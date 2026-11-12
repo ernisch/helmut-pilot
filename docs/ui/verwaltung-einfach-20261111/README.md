@@ -25,6 +25,9 @@ Veröffentlichung am12.11. ausdrücklich freigegeben; [Laufzeitstand in PR1155](
 - **Drei Einstiege:** Übersicht, Kunden, Einstellungen. Die Übersicht zeigt
   nur Kunden mit offenen Punkten, einmal statt als mehrfacher Zähler, Hinweis
   und Gesamtliste. Fehlende Nachweise bleiben offen.
+- **Klarer Kundenbestand:** Die einfache Kundenliste blendet bekannte synthetische
+  Kennungsfamilien aus. Die bisherigen Werkzeuge zeigen sie weiterhin. Ungeklärte
+  Konten bleiben zur Einrichtung sichtbar; Daten werden nicht gelöscht.
 - **Quellen & Versorgung:** direkt von der Übersicht oder unter Einstellungen.
   Vorhandenen Quellenlauf starten, Status prüfen und heutige Kundenbriefings
   sehen. Ein Laufabschluss erzeugt keinen erfolgreichen Briefingstatus.
@@ -108,7 +111,7 @@ niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **57 Gruppen mit Browser und echtem isoliertem Backend:**
+- **58 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
@@ -176,17 +179,16 @@ ist die daraus erzeugte Dateifassung. Es gibt keine zweite gepflegte Wahlliste.
 
 ## Stand, Grenze und nächster Schritt
 
-Branch `codex/verwaltung-kundenablauf-20261111`, [Draft-PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).
-Keine Freigabe zum Merge aus der Vorschau ableiten. Pflicht-CI auf dem jeweiligen
-Codekopf bleibt vor einem späteren Merge erforderlich; sie wird durch lokale
-Prüfungen oder den privaten Sites-Upload nicht ersetzt. Keine echte Konto- oder
-Profiländerung ist Teil dieses Entwicklungsnachweises.
+Branch `codex/verwaltung-kundenablauf-20261111`, [PR1155 mit aktuellem Rolloutbeleg](https://github.com/ernisch/helmut-pilot/pull/1155).
+Am12.11. hat der Betreiber Veröffentlichung und eigenen Zugangstest ausdrücklich freigegeben.
+Pflicht-CI am endgültigen Codekopf bleibt vor dem Merge erforderlich; lokale Prüfungen
+und der private Sites-Upload ersetzen sie nicht. Die App-Verknüpfung führt zur einfachen
+Verwaltung. [SMTP-Konfiguration und eigener Testumfang](../../betrieb/mailversand-tophoster.md).
 
-Nächster Schritt: Betreiber prüft den vereinfachten Ablauf unter der privaten
-Vorschauadresse. Vor späterem Livegang bleiben aktuelle Profilanbindung,
-Nachschub und wirklich gespeicherte Tagesbriefings separat nachzuweisen.
-Rückweg: Kandidatenzugang nicht zum Haupteinstieg machen bzw. die zugehörigen
-Änderungen zurücknehmen; vorhandene Oberflächen und Daten bleiben erhalten.
+Nächster Schritt: grüne Pflicht-CI, regulärer Rollout und genau eine eigene Zugangsmail.
+Profilversorgung, Nachschub und gespeicherte Tagesbriefings bleiben separat nachzuweisen.
+Rückweg: gezielter Revert der Veröffentlichung und Zugangsfreigabe auf0;
+vorhandene Oberflächen und Daten bleiben erhalten.
 
 Historie: [erste Klickskizze](vorschau-v1.html), [49 damalige Entwurfsprüfungen](pruefung.json)
 und [damaliger CI-Wartebefund](ci-wartebefund.json) bleiben erhalten. Diese 49

@@ -13,7 +13,7 @@ function isolatedBackend(){
  // CI installiert Laufzeitpakete im Ausgangscheckout. Nur diese vorhandenen
  // Pakete teilen; Daten und Zugangsdaten bleiben im wegwerfbaren Klon isoliert.
  if(fs.existsSync(path.join(root,'node_modules')))fs.symlinkSync(path.join(root,'node_modules'),path.join(clone,'node_modules'),'dir');
- for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js','scripts/profil-auswahl-paket.js','verwaltung/original-quellenlauf.mjs'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
+ for(const file of ['server.js','verwaltung/api.mjs','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js','scripts/profil-auswahl-paket.js','verwaltung/original-quellenlauf.mjs'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
  fs.cpSync(path.join(root,'verwaltung/einfach'),path.join(clone,'verwaltung/einfach'),{recursive:true});
  assert.equal(fs.existsSync(path.join(clone,'.helmut-data')),false);
  return {temp,clone};
@@ -59,6 +59,18 @@ async function run({browser=false,evidenceDir=null}={}){
   await check('Tatsaechlicher Kundenbestand wird gelesen; Admin ist kein Kunde',async()=>{
    const d=await api.load();assert.equal(d.customers.length,1);assert.notEqual(d.customers[0].userId,admin.id);
    assert.equal(d.resultDay,null);assert.equal(customerState(d,d.customers[0]).key,'setup');
+  });
+  await check('Einfache Kundensicht blendet bekannte Testfamilien aus; Originalbestand bleibt erreichbar',async()=>{
+   const cohort=await accounts.createUser({name:'Fiktive Testkohorte',email:'cohort-filter@example.invalid',role:'abgeordneter',politicianId:'test-mdb-kundenfilter',password:'Only-Synthetic-123!'});
+   const all=await (await authenticated('/api/admin/customers')).json();
+   const regular=await (await authenticated('/api/admin/customers?scope=regular')).json();
+   assert(all.kunden.some(c=>c.userId===cohort.id));
+   assert.equal(regular.customerScope,'regular');assert(!regular.kunden.some(c=>c.userId===cohort.id));
+   assert.equal(regular.counts.kunden,regular.kunden.length);
+   assert.equal((await fetch(base+'/api/admin/customers?scope=regular')).status,401);
+   assert.equal((await fetch(base+'/api/admin/customers?scope=regular',{headers:{Cookie:memberCookie}})).status,403);
+   const seen=[],scoped=createSimpleApi({fetcher:(url,options)=>{seen.push(url);return authenticated(url,options);},origin:base});
+   const d=await scoped.load();assert(!d.customers.some(c=>c.userId===cohort.id));assert(seen.includes('/api/admin/customers?scope=regular'));scoped.dispose();
   });
   const mandate={party:'SPD',faction:'SPD',parliamentType:'Bundestag',state:'Berlin',constituency:'Kein Wahlkreis (Landesliste)',focusTopics:['Fiktives Thema']};
   let user;
@@ -138,7 +150,7 @@ async function run({browser=false,evidenceDir=null}={}){
   await check('Vercel-Vorschau darf keine echten Konten anlegen',async()=>{
    let writes=0;const p=createSimpleApi({fetcher:async(url,options={})=>{
     if(options.method&&options.method!=='GET')writes++;
-    return {ok:true,status:200,json:async()=>url.includes('customers')?{kunden:[]}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'preview'}}}:{verfuegbar:false}};
+    return {ok:true,status:200,json:async()=>url.includes('customers')?{kunden:[],customerScope:'regular'}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'preview'}}}:{verfuegbar:false}};
    }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);assert.equal(writes,0);p.dispose();
   });
   await check('401 entfernt statt erfolgreichem Leerbestand den gesamten Zugriff',async()=>{
@@ -148,7 +160,7 @@ async function run({browser=false,evidenceDir=null}={}){
    const calls=[],url='https://kanonisches-beispiel.invalid/passwort-setzen?token=synthetisch';
    const p=createSimpleApi({fetcher:async(route,options={})=>{
     calls.push(route);let value={verfuegbar:false};
-    if(route.includes('customers'))value={kunden:[]};
+    if(route.includes('customers'))value={kunden:[],customerScope:'regular'};
     else if(route.includes('overview'))value={mandates:[],system:{deploy:{environment:'local'}}};
     else if(route==='/api/admin/users')value=[{id:'synthetic-invite',role:'abgeordneter',status:'eingeladen',active:true}];
     else if(route==='/api/security/csrf')value={token:'f'.repeat(32)};
@@ -169,7 +181,7 @@ async function run({browser=false,evidenceDir=null}={}){
    const saved=new Map(),events=[];
    const p=createSimpleApi({host:{crypto:require('node:crypto').webcrypto,sessionStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)}},fetcher:async(url,options={})=>{
     if(url==='/api/admin/quellenlauf'&&options.method==='POST')return new Response('{}',{status:401});
-    let value=url.includes('customers')?{kunden:[]}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'local'}}}:url==='/api/security/csrf'?{token:'s'.repeat(32)}:{verfuegbar:false};
+    let value=url.includes('customers')?{kunden:[],customerScope:'regular'}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'local'}}}:url==='/api/security/csrf'?{token:'s'.repeat(32)}:{verfuegbar:false};
     return new Response(JSON.stringify(value),{status:200,headers:{'Content-Type':'application/json'}});
    }});await p.load();p.sourceRun.subscribe(s=>events.push(s));await p.sourceRun.start();assert.ok(events.some(s=>s.accessStatus===401));assert.equal(saved.has('helmut-admin-quellenauftrag-v1'),false);await assert.rejects(p.sourceRun.start());p.dispose();
   });
@@ -317,10 +329,10 @@ async function run({browser=false,evidenceDir=null}={}){
    for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:1000});await check('Quellen und Versorgung ohne Ueberlauf bei '+width,async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true));if(evidenceDir&&width===390){await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(evidenceDir,'app-quellen-versorgung-mobil.png'),fullPage:true});}}
    const followupStarted=new Promise(resolve=>{sourceStarted=resolve;});
    await page.locator('[data-action="source-start"]').click();await followupStarted;assert.equal(sourcePosts,2);
-   await context.route('**/api/admin/customers',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));releaseSource();
+   await context.route('**/api/admin/customers*',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));releaseSource();
    await page.getByText('Der aktuelle Briefingstand konnte nicht geladen werden. Bitte „Stand neu laden“ wählen.',{exact:true}).waitFor();
    await check('Fehlende Folgeabfrage wird sichtbar und verhindert weitere Starts bis zur Lesekontrolle',async()=>assert.equal(await page.locator('[data-action="source-start"]').isDisabled(),true));
-   await context.unroute('**/api/admin/customers');await page.locator('[data-action="refresh"]:visible').first().click();await page.waitForFunction(()=>document.querySelector('[data-action="source-start"]')&&!document.querySelector('[data-action="source-start"]').disabled);
+   await context.unroute('**/api/admin/customers*');await page.locator('[data-action="refresh"]:visible').first().click();await page.waitForFunction(()=>document.querySelector('[data-action="source-start"]')&&!document.querySelector('[data-action="source-start"]').disabled);
    const beforeLoss=sourcePosts;
    loseSource=true;await page.locator('[data-action="source-start"]').click();await page.getByRole('status').filter({hasText:'Der Abschluss ist noch offen.'}).waitFor();
    await check('Verlorene Startantwort bleibt offen und verhindert einen blinden Neustart',async()=>{assert.equal(sourcePosts,beforeLoss+1);assert.equal(await page.locator('[data-action="source-start"]').isDisabled(),true);assert.ok(await page.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')));});
@@ -336,7 +348,7 @@ async function run({browser=false,evidenceDir=null}={}){
    await check('Sitzungsverlust beim Quellenstart entfernt Kundendaten und den sicher abgewiesenen Auftrag',async()=>{assert.doesNotMatch(await sourceAuthPage.locator('main').innerText(),/Fiktiver|example.invalid/);assert.equal(await sourceAuthPage.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')),null);});
    await sourceAuth.close();
    assert.deepEqual(consoleErrors,[]);
-   await context.route('**/api/admin/customers',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":"Bitte erneut anmelden."}'}));
+   await context.route('**/api/admin/customers*',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":"Bitte erneut anmelden."}'}));
    await page.locator('[data-action="refresh"]:visible').first().click();
    await page.getByRole('heading',{name:'Bitte melde dich erneut an.',exact:true}).waitFor();
    await check('Zugriffsentzug entfernt Kundendaten aus dem Browser',async()=>{assert.doesNotMatch(await page.locator('main').innerText(),/Fiktiver|browser@example/);});

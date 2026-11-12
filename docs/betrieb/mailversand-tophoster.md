@@ -2,9 +2,9 @@
 
 Stand: 12.11.2026. **Veröffentlichung und eigener Zugangstest freigegeben.**
 Aktueller Bereitstellungs- und Mailteststand: [PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).
-Die folgenden Einrichtungsbelege beschreiben den vorbereiteten Stand vor dem Rollout.
-Kein neues Dienstkonto oder Postfach angelegt, keine DNS- oder Production-Änderung,
-bisher keine Verbindung zum echten SMTP-Postfach und keine echte E-Mail versendet.
+Die folgenden Einrichtungsbelege beschreiben den geprüften Code vor dem Rollout.
+Kein neues Dienstkonto oder Postfach angelegt, keine DNS-Änderung.
+Production-Konfiguration und eigenes Testkonto sind vorbereitet; der echte Versand folgt nach dem Rollout.
 
 ## Bestätigte Verbindungsdaten
 
@@ -65,7 +65,7 @@ für beide echten Versandwege identisch.
 
 | Prüfung | Ergebnis |
 |---|---|
-| SMTP einschließlich lokaler TLS/HTTP-Flows, enger Kanalfreigabe und Zeitabbruch | 62/62 |
+| SMTP einschließlich lokaler TLS/HTTP-Flows, enger Kanalfreigabe und Zeitabbruch | 63/63 |
 | Bestehende Mailvorlagen / Mutationsprobe | 152/152 und26/26 |
 | Bestehendes Mailpit / Resend | 119/119 und201/201 |
 | Variableninventar / lokaler Netzschutz | 38/38 und92/92 |
@@ -83,9 +83,9 @@ anschließend wiederhergestellt. Die neue Suite wird über den vorhandenen Auth-
 von der CI-Auswahl erfasst. Ein Resend-Testfall verwendet nun `smtpx` als unbekannten Namen,
 weil `smtp` ein bekannter, weiterhin ausdrücklich zu konfigurierender Transport ist.
 
-Vor Livebetrieb: Draft freigeben und erforderliche Checks abschließen, Postfachpasswort sicher
-hinterlegen, Kommunikationsriegel und Tarifgrenzen prüfen. Danach einen ausdrücklich benannten
-Testempfänger bis zum Posteingang, zweimaliger Passworteingabe und späterer Anmeldung prüfen.
+Vor Livebetrieb: erforderliche Checks am endgültigen Kopf abschließen und regulär veröffentlichen.
+Danach den eigenen Testempfänger bis zur SMTP-Annahme prüfen. Posteingang, zweimalige
+Passworteingabe und spätere Anmeldung bestätigt der Betreiber selbst.
 Die tägliche Briefingversorgung ist ein eigenständiger Nachweis.
 
 
@@ -102,5 +102,12 @@ Rollback dieser Teilfreigabe: `HELMUT_ZUGANGSMAILS_FREIGEGEBEN` leeren/auf0 setz
 Die App-Verknüpfung „Verwaltung öffnen“ führt jetzt zur einfachen Verwaltung; die Originalansicht
 bleibt für vorhandene Spezialwerkzeuge unter `/verwaltung/` erreichbar.
 
-Lokale Freigabeprüfungen nach Hauptbranchintegration: Verwaltung57/57 Browser-/HTTP-Gruppen,
-Kommunikationsriegel48/48 und SMTP62/62; die übrigen vorherigen Nachweise bleiben erhalten.
+Die nicht geheimen Production-Variablen wurden mit den obigen Werten angelegt; die öffentliche
+App-Adresse ist `https://helmut-pilot.vercel.app`. Die globale Kommunikationsstellung blieb erhalten.
+Ein eigenes Konto `hallo@mithelmut.de` wurde einmalig als eingeladener Demo-Zugang ohne Mandat
+und ohne Passwort angelegt. Andere Konten, Kostenbestand und Budgets blieben im Vor-/Nachvergleich gleich.
+Bei anonym angeforderter Passworthilfe nennt das interne Audit neben `versand=nein` nur einen
+bekannten festen Fehlercode; die öffentliche Antwort bleibt generisch, ohne SMTP-Fehlerdetails.
+
+Lokale Freigabeprüfungen nach Hauptbranchintegration: Verwaltung58/58 Browser-/HTTP-Gruppen,
+Kommunikationsriegel48/48, Passwortablauf39/39 und SMTP63/63; die übrigen vorherigen Nachweise bleiben erhalten.

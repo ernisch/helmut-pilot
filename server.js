@@ -3309,7 +3309,7 @@ async function handleRequest(request, response) {
   // (sanitizeUser — nie Hashes) + aktive Sessions als reine Anzahl.
   if (url.pathname === "/api/admin/customers" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
-    return handleAsync(response, () => buildAdminCustomers());
+    return handleAsync(response, () => buildAdminCustomers({ regularOnly: url.searchParams.get("scope") === "regular" }));
   }
 
   // Quellen & Watchdog: Statuszaehler und problematische Abrufwege aus den
@@ -6466,10 +6466,17 @@ async function zustellenAnonymerReset(user, kontext) {
     { to: user.email, ...mailContent },
     { kennung: await kontoKennung(user) }
   );
+  // Nur feste Grundcodes im internen Audit, niemals SMTP-Antworten oder Zugangsdaten.
+  const bekannteGruende = [
+    ...Object.values(require("./lib/helmut/mail-transport").GRUND),
+    ...Object.values(require("./lib/helmut/kommunikationsriegel").GRUND)
+  ];
+  const fehlerGrund = versandBefund?.sent !== true && bekannteGruende.includes(versandBefund?.reason)
+    ? ` · grund=${versandBefund.reason}` : "";
   await accounts.recordAudit({
     action: "password.reset-requested", userId: user.id, ip: kontext.ip,
     politicianId: await kontoKennung(user),
-    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}`
+    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}${fehlerGrund}`
   });
 }
 
@@ -7039,14 +7046,18 @@ async function buildAdminCostsPerUser(days = 30) {
   return { generatedAt: new Date().toISOString(), ...per, perUser, tenantBudgets };
 }
 
-async function buildAdminCustomers() {
+async function buildAdminCustomers({ regularOnly = false } = {}) {
   const users = await accounts.listUsers();
   const sessions = await accounts.countActiveSessions().catch(() => null);
   const today = new Date().toISOString().slice(0, 10);
+  const { klassifiziere, BEFUND_SYNTHETISCH } = require("./lib/helmut/kommunikationsriegel");
   // Kundensicht: Mandats-Konten (abgeordneter) fuehren die Abrechnung. Konten
   // anderer Rollen erscheinen nur, wenn tatsaechlich customer-Daten gepflegt sind.
   const kunden = users
     .filter((u) => u.role === "abgeordneter" || (u.customer && (u.customer.pricePerMonth != null || (u.customer.paymentStatus && u.customer.paymentStatus !== "none"))))
+    // Einfache Kundensicht: bekannte Testfamilien bleiben in den bisherigen Werkzeugen.
+    // Ungeklaerte Konten bleiben zur Einrichtung sichtbar; keine Daten werden geloescht.
+    .filter((u) => !regularOnly || klassifiziere({ kanal: "einladung", kennung: u.politicianId }).befund !== BEFUND_SYNTHETISCH)
     .map((u) => ({
       userId: u.id,
       name: u.name || u.email,
@@ -7075,6 +7086,7 @@ async function buildAdminCustomers() {
   const mitPreis = kunden.filter((k) => !beendet(k) && Number.isFinite(Number(k.customer.pricePerMonth)) && k.customer.pricePerMonth != null);
   const mrrEur = mitPreis.length ? mitPreis.reduce((sum, k) => sum + Number(k.customer.pricePerMonth), 0) : null;
   return {
+    ...(regularOnly ? { customerScope: "regular" } : {}),
     generatedAt: new Date().toISOString(),
     counts,
     mrrEur,

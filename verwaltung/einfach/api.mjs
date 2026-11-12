@@ -4,7 +4,7 @@ import { berlinDay, validId } from './model.mjs';
 import { profilePartyOptions, profileFactionOptions, federalStateOptions, constituencyChoices } from './profil-auswahl.mjs';
 import { createQuellenlauf } from '../original-quellenlauf.mjs';
 export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date(), origin=globalThis.location?.origin||'http://localhost', host=globalThis.window }={}) {
- const reader=createAdminReader({fetcher,timeoutMs}),actions=createAdminActions({fetcher,timeoutMs});
+ const reader=createAdminReader({fetcher,timeoutMs,customerScope:'regular'}),actions=createAdminActions({fetcher,timeoutMs});
  let disposed=false, busy=false, writesAllowed=false;
  const pending=new Set();
  let sourceController=null,sourceListener=()=>{};
@@ -51,7 +51,7 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
   writesAllowed=false;reader.clear();const instant=now();
   const values=await Promise.allSettled([...['customers','overview','ergebnisse','sources'].map(key=>reader.read(key)),request('/api/admin/stats/process-runs?limit=5&process=warteschlange-crawl')]);
   for(const v of values)if(v.status==='rejected'&&[401,403].includes(v.reason?.status))throw v.reason;
-  if(values[0].status!=='fulfilled'||!Array.isArray(values[0].value?.kunden))throw new AdminMutationError();
+  if(values[0].status!=='fulfilled'||!Array.isArray(values[0].value?.kunden)||values[0].value.customerScope!=='regular')throw new AdminMutationError();
   const customers=values[0].value.kunden;
   if(customers.some(c=>!validId(c?.userId))||new Set(customers.map(c=>c.userId)).size!==customers.length)throw new AdminMutationError();
   const data={customers,overview:values[1].status==='fulfilled'?values[1].value:null,results:{},resultDay:null,now:instant.toISOString(),generatedAt:values[0].value.generatedAt};

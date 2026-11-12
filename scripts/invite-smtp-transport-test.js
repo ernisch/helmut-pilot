@@ -83,6 +83,18 @@ async function httpFlow(factory, messages) {
     check("HTTP-Passwort-Hilfe nutzt denselben SMTP-Weg", reset.status === 200 && messages.length === start + 2);
     const again = await request(port, "POST", "/api/auth/set-password", { token, password });
     check("Einmaliger Einladungslink bleibt nach Gebrauch ungueltig", again.status === 410);
+    process.env.HELMUT_SMTP_PASSWORD = "falsches-Testpasswort";
+    const anonymous = await request(port, "POST", "/api/auth/request-reset", { email });
+    const customer = await accounts.getUserByEmailRaw(email);
+    let receipt;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      receipt = (await accounts.listAuditEvents()).find(e => e.action === "password.reset-requested" && e.userId === customer.id);
+      if (receipt) break;
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    check("Anonyme Hilfe bleibt generisch; internes Fehleraudit nennt nur den festen SMTP-Grund", anonymous.status === 200
+      && receipt?.detail.endsWith("versand=nein · grund=smtp-anmeldung-abgelehnt")
+      && !JSON.stringify(anonymous.body).includes("smtp-") && messages.length === start + 2);
   } finally {
     nodemailer.createTransport = originalFactory;
     if (server?.listening) await new Promise(resolve => server.close(resolve));

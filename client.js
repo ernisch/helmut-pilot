@@ -1098,7 +1098,7 @@ function renderNoMandateState() {
       <div class="loading-logo"><span>H</span></div>
       <p>Helmut</p>
       <h1>Noch kein Mandat zugewiesen.</h1>
-      <p class="pilot-access-copy">Dein Zugang ist aktiv, aber dir ist noch kein Mandat zugeordnet. Bitte wende dich an einen Administrator.</p>
+      <p class="pilot-access-copy">Ihr Zugang ist aktiv, aber Ihnen ist noch kein Mandat zugeordnet. Bitte wenden Sie sich an einen Administrator.</p>
       <div class="pilot-access-form">
         <button type="button" class="primary-button" data-logout>Abmelden</button>
       </div>
@@ -1114,7 +1114,7 @@ function renderPilotAccess(message = "") {
       <div class="loading-logo"><span>H</span></div>
       <p>Helmut</p>
       <h1>Zugang.</h1>
-      <p class="pilot-access-copy">Gib den Zugangscode ein, um deine politische Lage zu öffnen.</p>
+      <p class="pilot-access-copy">Geben Sie den Zugangscode ein, um Ihre politische Lage zu öffnen.</p>
       <form class="pilot-access-form" id="pilotAccessForm">
         <input name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" aria-label="Zugangscode" />
         <button class="primary-button" type="submit">Helmut öffnen</button>
