@@ -11,7 +11,7 @@ function exportiere(ziel) {
   const vorher = process.env.HELMUT_MAIL_FROM;
   let mails;
   try {
-    process.env.HELMUT_MAIL_FROM = "Helmut <no-reply@mithelmut.de>";
+    process.env.HELMUT_MAIL_FROM = "Helmut <hallo@mithelmut.de>";
     mails = [
       ["einladung", buildInviteMail({ name: "Eva Beispiel", inviteUrl: "https://app.example.invalid/passwort-setzen?token=VORSCHAU-KEIN-ECHTER-LINK" })],
       ["passwort-vergessen", buildResetMail({ name: "Eva Beispiel", resetUrl: "https://app.example.invalid/passwort-setzen?token=VORSCHAU-KEIN-ECHTER-RESET" })]
@@ -36,7 +36,7 @@ function exportiere(ziel) {
 <p>Einladung und Passwort-Hilfe. Die Vorschau zeigt die echten Mailvorlagen mit Beispieldaten. Der Absender ist vorgesehen, die Links sind Platzhalter. Es wird nichts versendet oder gespeichert.</p>
 <nav aria-label="E-Mail auswählen"><button type="button" data-mail="einladung" aria-pressed="true">Einladung</button><button type="button" data-mail="passwort-vergessen" aria-pressed="false">Passwort vergessen</button></nav>
 <nav class="sizes" aria-label="Ansichtsbreite"><button type="button" data-width="gross" aria-pressed="true">Computer</button><button type="button" data-width="klein" aria-pressed="false">Handy</button></nav>
-<p class="meta">Von: <strong>Helmut &lt;no-reply@mithelmut.de&gt;</strong><br>Betreff: <strong id="betreff">Ihre Einladung zu Helmut</strong> · <a id="text" href="./einladung.txt" target="_blank" rel="noopener">Textfassung</a></p>
+<p class="meta">Von: <strong>Helmut &lt;hallo@mithelmut.de&gt;</strong><br>Betreff: <strong id="betreff">Ihre Einladung zu Helmut</strong> · <a id="text" href="./einladung.txt" target="_blank" rel="noopener">Textfassung</a></p>
 <p id="hinweis" role="status" aria-live="polite">Die Schaltflächen in der Mail sind hier nur eine Vorschau.</p></header>
 <main><iframe title="Vorschau der Einladung von Helmut" src="./einladung.html" sandbox="allow-same-origin" height="1200"></iframe></main>
 <script>

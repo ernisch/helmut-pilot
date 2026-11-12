@@ -1,9 +1,9 @@
 {
   "project_id": "appgprj_6af4de61bffc81918bc8bd16ff6259f7",
-  "deployment_id": "appgdep_6af59888c7c08191ae2822889e887180",
-  "version_id": "appgprj_6af4de61bffc81918bc8bd16ff6259f7~appgver_6e476be564348191b3ea132200f669e5",
+  "deployment_id": "appgdep_6af5b5ebeb9c8191bf0ec447b5aad380",
+  "version_id": "appgprj_6af4de61bffc81918bc8bd16ff6259f7~appgver_2479645aedd48191ad1ec585b1388632",
   "status": "succeeded",
   "url": "https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site",
-  "updated_at": "2026-11-12T10:44:36.254405+00:00",
-  "source_sha": "3ed76d72135b4a7c7451ebf08b1cc840beac71fa"
+  "updated_at": "2026-11-12T12:50:00.082754+00:00",
+  "source_sha": "0c0e71ad3af490dd91a116b3d044f674033fd094"
 }

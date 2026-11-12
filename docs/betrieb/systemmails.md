@@ -195,7 +195,8 @@ Aktivierung der Rückfallweg, wenn ein Versand scheitert.
 ## 9 · Aktuelle Gestaltungsvorschau und Freigabestand (12.11.2026)
 
 [Private Mailvorschau und Nachweise](../ui/systemmails-20261112/README.md).
-Der Betreiber hat `Helmut <no-reply@mithelmut.de>` als Absender gewählt; Antworten sind
-für das vorhandene Postfach `hallo@mithelmut.de` vorgesehen. Dafür ist kein zusätzliches
-Postfach für `no-reply` erforderlich, wohl aber eine beim Versanddienst verifizierte Domain.
+Der Betreiber hat `Helmut <hallo@mithelmut.de>` als Absender gewählt; Antworten gehen ebenfalls
+an das vorhandene Hauptpostfach `hallo@mithelmut.de`. Persönliche Kommunikation und automatische
+Einladungen verwenden dieselbe Adresse. Ein zusätzliches Postfach ist nicht nötig, wohl aber
+eine beim Versanddienst verifizierte Domain.
 Der Versand ist dadurch noch nicht konfiguriert oder freigeschaltet.

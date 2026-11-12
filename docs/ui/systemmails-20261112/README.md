@@ -36,10 +36,11 @@ Erfolg, Fehler und Erneuerung. Persönliche Anrede „Guten Tag Eva,“ aus dem 
 Vornamensfilter; ohne verwendbaren Namen „Guten Tag,“. Die übrige App und die Betreiberverwaltung
 sind keine vollständige sprachliche Überarbeitung dieses Auftrags.
 
-Vorgesehener Absender nach Betreiberentscheidung: **Helmut <no-reply@mithelmut.de>**.
-Vorgesehene Antwortadresse: **hallo@mithelmut.de**. Ein eigenes `no-reply`-Postfach ist für
-den Versand über die verifizierte Domain nicht erforderlich. Das vorhandene `hallo`-Postfach
-empfängt Antworten über `Reply-To`.
+Vorgesehener Absender nach Betreiberentscheidung: **Helmut <hallo@mithelmut.de>**.
+Vorgesehene Antwortadresse: **hallo@mithelmut.de**. Das bestehende Hauptpostfach dient zugleich
+für persönliche Kommunikation und Antworten auf automatische Mails. Ein zusätzliches Postfach
+ist nicht nötig; automatische Mails werden über den Versanddienst verschickt. Die Domain muss
+dafür noch verifiziert werden. `Reply-To` verweist ebenfalls auf das vorhandene Postfach.
 
 ## Nachweise
 
@@ -84,7 +85,7 @@ Prüfung in echten Apple-Mail-, Gmail- und Outlook-Postfächern steht noch aus.
    | Schlüssel | Vorgesehener Wert |
    |---|---|
    | `HELMUT_MAIL_TRANSPORT` | `resend` |
-   | `HELMUT_MAIL_FROM` | `Helmut <no-reply@mithelmut.de>` |
+   | `HELMUT_MAIL_FROM` | `Helmut <hallo@mithelmut.de>` |
    | `HELMUT_MAIL_REPLY_TO` | `hallo@mithelmut.de` |
    | `HELMUT_RESEND_API_KEY` | Neuer, auf Versand begrenzter Schlüssel; nie im Repo/Chat |
    | `HELMUT_PUBLIC_URL` | Bestätigte öffentliche App-Adresse, keine private Gestaltungsvorschau |

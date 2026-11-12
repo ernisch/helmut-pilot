@@ -17,4 +17,4 @@ Freundliche Grüße
 Helmut
 
 —
-Absender: Helmut <no-reply@mithelmut.de> · Impressum: https://helmut-website.vercel.app/impressum.html
+Absender: Helmut <hallo@mithelmut.de> · Impressum: https://helmut-website.vercel.app/impressum.html
