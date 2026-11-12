@@ -43,7 +43,7 @@ const DAUER_MUSTER = new RegExp(
 // Der gemeinsame Hinweis beider Mails — hier bewusst als WOERTLICHE Erwartung, nicht aus
 // dem Modul importiert: sonst pruefte der Test den Wortlaut gegen sich selbst.
 const HINWEIS_BEFRISTUNG =
-  "Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.";
+  "Der Link ist nur für Sie bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.";
 
 const TEST_ABSENDER = "Helmut <noreply@helmut.test>";
 const TEST_EMPFAENGER = "eva@example.org";
@@ -109,14 +109,14 @@ function hrefs(html) {
   const resetOhneName = inviteMail.buildResetMail({ resetUrl: RESET_URL });
 
   // ── A · Einladung ───────────────────────────────────────────────────────────────────────
-  check("A1 Einladung: Betreff ist „Deine Einladung zu Helmut“",
-    einladung.subject === "Deine Einladung zu Helmut", einladung.subject);
-  check("A2 Einladung: persoenliche Anrede im Text", einladung.text.startsWith("Hallo Eva,"),
+  check("A1 Einladung: Betreff ist „Ihre Einladung zu Helmut“",
+    einladung.subject === "Ihre Einladung zu Helmut", einladung.subject);
+  check("A2 Einladung: persoenliche Anrede im Text", einladung.text.startsWith("Guten Tag Eva,"),
     einladung.text.slice(0, 30));
-  check("A2 Einladung: persoenliche Anrede im HTML", sichtbarerText(einladung.html).includes("Hallo Eva,"));
+  check("A2 Einladung: persoenliche Anrede im HTML", sichtbarerText(einladung.html).includes("Guten Tag Eva,"));
   check("A2 Einladung ohne Namen: neutrale Anrede in beiden Fassungen",
-    einladungOhneName.text.startsWith("Hallo,") && sichtbarerText(einladungOhneName.html).includes("Hallo,")
-    && !/Hallo\s+\S/.test(einladungOhneName.text.split("\n")[0].replace("Hallo,", "")),
+    einladungOhneName.text.startsWith("Guten Tag,") && sichtbarerText(einladungOhneName.html).includes("Guten Tag,")
+    && !/Guten Tag\s+\S/.test(einladungOhneName.text.split("\n")[0].replace("Guten Tag,", "")),
     einladungOhneName.text.slice(0, 20));
   check("A3 Einladung: genau der vorgesehene Aktivierungslink im Text",
     (einladung.text.match(/passwort-setzen\?token=/g) || []).length === 1 && einladung.text.includes(INVITE_URL));
@@ -126,28 +126,29 @@ function hrefs(html) {
   check("A3 Einladung: kein zweites, fremdes Linkziel",
     hrefs(einladung.html).every((h) => h === INVITE_URL || h === "https://helmut-website.vercel.app/impressum.html"),
     JSON.stringify(hrefs(einladung.html)));
-  check("A4 Einladung: Schaltflaechenbeschriftung „Passwort festlegen“",
-    />Passwort festlegen<\/a>/.test(einladung.html) && einladung.text.includes("Passwort festlegen:"));
-  check("A Einladung: fuehrt Helmut ein, ohne etwas zu erfinden",
-    einladung.text.includes("du wurdest eingeladen, Helmut zu nutzen.")
-    && einladung.text.includes("politische Entwicklungen einzuordnen"));
+  check("A4 Einladung: Schaltflaechenbeschriftung „Passwort setzen“",
+    />Passwort setzen<\/a>/.test(einladung.html) && einladung.text.includes("Passwort setzen:"));
+  check("A Einladung: erklaert Passwort zweimal in der App und spaeteren Login",
+    einladung.text.includes("Ihr Zugang zu Helmut ist vorbereitet.")
+    && einladung.text.includes("Helmut App") && einladung.text.includes("zweimal")
+    && einladung.text.includes("E-Mail-Adresse und Ihrem Passwort"));
   check("A Einladung: Hinweistext zu Befristung und Einmaligkeit, ohne erfundene Zahl",
     einladung.text.includes(HINWEIS_BEFRISTUNG)
     && !DAUER_MUSTER.test(einladung.text) && !DAUER_MUSTER.test(sichtbarerText(einladung.html)),
     einladung.text);
   check("A Einladung: Ignorier-Hinweis vorhanden",
-    einladung.text.includes("Falls du diese Einladung nicht erwartet hast"));
-  check("A Einladung: Grussformel", einladung.text.includes("Viele Grüße")
-    && sichtbarerText(einladung.html).includes("Viele Grüße"));
+    einladung.text.includes("Falls Sie diese Einladung nicht erwartet haben"));
+  check("A Einladung: Grussformel", einladung.text.includes("Freundliche Grüße")
+    && sichtbarerText(einladung.html).includes("Freundliche Grüße"));
 
   // ── B · Passwort-Reset ──────────────────────────────────────────────────────────────────
   check("B5 Reset: Betreff ist „Neues Passwort für Helmut festlegen“",
     reset.subject === "Neues Passwort für Helmut festlegen", reset.subject);
   check("B5 Betreffzeilen sind klar unterscheidbar", einladung.subject !== reset.subject);
   check("B6 Reset: persoenliche Anrede in beiden Fassungen",
-    reset.text.startsWith("Hallo Eva,") && sichtbarerText(reset.html).includes("Hallo Eva,"));
+    reset.text.startsWith("Guten Tag Eva,") && sichtbarerText(reset.html).includes("Guten Tag Eva,"));
   check("B6 Reset ohne Namen: neutrale Anrede in beiden Fassungen",
-    resetOhneName.text.startsWith("Hallo,") && sichtbarerText(resetOhneName.html).includes("Hallo,"));
+    resetOhneName.text.startsWith("Guten Tag,") && sichtbarerText(resetOhneName.html).includes("Guten Tag,"));
   check("B7 Reset: genau der vorgesehene Reset-Link im Text",
     (reset.text.match(/passwort-setzen\?token=/g) || []).length === 1 && reset.text.includes(RESET_URL));
   check("B7 Reset: Schaltflaeche zeigt auf genau diesen Link",
@@ -157,13 +158,16 @@ function hrefs(html) {
   check("B8 Reset: Schaltflaechenbeschriftung „Neues Passwort festlegen“",
     />Neues Passwort festlegen<\/a>/.test(reset.html) && reset.text.includes("Neues Passwort festlegen:"));
   check("B Reset: nennt den Anlass, ohne etwas zu erfinden",
-    reset.text.includes("für deinen Helmut-Zugang wurde ein neues Passwort angefordert."));
+    reset.text.includes("für Ihren Helmut-Zugang wurde ein neues Passwort angefordert."));
   check("B Reset: Hinweis, dass das bisherige Passwort unveraendert bleibt",
-    reset.text.includes("Dein bisheriges Passwort bleibt unverändert."));
+    reset.text.includes("Ihr bisheriges Passwort bleibt unverändert."));
   check("B Reset: Hinweis zu Befristung und Einmaligkeit, ohne erfundene Zahl",
     reset.text.includes(HINWEIS_BEFRISTUNG)
     && !DAUER_MUSTER.test(reset.text) && !DAUER_MUSTER.test(sichtbarerText(reset.html)), reset.text);
   for (const [name, mail] of [["Einladung", einladung], ["Reset", reset]]) {
+    check(`B ${name}: Kunden werden durchgaengig gesiezt`,
+      /\bSie\b/.test(mail.text) && !/\b(?:du|dich|dir|dein(?:e|en|em|er|es)?)\b/i.test(mail.text)
+      && !/\b(?:du|dich|dir|dein(?:e|en|em|er|es)?)\b/i.test(sichtbarerText(mail.html)));
     check(`B ${name}: Einmaligkeit steht in BEIDER Fassung`,
       mail.text.includes("kann nur einmal verwendet werden")
       && sichtbarerText(mail.html).includes("kann nur einmal verwendet werden"),
@@ -176,14 +180,14 @@ function hrefs(html) {
 
   // ── C · HTML und Text tragen dieselben wesentlichen Informationen ───────────────────────
   for (const [name, mail, url, label] of [
-    ["Einladung", einladung, INVITE_URL, "Passwort festlegen"],
+    ["Einladung", einladung, INVITE_URL, "Passwort setzen"],
     ["Reset", reset, RESET_URL, "Neues Passwort festlegen"]
   ]) {
     const html = sichtbarerText(mail.html);
     check(`C9 ${name}: beide Fassungen tragen Anrede, Schaltflaechentext und Grussformel`,
-      html.includes("Hallo Eva,") && mail.text.includes("Hallo Eva,")
+      html.includes("Guten Tag Eva,") && mail.text.includes("Guten Tag Eva,")
       && html.includes(label) && mail.text.includes(label)
-      && html.includes("Viele Grüße") && mail.text.includes("Viele Grüße"));
+      && html.includes("Freundliche Grüße") && mail.text.includes("Freundliche Grüße"));
     // BEIDE Richtungen. Nur Text->HTML zu pruefen liesse HTML-only-Inhalt unentdeckt, nur
     // HTML->Text liesse Textverlust unentdeckt. Verglichen wird strukturell: jeder
     // Inhaltsabsatz der HTML-Fassung ist genau ein <p>-Element.
@@ -206,7 +210,7 @@ function hrefs(html) {
     check(`C10 ${name}: vollstaendiger Link sichtbar in BEIDEN Fassungen`,
       mail.text.includes(url) && html.includes(url), url);
     const posKnopf = mail.html.indexOf(`>${label}</a>`);
-    const posRueckfall = mail.html.indexOf("kopiere diese Adresse in deinen Browser");
+    const posRueckfall = mail.html.indexOf("kopieren Sie diese Adresse in Ihren Browser");
     check(`C10 ${name}: der sichtbare Rueckfallweg steht unter der Schaltflaeche`,
       posKnopf >= 0 && posRueckfall >= 0 && posKnopf < posRueckfall, `${posKnopf} / ${posRueckfall}`);
     check(`C ${name}: Textfassung enthaelt keine HTML-Auszeichnung`,
@@ -215,7 +219,7 @@ function hrefs(html) {
       mail.html.startsWith("<!doctype html>") && mail.html.includes('<meta charset="utf-8">')
       && mail.html.trim().endsWith("</html>"));
     check(`C ${name}: Umlaute stehen als echte Zeichen, nicht als Entitaet`,
-      mail.html.includes("Viele Grüße") && !mail.html.includes("&uuml;"));
+      mail.html.includes("Freundliche Grüße") && !mail.html.includes("&uuml;"));
   }
 
   // ── D · Maskierung und Einschleusung ────────────────────────────────────────────────────
@@ -225,7 +229,7 @@ function hrefs(html) {
   {
     const roh = layout.baueLayout({
       titel: `T ${boesartig}`,
-      anrede: `Hallo ${boesartig},`,
+      anrede: `Guten Tag ${boesartig},`,
       absaetze: [`Absatz ${boesartig}`],
       aktionLabel: `Los ${boesartig}`,
       aktionUrl: 'https://a.test/x?t=1"><script>alert(1)</script>',
@@ -248,9 +252,9 @@ function hrefs(html) {
       }).html));
     check("D11 Layout: Kaufmanns-Und wird maskiert",
       layout.baueLayout({
-        titel: "T", anrede: "Hallo Eva&Otto,", absaetze: ["A"], aktionLabel: "L",
+        titel: "T", anrede: "Guten Tag Eva&Otto,", absaetze: ["A"], aktionLabel: "L",
         aktionUrl: "https://a.test/x", hinweise: ["H"], gruss: ["G"], absender: "H <x@a.test>", impressumUrl: ""
-      }).html.includes("Hallo Eva&amp;Otto,"));
+      }).html.includes("Guten Tag Eva&amp;Otto,"));
     check("D11 der Maskierer verhaelt sich wie erwartet (fuenf Zeichen)",
       require("../lib/helmut/template").escapeHtml('<>&"\'') === "&lt;&gt;&amp;&quot;&#39;",
       require("../lib/helmut/template").escapeHtml('<>&"\''));
@@ -259,15 +263,15 @@ function hrefs(html) {
   // Zweite, UNABHAENGIGE Schicht; sie ersetzt die Maskierung nicht.
   const boese = inviteMail.buildInviteMail({ name: `${boesartig} Eva`, inviteUrl: INVITE_URL });
   check("D12 manipulierter Namensteil wird gar nicht erst zur Anrede",
-    boese.text.startsWith("Hallo Eva,") && !boese.html.includes("script"), boese.text.slice(0, 40));
+    boese.text.startsWith("Guten Tag Eva,") && !boese.html.includes("script"), boese.text.slice(0, 40));
   check("D12 kein ausfuehrbares script-Element in der Mail",
     !/<script/i.test(boese.html) && !/<\/script/i.test(boese.html));
   check("D12 keine Ereignis-Attribute (onload/onerror/onclick)", !/\son[a-z]+\s*=/i.test(boese.html));
   check("D12 kein javascript:-Ziel irgendwo im HTML", !/javascript:/i.test(boese.html));
   check("D12 URL-artiger Namensteil wird nicht zur Anrede (Mailprogramme verlinken das)",
-    inviteMail.anredeAus("http://evil.example Eva") === "Hallo Eva,"
-    && inviteMail.anredeAus("www.evil.example Eva") === "Hallo Eva,"
-    && inviteMail.anredeAus("http://evil.example") === "Hallo,",
+    inviteMail.anredeAus("http://evil.example Eva") === "Guten Tag Eva,"
+    && inviteMail.anredeAus("www.evil.example Eva") === "Guten Tag Eva,"
+    && inviteMail.anredeAus("http://evil.example") === "Guten Tag,",
     inviteMail.anredeAus("http://evil.example Eva"));
   {
     // Nicht nur der Name ist ein Fremdwert: die Basis-URL entsteht im lokalen Betrieb aus
@@ -283,26 +287,26 @@ function hrefs(html) {
       String((mitBoeserUrl.html.match(/&quot;&gt;&lt;script&gt;/g) || []).length));
   }
   check("D Umlaute und Sonderzeichen im Namen bleiben lesbar",
-    inviteMail.buildInviteMail({ name: "Renée Öçal-Groß", inviteUrl: INVITE_URL }).text.startsWith("Hallo Renée,"));
+    inviteMail.buildInviteMail({ name: "Renée Öçal-Groß", inviteUrl: INVITE_URL }).text.startsWith("Guten Tag Renée,"));
   check("D E-Mail-Adresse als Namensfeld ergibt KEINE Adress-Anrede",
-    inviteMail.buildInviteMail({ name: "kontakt@example.org", inviteUrl: INVITE_URL }).text.startsWith("Hallo,"));
+    inviteMail.buildInviteMail({ name: "kontakt@example.org", inviteUrl: INVITE_URL }).text.startsWith("Guten Tag,"));
   check("D Titel im Namensfeld werden uebersprungen",
-    inviteMail.anredeAus("Dr. h.c. Maximiliane-Charlotte von Sonnenberg") === "Hallo Maximiliane-Charlotte,",
+    inviteMail.anredeAus("Dr. h.c. Maximiliane-Charlotte von Sonnenberg") === "Guten Tag Maximiliane-Charlotte,",
     inviteMail.anredeAus("Dr. h.c. Maximiliane-Charlotte von Sonnenberg"));
   check("D absurd langer Vorname faellt auf die neutrale Anrede zurueck",
-    inviteMail.anredeAus(`${"x".repeat(200)} Eva`) === "Hallo,");
+    inviteMail.anredeAus(`${"x".repeat(200)} Eva`) === "Guten Tag,");
   check("D Namensfeld ohne einen einzigen Buchstaben ergibt die neutrale Anrede",
-    inviteMail.anredeAus("123 456") === "Hallo," && inviteMail.anredeAus("--") === "Hallo,");
+    inviteMail.anredeAus("123 456") === "Guten Tag," && inviteMail.anredeAus("--") === "Guten Tag,");
   check("D Sortierform „Nachname, Vorname“ gruesst mit dem VORnamen",
-    inviteMail.anredeAus("Müller, Eva") === "Hallo Eva,"
-    && inviteMail.anredeAus("Mustermann, Erika Dr.") === "Hallo Erika,",
+    inviteMail.anredeAus("Müller, Eva") === "Guten Tag Eva,"
+    && inviteMail.anredeAus("Mustermann, Erika Dr.") === "Guten Tag Erika,",
     inviteMail.anredeAus("Müller, Eva"));
   check("D „Vorname Nachname, Titel“ bleibt trotzdem richtig",
-    inviteMail.anredeAus("Eva Müller, MdB") === "Hallo Eva,", inviteMail.anredeAus("Eva Müller, MdB"));
+    inviteMail.anredeAus("Eva Müller, MdB") === "Guten Tag Eva,", inviteMail.anredeAus("Eva Müller, MdB"));
   check("D gaengige Vornamensformen gehen durch (Bindestrich, Apostroph, nicht-lateinisch)",
-    inviteMail.anredeAus("Jean-Luc Picard") === "Hallo Jean-Luc,"
-    && inviteMail.anredeAus("O’Brien Eva") === "Hallo O’Brien,"
-    && inviteMail.anredeAus("Ayşe Yılmaz") === "Hallo Ayşe,",
+    inviteMail.anredeAus("Jean-Luc Picard") === "Guten Tag Jean-Luc,"
+    && inviteMail.anredeAus("O’Brien Eva") === "Guten Tag O’Brien,"
+    && inviteMail.anredeAus("Ayşe Yılmaz") === "Guten Tag Ayşe,",
     [inviteMail.anredeAus("Jean-Luc Picard"), inviteMail.anredeAus("O’Brien Eva"), inviteMail.anredeAus("Ayşe Yılmaz")].join(" | "));
 
   // ── E · Keine externen Ressourcen, kein Zaehlpixel ──────────────────────────────────────
@@ -366,25 +370,35 @@ function hrefs(html) {
   check("G Tabellenbasiertes Layout mit direkten Stilen",
     einladung.html.includes('role="presentation"') && (einladung.html.match(/<table/g) || []).length >= 3
     && einladung.html.includes('cellpadding="0"'));
-  check("G Heller Hintergrund (Seite und Karte)",
-    einladung.html.includes("background-color:#f4f6fb") && einladung.html.includes("background-color:#ffffff"));
+  check("G Dunkle Helmut-Farben (Seite und Karte)",
+    einladung.html.includes("background-color:#070b16") && einladung.html.includes("background-color:#0c1322"));
   check("G Helmut-Schriftzug ist echter Text, kein Logo", sichtbarerText(einladung.html).startsWith("Helmut"));
-  check("G Nur Systemschriften", einladung.html.includes("-apple-system")
+  check("G Markenschriften mit passenden lokalen Ersatzschriften", einladung.html.includes("-apple-system")
+    && einladung.html.includes("'Spectral', Georgia") && einladung.html.includes("'Hanken Grotesk'")
     && einladung.html.includes("Arial, sans-serif") && !/Inter|Roboto:wght|@font-face/.test(einladung.html.replace("Roboto,", "")));
   check("G Schaltflaeche traegt Hintergrundfarbe auf der Zelle (Outlook-fest)",
-    /<td[^>]*bgcolor="#2c3f9e"[^>]*background-color:#2c3f9e/.test(einladung.html));
+    /<td[^>]*bgcolor="#7fa8e0"[^>]*background-color:#7fa8e0/.test(einladung.html));
   check("G Lesbare Schriftgroessen (Fliesstext 16 px, Nebentext 14 px, nichts unter 12 px)",
     einladung.html.includes("font-size:16px") && einladung.html.includes("font-size:14px")
     && !/font-size:(?:[0-9]|1[01])px/.test(einladung.html));
   check("G Mobil-Regel vorhanden (Abstaende auf schmalen Schirmen)",
     einladung.html.includes("@media only screen and (max-width:620px)")
     && einladung.html.includes('<meta name="viewport"'));
-  check("G Farben stammen aus dem Designsystem (Light-Mode-Tokens)",
-    layout.FARBE.text === "#0f1729" && layout.FARBE.akzent === "#2c3f9e" && layout.FARBE.karte === "#ffffff");
+  check("G Farben stammen aus der neuen Helmut-Verwaltung",
+    layout.FARBE.text === "#eaeef6" && layout.FARBE.akzent === "#7fa8e0" && layout.FARBE.karte === "#0c1322");
+  for (const [mail, titel] of [[einladung, "Willkommen bei Helmut."], [reset, "Ein neues Passwort."]]) {
+    check(`G Sichtbare Hauptueberschrift auch im Text: ${titel}`,
+      /<h1\b/.test(mail.html) && sichtbarerText(mail.html).includes(titel) && mail.text.includes(titel));
+  }
+  {
+    const boese = layout.baueLayout({ ueberschrift: '<img src=x onerror="alert(1)">' });
+    check("G Neue Hauptueberschrift ist gegen HTML-Einschleusung geschuetzt",
+      !/<img\b/.test(boese.html) && boese.html.includes("&lt;img") && boese.text.includes('<img src=x'));
+  }
   {
     // Kontraste werden GERECHNET, nicht behauptet — und zwar jeweils gegen den Hintergrund,
     // auf dem der Text tatsaechlich steht. Die Fusszeile steht als einzige NICHT auf der
-    // weissen Karte, sondern auf dem Seitenhintergrund.
+    // Karte, sondern auf dem Seitenhintergrund.
     const leuchtdichte = (hex) => {
       const teile = [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16) / 255)
         .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
@@ -405,9 +419,8 @@ function hrefs(html) {
       const k = kontrast(vorn, hinten);
       check(`G Kontrast erfuellt AAA (>= 7:1): ${was}`, k >= 7, `${k.toFixed(2)}:1 (${vorn} auf ${hinten})`);
     }
-    check("G die Fusszeile benutzt NICHT die Kartenfarbe (die verfehlte dort AAA)",
-      layout.FARBE.gedaempftAufSeite !== layout.FARBE.gedaempft
-      && einladung.html.includes(`color:${layout.FARBE.gedaempftAufSeite}`));
+    check("G die Fusszeile benutzt die gepruefte Farbe fuer ihren Hintergrund",
+      einladung.html.includes(`color:${layout.FARBE.gedaempftAufSeite}`));
   }
   check("G Langer Link kann die Spalte nicht sprengen", einladung.html.includes("word-break:break-all"));
 
@@ -420,7 +433,7 @@ function hrefs(html) {
     check("H16 Mailpit: Feldname ist HTML (gegen v1.30.6 belegt)", typeof rumpf.HTML === "string" && rumpf.HTML.length > 0);
     check("H16 Mailpit: HTML-Teil ist byte-identisch zur Vorlage", rumpf.HTML === einladung.html);
     check("H16 Mailpit: Text-Teil ist byte-identisch zur Vorlage", rumpf.Text === einladung.text);
-    check("H16 Mailpit: Betreff unveraendert", rumpf.Subject === "Deine Einladung zu Helmut");
+    check("H16 Mailpit: Betreff unveraendert", rumpf.Subject === "Ihre Einladung zu Helmut");
   }
   {
     const f = testFetch(jsonAntwort(200, { id: "resend-testkennung" }));
@@ -484,7 +497,7 @@ function hrefs(html) {
   {
     const unsicher = inviteMail.buildInviteMail({ name: "Eva", inviteUrl: "javascript:alert(1)" });
     check("I unsicheres Ziel: KEINE Schaltflaeche, KEIN href auf das Ziel",
-      !unsicher.html.includes('href="javascript') && !/>Passwort festlegen<\/a>/.test(unsicher.html));
+      !unsicher.html.includes('href="javascript') && !/>Passwort setzen<\/a>/.test(unsicher.html));
     check("I unsicheres Ziel: die Adresse erscheint nur noch als maskierter Text",
       unsicher.html.includes("javascript:alert(1)") && !/javascript:alert\(1\)"/.test(unsicher.html));
     check("I unsicheres Ziel: Textfassung bleibt ehrlich und zeigt den Wert",
@@ -492,8 +505,8 @@ function hrefs(html) {
     // Ohne Schaltflaeche darf die Beschriftung nicht verschwinden — sonst traegt die
     // Textfassung eine Information, die dem HTML fehlt.
     check("I unsicheres Ziel: beide Fassungen tragen weiterhin die Beschriftung",
-      sichtbarerText(unsicher.html).includes("Passwort festlegen:")
-      && unsicher.text.includes("Passwort festlegen:"), sichtbarerText(unsicher.html).slice(0, 200));
+      sichtbarerText(unsicher.html).includes("Passwort setzen:")
+      && unsicher.text.includes("Passwort setzen:"), sichtbarerText(unsicher.html).slice(0, 200));
     check("I unsicheres Ziel: das Impressum bleibt der einzige verlinkte Rest",
       hrefs(unsicher.html).length === 1
       && hrefs(unsicher.html)[0] === "https://helmut-website.vercel.app/impressum.html",
@@ -503,7 +516,7 @@ function hrefs(html) {
     // Der Impressum-Link laeuft durch DIESELBE Pruefung wie das Aktionsziel — heute eine
     // Code-Konstante, morgen vielleicht konfigurierbar. Direkt am Layout geprueft.
     const boese = layout.baueLayout({
-      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
+      titel: "T", anrede: "Guten Tag,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
       hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: "javascript:alert(1)"
     });
     // Uebrig bleiben genau die zwei Ziele des SICHEREN Aktionslinks (Schaltflaeche +
@@ -514,7 +527,7 @@ function hrefs(html) {
     check("I unsicheres Impressum-Ziel bleibt als maskierter Text sichtbar",
       boese.html.includes("Impressum: javascript:alert(1)"));
     const gut = layout.baueLayout({
-      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
+      titel: "T", anrede: "Guten Tag,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
       hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: "https://a.test/impressum"
     });
     check("I sicheres Impressum-Ziel wird normal verlinkt",
@@ -524,7 +537,7 @@ function hrefs(html) {
     // „Geprüft" und „verlinkt" müssen derselbe String sein. Der Rohwert ist NICHT getrimmt —
     // stünde er im href, wäre ein anderer Wert verlinkt als der, der die Prüfung bestand.
     const mitLeerraum = layout.baueLayout({
-      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los",
+      titel: "T", anrede: "Guten Tag,", absaetze: ["A"], aktionLabel: "Los",
       aktionUrl: "  https://a.test/x?token=1  ",
       hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: ""
     });

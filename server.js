@@ -4416,7 +4416,7 @@ function sendSetPasswordPage(response) {
       <section id="loadingView"><p>Der Link wird geprüft …</p></section>
 
       <section id="formView" hidden>
-        <p>Wähle ein Passwort für deinen Helmut-Zugang. Mindestens 8 Zeichen.</p>
+        <p>Wählen Sie ein Passwort für Ihren Helmut-Zugang. Mindestens 8 Zeichen.</p>
         <form id="setForm">
           <label for="pw1">Neues Passwort</label>
           <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
@@ -4428,7 +4428,7 @@ function sendSetPasswordPage(response) {
       </section>
 
       <section id="doneView" hidden>
-        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet. Du wirst weitergeleitet …</p>
+        <p class="notice">Ihr Passwort ist gesetzt. Sie sind jetzt angemeldet und werden weitergeleitet …</p>
         <p style="margin-top:14px"><a href="/">Weiter zu Helmut</a></p>
       </section>
 
@@ -4436,10 +4436,10 @@ function sendSetPasswordPage(response) {
         <p class="notice">Dieser Link ist abgelaufen oder wurde bereits verwendet.</p>
         <form id="renewForm">
           <label for="renewEmail">Neuen Link anfordern</label>
-          <input id="renewEmail" type="email" required autocomplete="email" placeholder="deine E-Mail-Adresse" />
+          <input id="renewEmail" type="email" required autocomplete="email" placeholder="Ihre E-Mail-Adresse" />
           <button type="submit" id="renewSubmit">Neuen Link anfordern</button>
         </form>
-        <p id="renewDone" hidden>Anfrage angekommen. Solange der Mail-Versand noch nicht aktiv ist, wende dich bitte direkt ans Helmut-Team — es kann dir sofort einen neuen Link erstellen.</p>
+        <p id="renewDone" hidden>Anfrage angekommen. Falls keine E-Mail eintrifft, wenden Sie sich bitte an hallo@mithelmut.de.</p>
       </section>
 
       <footer><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></footer>
@@ -4487,11 +4487,11 @@ function sendSetPasswordPage(response) {
             }
             if (res.status === 410) { show("expiredView"); return null; }
             return res.json().catch(function () { return {}; }).then(function (data) {
-              errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuch es erneut.";
+              errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuchen Sie es erneut.";
               errorEl.hidden = false;
             });
           }).catch(function () {
-            errorEl.textContent = "Keine Verbindung. Bitte versuch es erneut.";
+            errorEl.textContent = "Keine Verbindung. Bitte versuchen Sie es erneut.";
             errorEl.hidden = false;
           }).then(function () { button.disabled = false; });
         });
@@ -6569,7 +6569,7 @@ function handleAuthPasswordToken(request, response, url) {
 function sendAuthUnavailable(response) {
   console.error("Kontenablage fuer die Anmeldung nicht erreichbar");
   response.writeHead(503, jsonHeaders({ "Retry-After": "30" }));
-  response.end(JSON.stringify({ reason: "auth-unavailable", error: "Die Anmeldung ist vorübergehend nicht erreichbar. Bitte versuche es später erneut." }));
+  response.end(JSON.stringify({ reason: "auth-unavailable", error: "Die Anmeldung ist vorübergehend nicht erreichbar. Bitte versuchen Sie es später erneut." }));
   return null;
 }
 

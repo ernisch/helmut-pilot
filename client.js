@@ -1227,7 +1227,7 @@ function renderLogin(message = "") {
         <div class="loading-logo"><span>H</span></div>
         <p>Helmut</p>
         <h1>Anmeldung</h1>
-        <p class="pilot-access-copy">Melde dich mit deinem Helmut-Konto an, um deine persönliche Lage zu öffnen.</p>
+        <p class="pilot-access-copy">Melden Sie sich mit Ihrem Helmut-Konto an, um Ihre persönliche Lage zu öffnen.</p>
         <form class="pilot-access-form" id="loginForm">
           <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" required />
           <div class="password-field">
@@ -1317,7 +1317,7 @@ async function requestPasswordChange(row) {
       return;
     }
     if (json.mail?.sent) {
-      showToast("Wir haben dir einen Link per E-Mail geschickt (1 Stunde gültig).");
+      showToast("Wir haben Ihnen einen Link per E-Mail geschickt.");
     } else {
       // Ehrlich bleiben: ohne Mail-Versand und ohne Interim-Link gibt es nichts zu tun.
       showToast("Der Link konnte nicht zugestellt werden — bitte ans Helmut-Team wenden.");

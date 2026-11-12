@@ -1,0 +1,22 @@
+Guten Tag Eva,
+
+Willkommen bei Helmut.
+
+Ihr Zugang zu Helmut ist vorbereitet.
+
+Legen Sie jetzt Ihr persönliches Passwort in der Helmut App fest. Zur Bestätigung geben Sie es zweimal ein.
+
+Danach sind Sie angemeldet. Künftig melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.
+
+Passwort setzen:
+https://app.example.invalid/passwort-setzen?token=VORSCHAU-KEIN-ECHTER-LINK
+
+Der Link ist nur für Sie bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.
+
+Falls Sie diese Einladung nicht erwartet haben, können Sie diese Nachricht ignorieren.
+
+Freundliche Grüße
+Helmut
+
+—
+Absender: Helmut <no-reply@mithelmut.de> · Impressum: https://helmut-website.vercel.app/impressum.html
