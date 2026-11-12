@@ -248,9 +248,31 @@ Zusaetzlicher konkreter Softwarebefund aus demselben Lauf:22als Fehler geloggte
 Quellenabrufe enden vor dem Abruf an der Google-Minutenbegrenzung. Der Crawler
 liefert ihre strukturierte anbieterVertagung weiter; handleSourceFetch verwirft
 sie beim Umbau in Error. Dadurch kann die vorhandene versuchserhaltende
-Worker-Zurueckstellung diese Anbieterpause nicht mehr erkennen. Gezielte
-Reproduktion/Korrektur dieses Uebergangs folgt kostenlos; keine neue bezahlte Probe,
-keine Umdeutung in eine bewiesene Neustartursache und keine Anbieterlimiterhoehung.
+Worker-Zurueckstellung diese Anbieterpause nicht mehr erkennen.
+
+### Anbieterpause im Quellenhandler korrigiert, Rollout noch offen
+
+Die bestehende strukturierte anbieterVertagung wird aus dem Abrufresultat auf den
+geworfenen Error uebernommen. Nur Objektmetadaten werden weitergegeben; ohne
+solchen Beleg bleibt ein echter Abruffehler ein Fehlversuch. Der gemeinsame Worker
+nutzt dadurch seinen bereits vorhandenen Zurueckstellungspfad und kann auch am
+letzten erlaubten Versuch vertagen, statt die Quelle endgueltig scheitern zu lassen.
+Keine neue Wartefunktion, Grenzerhoehung, Wiederholung unbekannter Modellantworten,
+Cron-/Env-/Migrationsaenderung oder Reparatur historischer Versuchszaehler.
+
+Der alte statische Test sah nur, dass der Worker anbieterVertagung kennt, aber
+nicht den Verlust im Handler. Sieben neue Verhaltenspruefungen durchlaufen den
+echten source_fetch-Handler UND den gemeinsamen Worker. Vor Korrektur58PASS/4FAIL,
+danach62/62PASS: Anbieterpause am letzten Versuch, korrekte Lease/Vertagung ohne
+finish, kein Dokumentwrite und freier Klassenslot, lange Wiedervorlage, echter
+Abruffehler bleibt Fehler, nicht verfuegbare Vertagung bleibt offen, ungueltige
+Metadaten werden nicht als Pause anerkannt. Tests nur ueber lokal.js, kein Netz.
+Die bestehende lokale HTTP-Suite fuer Blob-Entkopplung besteht ebenfalls63/63;
+Pflicht-CI/normaler Coderollout fuer diese Korrektur zum Dokumentationsstand offen.
+Der Fehler ist echt, aber keine bewiesene Ursache der Datenbankneustarts.
+Alle bezahlten Arbeiten bleiben gestoppt; keine neue Liveprobe oder Freigabeanfrage
+zum Umgehen der heutigen Bindung von0,988518USD und der vier Abbruchbedingungen.
+Rueckweg: gezielter Code-Revert, keine Daten- oder Zaehlerzuruecksetzung.
 
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
 
