@@ -23,12 +23,17 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
   setzt die Wahlkreisauswahl zurück. Landesliste und bestehende Sonderwerte bleiben
   auswählbar. [Ansicht auf dem Handy](vorschau-mandat-dropdown-mobil.png).
 - **Drei Einstiege:** Übersicht, Kunden, Einstellungen. Die Übersicht zeigt
-  Kunden mit Handlungsbedarf. Fehlende Nachweise bleiben offen.
+  nur Kunden mit offenen Punkten, einmal statt als mehrfacher Zähler, Hinweis
+  und Gesamtliste. Fehlende Nachweise bleiben offen.
 - **Quellen & Versorgung:** direkt von der Übersicht oder unter Einstellungen.
   Vorhandenen Quellenlauf starten, Status prüfen und heutige Kundenbriefings
   sehen. Ein Laufabschluss erzeugt keinen erfolgreichen Briefingstatus.
 - **Helmut-Gestaltung:** originales Zeichen, Hanken Grotesk und Spectral aus
   der App; ruhige dunkle Farben, kurze Beschriftungen und native Formularfelder.
+- **Weniger auf einmal:** Kundenseiten zeigen den Stand und die nächste Aktion.
+  Briefingnachweise öffnen sich über „Briefing prüfen“. Quellenzahlen, Automatik,
+  Zeitplan und seltene Werkzeuge liegen hinter geschlossenen Details. Wichtige
+  Fehler, offene Abschlüsse und nötige Neuladeaktionen bleiben sofort sichtbar.
 - **Weitere Funktionen:** Kosten, Quellen und letzte Abläufe verwenden vorhandene
   Leserouten. Profilbestand, Zuweisungen, Datenschutz und Diagnose bleiben in
   den bisherigen Werkzeugen erreichbar. Keine bestehenden Funktionen oder Daten
@@ -116,11 +121,11 @@ niemals den fiktiven Beispieladapter.
   Versandanzeige ist mit einer ausdrücklich synthetischen Antwort geprüft;
   eine echte E-Mail wurde nicht versendet. Ergebnisstatus gegen synthetische bestehende
   Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
-- **30 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+- **35 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
   1440/390/360/320 Pixel, vollständige Anlage, erhaltenes Mandat, simulierte
   Einladung, optionale/leer speicherbare Schwerpunkte, Dropdowns, Beispielzustände, keine JavaScriptfehler
   und keine App-/Netzwerkverbindung.
-- **17/17 bestehende Quellenstartgruppen einschließlich Originalbrowser:**
+- **20/20 bestehende Quellenstartgruppen einschließlich Originalbrowser:**
   lokale Queue-/Storage-Injektion; keine externe Quellen- oder Modellarbeit.
   Der neue Client erreicht die echte Route im ausgeschalteten Arbeitsfenster;
   erfolgreiche und unklare Laufantworten sind zusätzlich synthetisch geprüft.
@@ -140,6 +145,7 @@ niemals den fiktiven Beispieladapter.
 · [Bestehende Passwortseite](app-passwort-setzen-mobil.png).
 
 [Quellen & Versorgung auf dem Handy](vorschau-quellen-mobil.png)
+· [Vereinfachte Übersicht auf dem Handy](vorschau-uebersicht-einfach-mobil.png)
 · [Desktop](vorschau-quellen-desktop.png)
 · [Einordnung, Altbestand und Live-Momentaufnahme](versorgung-20261112.md).
 
@@ -156,6 +162,12 @@ Die Browserprüfung verwendet einen wegwerfbaren lokalen Klon mit synthetischen
 Daten, keine gemeinsame Testdatenablage und keine echten Nachrichten.
 Native App-Routen bleiben serverseitig auf Administratoren beschränkt; jede neue
 Assetdatei hat denselben Zugriffsschutz und eine feste Allowlist.
+
+Die Vereinfachung ändert ausschließlich Darstellung und Zugänge zu Details.
+Die 57 lokalen Backend-/Browsergruppen bleiben bestanden. Fünf zusätzliche
+Exportgruppen belegen die kurze Übersicht, geschlossene seltene Werkzeuge und
+das tatsächliche Öffnen der erhaltenen Briefingnachweise. Der aktuelle main-Stand
+`f2676192` ist im Entwurfsbranch enthalten; keine Änderung der Produktivdaten.
 
 `scripts/profil-auswahl-paket.js` liest die vorhandenen Profillisten aus
 `client.js` und `assets/profil-wahlkreise.json`, ohne den Client auszuführen.

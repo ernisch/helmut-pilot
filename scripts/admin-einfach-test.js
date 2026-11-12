@@ -188,9 +188,9 @@ async function run({browser=false,evidenceDir=null}={}){
    page.on('dialog',dialog=>dialog.accept());
    await page.goto(base+'/verwaltung/einfach/');
    await page.getByRole('heading',{name:'Auf einen Blick.'}).waitFor();
-   await check('Neue Oberflaeche bootet mit drei Hauptbereichen und echten lokalen Konten',async()=>{assert.equal(await page.locator('.nav button').count(),3);assert.ok((await page.locator('main').innerText()).includes('Fiktiver Kunde Einfach'));});
+   await check('Neue Oberflaeche bootet mit drei Hauptbereichen und echten lokalen Konten',async()=>{assert.equal(await page.locator('.nav button').count(),3);assert.equal(await page.locator('main > .summary-line').count(),0);});
    if(evidenceDir)await page.screenshot({path:path.join(evidenceDir,'app-uebersicht.png'),fullPage:true});
-   await page.locator(`[data-customer="${user.id}"]`).click();await page.locator('[data-action="profile"]').first().click();
+   await page.locator('[data-nav="customers"]').click();await page.locator(`[data-customer="${user.id}"]`).click();await page.locator('[data-action="profile"]').first().click();
    await page.locator('#profile-form').waitFor();
    await check('Vorhandene freie Bezeichnungen bleiben beim Oeffnen im Dropdown erhalten',async()=>{assert.equal(await page.locator('#party').inputValue(),'Fiktive Regionalpartei');assert.equal(await page.locator('#faction').inputValue(),'Fiktive Fraktion');assert.equal(await page.locator('#constituency').inputValue(),'Fiktive Region');});
    await page.locator('[data-nav="customers"]').click();
@@ -213,7 +213,7 @@ async function run({browser=false,evidenceDir=null}={}){
    if(evidenceDir){await page.setViewportSize({width:390,height:1100});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(evidenceDir,'app-mandat-dropdown-mobil.png'),fullPage:true});}
    await page.locator('#new-customer button[type="submit"]').click();
    await page.getByRole('heading',{name:'Fiktiver Browserkunde',exact:true}).waitFor();
-   await check('Browser speichert Dropdownwerte, ohne den Kunden als versorgt auszugeben',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');const p=await storage.getProfile(c.politicianId);assert.equal(p.parliamentType,'Landtag');assert.equal(p.party,'SPD');assert.equal(p.faction,'SPD');assert.equal(p.constituency,'Kein Wahlkreis (Landesliste)');assert.equal(p.profileActive,false);assert.match(await page.locator('main').innerText(),/Versorgung pausiert/);});
+   await check('Browser speichert Dropdownwerte, ohne den Kunden als versorgt auszugeben',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');const p=await storage.getProfile(c.politicianId);assert.equal(p.parliamentType,'Landtag');assert.equal(p.party,'SPD');assert.equal(p.faction,'SPD');assert.equal(p.constituency,'Kein Wahlkreis (Landesliste)');assert.equal(p.profileActive,false);assert.match(await page.locator('main').innerText(),/Die Versorgung ist noch nicht aktiv/);});
    await check('Ein Klick legt den Kunden an und uebergibt die Einladung an den gesperrten Mailweg',async()=>{
     const c=await accounts.getUserByEmailRaw('browser@example.invalid');assert.equal(c.active,true);assert.equal(c.status,'eingeladen');assert.equal(c.passwordHash,null);
     assert.equal(mailCalls.filter(m=>m.message.to===c.email).length,1);assert.ok(mailCalls.find(m=>m.message.to===c.email).profile);
@@ -263,7 +263,7 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.setViewportSize({width:390,height:900});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
    if(evidenceDir)await page.screenshot({path:path.join(evidenceDir,'app-kunde-ohne-schwerpunkte-mobil.png'),fullPage:true});
    await page.locator('#new-customer button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv spaetere Schwerpunkte',exact:true}).waitFor();
-   await check('Browser legt einen Kunden ohne Schwerpunkte an und bietet den Einladungslink an',async()=>{assert.equal(await page.locator('[data-action="activate"]').count(),0);assert.equal(await page.getByText('Schwerpunkte offen',{exact:true}).count(),1);assert.ok((await accounts.listPendingInvites())[(await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid')).id]);});
+   await check('Browser legt einen Kunden ohne Schwerpunkte an und bietet den Einladungslink an',async()=>{assert.equal(await page.locator('[data-action="activate"]').count(),0);assert.equal(await page.getByRole('heading',{name:'Schwerpunkte können später ergänzt werden.',exact:true}).count(),1);assert.ok((await accounts.listPendingInvites())[(await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid')).id]);});
    const laterInvitation=new URL(await page.locator('#invite-url').inputValue());
    const laterContext=await browserInstance.newContext({viewport:{width:390,height:900}});
    await laterContext.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
@@ -292,6 +292,7 @@ async function run({browser=false,evidenceDir=null}={}){
    await check('Kostenansicht liest die vorhandene Route',async()=>assert.ok(requests.some(r=>r.url==='/api/admin/stats/budget-today')));
    await page.setViewportSize({width:1440,height:1000});
    await page.locator('[data-action="settings"]').click();await page.locator('[data-setting="sources"]').click();
+   await page.locator('.source-details > summary').click();
    await page.getByText('Der Quellenstand konnte noch nicht bestätigt werden.',{exact:true}).waitFor();
    await check('Fehlende Quelldaten sind ein erklaerter Zustand mit echtem Detailzugang',async()=>{assert.equal(await page.locator('a[href="/verwaltung/#/betrieb/quellen"]').count(),1);assert.equal(await page.getByText('Quellenzugänge',{exact:true}).count(),0);});
    await page.locator('[data-action="source-start"]').click();await page.getByRole('status').filter({hasText:'Die Quellenarbeit ist ausgeschaltet.'}).waitFor();

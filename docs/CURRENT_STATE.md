@@ -199,7 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-**12.11.:** [Kundenverwaltung](ui/verwaltung-einfach-20261111/README.md): Quellenstart/Kundenablauf geprüft; private Vorschau, PR1155 Draft ohne Merge.
+**12.11.:** [Kundenverwaltung](ui/verwaltung-einfach-20261111/README.md): Ansichten gekürzt, Abläufe geprüft; private Vorschau, PR1155 Draft ohne Merge.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 
