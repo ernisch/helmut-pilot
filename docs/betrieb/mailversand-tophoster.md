@@ -111,3 +111,11 @@ bekannten festen Fehlercode; die öffentliche Antwort bleibt generisch, ohne SMT
 
 Lokale Freigabeprüfungen nach Hauptbranchintegration: Verwaltung58/58 Browser-/HTTP-Gruppen,
 Kommunikationsriegel48/48, Passwortablauf39/39 und SMTP63/63; die übrigen vorherigen Nachweise bleiben erhalten.
+
+Freigabeprüfung: CI43247458216 Versuch1 brach vor dem ersten Auth-Feldpatchfall mit
+`fetch failed` ab; derselbe unveränderte Test bestand auf dem vorigen Kopf44/44.
+Versuch2 wurde schon von der bestehenden Einmalbindung des synthetischen Vorflugs abgewiesen.
+Beide Erstbefunde bleiben erhalten; kein weiterer Wiederholungslauf. Der Testharness öffnet
+nach den langen synchronen SQL-Proben ein frisches lokales HTTP-Tor und nennt bei Netzwerkfehlern
+nur Methode/Pfad/Fehlerklasse. Die Datenbank, Testassertionen und Einmalbindung werden nicht geändert.
+Eine neue reguläre Pflicht-CI prüft den korrigierten Kopf; aktuelles Ergebnis siehe PR1155.
