@@ -59,6 +59,7 @@ async function httpFlow(factory, messages) {
   try {
     Object.assign(process.env, env);
     nodemailer.createTransport = factory;
+    require("../lib/helmut/reset-timing").bereiteLaufzeitVor({ VERCEL: "1" });
     const handler = require("../server"), accounts = require("../lib/helmut/accounts");
     server = http.createServer(handler); await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
     const port = server.address().port, start = messages.length;
@@ -233,6 +234,16 @@ async function smtpLoopback() {
 }
 
 (async () => {
+  const ohneSdk = [
+    'const assert = require("node:assert/strict");',
+    'const Module = require("node:module"), original = Module._load; let versuche = 0;',
+    'Module._load = function(name, ...args) { if (name === "@vercel/functions") { versuche++; throw Object.assign(new Error("Plattformpaket fehlt im isolierten Node-Server"), {code:"MODULE_NOT_FOUND"}); } return original.call(this, name, ...args); };',
+    '(async () => { const t = require("./lib/helmut/reset-timing"); await t.starteHintergrundarbeit(() => Promise.resolve()); await t.offeneArbeit(); assert.equal(versuche, 0); console.log("standalone-without-sdk-ok"); })().catch(() => { process.exitCode = 1; });'
+  ].join("\n");
+  const lokal = spawnSync(process.execPath, [path.join(__dirname, "lokal.js"), "--", process.execPath, "-e", ohneSdk],
+    { cwd: path.resolve(__dirname, ".."), env: { ...process.env, VERCEL: "" }, encoding: "utf8", timeout: 10000 });
+  check("Normaler isolierter Node-Server startet und beendet Hintergrundarbeit ohne Vercel-Paket",
+    lokal.status === 0 && lokal.stdout.includes("standalone-without-sdk-ok"));
   const cfg = transport.transportKonfiguration(ENV);
   check("SMTP nur nach ausdruecklicher Auswahl und mit vollstaendigen Zugangsdaten", cfg.aktiv && cfg.transport === "smtp");
   check("Konfigurationsstatus enthaelt kein Passwort", !JSON.stringify(cfg).includes(PASSWORT));

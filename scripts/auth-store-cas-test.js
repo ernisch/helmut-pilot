@@ -195,6 +195,24 @@ async function check(name, run) {
       await accounts.createUser(user(2));
       assert.equal(blob.users.length, 2, "ein Fehler blockiert die naechste Kontoanlage nicht");
     });
+    await check("CI-Fehlerdiagnose zeigt nur geschlossene Fehlerklasse und Codeposition", async () => {
+      const { failureDiagnostic } = require("./auth-store-cas-datenbank-test");
+      const file = require("node:path").join(__dirname, "auth-store-cas-datenbank-test.js");
+      assert.deepEqual(failureDiagnostic({ code: "ERR_ASSERTION", status: 1,
+        message: "FICTIONAL_PRIVATE", stack: `FICTIONAL_PRIVATE\n    at main (${file}:120:9)` }, "postgrest"),
+      { phase: "postgrest", code: "ERR_ASSERTION", type: "UNKNOWN", httpStatus: null,
+        source: "auth-store-cas-datenbank-test.js", exitStatus: 1, line: 120 });
+      const fixture = require("node:path").join(__dirname, "fixtures/auth-store-partial-datenbank.js");
+      assert.deepEqual(failureDiagnostic({ name: "AbortError", message: 'Supabase storage failed (503): FICTIONAL_PRIVATE',
+        stack: `FICTIONAL_PRIVATE\n    at pruefe (${fixture}:54:9)\n    at main (${file}:206:3)` }, "auth-patch"),
+      { phase: "auth-patch", code: "UNKNOWN", type: "AbortError", httpStatus: 503,
+        source: "fixtures/auth-store-partial-datenbank.js", exitStatus: null, line: 54 });
+      const rejected = failureDiagnostic({ code: "FICTIONAL_PRIVATE", status: "FICTIONAL_PRIVATE",
+        stack: "FICTIONAL_PRIVATE" }, "FICTIONAL_PRIVATE");
+      assert.deepEqual(rejected, { phase: "UNKNOWN", code: "UNKNOWN", type: "UNKNOWN", httpStatus: null,
+        source: null, exitStatus: null, line: null });
+      assert.ok(!JSON.stringify(rejected).includes("FICTIONAL_PRIVATE"));
+    });
     await check("Fuenf getrennte Prozesse speichern mit Netzschutz 500 Konten", async () => {
       const http = require("node:http");
       const { once } = require("node:events");

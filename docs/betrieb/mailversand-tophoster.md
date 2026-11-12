@@ -156,3 +156,20 @@ Npm bindet stattdessen exakt SDK3.11.2 samt Lockdatei, übrige direkte Abhängig
 Das temporäre Vorbereitungsworkflow ist nicht Teil des Produktdiffs. Vor Veröffentlichung
 bleibt die Pflicht-CI am neuen Codekopf erforderlich; erneuter eigener Livebeleg danach offen.
 Aktueller Abschlussbeleg und Folge-PR werden in PR1155 geführt.
+
+
+## Plattformabgrenzung und aktuelle Hauptbranchintegration
+
+Pflichtlauf43265827684 auf `f61a83f3` brach im unveränderten nativen Drei-Profil-Vorflug
+mit `MODULE_NOT_FOUND` in der Arbeitsphase ab. Der isolierte normale Node-Server enthält
+keine Vercel-Pakete. Deshalb wird das SDK erst für die Passworthilfe auf Vercel geladen;
+der Import wird für jede anonyme Anfrage vor dem Lesen ihrer Adresse vorbereitet.
+Die Bindung an waitUntil bleibt aktiv. Keine Original-, Ressourcen- oder Prüfregel geändert.
+
+Eine neue Gegenprobe verbietet das Laden des SDK im normalen Node-Kindprozess und prüft
+seinen vollständigen Abschluss. Die echte HTTP-/SDK-/SMTP-Gegenprobe bleibt erhalten.
+[Vorbereitung43268596889](https://github.com/ernisch/helmut-pilot/actions/runs/43268596889):
+SMTP66/66, Reset-Regression1/1 und npm audit0. Geprüfte Dateien aus `572bd4e3` wurden
+bytegleich übernommen. Main `012b6111` samt paralleler Quellenkorrektur und ihren
+Datenbankprüfungen ist vollständig erhalten. Neues Pflicht-CI-Ergebnis und Liveabschluss
+weiter in PR1169 bzw. PR1155, kein blinder Versand-Retry.
