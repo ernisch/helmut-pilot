@@ -2,7 +2,7 @@
 
 ## Endstand: Codekorrekturen live, Briefingbetrieb weiter blockiert
 
-Die sechs beschriebenen Codekorrekturen sind auf Production. Ein frisches,
+Die sieben beschriebenen Codekorrekturen sind auf Production. Ein frisches,
 vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: beide separat
 freigegebenen Quellenfenster wurden von ungeordneten Datenbankneustarts
 unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
@@ -49,7 +49,31 @@ unveraendert im isolierten main-Standf2676192 auf; die Kosten-/Laufaggregationen
 bestehen. Kein gruener Gesamtnachweis fuer diesen Legacytest behauptet.
 Die vorhandene verpflichtende PostgreSQL-/PostgREST-CI prueft zusaetzlich die
 echte JSON-Feldauswahl und den hashgleichen Datenbestand nach gesperrtem
-Teilschreiben. Pflicht-CI/Merge/Production der Softwareentlastung noch offen.
+Teilschreiben. [PR1163](https://github.com/ernisch/helmut-pilot/pull/1163): beide Pflichtchecks
+auf Kopf46677bdf9b406d51dcdbd8ec33f919fb9bbc12f6 SUCCESS in
+[CI43203897145](https://github.com/ernisch/helmut-pilot/actions/runs/43203897145).
+Alle Datenbank-, Standard-, Fach- und Z22-Schritte erfolgreich; Browserausfuehrung
+fuer diesen Backenddiff planmaessig uebersprungen, erfolgreicher Pflichtcheck.
+Vor Merge mainf2676192, vollstaendiger Diff/Kopf und0lebende Leases bestaetigt.
+Merge6557405d8419a47dfdcfe53d6f03ca26a863ee3c um11:25:05UTC;
+Deploymentdpl_8MLTAiwYsrTA8Ho9jyvv5TEo5UgE READY und Hauptalias bestaetigt.
+Lesende Runtimekontrolle11:25:46UTC: Startseitenversion6557405d, exakter
+Mergecommit, production=true, kommunikationGesperrt=true. Anonyme Sitzung
+bleibt nicht authentifiziert. Im abgefragten neuen Deploymentfenster keine
+error/warning/fatal-Gruppen; kurze Ruhebeobachtung, kein Lastnachweis.
+Keine echte authentifizierte Production-Bedienabnahme oder wiederhergestelltes
+Kundenbriefing daraus ableiten.
+
+Native Nachkontrolle11:26:28UTC: weiterhin1aktives Profil,0lebende Job-/Pipeline-/
+Klassensperren, PostgreSQL seit09:27:43UTC ohne weiteren Neustart. Gesamtbindung
+1,720205USD, heute0,487723USD einschliesslich2offener Reservierungen; frozen=null,
+Vertrag8c98b2e1 unveraendert. Fenster3/8, Sekunden900/2400, Originale16/16.
+Kein neuer Quellen-, Modell-, Lage- oder Morgenlauf waehrend der Softwarephase.
+Die neue begrenzte Nachlaufanfrage ohne Datenbankupgrade ist nur eine Anfrage:
+maximal ein300s-Quellenfenster und danach bei bestaetigtem Abschluss je ein Lage-/
+Morgenlauf, bestehende1USD/30USD inklusive Reserven, keine Resets/Nachrichten,
+Stopp bei erneutem Datenbankfehler. Zum Dokumentationsstand nicht freigegeben.
+Naechster Schritt: ausdrueckliche Entscheidung zu dieser konkreten Livepruefung.
 Rueckweg: gezielter Revert dieser Lesekorrektur, keine Datenruecksetzung.
 
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
