@@ -2,12 +2,15 @@
 
 ## Endstand: Codekorrekturen live, Briefingbetrieb weiter blockiert
 
-Die sieben beschriebenen Codekorrekturen sind auf Production. Ein frisches,
+Die beschriebenen Codekorrekturen sind auf Production; die Schreibentlastung ist
+mit gesondertem GO seit14:30UTC aktiv. Ein frisches,
 vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: drei separat
 freigegebene Quellenfenster wurden von ungeordneten Datenbankneustarts
 unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
 vereinbarten Stoppbedingung beendet; keine erneute Freigabe aus alten GOs ableiten.
 Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten/dritten NICHT.
+Ein vierter begrenzter Nachlauf ist separat freigegeben; zum folgenden
+Aktivierungsbeleg steht seine tatsaechliche Startbestaetigung noch aus.
 
 ### Speicherbefund und Softwareentlastung ohne Mehrkosten
 
@@ -110,7 +113,7 @@ Aktuelle Metriken nach Neustart:948195328Bytes RAM,600424448verfuegbar,
 Committed_AS1204494336 bei CommitLimit1547833344, oom_kill0; Momentaufnahme nach
 Reset, kein Entlastungsbeweis fuer den vorangegangenen Ausfall. Ursache bleibt UNKNOWN.
 
-### Auth-Schreibentlastung vorbereitet, noch nicht aktiviert
+### Auth-Schreibentlastung: Vorbereitung und gesondert freigegebene Aktivierung
 
 [PR1165](https://github.com/ernisch/helmut-pilot/pull/1165): kleine Auth-Aenderungen
 sollen nur geaenderte oberste JSON-Felder uebertragen. Die ganze Zeilenrevision
@@ -129,7 +132,7 @@ Eine fehlende Migration oder verlorene Schreibantwort bleibt Fehler; kein
 Rueckfall auf Gesamtschreiben und kein blinder Retry. Neue Zeilen bleiben beim
 bisherigen bedingten Insert. Ohne exakt `HELMUT_AUTH_PATCH_V1=on` bleiben bestehende
 Schreibpfade aktiv, einschliesslich ihrer bisherigen CAS-Pruefung.
-Vercel-Env-Metadaten rein lesend geprueft: Flag in keinem Ziel gesetzt.
+Vor der Aktivierung Vercel-Env-Metadaten rein lesend geprueft: Flag in keinem Ziel gesetzt.
 
 Gezielt lokal ueber lokal.js:12/12Schreibgruppen und12/12Lesegruppen bestanden.
 Synthetischer Sitzungstest mit3MBHistorie:594statt3000253Requestbytes, keine
@@ -162,7 +165,8 @@ Migration, Flag-Aktivierung und gesonderter Redeploy sind NICHT ausgefuehrt.
 Keine weiteren Quellen-/Modell-/Lage-/Morgenlaeufe. Naechster Schritt bleibt die
 konkrete Freigabe fuer den folgenden Aktivierungsplan, keine alte Lauf-GO-Verwendung.
 
-Konkreter Aktivierungsplan nach gruener CI und inaktivem Coderollout:
+Vorbereiteter Aktivierungsplan nach gruener CI und inaktivem Coderollout
+(historischer Plan, Umsetzung mit dem folgenden gesonderten GO):
 1. Frischen Productionstand, fehlenden RPC, Ziel-ID-Endung,0lebende Schreiber
    und weiter fehlendes Flag rein lesend pruefen; aktuelle Kostenreserven erhalten.
 2. Nur mit gesondertem GO Migration
@@ -176,6 +180,44 @@ Konkreter Aktivierungsplan nach gruener CI und inaktivem Coderollout:
 4. Rueckweg bei Fehler: Flag entfernen und vorherigen Schreibpfad redeployen;
    erst danach `rollback_20261112130226_auth_store_cas_patch_v1.sql` anwenden.
    Die Funktion wird entfernt, keine Daten oder Journale zurueckgesetzt.
+
+### Aktivierung14:28UTC und vierter freigegebener Nachlauf
+
+Nach der Rueckfrage hat der Betreiber eindeutig „Aktivierung und einen Nachlauf
+freigegeben“ bestaetigt. Genau die gepruefte Migration, Production-Flag und Redeploy;
+hoechstens ein zusaetzliches300s-Quellenfenster, danach nur bei bestaetigt fehlerfreiem
+Abschluss je ein Lage-/Morgenlauf fuer das bestehende eine Profil. Weiterhin1USD
+heute/30USD insgesamt inklusive aller Reserven, keine Aufruestung/monatlichen
+Datenbankmehrkosten, Resets oder Nachrichten; Stopp bei erneutem DB-Fehler.
+Adminstart nur durch den Betreiber nach Signal, kein Wiederverwenden alter GOs.
+
+Vorflug14:26:48UTC: main unveraenderted2c107f, aktiver Code4450622a, Funktion
+fehlend und Flag in keinem Ziel gesetzt. PostgreSQL seit12:47:29UTC,0lebende
+Job-/Pipeline-/Klassensperren; unveraenderter Vertrag8c98b2e1, frozen=null,
+Gesamtbindung1,965706USD, heute0,733224USD. Originaljournale und Reserven erhalten.
+Migrationdatei SHA256dd5f0a285ba19510d337b7566e660616e190a8c508a6b3f22e244ddb28c77e41
+erneut gebunden. Supabase apply_migration bestaetigt success; native Historie
+`auth_store_cas_patch_v1`, Version20261112142801 (serverseitig erzeugt, zugehoerige
+Repositorydatei weiterhin20261112130226_auth_store_cas_patch_v1.sql).
+
+Native Nachkontrolle14:28:26UTC: SECURITY INVOKER, search_path=pg_catalog,public,
+EXECUTE anon=false/authenticated=false/service_role=true. main und main-auth
+vor/nach Installation hashgleich. Ausschliesslich HELMUT_AUTH_PATCH_V1=on fuer
+Production gesetzt, Preview/Development weiter ohne Flag. Keine andere Env-Aenderung.
+Neues Deploymentdpl_FmLEpVSCdhhNKhV2wFLvt5a7Sqsr aus dem geprueften bestehenden
+Code4450622a8c11d287eaa1eddab8557ded0de1da79, withLatestCommit=false, READY;
+Hauptalias zeigt genau dorthin. Reine GET-Kontrolle14:30:46UTC: Commit/Startseiten-
+version4450622a, production=true, kommunikationGesperrt=true, anonyme Sitzung
+nicht authentifiziert. Das prueft den Rollout, noch keinen echten Schreib- oder
+Briefingablauf und keine RAM-Spitzenentlastung.
+
+Letzter Quellen-Vorflug14:31:25UTC:0lebende Sperren/Jobs, Fenster4/8,
+Sekunden1200/2400, Originale16/16, kein weiterer Neustart.14:32:06UTC genau ein
+aktives nicht ausgeschlossenes Profil bestaetigt. Startsignal14:32:06.264718UTC:
+Verwaltung frisch laden und genau einmal Quellenlauf starten. Zum Belegzeitpunkt
+noch kein tatsaechlicher neuer Start bestaetigt, deshalb0/1neue Fenster verbraucht;
+Lage-/Morgenlauf4 nicht gestartet. Nachweis des aktiven RPC im echten Ablauf,
+Quellenabschluss, Frische und Kundenbriefing weiterhin ausstehend.
 
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
 
