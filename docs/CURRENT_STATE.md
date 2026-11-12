@@ -2,7 +2,7 @@
 
 **Stand: 12.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
-**12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; Migration `20261112130226` erfolgt. 4.DB-Abbruch; Pausenfix bereit, bezahlt STOP.
+**12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; Migration `20261112130226` erfolgt. 4.DB-Abbruch, bezahlte Arbeit STOP.
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
@@ -199,8 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-Dieser Auftrag ist abgeschlossen. Nächster fachlicher Schritt bei weiterer
-Verwaltungsarbeit: fehlende Funktionen nach OP-33 einzeln zuordnen.
+**12.11.:** [Verwaltung/SMTP](betrieb/mailversand-tophoster.md): freigegeben; Laufzeitstand siehe PR1155.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

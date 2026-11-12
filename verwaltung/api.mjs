@@ -19,7 +19,7 @@ export class AdminReadError extends Error {
   }
 }
 
-export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 12000 } = {}) {
+export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 12000, customerScope = 'all' } = {}) {
   const cache = new Map();
   const pending = new Set();
   let disposed = false;
@@ -27,6 +27,7 @@ export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 1200
     read(key, id = null) {
       if (disposed) return Promise.reject(new AdminReadError());
       let url = typeof key === "string" && Object.hasOwn(ENDPOINTS, key) ? ENDPOINTS[key] : null;
+      if (key === "customers" && customerScope === "regular") url += "?scope=regular";
       if (key === "ergebnisse" && id !== null && /^[2-4]$/.test(String(id))) url = `${ENDPOINTS.ergebnisse}&seite=${id}`;
       if (key === "profile" && typeof id === "string" && /^[a-z0-9][a-z0-9-]{0,119}$/.test(id)) {
         url = `/api/admin/profile/${encodeURIComponent(id)}`;

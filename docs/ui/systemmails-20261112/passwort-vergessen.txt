@@ -1,0 +1,20 @@
+Guten Tag Eva,
+
+Ein neues Passwort.
+
+für Ihren Helmut-Zugang wurde ein neues Passwort angefordert.
+
+Über den folgenden Link können Sie ein neues Passwort festlegen.
+
+Neues Passwort festlegen:
+https://app.example.invalid/passwort-setzen?token=VORSCHAU-KEIN-ECHTER-RESET
+
+Der Link ist nur für Sie bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.
+
+Falls Sie kein neues Passwort angefordert haben, können Sie diese Nachricht ignorieren. Ihr bisheriges Passwort bleibt unverändert.
+
+Freundliche Grüße
+Helmut
+
+—
+Absender: Helmut <hallo@mithelmut.de> · Impressum: https://helmut-website.vercel.app/impressum.html

@@ -3309,7 +3309,7 @@ async function handleRequest(request, response) {
   // (sanitizeUser — nie Hashes) + aktive Sessions als reine Anzahl.
   if (url.pathname === "/api/admin/customers" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
-    return handleAsync(response, () => buildAdminCustomers());
+    return handleAsync(response, () => buildAdminCustomers({ regularOnly: url.searchParams.get("scope") === "regular" }));
   }
 
   // Quellen & Watchdog: Statuszaehler und problematische Abrufwege aus den
@@ -3371,6 +3371,18 @@ async function serveOriginalAdministration(request, response, url) {
   let key;
   try { key = decodeURIComponent(url.pathname.slice("/verwaltung/".length)); }
   catch { return end(400, '{"error":"Ungueltiger Pfad."}'); }
+  // Getrennt pruefbarer Kandidat; Originalverwaltung und alte Werkzeuge bleiben.
+  // Dieselbe vorstehende Session-/Adminpruefung schuetzt jede einzelne Datei.
+  if (key === "einfach") return end(308, "", "text/plain; charset=utf-8", { Location: "/verwaltung/einfach/" });
+  if (key.startsWith("einfach/") || ["api.mjs", "model.mjs", "original-actions.mjs", "original-quellenlauf.mjs"].includes(key)) {
+    const assets = require("./scripts/einfache-verwaltung-paket").simpleAdministrationPackage();
+    if (!assets.has(key)) return end(404, '{"error":"Nicht gefunden."}');
+    const type = key.endsWith("/") || key.endsWith(".html") ? "text/html; charset=utf-8"
+      : key.endsWith(".css") ? "text/css; charset=utf-8" : key.endsWith(".svg") ? "image/svg+xml" : key.endsWith(".woff2") ? "font/woff2" : "text/javascript; charset=utf-8";
+    return end(200, assets.get(key), type, {
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    });
+  }
   try {
     if (!originalAdministrationPackageCache) {
       const { originalAdministrationPackage, addVerifiedRuntimeAssets } = require("./scripts/original-verwaltung-paket");
@@ -4404,7 +4416,7 @@ function sendSetPasswordPage(response) {
       <section id="loadingView"><p>Der Link wird geprüft …</p></section>
 
       <section id="formView" hidden>
-        <p>Wähle ein Passwort für deinen Helmut-Zugang. Mindestens 8 Zeichen.</p>
+        <p>Wählen Sie ein Passwort für Ihren Helmut-Zugang. Mindestens 8 Zeichen.</p>
         <form id="setForm">
           <label for="pw1">Neues Passwort</label>
           <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
@@ -4416,7 +4428,7 @@ function sendSetPasswordPage(response) {
       </section>
 
       <section id="doneView" hidden>
-        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet. Du wirst weitergeleitet …</p>
+        <p class="notice">Ihr Passwort ist gesetzt. Sie sind jetzt angemeldet und werden weitergeleitet …</p>
         <p style="margin-top:14px"><a href="/">Weiter zu Helmut</a></p>
       </section>
 
@@ -4424,10 +4436,10 @@ function sendSetPasswordPage(response) {
         <p class="notice">Dieser Link ist abgelaufen oder wurde bereits verwendet.</p>
         <form id="renewForm">
           <label for="renewEmail">Neuen Link anfordern</label>
-          <input id="renewEmail" type="email" required autocomplete="email" placeholder="deine E-Mail-Adresse" />
+          <input id="renewEmail" type="email" required autocomplete="email" placeholder="Ihre E-Mail-Adresse" />
           <button type="submit" id="renewSubmit">Neuen Link anfordern</button>
         </form>
-        <p id="renewDone" hidden>Anfrage angekommen. Solange der Mail-Versand noch nicht aktiv ist, wende dich bitte direkt ans Helmut-Team — es kann dir sofort einen neuen Link erstellen.</p>
+        <p id="renewDone" hidden>Anfrage angekommen. Falls keine E-Mail eintrifft, wenden Sie sich bitte an hallo@mithelmut.de.</p>
       </section>
 
       <footer><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></footer>
@@ -4475,11 +4487,11 @@ function sendSetPasswordPage(response) {
             }
             if (res.status === 410) { show("expiredView"); return null; }
             return res.json().catch(function () { return {}; }).then(function (data) {
-              errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuch es erneut.";
+              errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuchen Sie es erneut.";
               errorEl.hidden = false;
             });
           }).catch(function () {
-            errorEl.textContent = "Keine Verbindung. Bitte versuch es erneut.";
+            errorEl.textContent = "Keine Verbindung. Bitte versuchen Sie es erneut.";
             errorEl.hidden = false;
           }).then(function () { button.disabled = false; });
         });
@@ -6454,10 +6466,17 @@ async function zustellenAnonymerReset(user, kontext) {
     { to: user.email, ...mailContent },
     { kennung: await kontoKennung(user) }
   );
+  // Nur feste Grundcodes im internen Audit, niemals SMTP-Antworten oder Zugangsdaten.
+  const bekannteGruende = [
+    ...Object.values(require("./lib/helmut/mail-transport").GRUND),
+    ...Object.values(require("./lib/helmut/kommunikationsriegel").GRUND)
+  ];
+  const fehlerGrund = versandBefund?.sent !== true && bekannteGruende.includes(versandBefund?.reason)
+    ? ` · grund=${versandBefund.reason}` : "";
   await accounts.recordAudit({
     action: "password.reset-requested", userId: user.id, ip: kontext.ip,
     politicianId: await kontoKennung(user),
-    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}`
+    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}${fehlerGrund}`
   });
 }
 
@@ -6557,7 +6576,7 @@ function handleAuthPasswordToken(request, response, url) {
 function sendAuthUnavailable(response) {
   console.error("Kontenablage fuer die Anmeldung nicht erreichbar");
   response.writeHead(503, jsonHeaders({ "Retry-After": "30" }));
-  response.end(JSON.stringify({ reason: "auth-unavailable", error: "Die Anmeldung ist vorübergehend nicht erreichbar. Bitte versuche es später erneut." }));
+  response.end(JSON.stringify({ reason: "auth-unavailable", error: "Die Anmeldung ist vorübergehend nicht erreichbar. Bitte versuchen Sie es später erneut." }));
   return null;
 }
 
@@ -7027,14 +7046,18 @@ async function buildAdminCostsPerUser(days = 30) {
   return { generatedAt: new Date().toISOString(), ...per, perUser, tenantBudgets };
 }
 
-async function buildAdminCustomers() {
+async function buildAdminCustomers({ regularOnly = false } = {}) {
   const users = await accounts.listUsers();
   const sessions = await accounts.countActiveSessions().catch(() => null);
   const today = new Date().toISOString().slice(0, 10);
+  const { klassifiziere, BEFUND_SYNTHETISCH } = require("./lib/helmut/kommunikationsriegel");
   // Kundensicht: Mandats-Konten (abgeordneter) fuehren die Abrechnung. Konten
   // anderer Rollen erscheinen nur, wenn tatsaechlich customer-Daten gepflegt sind.
   const kunden = users
     .filter((u) => u.role === "abgeordneter" || (u.customer && (u.customer.pricePerMonth != null || (u.customer.paymentStatus && u.customer.paymentStatus !== "none"))))
+    // Einfache Kundensicht: bekannte Testfamilien bleiben in den bisherigen Werkzeugen.
+    // Ungeklaerte Konten bleiben zur Einrichtung sichtbar; keine Daten werden geloescht.
+    .filter((u) => !regularOnly || klassifiziere({ kanal: "einladung", kennung: u.politicianId }).befund !== BEFUND_SYNTHETISCH)
     .map((u) => ({
       userId: u.id,
       name: u.name || u.email,
@@ -7063,6 +7086,7 @@ async function buildAdminCustomers() {
   const mitPreis = kunden.filter((k) => !beendet(k) && Number.isFinite(Number(k.customer.pricePerMonth)) && k.customer.pricePerMonth != null);
   const mrrEur = mitPreis.length ? mitPreis.reduce((sum, k) => sum + Number(k.customer.pricePerMonth), 0) : null;
   return {
+    ...(regularOnly ? { customerScope: "regular" } : {}),
     generatedAt: new Date().toISOString(),
     counts,
     mrrEur,

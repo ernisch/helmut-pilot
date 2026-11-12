@@ -1,0 +1,701 @@
+{
+  "status": "PASS",
+  "observedAt": "2026-11-12T15:15:36.641Z",
+  "checks": 58,
+  "requests": [
+    {
+      "url": "/verwaltung/einfach/",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/styles.css",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/main.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/sans.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/app.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/api.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/model.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/versorgung.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/profil-auswahl.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/api.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/original-actions.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/original-quellenlauf.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/model.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/logo.svg",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/serif.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-64793635-5b4d-40bb-a827-f6fab9e6868d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-64793635-5b4d-40bb-a827-f6fab9e6868d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-fb772db6324550fc12",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-fb772db6324550fc12/restore-access",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-fb772db6324550fc12/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-794134a7-9150-40d7-9f3c-3d97a351008f",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-fb772db6324550fc12/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-354dcea68dbcb465af",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-3f7d79fd-3c40-45ee-a083-d246a3d542cd",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-3f7d79fd-3c40-45ee-a083-d246a3d542cd",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-3f7d79fd-3c40-45ee-a083-d246a3d542cd",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-354dcea68dbcb465af/restore-access",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-354dcea68dbcb465af/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-1f03069a6feaa350bb",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-5a7679db-b725-4f07-b054-a7cd8fde957d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-5a7679db-b725-4f07-b054-a7cd8fde957d",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-5a7679db-b725-4f07-b054-a7cd8fde957d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-1f03069a6feaa350bb/restore-access",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-1f03069a6feaa350bb/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-a9a0e300fae8a48177",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-458e95df-63a2-460f-b399-a4afb7e8b04d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-458e95df-63a2-460f-b399-a4afb7e8b04d",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-458e95df-63a2-460f-b399-a4afb7e8b04d",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/budget-today",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "POST"
+    },
+    {
+      "url": "/verwaltung/einfach/",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/styles.css",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/main.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/sans.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/app.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/api.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/api.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/original-actions.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/model.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/profil-auswahl.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/original-quellenlauf.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/versorgung.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/model.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/quellenlauf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/logo.svg",
+      "method": "GET"
+    },
+    {
+      "url": "/verwaltung/einfach/serif.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/sources-status",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/stats/process-runs",
+      "method": "GET"
+    }
+  ],
+  "pageErrors": [],
+  "scope": "Isolierter echter lokaler HTTP-/Konten-/Profilspeicher; Ergebnisstatus zusaetzlich mit synthetischen Antwortvertraegen. Keine Production- oder Modellpruefung."
+}

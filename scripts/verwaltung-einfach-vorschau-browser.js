@@ -1,0 +1,68 @@
+"use strict";
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium}=require('playwright');
+const {previewHtml}=require('./verwaltung-einfach-export');
+const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
+(async()=>{
+ const html=previewHtml();assert.equal(html,fs.readFileSync(path.join(dir,'vorschau.html'),'utf8'));
+ const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--disable-background-networking']});
+ const context=await browser.newContext({offline:true,viewport:{width:1440,height:1100}}),page=await context.newPage(),errors=[],external=[];
+ let checks=0;const check=(name,value)=>{assert.ok(value,name);checks++;console.log('PASS '+name);};
+ page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))external.push(r.url());});page.on('dialog',d=>d.accept());
+ try{
+  await page.setContent(html);await page.getByRole('heading',{name:'Auf einen Blick.'}).waitFor();
+  check('Vorschau bootet dieselbe Appkomponente',await page.locator('.nav button').count()===3);
+  await page.evaluate(()=>document.fonts.ready);
+  check('Originales Helmut-Zeichen und Schrift sind auch offline vorhanden',await page.locator('.brand-logo').evaluate(el=>el.complete&&el.naturalWidth>0)&&await page.evaluate(()=>document.fonts.check('16px "Hanken Grotesk"')));
+  check('Fiktive Daten sind sichtbar gekennzeichnet',await page.locator('.demo').innerText().then(t=>t.includes('Fiktive Daten')));
+  await page.screenshot({path:path.join(dir,'vorschau-v2-uebersicht.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:900});await page.screenshot({path:path.join(dir,'vorschau-uebersicht-einfach-mobil.png'),fullPage:true});await page.setViewportSize({width:1440,height:1100});
+  check('Uebersicht zeigt offene Kunden einmal statt mehrfacher Zaehler und Listen',await page.locator('main > .summary-line').count()===0&&await page.locator('main [data-customer="preview-nord"]').count()===1&&await page.locator('main [data-customer="preview-mitte"]').count()===0);
+  await page.locator('[data-nav="customers"]').click();await page.locator('[data-customer="preview-mitte"]').click();
+  check('Vorhandener Beispielnachweis bleibt von Fachurteil getrennt',await page.locator('main').innerText().then(t=>t.includes('Beurteilung ist offen')));
+  check('Kundendetails sind zunaechst zugeklappt',await page.locator('#supply').evaluate(el=>!el.open));
+  await page.locator('[data-action="supply"]').click();check('Briefingpruefung oeffnet die erhaltenen Nachweise',await page.locator('#supply').evaluate(el=>el.open)&&await page.getByText('In der App bereitgestellt',{exact:true}).isVisible());
+  await page.locator('[data-nav="customers"]').click();await page.locator('[data-customer="preview-nord"]').click();
+  check('Fehlendes Briefing wird sichtbar',await page.getByRole('heading',{name:'Das heutige Briefing fehlt.',exact:true}).isVisible());
+  await page.locator('[data-nav="customers"]').click();await page.locator('[data-action="new"]').click();
+  check('Ein Formular enthaelt Name, E-Mail und die Mandatsangaben',await page.locator('#new-customer input').count()===2&&await page.locator('#new-customer select').count()===5&&await page.locator('#new-customer textarea').count()===1);
+  await page.setViewportSize({width:390,height:900});await page.screenshot({path:path.join(dir,'vorschau-v2-anlegen-mobil.png'),fullPage:true});
+  await page.locator('#name').fill('Fiktiver Vorschaukunde');await page.locator('#email').fill('test@example.invalid');
+  check('Vorschau hat dieselben drei Dropdowns',await page.locator('#party,#faction,#constituency').evaluateAll(nodes=>nodes.length===3&&nodes.every(n=>n.tagName==='SELECT')));
+  check('Wahlkreis wartet auf Parlament und Bundesland',await page.locator('#constituency').isDisabled());
+  await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('CDU');await page.locator('#faction').selectOption('CDU/CSU');
+  check('Vorhandene Wahlkreisdaten sind auch offline verfuegbar',await page.locator('#constituency option').count()>2);
+  await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');
+  await page.screenshot({path:path.join(dir,'vorschau-mandat-dropdown-mobil.png'),fullPage:true});
+  await page.locator('#state').selectOption('Brandenburg');
+  check('Bundeslandwechsel leert den Wahlkreis auch in der privaten Vorschau',(await page.locator('#constituency').inputValue())==='');
+  await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');await page.locator('#topics').fill('Fiktives Thema');
+  await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
+  await page.screenshot({path:path.join(dir,'vorschau-kunde-komplett-mobil.png'),fullPage:true});
+  await page.locator('#new-customer button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiver Vorschaukunde',exact:true}).waitFor();
+  check('Vollstaendiger Beispielkunde wird mit Einladung und pausierter Versorgung geoeffnet',await page.locator('main').innerText().then(t=>t.includes('Kunde angelegt.')&&t.includes('Es wurde keine E-Mail verschickt.')&&t.includes('Die Versorgung ist noch nicht aktiv.')));
+  check('Vorschau zeigt einen ausdruecklich fiktiven Zugangslink',await page.locator('#invite-url').inputValue().then(t=>t.endsWith('token=fiktiver-vorschaulink')));
+  await page.locator('[data-action="profile"]').first().click();await page.locator('#profile-form').waitFor();
+  check('Mandatsangaben bleiben nach der Anlage in der Vorschau erhalten',(await page.locator('#party').inputValue())==='CDU'&&(await page.locator('#state').inputValue())==='Brandenburg'&&(await page.locator('#topics').inputValue())==='Fiktives Thema');
+  for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:900});check('Vorschau ohne Ueberlauf bei '+width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+  await page.locator('[data-nav="customers"]').click();await page.locator('[data-action="new"]').click();
+  check('Schwerpunkte sind als optional erklaert und mit der Wirkung beschriftet',await page.getByLabel('Politische Schwerpunkte (optional)',{exact:true}).evaluate(el=>!el.required)&&await page.locator('#topics-help').innerText().then(t=>t.includes('Damit wählt Helmut passende Nachrichten für dein Briefing aus.')&&t.includes('Kann später im Profil ergänzt werden.')));
+  await page.locator('#name').fill('Fiktiv ohne Schwerpunkte');await page.locator('#email').fill('ohne@example.invalid');await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('SPD');await page.locator('#faction').selectOption('SPD');await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');
+  await page.setViewportSize({width:390,height:900});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
+  await page.screenshot({path:path.join(dir,'vorschau-ohne-schwerpunkte-mobil.png'),fullPage:true});
+  await page.locator('#new-customer button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv ohne Schwerpunkte',exact:true}).waitFor();
+  check('Vorschau erlaubt Anlage ohne Schwerpunkte mit Einladung und ehrlichem offenem Stand',await page.locator('main').innerText().then(t=>t.includes('Kunde angelegt.')&&t.includes('Schwerpunkte können später ergänzt werden.'))&&await page.locator('#invite-url').count()===1);
+  check('Vorschau bietet keine Briefingaktivierung ohne fachliche Angaben an',await page.locator('[data-action="activate"]').count()===0);
+  await page.locator('[data-action="profile"]').first().click();await page.locator('#profile-form').waitFor();await page.locator('#profile-form button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv ohne Schwerpunkte',exact:true}).waitFor();
+  check('Leere Schwerpunkte bleiben auch beim Bearbeiten speicherbar',await page.getByRole('heading',{name:'Schwerpunkte können später ergänzt werden.',exact:true}).count()===1);
+  await page.locator('[data-nav="settings"]').click();check('Seltene Werkzeuge sind eingeklappt und bleiben erreichbar',await page.locator('main details').evaluate(el=>!el.open)&&await page.locator('a[href="/verwaltung/#/profile"]').count()===1);await page.locator('[data-setting="sources"]').click();
+  check('Zeitplan und Quellenzahlen bleiben hinter Details erreichbar',await page.locator('.source-details').evaluate(el=>!el.open)&&await page.getByText('Nächste automatische Prüfung',{exact:true}).count()===1);
+  check('Quellenstart liegt verstaendlich unter Einstellungen und Quellenversorgung',await page.getByRole('heading',{name:'Quellen & Versorgung.',exact:true}).isVisible()&&await page.getByRole('button',{name:'Quellenlauf jetzt starten',exact:true}).isVisible());
+  await page.locator('[data-action="source-start"]').click();await page.getByRole('heading',{name:'Quellenlauf abgeschlossen.',exact:true}).waitFor();
+  check('Simulierter Quellenabschluss laesst fehlende Kundenbriefings offen',await page.locator('.check').filter({hasText:'Heute bereit'}).innerText().then(t=>t.includes('1 von')));
+  for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:1000});check('Quellenversorgung ohne Ueberlauf bei '+width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));if(width===390||width===1440){await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(dir,'vorschau-quellen-'+(width===390?'mobil':'desktop')+'.png'),fullPage:true});}}
+  await page.locator('[data-nav="overview"]').click();check('Versorgungsstand ist von der Uebersicht direkt erreichbar',await page.locator('.supply-overview [data-setting="sources"]').count()===1);
+  check('Keine JavaScriptfehler',errors.length===0);check('Keine App-/Netzwerkverbindung',external.length===0);
+  fs.writeFileSync(path.join(dir,'vorschau-v2-pruefung.json'),JSON.stringify({status:'PASS',observedAt:new Date().toISOString(),checks,pageErrors:errors,externalRequests:external.length,scope:'Export derselben Appkomponente mit fiktivem Beispieladapter; keine echten Appdaten'},null,2)+'\n');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -209,7 +209,14 @@ async function main() {
         sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),
         rueckweg: require("./quellenfrische-30-plan").baueRueckweg });
     diagnosticPhase = "auth-patch";
-    const authPatchPruefungen = await require("./fixtures/auth-store-partial-datenbank").pruefe({ psql, base, token, secret });
+    // Die synchronen SQL-Importproben blockieren den Node-Eventloop mehrere
+    // Sekunden. Danach keine alten HTTP-Keepalive-Verbindungen weiterreichen:
+    // ein frisches Tor isoliert den folgenden REST-Nachweis vom alten Socketpool.
+    // PostgreSQL/PostgREST, Daten, Rollen und alle Pruefungen bleiben dieselben.
+    await gateway.stoppe();
+    gateway = await require("./fixtures/z3-plattform").starteDatenbankTor({ postgrestPort: apiPort });
+    process.env.SUPABASE_URL = gateway.url;
+    const authPatchPruefungen = await require("./fixtures/auth-store-partial-datenbank").pruefe({ psql, base: gateway.url, token, secret });
     console.log(`PostgreSQL ${version}: ${16 + importPruefungen + authPatchPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {

@@ -38,6 +38,15 @@ zusaetzlich die genaue Fixture-Zeile, einen erlaubten Fehlertyp und gegebenenfal
 den numerischen HTTP-Fehlerstatus. Deren gezielte synthetische Gegenprobe besteht;
 beliebige Fehlermeldungen bleiben verworfen. Die eigentliche Ursache ist noch offen.
 
+Zwischenzeitlich wurde PR1155 auf main integriert. Dessen Korrektur erneuert das
+lokale HTTP-Tor nach den synchronen SQL-Importproben, bevor die Feldpatch-Probe
+beginnt. Die Konfliktaufloesung behaelt diesen vorhandenen Fix und die geschlossene
+Diagnose gemeinsam; keine Kopie oder Abschwaechung des Nachweises.
+Der integrierte native Kontodatenbanktest besteht lokal44/44Pruefungen mit echtem
+PostgreSQL17.6 und PostgREST12.2.3, einschliesslich aller neun Feldpatch-Faelle.
+Der Testcluster wurde danach beendet und entfernt. Der neue Pflichtlauf bleibt
+bis zu seinem tatsaechlichen erfolgreichen Abschluss offen.
+
 Status: Pflicht-CI und Coderollout ausstehend. Kein Nachweis fuer einen
 wiederhergestellten Briefingbetrieb; weitere betriebliche Laeufe bleiben gestoppt.
 Ausfuehrliche Betriebsnachweise bleiben lokal, dieser Nachweis enthaelt nur die

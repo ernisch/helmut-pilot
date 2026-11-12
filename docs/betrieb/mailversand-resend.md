@@ -1,5 +1,10 @@
 # E-Mail-Versand über Resend — Einrichtung und kontrollierte Aktivierung
 
+**Nachtrag12.11.2026:** Für den aktuellen Betreiber ist zusätzlich der
+[Versand über das vorhandene Tophoster-Postfach](mailversand-tophoster.md) vorbereitet.
+Die folgende Anleitung bleibt die Referenz ausschließlich für die Resend-Alternative;
+ein Resend-Konto ist für SMTP nicht erforderlich. Kein echter Versand aktiviert.
+
 **Stand:** 2026-08-01 · **Zustand:** **vorbereitet, in Production NICHT aktiviert.**
 
 > **Das Wichtigste zuerst:** Nach diesem Sprint versendet Helmut **weiterhin keine echte

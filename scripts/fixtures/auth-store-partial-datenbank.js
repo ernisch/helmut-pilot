@@ -32,7 +32,13 @@ async function pruefe({ psql, base, token, secret }) {
   globalThis.fetch = async (input, options = {}) => {
     const url = new URL(input); assert.equal(url.hostname, "127.0.0.1");
     requests.push({ path: url.pathname, method: options.method || "GET", bytes: Buffer.byteLength(options.body || "") });
-    const response = await transport(input, options);
+    let response;
+    try { response = await transport(input, options); }
+    catch (error) {
+      // Nur Phase, Methode und Fehlerklasse: keine URL-Query, Bodies oder Test-JWTs.
+      const code = /^[A-Z0-9_]{1,80}$/.test(error?.cause?.code || "") ? error.cause.code : "NETWORK_ERROR";
+      throw new Error(`auth-feldpatch: ${options.method || "GET"} ${url.pathname} ${code}`);
+    }
     if (dropReply && url.pathname === RPC) {
       assert.equal(response.status, 200); await response.text(); dropReply = false;
       throw new Error("simulierter Antwortverlust nach echtem RPC");
