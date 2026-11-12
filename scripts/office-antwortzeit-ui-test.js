@@ -63,7 +63,7 @@ function fixture(latencyMs, baseline = false) {
     apiScopeQuery: () => `politicianId=${s.activePoliticianId}`,
     officeDecisions: () => s.decisions, activeOfficeFormats: () => [format],
     recommendedOfficeFormat: () => ({ format, reason: "Synthetischer Pruefauftrag" }),
-    officeDraftSources: d => d.sources || [], renderOfficeDraftSources: () => "",
+    officeDraftSources: d => d.sources || [], renderOfficeDraftSources: () => "", officeSourceStand: () => "Quellenstand: 25. September 2026",
     sourceHref: source => source.url,
     uiIcon: () => "", escapeHtml: value => String(value), escapeAttribute: value => String(value),
     fetch: (url, options = {}) => {
@@ -129,6 +129,8 @@ async function test(name, body) { await body(); ++passed; console.log(`PASS ${na
     const f = fixture(latency), { pending } = await f.start();
     const during = Math.min(12001, latency - 1); await f.advance(during);
     assert.equal(f.postCount(), 1); assert.equal(f.s.officeDraftsGenerating, true);
+    assert(f.views.at(-1).includes('progress class="buero-generation-progress"'));
+    assert(!f.views.at(-1).includes('aria-valuenow') && !f.views.at(-1).includes('value="'));
     assert.equal(f.s.officeCardStatus(f.decision, f.format), "Wird vorbereitet");
     await f.s.generateSelectedOfficeDraft({ userInitiated: true }); await f.s.generateSelectedOfficeDraft({ userInitiated: true });
     assert.equal(f.postCount(), 1, "Weitere Klicks starten waehrend der Wartezeit keinen zweiten kostenpflichtigen Auftrag");

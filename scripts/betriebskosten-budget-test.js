@@ -317,7 +317,8 @@ async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`)
       const calls = sentTickets.map(id => f.read()[B.KEY].calls[id]);
       assert.equal(calls[0].cost, 130); assert.equal(calls[1].status, "ungeklaert");
       assert.equal(calls[2].status, "ungeklaert"); assert.equal(calls[3].cost, 130);
-      modelResponse = '{"text":"Synthetischer quellengebundener Bueroauftrag.","rationale":"Offlinepruefung"}';
+      modelResponse = JSON.stringify({ text: require("./fixtures/office-format-beispiele").texts.internal_line
+        .replace(/^- /, "- Synthetischer quellengebundener Büroauftrag: "), rationale: "Offlinepruefung" });
       const decision = { title: "Synthetischer Anlass", sources: [{ url: "https://example.test/original",
         summary: "Synthetischer Originalauszug als Grundlage fuer diesen Bueroauftrag." }] };
       const input = { office: true, decision, profile: { id: CONTRACT.profileId }, channel: "internal_line" };

@@ -7787,6 +7787,7 @@ function renderOfficeFormatSheet() {
     <header class="buero-sheet-header"><h2 id="office-format-title">Format wählen</h2>
       <button type="button" class="buero-sheet-close" data-office-format-close aria-label="Formatwahl schließen" autofocus>×</button>
       <p id="office-format-topic">${escapeHtml(decision.title)}</p></header>
+    <p class="buero-sheet-note">${escapeHtml(officeSourceStand(decision))}</p>
     ${!ready ? '<p class="buero-sheet-note" role="status">Für dieses Thema fehlt noch ausreichender Originalquellentext. Neue Entwürfe können erst danach erstellt werden.</p>' : ""}
     <div class="buero-format-actions">${primary.map(row).join("")}
       ${more.length ? `<details class="buero-more-formats"><summary>Weitere Formate ${uiIcon("chevron")}</summary>${more.map(row).join("")}</details>` : ""}
@@ -7859,7 +7860,7 @@ function renderOfficeView() {
 
 function uiOfficeSelection(decision, format) {
   const cached = officeDraftEntry(decision, format);
-  return { decision, format, text: cached?.text || "", provenance: draftProvenanceLabel(cached?.source || "", Boolean(cached)) };
+  return { decision, format, text: cached?.text || "", formatCheck: cached?.formatCheck || null, provenance: draftProvenanceLabel(cached?.source || "", Boolean(cached)) };
 }
 
 function renderOfficeDraftCard(decision) {
@@ -7888,7 +7889,14 @@ function officeSourceDateLabel(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(d);
+}
+
+function officeSourceStand(decision) {
+  const dates = officeDraftSources(decision).map(s => s.publishedAt).filter(Boolean)
+    .map(value => new Date(value)).filter(date => Number.isFinite(date.getTime()));
+  if (!dates.length) return "Quellenstand: Veröffentlichungsdatum nicht belegt";
+  return `Quellenstand: ${officeSourceDateLabel(new Date(Math.max(...dates.map(date => date.getTime()))).toISOString())}`;
 }
 
 // Sichtbare, anklickbare Quellenliste des Entwurfs (Quellenpflicht-Sprint):
@@ -7929,10 +7937,11 @@ function officeDraftFailure(reason) {
     "entwurf-nicht-freigegeben": "Die Entwurfserstellung ist für dieses Profil oder diese Aufgabe derzeit nicht freigegeben.",
     "entwurf-nicht-beauftragt": "Wählen Sie ein Format und beauftragen Sie die Erstellung ausdrücklich.",
     "kostenpruefung-fehlgeschlagen": "Die KI-Kostenfreigabe konnte derzeit nicht bestätigt werden. Bitte versuchen Sie es erneut.",
-    "format-unbekannt": "Dieses Textformat ist derzeit nicht verfügbar."
+    "format-unbekannt": "Dieses Textformat ist derzeit nicht verfügbar.",
+    "formatpruefung-fehlgeschlagen": "Der erzeugte Text passt nicht zu den Vorgaben des gewählten Formats. Sie können die Erstellung erneut beauftragen."
   };
   return { message: messages[reason] || "Der Entwurf konnte nicht belastbar erstellt werden. Sie können es erneut versuchen.",
-    retry: reason === "kostenpruefung-fehlgeschlagen" || !Object.prototype.hasOwnProperty.call(messages, reason) };
+    retry: ["kostenpruefung-fehlgeschlagen", "formatpruefung-fehlgeschlagen"].includes(reason) || !Object.prototype.hasOwnProperty.call(messages, reason) };
 }
 
 function renderOfficeDraftDetail() {
@@ -7950,12 +7959,14 @@ function renderOfficeDraftDetail() {
         <span class="buero-group-eyebrow">Anlass</span>
         <h2 class="buero-detail-title">${escapeHtml(decision.title)}</h2>
         <p class="buero-detail-anlass">${escapeHtml(format.label)}</p>
+        <p class="buero-detail-linecheck">${escapeHtml(officeSourceStand(decision))}</p>
         ${format.id === "anfrage" ? '<p class="buero-detail-linecheck">Arbeitsentwurf für den Ausschuss · keine formgerechte parlamentarische Anfrage.</p>' : ""}
         <button type="button" class="buero-choose-format" data-office-choose>Anderes Format wählen</button>
       </header>
       ${text ? `<div class="buero-detail-body">${String(text).split(/\n+/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${escapeHtml(p)}</p>`).join("")}</div>
-        <p class="buero-detail-linecheck">KI-Entwurf · Prüfen Sie Aussagen und politische Positionen vor der Verwendung.</p>`
-        : `<div class="buero-draft-state" role="status"><p>${loading ? "Ihr Entwurf wird vorbereitet …" : failed ? escapeHtml(failure.message) : "Für dieses Format liegt noch kein Entwurf vor."}</p>
+        <p class="buero-detail-linecheck">KI-Entwurf · ${selectedOfficeDraft.formatCheck?.valid ? "Länge und Aufbau geprüft. " : ""}Prüfen Sie Aussagen und politische Positionen vor der Verwendung.</p>`
+        : `<div class="buero-draft-state" role="status" aria-busy="${loading}"><p>${loading ? "Ihr Entwurf wird vorbereitet …" : failed ? escapeHtml(failure.message) : "Für dieses Format liegt noch kein Entwurf vor."}</p>
+        ${loading ? '<progress class="buero-generation-progress" aria-label="KI erstellt den Entwurf"></progress>' : ""}
         ${!loading && (!failed || failure.retry) ? `<button class="secondary-button" type="button" data-office-generate>${failed ? "Erneut versuchen" : `${escapeHtml(format.label)} erstellen`}</button>` : ""}</div>`}
       ${renderOfficeDraftSources(sources)}
       ${text ? `<footer class="buero-detail-footer"><button class="buero-copy-btn buero-copy-btn--full" type="button" data-office-share>${uiIcon("share")} Teilen</button>
@@ -11342,11 +11353,11 @@ async function generateSelectedOfficeDraft({ userInitiated = false } = {}) {
     const result = await generateStatementWithBackend(`Bereiten Sie das Format ${format.label} zum belegten Anlass vor.`, decision, format.channel || "press", { office: true, userInitiated: true });
     if (!stillAssigned()) return;
     if (!result.aiEnabled || result.degraded || !isValidDraft(result.text) || !String(result.text || "").trim()) {
-      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "entwurf-nicht-freigegeben", "entwurf-nicht-beauftragt", "kostenpruefung-fehlgeschlagen", "format-unbekannt"]);
+      const safeReasons = new Set(["quellenbasis-fehlt", "anlass-nicht-verfuegbar", "zustaendigkeit-offen", "budget-erschoepft", "entwurf-nicht-freigegeben", "entwurf-nicht-beauftragt", "kostenpruefung-fehlgeschlagen", "format-unbekannt", "formatpruefung-fehlgeschlagen"]);
       officeDraftErrors[key] = safeReasons.has(result.fallbackReason) ? result.fallbackReason : "ki-fehler";
       return;
     }
-    officeDrafts[key] = { text: result.text, source: "ki", binding, createdAt: Date.now() };
+    officeDrafts[key] = { text: result.text, source: "ki", binding, createdAt: Date.now(), ...(result.formatCheck ? { formatCheck: result.formatCheck } : {}) };
     delete officeDraftErrors[key];
     try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
   } catch (_) {

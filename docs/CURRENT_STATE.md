@@ -16,7 +16,7 @@
 
 **11.11., Büro live:** [PR1135, Nachweise und Rückweg](ui/buero-formatwahl-20261111/README.md).
 
-**Büro (11.11.):** [Übersicht PR1145](ui/buero-themenuebersicht-20261111/README.md); [Quellentextfix PR1153](ui/buero-quellentext-20261111/README.md) auf `1b031b58` live/READY. Appstart erhält Quellenkurztexte. CI189/189+367/367+Browser grün, keine KI-Probe.
+**Büro (11.11.):** [PR1156/Abnahme](ui/buero-qualitaet-20261111/README.md): Quellenjahr, Ladebalken/Formprüfung lokal grün(35/92/13/16/310). Livegang blockiert: GitHub Actions major_outage; Pflicht-CI wartet. Bisher1b031b58 live, keine bezahlten KI-Proben.
 
 [PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
 
