@@ -9,6 +9,49 @@ unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
 vereinbarten Stoppbedingung beendet; keine erneute Freigabe aus alten GOs ableiten.
 Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten NICHT.
 
+### Speicherbefund und Softwareentlastung ohne Mehrkosten
+
+Der Betreiber lehnt Small/2GB und zusaetzliche Kosten ausdruecklich ab:
+„Keine Mehrkosten; Software weiter pruefen“. Keine Ressourcenumschaltung,
+kein neuer Quellen-/Modell-/Lage-/Morgenlauf daraus freigegeben oder ausgefuehrt.
+Die beiden3h-Dashboardbilder zeigen hohe Memory commitment und Einbrueche
+nahe den Neustarts; maximal etwa15Verbindungen gegen60zulaessige. Commitment
+ist zugesagter virtueller Speicher, nicht residenter RAM. Native Momentaufnahme
+nach dem ersten Ausfall: Committed_AS1834622976Bytes bei CommitLimit1547833344,
+physischer Speicher948191232Bytes. Speicherknappheit ist belegt; der konkrete
+Absturzausloeser und ein OOM-Kill bleiben unbewiesen. Keine pauschale Erhoehung
+des Verbindungslimits oder Aenderung der Datenbankkonfiguration.
+
+Eine konkrete unnoetige Belastung liegt im Softwarelesepfad: die Sitzungspruefung
+und kleine Statusleser holen den kompletten main-auth-Block samt Kostenhistorie.
+Der Kostenbericht holt denselben Block sogar zweimal. Die Korrektur waehlt
+serverseitig nur benoetigte JSON-Felder; Kostenbericht und Laufzuordnung nutzen
+einen gemeinsamen Lesestand. Sitzungen werden nicht gecacht. Vollstaendige
+CAS-Mutationen, Kostenbuecher, offene Reserven und historische Journale bleiben
+erhalten. Die reine Teilsicht darf auch als flache Kopie weder den Auth- noch
+den Content-Speicher ueberschreiben, einschliesslich lokalem Dateimodus.
+
+Rein lesende native REST-Gegenprobe12.11.,10:47:30UTC: vollstaendige Antwort
+4304637Bytes, dieselben Konten/Sitzungen408327Bytes (-90,51Prozent), dieselben
+Prozesslaeufe339551Bytes (-92,11Prozent). Drei begrenzte GETs, Werte direkt
+verglichen; keine gespeicherten Konteninhalte im oeffentlichen Beleg. Einzelne
+Antwortzeiten2,153/0,877/0,401s sind keine Lastmessung. Keine behauptete Senkung
+des RAM-Spitzenverbrauchs und kein Nachweis ausgebliebener Neustarts.
+
+Gezielte lokale Pruefungen ueber lokal.js:12/12Lese-/Fehlergruppen,
+15/15Konten-CAS einschliesslich fuenf Prozessen,13/13Profil-/Auth-Entkopplung,
+24/24Login/HTTP,17/17Sitzungs-/Mandatszuordnung und21/21Speicherintegritaet.
+Socket-EPERM wurde mit demselben isolierten Test ausserhalb der Sandbox
+aufgeloest. Der zusaetzlich gelesene historische Kostenmessungstest meldet
+128/129: sein Scheduler-Regulaerausdruck endet am verschachtelten Optionsobjekt
+vor runId. Derselbe Fehler tritt
+unveraendert im isolierten main-Standf2676192 auf; die Kosten-/Laufaggregationen
+bestehen. Kein gruener Gesamtnachweis fuer diesen Legacytest behauptet.
+Die vorhandene verpflichtende PostgreSQL-/PostgREST-CI prueft zusaetzlich die
+echte JSON-Feldauswahl und den hashgleichen Datenbestand nach gesperrtem
+Teilschreiben. Pflicht-CI/Merge/Production der Softwareentlastung noch offen.
+Rueckweg: gezielter Revert dieser Lesekorrektur, keine Datenruecksetzung.
+
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
 
 [PR1160](https://github.com/ernisch/helmut-pilot/pull/1160): Lage-Gesamtabschluss

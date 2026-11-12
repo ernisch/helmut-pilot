@@ -101,7 +101,7 @@ function check(name, cond, detail = "") {
     assert.equal(u.hostname, "example.invalid");
     const method = options.method || "GET";
     if (u.pathname === "/rest/v1/helmut_store") {
-      if (method === "GET") return response(200, blob ? [{ data: blob }] : []);
+      if (method === "GET") return response(200, blob ? [require("./fixtures/store-json-selection")("main-auth", blob, url)] : []);
       if (method === "PATCH") {
         const expected = u.searchParams.get("data->>_authStoreRevision");
         const current = blob?._authStoreRevision;

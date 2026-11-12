@@ -51,7 +51,7 @@ globalThis.fetch = async (url, options = {}) => {
   assert.equal(u.pathname, "/rest/v1/helmut_store");
   const method = options.method || "GET";
   calls.push({ method });
-  if (method === "GET") return response(200, blob ? [{ data: blob }] : []);
+  if (method === "GET") return response(200, blob ? [require("./fixtures/store-json-selection")("main-auth", blob, url)] : []);
   const value = JSON.parse(options.body);
   if (method === "PATCH") {
     assert.equal(u.searchParams.get("id"), "eq.main-auth");
