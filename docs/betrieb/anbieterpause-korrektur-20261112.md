@@ -32,6 +32,11 @@ Fehlermeldungen, SQL und Zugangsdaten gehen nicht in diese Annotation ein.
 Pruefauswahl, Einmalbindung, Grenzwerte und Abnahmekriterien bleiben erhalten.
 Die bestehende synthetische Kontosuite besteht mit der Annotation16/16Pruefungen,
 einschliesslich einer Gegenprobe gegen die Ausgabe beliebiger Fehlertexte.
+Der neue Pflichtlauf grenzt den Abbruch auf den Auth-Feldpatch-Abschnitt ein;
+die vorherigen Abschnitte erreichen dessen Aufruf. Die Diagnose nennt deshalb
+zusaetzlich die genaue Fixture-Zeile, einen erlaubten Fehlertyp und gegebenenfalls
+den numerischen HTTP-Fehlerstatus. Deren gezielte synthetische Gegenprobe besteht;
+beliebige Fehlermeldungen bleiben verworfen. Die eigentliche Ursache ist noch offen.
 
 Status: Pflicht-CI und Coderollout ausstehend. Kein Nachweis fuer einen
 wiederhergestellten Briefingbetrieb; weitere betriebliche Laeufe bleiben gestoppt.

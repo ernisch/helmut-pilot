@@ -17,11 +17,17 @@ function failureDiagnostic(error, phase) {
   const phases = ["configuration", "schema", "postgrest", "auth-cas", "registration",
     "projection", "store-cas", "fixtures", "auth-patch", "cleanup", "worker"];
   const codes = ["ERR_ASSERTION", "ENOENT", "EACCES", "EPERM", "ECONNREFUSED", "ETIMEDOUT", "EPIPE"];
-  const frame = String(error?.stack || "").split("\n").slice(1)
-    .find((line) => line.includes(__filename + ":"));
-  const point = frame?.slice(frame.indexOf(__filename) + __filename.length).match(/^:(\d+):\d+\)?$/);
+  const frames = String(error?.stack || "").split("\n").slice(1);
+  const source = ["fixtures/auth-store-partial-datenbank.js", "auth-store-cas-datenbank-test.js"]
+    .find((file) => frames.some((line) => line.includes(path.join(__dirname, file) + ":")));
+  const fullPath = source && path.join(__dirname, source);
+  const frame = fullPath && frames.find((line) => line.includes(fullPath + ":"));
+  const point = frame?.slice(frame.indexOf(fullPath) + fullPath.length).match(/^:(\d+):\d+\)?$/);
+  const http = String(error?.message || "").match(/^Supabase storage failed \(([45]\d{2})\):/);
   return { phase: phases.includes(phase) ? phase : "UNKNOWN",
     code: codes.includes(error?.code) ? error.code : "UNKNOWN",
+    type: ["AbortError", "TypeError", "AssertionError"].includes(error?.name) ? error.name : "UNKNOWN",
+    httpStatus: http ? Number(http[1]) : null, source: source || null,
     exitStatus: Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255 ? error.status : null,
     line: point ? Number(point[1]) : null };
 }
