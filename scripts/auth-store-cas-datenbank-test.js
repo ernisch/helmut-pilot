@@ -147,6 +147,15 @@ async function main() {
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
     console.log("PASS  500 von 500 Konten nach fuenf unabhaengigen Prozessen vollstaendig und eindeutig gespeichert");
     console.log("PASS  Konten bleiben inaktiv und vorhandene Betriebsdaten bleiben erhalten");
+    const authBeforeProjection = psql("select md5(data::text) from public.helmut_store where id='main-auth'");
+    const projection = await storage.readAuthStore({ fields: ["users", "sessions"] });
+    assert.equal(projection.users.length, 500);
+    assert.deepEqual(projection.sessions, []);
+    assert.equal(Object.hasOwn(projection, "adminSettings"), false);
+    await assert.rejects(storage.writeAuthStore({ ...projection }), { code: "AUTH_STORE_READ_ONLY" });
+    assert.equal((await require("../lib/helmut/accounts").listUsers()).length, 500);
+    assert.equal(psql("select md5(data::text) from public.helmut_store where id='main-auth'"), authBeforeProjection);
+    console.log("PASS  Echte PostgREST JSON-Feldauswahl liest nur Konten/Sitzungen; Teilschreiben gesperrt, SQL Bestand hashgleich");
     // Derselbe echte PostgREST Dienst prueft jetzt auch main und p, jeweils mit
     // fuenf frischen Prozessen und einer Barriere nach dem Lesen. Die bestehenden
     // 500 Registrierungen und ihre SQL Bestandspruefungen bleiben unveraendert.
@@ -170,7 +179,7 @@ async function main() {
       + require("./fixtures/quellenimport-datenbank").pruefe({ psql, anzahl: 30,
         sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),
         rueckweg: require("./quellenfrische-30-plan").baueRueckweg });
-    console.log(`PostgreSQL ${version}: ${15 + importPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    console.log(`PostgreSQL ${version}: ${16 + importPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});
