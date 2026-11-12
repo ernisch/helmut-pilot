@@ -4,13 +4,13 @@
 
 Die beschriebenen Codekorrekturen sind auf Production; die Schreibentlastung ist
 mit gesondertem GO seit14:30UTC aktiv. Ein frisches,
-vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: drei separat
+vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: vier separat
 freigegebene Quellenfenster wurden von ungeordneten Datenbankneustarts
 unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
 vereinbarten Stoppbedingung beendet; keine erneute Freigabe aus alten GOs ableiten.
 Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten/dritten NICHT.
-Ein vierter begrenzter Nachlauf ist separat freigegeben; zum folgenden
-Aktivierungsbeleg steht seine tatsaechliche Startbestaetigung noch aus.
+Auch der vierte separat freigegebene Nachlauf ist verbraucht und abgebrochen;
+Lage-/Morgenlauf4 NICHT gestartet. Keine weiteren bezahlten Arbeiten freigegeben.
 
 ### Speicherbefund und Softwareentlastung ohne Mehrkosten
 
@@ -181,7 +181,7 @@ Vorbereiteter Aktivierungsplan nach gruener CI und inaktivem Coderollout
    erst danach `rollback_20261112130226_auth_store_cas_patch_v1.sql` anwenden.
    Die Funktion wird entfernt, keine Daten oder Journale zurueckgesetzt.
 
-### Aktivierung14:28UTC und vierter freigegebener Nachlauf
+### Aktivierung14:28UTC und vierter Nachlauf: erneuter ungeordneter Neustart
 
 Nach der Rueckfrage hat der Betreiber eindeutig „Aktivierung und einen Nachlauf
 freigegeben“ bestaetigt. Genau die gepruefte Migration, Production-Flag und Redeploy;
@@ -214,10 +214,43 @@ Briefingablauf und keine RAM-Spitzenentlastung.
 Letzter Quellen-Vorflug14:31:25UTC:0lebende Sperren/Jobs, Fenster4/8,
 Sekunden1200/2400, Originale16/16, kein weiterer Neustart.14:32:06UTC genau ein
 aktives nicht ausgeschlossenes Profil bestaetigt. Startsignal14:32:06.264718UTC:
-Verwaltung frisch laden und genau einmal Quellenlauf starten. Zum Belegzeitpunkt
-noch kein tatsaechlicher neuer Start bestaetigt, deshalb0/1neue Fenster verbraucht;
-Lage-/Morgenlauf4 nicht gestartet. Nachweis des aktiven RPC im echten Ablauf,
-Quellenabschluss, Frische und Kundenbriefing weiterhin ausstehend.
+Verwaltung frisch laden und genau einmal Quellenlauf starten. Der Betreiber
+bestaetigt den tatsaechlichen einen Start; native Quittung14:34:42.186UTC:
+admin-quellen-2026-11-12-982b2e56-645d-496a-aec3-965ae0af114e,
+process=warteschlange-crawl, commit4450622a, Request9kzj5-1794494081994-1dc692846671
+auf Deploymentdpl_FmLEpVSCdhhNKhV2wFLvt5a7Sqsr. Das freigegebene Fenster ist verbraucht.
+Native Edge-Logs bestaetigen den neuen RPC wirklich mit HTTP200, unter anderem
+14:36:09.281/18.273/21.520/26.910UTC. Keine Aussage ueber jede einzelne Mutation.
+
+Um14:38:18.665504UTC startet PostgreSQL erneut ungeordnet; native Meldungen
+interrupted/not properly shut down/automatic recovery. Runtime521 bei KO-, Link-
+und Sperrschreiben, unbestaetigter Kostenabschluss; eine native Kontrollabfrage
+lief in einen MCP-Timeout. Der fehlgeschlagene Lauf hat diesmal eine gespeicherte
+Endquittung:14:38:25.866UTC,223680ms, status=failed,
+error_class=warteschlange-nicht-verfuegbar, processed6/failed1/deferred11,
+geplant158/wiederholt24/spiegelGesammelt73/spiegelGeschrieben67.
+Ein zweiter Prozess mit derselben run_id ist der Quellenbestandsaudit, NICHT
+ein weiterer Adminstart: status=blocked, errors4/configurationDrift13,
+activeProfiles1/demandedPackages9. Auswertungen deshalb immer an process UND run_id
+binden. Keine erneute Quittungsaenderung oder Wiederholung durch den Agenten.
+
+Native Nachkontrolle14:41:54UTC: sechs neue Aufrufe voll abgerechnet, zusammen
+0,043294USD; ein weiterer seit14:37:37.286UTC mit0,212000USD ungeklaert reserviert.
+Heute0,988518USD einschliesslich Reserven gebunden, gesamt2,221000USD, frozen=null,
+Vertrag unveraendert. Alle bisherigen offenen Reserven erhalten. Noch je eine
+lebende Job-/Pipeline-/Klassenlease in diesem Kontrollzeitpunkt; keine erzwungene
+Freigabe, TTL und Eigentum rein lesend pruefen. Lage-/Morgenlauf4 nicht ausgefuehrt.
+Die Stoppbedingung ist eingetreten, keinerlei weiteres bezahltes Laufrecht.
+Lesefix UND aktiver Schreibfix haben diesen Neustart nicht verhindert; dessen
+Ursache bleibt unbewiesen. Kein wiederhergestelltes Kundenbriefing behauptet.
+
+Zusaetzlicher konkreter Softwarebefund aus demselben Lauf:22als Fehler geloggte
+Quellenabrufe enden vor dem Abruf an der Google-Minutenbegrenzung. Der Crawler
+liefert ihre strukturierte anbieterVertagung weiter; handleSourceFetch verwirft
+sie beim Umbau in Error. Dadurch kann die vorhandene versuchserhaltende
+Worker-Zurueckstellung diese Anbieterpause nicht mehr erkennen. Gezielte
+Reproduktion/Korrektur dieses Uebergangs folgt kostenlos; keine neue bezahlte Probe,
+keine Umdeutung in eine bewiesene Neustartursache und keine Anbieterlimiterhoehung.
 
 ### Zusaetzliche Codekorrekturen und echte Rolloutbelege
 
