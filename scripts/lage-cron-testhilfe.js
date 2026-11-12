@@ -25,8 +25,11 @@ async function run(profiles, options = {}) {
   const tenants = require("../lib/helmut/tenant-context");
   class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } }
   const auth = { processRuns: [] }, rows = [], calls = [];
+  const serverRequire = createRequire(serverPath);
   const context = vm.createContext({
-    require: createRequire(serverPath), crypto, Date: Clock,
+    require: id => id === "./lib/helmut/quellen-versorgungsstand"
+      ? { lese: async ({ mandat }) => options.versorgung?.[mandat] || null }
+      : serverRequire(id), crypto, Date: Clock,
     console: { log() {}, warn() {}, error() {} },
     accounts: { recordSystemError: async () => {} },
     tenantContext: { resolveCronTenants: () => tenants.resolveCronTenants({ listProfiles: async () => {

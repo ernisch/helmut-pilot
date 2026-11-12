@@ -2048,6 +2048,10 @@ async function handleRequest(request, response) {
       const lageErfolg = results.filter(r => r.available === true).length;
       const lageFehler = results.filter(r => !r.available
         && !["zeitbudget", "laeuft-bereits", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
+      // Ein gespeicherter Text kann bei offenem/unbekanntem Quellenstand
+      // verfuegbar sein. Der ausdrueckliche Einzelfehler gilt auch im Abschluss.
+      const lageVollstaendig = summary.ok !== false && !summary.fairnessGestoert
+        && lageErfolg === summary.tenants && results.every(r => r.ok !== false);
       const lageTelemetrie = await recordProcessRun({
         process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
@@ -2058,11 +2062,11 @@ async function handleRequest(request, response) {
         mandatsErgebnisse,
         zielmenge: summary.tenants,
         status: summary.ok === false || lageFehler ? "failed"
-          : lageErfolg < summary.tenants || summary.fairnessGestoert ? "partial" : "success"
+          : !lageVollstaendig ? "partial" : "success"
       });
       return {
         prewarmed: lageErfolg, gestartet: results.length - skipped, uebersprungen: skipped,
-        vollstaendig: summary.ok !== false && !summary.fairnessGestoert && lageErfolg === summary.tenants,
+        vollstaendig: lageVollstaendig,
         zielmenge: summary.tenants, fairness: summary.fairness,
         ...(summary.reason ? { reason: summary.reason } : {}),
         results,
