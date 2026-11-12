@@ -471,13 +471,31 @@ function runtime(overrides = {}) {
     A(z[i - 1].includes('"$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-fortsetzung"'),
       "Fortsetzungsvariable darf nur im Fortsetzungszweig gesetzt werden: " + z[i - 1]);
     A(!/^\s*HELMUT_QUELLENVORLAUF_FORTSETZUNG:/m.test(yml), "kein workflow-/step-weites env");
-    // Der geteilte Worker-Handler bleibt unveraendert: er wirft weiterhin den schlichten Fehler,
-    // damit das Verhalten des regulaeren Workers (und aller anderen Aufrufer) identisch bleibt.
-    const pipeline = fs.readFileSync("lib/helmut/scalable-pipeline.js", "utf8");
-    A(pipeline.includes('throw new Error(ergebnis.error || "abruf-fehlgeschlagen")'),
-      "der geteilte source_fetch-Handler wurde veraendert");
-    A(!pipeline.includes("anbieterVertagung = ergebnis.anbieterVertagung"),
-      "der geteilte Handler darf die Vertagung nicht selbst anhaengen");
+  });
+
+  await test("Echter Quellenhandler gibt Anbieterpause ohne Zusatzabruf ausserhalb der Fortsetzung weiter", async () => {
+    // Die fruehere Textfixierung verbot auch die allgemeine Fehlerkorrektur vom
+    // 12.11.2026. Tragend bleibt die Isolation: keine zweite Ausfuehrung und kein
+    // Sonderlauf-Warten im normalen Pfad. Die Pausenmetadaten duerfen ankommen.
+    const SP = require("../lib/helmut/scalable-pipeline");
+    const vertagung = { grund: "minutengrenze", wartenMs: 1200, vorAbruf: true };
+    let abrufe = 0, gewartet = 0, freigaben = 0;
+    const deps = {
+      hardeningConfig: () => ({ enabled: false }),
+      crawlAllSources: async () => { abrufe++; return { results: [{ ok: false,
+        error: "anbietergrenze: minutengrenze", anbieterVertagung: vertagung }] }; },
+      klassen: { belege: async () => ({ erlaubt: true, slot: "slot-synthetisch" }),
+        gebeFrei: async () => { freigaben++; } }
+    };
+    const r = await G.versuchMitVertagung(() => SP.HANDLER.source_fetch({
+      id: "quelle-synthetisch", payload: { quelle: { id: "synthetisch", active: true } }
+    }, deps), { aktiv: false, jetzt: () => new Date(ZEIT), ende: Date.now() + 3600000,
+      schlafe: async () => { gewartet++; } });
+    A.equal(r.ok, false); A.equal(r.vertagung, false);
+    A.equal(abrufe, 1, "kein Zusatzabruf im normalen Handler");
+    A.equal(gewartet, 0, "kein Sonderlauf-Warten ausserhalb der Fortsetzung");
+    A.equal(freigaben, 1, "Klassenslot bleibt nicht belegt");
+    A.deepEqual(r.fehler.anbieterVertagung, vertagung);
   });
 
   // ── SCHUTZVERTRAG DES QUELLEN-VORLAUFS (enge Projektion) ───────────────────────────────────

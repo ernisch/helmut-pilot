@@ -11,6 +11,27 @@ const fs = require("node:fs");
 const { execFileSync, spawn } = require("node:child_process");
 const { once } = require("node:events");
 
+let diagnosticPhase = "configuration";
+function failureDiagnostic(error, phase) {
+  // Geschlossenes CI-Format: weder Fehlermeldung, SQL, Token noch Rohstack ausgeben.
+  const phases = ["configuration", "schema", "postgrest", "auth-cas", "registration",
+    "projection", "store-cas", "fixtures", "auth-patch", "cleanup", "worker"];
+  const codes = ["ERR_ASSERTION", "ENOENT", "EACCES", "EPERM", "ECONNREFUSED", "ETIMEDOUT", "EPIPE"];
+  const frames = String(error?.stack || "").split("\n").slice(1);
+  const source = ["fixtures/auth-store-partial-datenbank.js", "auth-store-cas-datenbank-test.js"]
+    .find((file) => frames.some((line) => line.includes(path.join(__dirname, file) + ":")));
+  const fullPath = source && path.join(__dirname, source);
+  const frame = fullPath && frames.find((line) => line.includes(fullPath + ":"));
+  const point = frame?.slice(frame.indexOf(fullPath) + fullPath.length).match(/^:(\d+):\d+\)?$/);
+  const http = String(error?.message || "").match(/^Supabase storage failed \(([45]\d{2})\):/);
+  return { phase: phases.includes(phase) ? phase : "UNKNOWN",
+    code: codes.includes(error?.code) ? error.code : "UNKNOWN",
+    type: ["AbortError", "TypeError", "AssertionError"].includes(error?.name) ? error.name : "UNKNOWN",
+    httpStatus: http ? Number(http[1]) : null, source: source || null,
+    exitStatus: Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255 ? error.status : null,
+    line: point ? Number(point[1]) : null };
+}
+
 async function worker() {
   const base = process.env.HELMUT_TEST_AUTH_CAS_URL;
   assert.equal(new URL(base).hostname, "127.0.0.1");
@@ -80,6 +101,7 @@ async function main() {
   let api;
   let gateway;
   try {
+    diagnosticPhase = "schema";
     psql("do $$ begin if not exists (select 1 from pg_roles where rolname='service_role') then create role service_role nologin bypassrls; end if; end $$;");
     psql("create table public.helmut_store(id text primary key, data jsonb not null); grant usage on schema public to service_role; grant select, insert, update on public.helmut_store to service_role;");
     require("./fixtures/quellenkontext-datenbank").bereiteVor({ psql });
@@ -98,6 +120,7 @@ async function main() {
     const unsigned = `${header}.${payload}`;
     const token = `${unsigned}.${crypto.createHmac("sha256", secret).update(unsigned).digest("base64url")}`;
     const apiBase = `http://127.0.0.1:${apiPort}`;
+    diagnosticPhase = "postgrest";
     api = spawn(process.env.HELMUT_TEST_POSTGREST_BIN || "/tmp/postgrest", [], {
       env: { ...process.env,
         PGRST_DB_URI: `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${db}`,
@@ -128,6 +151,7 @@ async function main() {
     process.env.SUPABASE_SERVICE_ROLE_KEY = token;
     process.env.HELMUT_SUPABASE_AUTH_STORE_ID = "main-auth";
     const storage = require("../lib/helmut/storage");
+    diagnosticPhase = "auth-cas";
     const first = await storage.readAuthStore();
     const stale = { ...first };
     first.adminSettings = { baseline: 2 };
@@ -139,6 +163,7 @@ async function main() {
 
     // Alle Prozesse abschliessen lassen, auch wenn einer einen Fehler meldet.
     // Kein Prozess bleibt als Schreiber zurueck, waehrend die Testdatenbank faellt.
+    diagnosticPhase = "registration";
     const runs = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => startRegistrationWorker({ base, token, index })));
     const rejected = runs.find((r) => r.status === "rejected");
     const counts = psql(`select count(*)||'|'||count(distinct u->>'id')||'|'||count(distinct u->>'email')||'|'||count(distinct u->>'politicianId')||'|'||count(*) filter (where u->>'active'='true') from public.helmut_store s cross join lateral jsonb_array_elements(s.data->'users') u where s.id='main-auth'`);
@@ -148,6 +173,7 @@ async function main() {
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
     console.log("PASS  500 von 500 Konten nach fuenf unabhaengigen Prozessen vollstaendig und eindeutig gespeichert");
     console.log("PASS  Konten bleiben inaktiv und vorhandene Betriebsdaten bleiben erhalten");
+    diagnosticPhase = "projection";
     const authBeforeProjection = psql("select md5(data::text) from public.helmut_store where id='main-auth'");
     const projection = await storage.readAuthStore({ fields: ["users", "sessions"] });
     assert.equal(projection.users.length, 500);
@@ -160,6 +186,7 @@ async function main() {
     // Derselbe echte PostgREST Dienst prueft jetzt auch main und p, jeweils mit
     // fuenf frischen Prozessen und einer Barriere nach dem Lesen. Die bestehenden
     // 500 Registrierungen und ihre SQL Bestandspruefungen bleiben unveraendert.
+    diagnosticPhase = "store-cas";
     const { runWriters } = require("./fixtures/store-cas-processes");
     for (const key of ["main", "p-cas-existing", "p-cas-new"]) {
       const id = key === "main" ? "main" : `main-${key}`;
@@ -171,6 +198,7 @@ async function main() {
       assert.deepEqual(actual.map((note) => note.id).sort(), expected);
       console.log(`PASS  ${key}: vier veraltete Writes verweigert, nach frischem Lesen alle fuenf Aenderungen vollstaendig`);
     }
+    diagnosticPhase = "fixtures";
     await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
     await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
     await require("./fixtures/quellenkontext-datenbank").pruefe({ base, token });
@@ -180,6 +208,7 @@ async function main() {
       + require("./fixtures/quellenimport-datenbank").pruefe({ psql, anzahl: 30,
         sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),
         rueckweg: require("./quellenfrische-30-plan").baueRueckweg });
+    diagnosticPhase = "auth-patch";
     // Die synchronen SQL-Importproben blockieren den Node-Eventloop mehrere
     // Sekunden. Danach keine alten HTTP-Keepalive-Verbindungen weiterreichen:
     // ein frisches Tor isoliert den folgenden REST-Nachweis vom alten Socketpool.
@@ -200,9 +229,13 @@ async function main() {
   }
 }
 
-module.exports = { startRegistrationWorker };
+module.exports = { startRegistrationWorker, failureDiagnostic };
 if (require.main === module) {
   (process.argv[2] === "worker" ? worker() : main()).catch((error) => {
+    if (process.env.GITHUB_ACTIONS === "true") {
+      const phase = process.argv[2] === "worker" ? "worker" : diagnosticPhase;
+      console.error(`::error title=SAFE Auth-Datenbankdiagnose::${JSON.stringify(failureDiagnostic(error, phase))}`);
+    }
     console.error(`FAIL  ${error.message}`);
     process.exitCode = 1;
   });
