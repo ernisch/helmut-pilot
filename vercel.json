@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/briefing-versorgung-reparatur-20261112": false,
       "codex/quellenautomatik-bedarf-20261111": false,
       "codex/admin-quellenstart-20261111": false,
       "codex/quellenkontingent-startfehler-20261111": false,
