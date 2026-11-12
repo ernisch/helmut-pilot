@@ -1,6 +1,100 @@
 # Fehlendes Tagesbriefing: Diagnose und Reparatur, 12.11.2026
 
-## Rollout bestaetigt; heutiger Nachlauf offen
+## Endstand: Codekorrekturen live, Briefingbetrieb weiter blockiert
+
+Die sechs beschriebenen Codekorrekturen sind auf Production. Ein frisches,
+vollstaendiges Kundenbriefing ist weiterhin NICHT nachgewiesen: beide separat
+freigegebenen Quellenfenster wurden von ungeordneten Datenbankneustarts
+unterbrochen. Weitere Quellen-, Modell- und Briefinglaeufe sind nach der
+vereinbarten Stoppbedingung beendet; keine erneute Freigabe aus alten GOs ableiten.
+Die Lage-/Morgenaufrufe des ersten Zyklus sind erfolgt, die des zweiten NICHT.
+
+### Zusaetzliche Codekorrekturen und echte Rolloutbelege
+
+[PR1160](https://github.com/ernisch/helmut-pilot/pull/1160): Lage-Gesamtabschluss
+uebernimmt negative Mandatsergebnisse. Kopf7ae6113d1007d18d44dfe18514b9f4c46b00cedb,
+beide Pflichtchecks SUCCESS in
+[CI43183841074](https://github.com/ernisch/helmut-pilot/actions/runs/43183841074).
+Merge9acd4d5948a629238648dcb07468c3e53a13359d um09:08:47UTC,
+Vercel dpl_23iZDkbq6Qj5wnw1BPNd8oBay8oa READY. Alias und Runtime bestaetigt.
+Ein automatischer Merge-Review lehnte zunaechst wegen angeblich fehlendem GO ab;
+die Dauerfreigabe wurde direkt aus AGENTS.md auf GitHub-main gelesen, derselbe
+exakt gebundene Merge danach akzeptiert. Kein offener Freigabeblocker.
+
+[PR1161](https://github.com/ernisch/helmut-pilot/pull/1161): belegter Fristablauf
+loest die lokale dauerhafte Startsperre. Kopf8faa6780d581ac31d0ecc3b7222a51d3af5f4765,
+beide Pflichtchecks SUCCESS in
+[CI43187026061](https://github.com/ernisch/helmut-pilot/actions/runs/43187026061).
+Merge94c43f8a47721579bab5ceb864c6413c747290ec um09:45:36UTC,
+Vercel dpl_637r6ZZrNY3jvWCpU7FSDKG2yUHS READY. Hauptalias auf genau dieser
+Deployment-ID, Startseite HTTP200 mit Clientversion94c43f8a; reiner Runtime-
+Leser HTTP200, commit94c43f8a, production=true, kommunikationGesperrt=true.
+Das geschuetzte Verwaltungsmodul liefert ohne Benutzersitzung401; keine
+Umgehung, kein authentifizierter Production-Bedien- oder Bytegleichheitsnachweis.
+Die20/20 lokalen HTTP-/Browserpruefungen und Pflicht-CI sind getrennte Nachweise.
+Beide neuen Pflicht-Browserjobs haben die Browserpruefung wirklich ausgefuehrt.
+Vor beiden Merges aktueller main, Diff/Kopf, Parallelitaet und leere lebende
+Leasemenge geprueft. Keine Quoten-, Budget-, Cron- oder Profilkonfiguration
+geaendert; nur die neue Arbeitsbranch-Preview deaktiviert.
+
+### Zweites ausdruecklich freigegebenes Zusatzfenster
+
+Nach dem ersten Abbruch erteilte der Betreiber ein neues GO fuer genau ein
+weiteres300s-Fenster und anschliessend je einen Lage-/Morgenlauf, bei erneutem
+Datenbankfehler ohne weiteren Lauf stoppen. Gleiche1USD/UTC-Tag/30USD insgesamt,
+einschliesslich Reserven, keine Resets/Nachrichten. Vorflug09:00:57UTC:
+1aktives Profil,0lebende Leases/Sperren, heute0,461436USD, frozen=null;
+Vertrag unveraendert. Nach Startsignal bestaetigte der Betreiber den neuen Start.
+
+Nativer Lauf admin-quellen-2026-11-12-e605748f-5578-430d-ac12-a9a420d425a8,
+09:25:56.351UTC, commit9acd4d59, Requestkdntg-1794475556051-d0cd8ea73ed6.
+Der vorab gepruefte16-Quellen-Auftrag40607078-aeaf-430d-96aa-a94a7f582097
+wurde tatsaechlich verarbeitet. Vier Modellaufrufe sind vollstaendig verbucht,
+Kosten0,026287USD; drei technisch vollstaendige Wissensobjekte gespeichert.
+Zwei davon haben leere headline/display_title trotz nichtleerem Faktentext,
+das dritte behandelt eine Papstmesse. Keine fachliche Kundenbriefing-Abnahme
+oder vollstaendige Versorgung daraus ableiten; Inhaltsqualitaet bleibt offen.
+
+Um09:27:43.720937UTC startet PostgreSQL erneut ungeordnet. Native Logmeldungen
+wie beim ersten Ausfall: interrupted/not properly shut down/automatic recovery.
+Vercel521 bei KO-/Rohdaten-/Sperr-/Quittungszugriffen und Timeout beim Vermerken
+eines unbekannten Verstehensausgangs. Laufzeit120514ms, Endquittung fehlgeschlagen;
+kein bestaetigter Abschluss. Die vereinbarte Stoppbedingung ist eingetreten.
+lage2/morgen2 wurden nicht aufgerufen; die privaten Einmal-Skripte bleiben
+unbenutzt, alte Lage-/Morgenartefakte unveraendert erhalten.
+
+Native Nachkontrolle09:33UTC: Gesamtbindung1,720205USD, heute0,487723USD,
+frozen=null. Die zwei alten heutigen Reservierungen von zusammen0,424000USD
+bleiben voll gebunden; keine neue offene Geldreservierung im zweiten Lauf.
+Vier historische Reserven ebenfalls erhalten. Fenster3/8, Sekunden900/2400,
+Originale16/16. Beide Zusatzfenster sind verbraucht, keine weitere Startfreigabe.
+Um09:44:40UTC0lebende Job-/Pipelineleases; keine alten Quittungen umgeschrieben.
+
+### Verbleibender Nachweisbedarf
+
+Der Neustart ist zweimal nativ belegt, sein Ausloeser weiter UNKNOWN.
+pg_stat_statements enthaelt nach dem zweiten Neustart nur den neuen Bestand;
+die verursachende Abfrage laesst sich daraus nicht bestimmen. Langsamster
+erfolgreicher sichtbarer Store-PATCH vor dem Abbruch4905ms. Das beweist weder
+einen OOM noch eine konkrete App-Abfrage als Absturzursache.
+Aktuelle Projektmetriken nach dem zweiten Ausfall: verfuegbar593858560Bytes
+von948191232, OOM-/PostgreSQL-Neustartzaehler0, PostgreSQL UND GoTrue mit neuen
+Startzeiten. Momentaufnahme, kein Beleg gegen einen vorigen Ressourcenfehler.
+Konfigurierter Managementtoken401; keine Rotation oder Ressourcenbuchung.
+Die aktuelle oeffentliche Management-API bietet nur aktuelle Scrape-Metriken,
+keine damit abrufbare historische Infrastruktur-Ursache. Der lokale Browser-
+Leitfaden und Cloud-Desktop-Leitfaden wurden geprueft: kein Browser-js/CUA-js
+oder Desktop-Oeffner angeboten; keine angemeldete Dashboard-Sitzung kontrolliert.
+Die vollstaendige Umgebungsdiagnose bleibt privat, keine Tokens im Repository.
+
+Der Betreiber wurde um den Ereigniswortlaut im Supabase-Dashboard fuer09:11
+und10:27Berliner Zeit gebeten. Naechster Schritt: diesen Infrastrukturgrund
+belegen und dann eine gezielte Reparatur vorbereiten; keine weiteren bezahlten
+Wiederholungen, Limits erhoehen oder Daten/Reserven zuruecksetzen.
+Ein Supportentwurf ist privat vorbereitet, NICHT versandt. Externe Nachrichten
+sind von diesem Auftrag nicht freigegeben.
+
+## Historie: erste Reparatur und erster Nachlauf
 
 [PR1158](https://github.com/ernisch/helmut-pilot/pull/1158) wurde am12.11.,
 07:52:14UTC nach vollstaendig gruener Endkopf-CI gemergt: gepruefter Kopf
@@ -30,8 +124,101 @@ Der Betreiber hat fuer die Zeit nach dem Rollout genau ein weiteres Quellenfenst
 fuer den bestehenden Einprofilbetrieb sowie anschliessend die vorhandenen
 Lage-/Morgenlaeufe freigegeben, innerhalb1USD/UTC-Tag und30USD insgesamt,
 ohne Kontingentreset und ohne externe Nachrichten. Der echte angemeldete
-Adminstart ist noch erforderlich; ein Startbeleg nach dem Rollout fehlt bisher.
-Der Nachlauf und die produktive Wiederherstellung bleiben bis zur Kontrolle offen.
+Adminstart und die nachfolgenden Lage-/Morgenlaeufe sind erfolgt; Ergebnis unten.
+Die vollstaendige produktive Wiederherstellung bleibt offen.
+
+## Erster Zusatzlauf und erster Datenbankblocker
+
+Der Betreiber bestaetigte den Start mit „gestartet“. Nativer Quellenstart
+08:09:27UTC, Lauf
+`admin-quellen-2026-11-12-6d6ed153-9013-4cff-b6e4-28aa61d74fc9`,
+Production weiterhin d72cd218. Das eine zusaetzliche Fenster ist verbraucht:
+2/8 Fenster,600/2400Sekunden; Originale unveraendert16/16.
+Keine Wiederholung, kein Reset und keine neue Quellenfreigabe.
+
+Zwei vollstaendige Wissensobjekte sind um08:09:57 und08:10:11 gespeichert.
+Ihre echten Quellenpublikationen sind23.09. beziehungsweise30.10.; das ist
+Verarbeitungsfortschritt, kein Nachweis aktueller Meldungen. Der bearbeitete
+Auftrag enthaelt auch Quellen bis11.11., wurde aber nicht abgeschlossen.
+
+Ab08:10:12 meldet PostgREST Timeouts,08:10:49/51 native Statement-Timeouts
+beim Lesen von helmut_store beziehungsweise beim Zaehlen der Wissensobjekte.
+Um08:11:29 startet PostgreSQL tatsaechlich neu. Native Logmeldungen:
+„database system was interrupted“ und „was not properly shut down; automatic
+recovery in progress“; pg_postmaster_start_time bestaetigt08:11:29.034722UTC.
+Vercel meldet521 beim Speichern und503/PGRST002 beim Quellenabschluss.
+Die Ursache des ungeordneten Datenbankneustarts ist aus diesen Logs NICHT
+bestimmbar; kein belegter OOM-, Wartungs- oder App-Lastnachweis.
+Der Health-Advisor liefert keine Hinweise, beweist aber keine Fehlerfreiheit.
+Der Quellenprozess bleibt wegen fehlender Endquittung technisch running;
+der abgelaufene Joblease und die um08:19:43 abgelaufene Globalsperre wurden
+nicht manuell geloescht. Originalstatus und Fehler bleiben erhalten.
+
+Nach REST-Erholung, leerer lebender Lease-Menge, erneutem Kosten-/Vertrags-
+vorflug und bestaetigter Runtime-Nachrichtensperre genau einmal die vorhandenen
+Lage-/Morgenhandler aufgerufen. Lage08:25:32–08:26:05 HTTP200, ein Text neu
+gespeichert. Einzelergebnis meldet quellenversorgung-offen/ok=false;
+der bisherige Gesamtabschluss behauptet dennoch vollstaendig=true/success.
+Dieser damit produktiv reproduzierte fuenfte Fehler wird korrigiert:
+ein ausdruecklich negatives Einzelergebnis verhindert Gesamtgruen, bei weiter
+verfuegbarem Text wird der Quellenrueckstand als partial protokolliert.
+Gezielte echte Handler-/Persistenzpruefung10/10 und Fortsetzungspruefung14/14
+bestanden; offener, unbekannter, gemischter und gesunder Quellenstand geprueft.
+Zwei Testaufrufe auf nicht vorhandene Dateipfade fuehrten keine Suite aus;
+der vorhandene19/19-Paketnachweis bleibt unveraendert. Die tatsaechliche
+Statusgroessenpruefung current-state-groesse-test.js besteht4/4 bei29979Zeichen.
+
+Morgen08:26:23–08:26:33 HTTP200: Tagespaket und Erfolgsquittung gespeichert
+und gegengelesen, aber Paket vollstaendig=false, Versorgung partial/0von1.
+Native Inhaltspruefung quellenversorgung-unvollstaendig; Hauptthema weiterhin
+Pflegereform mit echter Publikation06.11. Push explizit gesperrt:
+testfenster-sperrt-alle-aussenkanaele. Kein zweiter Lage-/Morgenaufruf.
+
+Kostenbuch nach den Nachlaeufen:1,693918USD gebunden insgesamt,
+heute0,461436USD einschliesslich0,424000USD fuer zwei offene Reservierungen
+aus dem unterbrochenen Quellenjob. Beide bleiben konservativ voll gebunden;
+vier historische Reserven ebenfalls unveraendert. frozen=null, Vertrag und
+1USD/Tag/30USD insgesamt unveraendert. Kein blinder Wiederholungsaufruf.
+
+Noch offen: Ursache/Stabilitaet des Datenbankausfalls, Quellenauftraege und
+frisches vollstaendiges Tagesbriefing. Ein weiteres Quellenfenster liegt
+ausserhalb der verbrauchten Einmalfreigabe und benoetigt eine neue konkrete
+Betreiberentscheidung gemaess AGENTS.md/Production Schutz. Es besteht kein
+technischer Zwang, bis morgen zu warten; die Zusatzverarbeitung ist begrenzt.
+
+## Historie: weiterer Arbeitsvorrat und Verwaltungssperre
+
+Zusaetzliche rein lesende Diagnose: Supabase-Projekt ACTIVE_HEALTHY,
+Metrikfeed HTTP200. Aktuell439.664.640 von948.191.232Bytes verfuegbar,
+OOM-Zaehler0. Die momentanen Metriken beweisen keine Ursache des vorigen
+Neustarts. Der konfigurierte Managementtoken liefert401; keine Credentials
+geaendert, der dokumentierte Projektmetrikfeed funktioniert mit dem bestehenden
+Serverschluessel. Weder Computewechsel noch Neustart oder Budgetaenderung.
+
+Von89 oeffentlichen Quelldokumenten ab11.11.,08:00UTC haben73 gemaess
+unveraendertem Inhaltsvertrag brauchbaren Bestandstext,16 benoetigen Originale.
+Zwei wartende Auftraege enthalten je16 der aktuellen Bestandstexte. Privater
+Replay aller32 gebundenen Original-Snapshots: Auftrag
+40607078-aeaf-430d-96aa-a94a7f582097 besteht16/16 Hash-/Metadatenbindungen,
+kein neuer Originalabruf erforderlich. Der andere Auftrag behaelt seine echte
+Metadatenabweichung und bleibt gesperrt. Das ist ein konkreter Arbeitsvorrat,
+kein behaupteter weiterer Production-Erfolg; noch kein neuer Lauf freigegeben.
+
+Beim Vorbereiten der Bedienung fiel eine weitere konkrete Sperre auf:
+original-quellenlauf.mjs behaelt unbekannte Auftragskennungen unbegrenzt in der
+Sitzung und deaktiviert jeden neuen Start, auch wenn die maximale Laufzeit
+nachweislich vorbei ist. Korrektur: nur ein korrelierter, authentifizierter
+Server-Status mit gueltiger Startzeit und abgelaufenen300s gibt die lokale
+Startsperre frei. Der Ausgang bleibt unbekannt; kein Endbeleg, keine Buchung,
+kein Job oder Kontingent wird umgeschrieben. Jeder weitere Lauf erfordert einen
+neuen ausdruecklichen Klick, eine neue Kennung, CSRF und saemtliche bisherigen
+serverseitigen Sperr-/Budgetpruefungen. Ein noch offener POST, unlesbarer Beleg,
+ungueltige Startzeit oder fremde Laufkennung halten die Sperre weiter fest.
+20/20 gezielte lokale Pruefungen bestanden, darunter vier echte Chromium-
+Browsergruppen mit1280/390/320px und dem beleglosen abgelaufenen Auftrag.
+0 externe Aufrufe; Originalquittung und Verbrauch im Browserfall erhalten.
+Eigener Arbeitsbranch; Preview fuer ihn explizit deaktiviert, damit keine
+Vorschau mit Productionzugang entsteht. Pflicht-CI und Rollout noch offen.
 
 ## Produktionsbefund vor der Reparatur
 

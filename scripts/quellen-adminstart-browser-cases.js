@@ -2,8 +2,9 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
-exports.browserCheck = async ({ base, check, reset, setHold, advance, plans }) => {
+exports.browserCheck = async ({ base, check, reset, setHold, advance, plans, seedRunning }) => {
   let playwright;
   for (const name of ["playwright", "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"]) {
     try { playwright = require(name); break; } catch {}
@@ -74,6 +75,22 @@ exports.browserCheck = async ({ base, check, reset, setHold, advance, plans }) =
       await page.reload();
       await page.getByRole("status").filter({ hasText: "Verarbeitet: 3" }).waitFor(); assert.equal(posts, before);
       await page.getByRole("button", { name: "Status prüfen", exact: true }).waitFor({ state: "hidden" });
+    });
+    await check("Abgelaufener Lauf ohne Endbeleg bleibt unbekannt und erlaubt erst nach Klick einen neuen Auftrag", async () => {
+      reset();
+      const a = { auftragId: crypto.randomUUID(), tag: "2026-11-11" };
+      const original = seedRunning(a), before = posts, planned = plans();
+      await page.evaluate(value => sessionStorage.setItem("helmut-admin-quellenauftrag-v1", JSON.stringify(value)), a);
+      await page.reload();
+      await page.getByRole("status").filter({ hasText: "Der Abschluss bleibt unbekannt" }).waitFor();
+      assert.equal(await button.isDisabled(), false); assert.equal(posts, before);
+      assert.equal(await page.evaluate(() => sessionStorage.getItem("helmut-admin-quellenauftrag-v1")), null);
+      const nextRequest = page.waitForRequest(r => r.url() === base + "/api/admin/quellenlauf" && r.method() === "POST");
+      await button.click();
+      assert.notEqual((await nextRequest).postDataJSON().auftragId, a.auftragId);
+      await page.getByRole("status").filter({ hasText: "Verarbeitet: 3" }).waitFor();
+      assert.equal(posts, before + 1); assert.equal(plans(), planned + 1);
+      assert.equal(original.status, "running"); assert.equal(original.finishedAt, undefined);
     });
     const out = process.env.HELMUT_ADMINSTART_BELEGE;
     if (out) { fs.mkdirSync(out, { recursive: true }); await page.screenshot({ path: path.join(out, "quellenstart-mobil.png"), fullPage: true }); }

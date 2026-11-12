@@ -109,6 +109,31 @@ async function check(name, fn) {
     assert.equal(r.response.lauftelemetrie.vollstaendig, false);
     assert.equal(r.response.lauftelemetrie.fehler[0].backend, "relational");
   });
+  await check("Gespeicherte Lage mit offenem oder unbekanntem Quellenstand bleibt unvollstaendig", async () => {
+    for (const zustand of ["offen", "unbekannt", "kein-bekannter-rueckstand"]) {
+      const r = await run([{ id: "local-versorgung" }], {
+        versorgung: { "local-versorgung": { version: 1, zustand } }
+      });
+      persisted(r);
+      assert.equal(r.response.prewarmed, 1, "Der wirklich gespeicherte Text bleibt gezaehlt");
+      const vollstaendig = zustand === "kein-bekannter-rueckstand";
+      assert.equal(r.response.vollstaendig, vollstaendig);
+      assert.equal(r.rows[0].status, vollstaendig ? "success" : "partial");
+      assert.equal(r.rows[0].failed_count, 0, "Quellenrueckstand ist kein Modellfehler");
+      assert.equal(r.response.results[0].ok === false, !vollstaendig);
+    }
+  });
+  await check("Ein offener Quellenstand verhindert Gesamtgruen bei mehreren gespeicherten Lagen", async () => {
+    const r = await run([{ id: "local-ready" }, { id: "local-open" }], {
+      versorgung: { "local-open": { version: 1, zustand: "offen" } }
+    });
+    persisted(r);
+    assert.equal(r.response.prewarmed, 2);
+    assert.equal(r.response.vollstaendig, false);
+    assert.equal(r.rows[0].status, "partial");
+    assert.equal(r.response.fairness.erfolgreich.length, 1);
+    assert.equal(r.response.fairness.fehlgeschlagen.length, 1);
+  });
   await check("Ohne Cronberechtigung startet weder Facharbeit noch Protokollierung", async () => {
     const r = await run([{ id: "local-one" }], { authorized: false });
     assert.equal(r.calls.length, 0); assert.equal(r.rows.length, 0); assert.equal(r.blob, null);
