@@ -95,6 +95,38 @@ async function httpFlow(factory, messages) {
     check("Anonyme Hilfe bleibt generisch; internes Fehleraudit nennt nur den festen SMTP-Grund", anonymous.status === 200
       && receipt?.detail.endsWith("versand=nein · grund=smtp-anmeldung-abgelehnt")
       && !JSON.stringify(anonymous.body).includes("smtp-") && messages.length === start + 2);
+    const slot = Symbol.for("@vercel/request-context");
+    const vorherigerKontext = Object.getOwnPropertyDescriptor(globalThis, slot);
+    const originalToken = accounts.createPasswordToken;
+    const gehalten = [];
+    let freigeben;
+    const blockiert = new Promise(resolve => { freigeben = resolve; });
+    try {
+      process.env.HELMUT_SMTP_PASSWORD = PASSWORT;
+      Object.defineProperty(globalThis, slot, { configurable: true, value: {
+        get: () => ({ waitUntil: promise => gehalten.push(promise) })
+      } });
+      accounts.createPasswordToken = async (...args) => { await blockiert; return originalToken(...args); };
+      const frueheAntwort = await request(port, "POST", "/api/auth/request-reset", { email });
+      let abgeschlossen = false;
+      gehalten[0]?.then(() => { abgeschlossen = true; });
+      await Promise.resolve();
+      check("Vercel haelt die echte Versandzusage ueber die fruehe generische HTTP-Antwort hinaus",
+        frueheAntwort.status === 200 && frueheAntwort.body.ok === true
+        && gehalten.length === 1 && typeof gehalten[0]?.then === "function"
+        && !abgeschlossen && messages.length === start + 2);
+      freigeben();
+      await gehalten[0];
+      const belegt = (await accounts.listAuditEvents()).find(e => e.action === "password.reset-requested" && e.userId === customer.id);
+      check("Gehaltene Anfrage beendet Token, tatsaechliches lokales SMTP und Versandquittung",
+        abgeschlossen && messages.length === start + 3 && belegt?.detail.endsWith("versand=ja"));
+    } finally {
+      freigeben();
+      await require("../lib/helmut/reset-timing").offeneArbeit();
+      accounts.createPasswordToken = originalToken;
+      if (vorherigerKontext) Object.defineProperty(globalThis, slot, vorherigerKontext);
+      else delete globalThis[slot];
+    }
   } finally {
     nodemailer.createTransport = originalFactory;
     if (server?.listening) await new Promise(resolve => server.close(resolve));
