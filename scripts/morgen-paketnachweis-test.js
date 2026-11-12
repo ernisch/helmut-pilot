@@ -109,6 +109,10 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(r.response.versorgung.vollstaendigePakete, 0);
     assert.equal(r.response.versorgung.fehlt, 1);
     assert.equal(r.saved.telemetry[0].status, "partial");
+    assert.equal(r.response.ok, false, "ein unvollstaendiges Morgenpaket ist kein erfolgreicher Gesamtabschluss");
+    assert.equal(r.response.status, "partial");
+    assert.equal(r.response.vollstaendig, false);
+    assert.equal(r.response.reason, "morgenversorgung-unvollstaendig");
   });
   await test("Spaeter gespeicherte Lage ergaenzt dasselbe Paket ohne zweiten Push", async () => {
     const first = await run(), before = clone(first.saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`));
@@ -117,6 +121,10 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(second.response.versorgung.vollstaendig, true);
     assert.equal(second.response.versorgung.versorgt, 1);
     assert.equal(second.saved.telemetry.at(-1).status, "success");
+    assert.equal(second.response.ok, true);
+    assert.equal(second.response.status, "success");
+    assert.equal(second.response.vollstaendig, true);
+    assert.equal(second.response.reason, undefined);
     const row = second.saved.rows.get(before.id);
     assert.deepEqual(row.payload.vorherigerStand, before);
     assert.equal(row.payload.pruefung.bestanden, false);
@@ -159,6 +167,9 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
       assert.equal(r.response.frischevertrag.belegt, 0);
       assert.equal(r.saved.telemetry[0].status, "failed");
       assert.equal(r.saved.telemetry[0].failed_count, 1);
+      assert.equal(r.response.ok, false);
+      assert.equal(r.response.status, "failed");
+      assert.equal(r.response.vollstaendig, false);
       assert(!r.saved.rows.has(`bf-${profile.id}-${L.SLOT_ERFOLG}-${day}`));
       assert.equal(r.saved.pushes.length, 0);
     });
@@ -209,6 +220,9 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(first.response.versorgung.paketeGespeichert, first.calls.length);
     assert.equal(first.response.versorgung.fehlt, 500);
     assert.equal(first.saved.telemetry[0].status, "partial");
+    assert.equal(first.response.ok, false);
+    assert.equal(first.response.status, "partial");
+    assert.equal(first.response.vollstaendig, false);
     const second = await run(profiles, { saved: first.saved, nowMs: first.now + 1000, advanceMs: 20000, runId: "second" });
     assert(second.calls.every(id => !first.calls.includes(id)));
     assert.equal(second.response.versorgung.ziel, 500);
@@ -224,6 +238,9 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(r.response.versorgung.quittungen, 500);
     assert.equal(r.response.versorgung.paketeGespeichert, 500);
     assert.equal(r.response.versorgung.vollstaendig, true);
+    assert.equal(r.response.ok, true);
+    assert.equal(r.response.status, "success");
+    assert.equal(r.response.vollstaendig, true);
     assert.equal(r.response.versorgung.fachlicheAbnahme, "offen");
     assert.equal(r.saved.telemetry[0].status, "success");
   });
@@ -238,8 +255,14 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     const r = await run([profile], { listError: true });
     assert.equal(r.saved.telemetry[0].status, "failed");
     assert.equal(r.response.versorgung.vollstaendig, false);
+    assert.equal(r.response.ok, false);
+    assert.equal(r.response.status, "failed");
+    assert.equal(r.response.reason, "mandanten-liste-nicht-ladbar", "der urspruengliche Fehlergrund bleibt erhalten");
     const empty = await run([{ ...profile, aktiv: false }]);
     assert.equal(empty.saved.telemetry[0].status, "success"); assert.equal(empty.calls.length, 0);
+    assert.equal(empty.response.ok, true);
+    assert.equal(empty.response.status, "success");
+    assert.equal(empty.response.vollstaendig, true);
     const changed = await run([profile], { currentProfiles: { [profile.id]: { ...profile, aktiv: false } } });
     assert.equal(changed.calls.length, 0); assert.equal(changed.response.versorgung.vollstaendig, false);
   });
@@ -257,6 +280,9 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(off.response.frischevertrag.vertrag, "not-aus");
     assert.equal(off.response.frischevertrag.nichtPersistiert, 0);
     assert.equal(off.response.versorgung.vollstaendig, false);
+    assert.equal(off.response.ok, true, "der ausdrueckliche Not-Aus behaelt den technischen Leerlauferfolg");
+    assert.equal(off.response.status, "success");
+    assert.equal(off.response.vollstaendig, false);
     assert.equal(off.saved.writes.filter(s => s === L.SLOT_ERFOLG || s === L.SLOT_FEHLER).length, 0);
   });
   await test("Tageswechsel waehrend des Baus schreibt kein Paket fuer einen fremden Tag", async () => {

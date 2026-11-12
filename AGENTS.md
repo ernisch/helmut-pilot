@@ -175,6 +175,33 @@ kosmetischen Umbauten oder neuen Funktionen ohne Auftrag. Bewaehrte Vorbilder nu
 bei belegtem Engpass fuer die kleinste passende Loesung nutzen. Keine neue Infrastruktur
 oder Anbieter allein wegen eines Vorbilds. Fremde/unabhaengige PRs sind kein Auftrag.
 
+## Supabase Support: faktenbasierte Ticketentwuerfe
+
+Wenn bei einem beauftragten Arbeitsschritt ein belegter Fehler auftritt, bei dem
+Supabase Support tatsaechlich helfen koennte, zuerst den eigenen Anwendungscode,
+die vorhandene Konfiguration und bereits dokumentierte Ursachen gezielt pruefen.
+Nicht jeden Codex, Netzwerk oder Produktfehler als Supabase Fehler einstufen.
+Keine neuen Massentests, kostenpflichtigen Versuche oder Diagnosesysteme starten.
+
+Falls Support sinnvoll bleibt, ohne erneute Aufforderung einen kurzen
+**englischen Ticketentwurf** fuer den Betreiber aus vorhandenen Belegen erstellen.
+Reihenfolge der Abschnitte: Summary, Impact, Expected behaviour, Actual behaviour,
+Steps to reproduce, Environment, Troubleshooting completed, Evidence, Request.
+Nur gesicherte Fakten, genaue Fehlermeldungen, relevante Projektkennung,
+Zeitpunkte samt Zeitzone, knappe Logs oder Request IDs und belegte bisherige
+Versuche aufnehmen. Unklare Punkte deutlich kennzeichnen, keine Ursachen,
+Reproduktionsschritte oder Ergebnisse erfinden. Unter 300 Woerter anstreben,
+essentielle Codeauszuege ausgenommen; hoechstens drei Fragen unter
+Missing information, falls wirklich erforderlich.
+
+Vor der Ausgabe personenbezogene Daten, Mandatsinhalte, Zugangsdaten,
+Passwoerter, API Keys, Tokens und sonstige Secrets entfernen. Keine rohen
+Logdumps oder vertraulichen Originale in Git, PRs oder Supporttickets ablegen.
+Entwurf dem Betreiber zur Pruefung vorlegen; **kein automatisches Absenden,
+keine externe Kontaktaufnahme oder verbindliche Zusage ohne konkrete Freigabe**.
+Ist Support nicht sinnvoll, knapp den internen Blocker und genau einen
+naechsten Schritt nennen.
+
 ## Tests
 
 Gezielt pruefen, wenn geaenderte Funktion, Fehlerreproduktion, geltender Pruefvertrag

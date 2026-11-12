@@ -1348,7 +1348,13 @@ async function handleRequest(request, response) {
         status: versorgung.status
       });
       console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"} frischebelege=${frischeAbdeckung.belegt}/${frischeAbdeckung.mandate}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
-      return { ...summary, versorgung, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
+      // Gespeicherte technische Quittungen koennen zu einem unvollstaendigen
+      // Morgenpaket gehoeren. Die kanonische Versorgungsbilanz gilt deshalb
+      // auch fuer den Gesamtabschluss, nicht nur fuer die Lauftelemetrie.
+      return { ...summary, ok: versorgung.status === "success", status: versorgung.status,
+        vollstaendig: versorgung.vollstaendig,
+        ...(!summary.reason && versorgung.status !== "success" ? { reason: "morgenversorgung-unvollstaendig" } : {}),
+        versorgung, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
     });
   }
 
