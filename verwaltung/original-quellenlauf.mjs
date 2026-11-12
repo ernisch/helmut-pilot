@@ -28,7 +28,11 @@ export function createQuellenlauf({ fetcher = globalThis.fetch, host = globalThi
       // Solange der POST antworten kann, darf ein fehlender Startbeleg die Anzeige
       // nicht als Abbruch ausgeben. Die gesendete Mutation wird dadurch nicht beendet.
       if (busy && r.zustand === "unbekannt") return;
-      if (!busy && ["abgeschlossen", "teilweise"].includes(r.zustand)) forget();
+      // Nur der korrelierte Serverbeleg kann das Ende der maximalen Laufzeit
+      // bestaetigen. Der alte Ausgang bleibt unbekannt; ein neuer Auftrag
+      // braucht weiterhin einen ausdruecklichen Klick und eine neue Kennung.
+      if (!busy && (["abgeschlossen", "teilweise"].includes(r.zustand)
+        || r.zustand === "unbekannt" && r.grund === "laufzeit-ohne-abschlussbeleg" && r.laufzeitAbgelaufen === true)) forget();
       update(r);
     } catch (e) { if (!closed && auftrag === current && !busy) update({ zustand: "unbekannt", grund: "laufbeleg-nicht-lesbar" }); }
   }
@@ -90,6 +94,8 @@ export function quellenlaufText(s) {
   };
   const counts = [["Verarbeitet", s.verarbeitet], ["Reserviert", s.reserviert], ["Zurückgestellt", s.zurueckgestellt], ["Fehlgeschlagen", s.fehlgeschlagen], ["Planrest", s.planAusstehend]]
     .filter(([, n]) => Number.isSafeInteger(n) && n >= 0).map(([label, n]) => `${label}: ${n}`).join(" · ");
+  if (s.zustand === "unbekannt" && s.grund === "laufzeit-ohne-abschlussbeleg" && s.laufzeitAbgelaufen === true)
+    return "Die maximale Laufzeit ist abgelaufen. Der Abschluss bleibt unbekannt. Vor einem neuen manuellen Auftrag gespeicherten Stand und Kosten prüfen.";
   return [labels[s.zustand] || labels.unbekannt, s.grund ? (reasons[s.grund] || `Grund: ${s.grund}`) : "", counts].filter(Boolean).join(" ");
 }
 
