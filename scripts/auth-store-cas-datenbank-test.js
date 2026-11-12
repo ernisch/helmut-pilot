@@ -84,6 +84,7 @@ async function main() {
     psql("create table public.helmut_store(id text primary key, data jsonb not null); grant usage on schema public to service_role; grant select, insert, update on public.helmut_store to service_role;");
     require("./fixtures/quellenkontext-datenbank").bereiteVor({ psql });
     require("./fixtures/raw-document-cas-datenbank").bereiteVor({ psql });
+    require("./fixtures/auth-store-partial-datenbank").bereiteVor({ psql });
     // Altbestand ohne Revision: gerade dieser erste CAS Schritt muss sicher sein.
     psql(`insert into public.helmut_store values ('main-auth', '{"users":[],"adminSettings":{"baseline":1}}'::jsonb)`);
     const listener = net.createServer();
@@ -179,7 +180,8 @@ async function main() {
       + require("./fixtures/quellenimport-datenbank").pruefe({ psql, anzahl: 30,
         sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),
         rueckweg: require("./quellenfrische-30-plan").baueRueckweg });
-    console.log(`PostgreSQL ${version}: ${16 + importPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    const authPatchPruefungen = await require("./fixtures/auth-store-partial-datenbank").pruefe({ psql, base, token, secret });
+    console.log(`PostgreSQL ${version}: ${16 + importPruefungen + authPatchPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});

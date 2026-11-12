@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/auth-schreiblast-vorbereiten-20261112": false,
       "codex/auth-leselast-reduzieren-20261112": false,
       "codex/briefing-versorgung-reparatur-20261112": false,
       "codex/quellenlauf-abschluss-reparatur-20261112": false,
