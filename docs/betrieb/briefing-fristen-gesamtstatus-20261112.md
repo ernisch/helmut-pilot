@@ -17,6 +17,13 @@ ueber lokal.js: Anbieter-Fachpfad71/71, Queue-Inhaltsversorgung29/29 und
 Morgenpaketnachweis19/19 bestanden; Syntax und Diff geprueft. Spaete positive
 und negative Antworten erzeugen keine neuen Writes oder unbehandelten Rejections.
 
+Eine isolierte lokale Probe mit zwei fiktiven Profilen bestand ausserdem den
+Verarbeitungsweg mit PostgreSQL17.6, PostgREST14.5 und pgvector0.8.0 einschliesslich
+nativer Vektorsuche, Lage und Morgenpaket. Gemeinsames RAM-Limit: 948191232 Bytes;
+kein OOM oder Neustart. Modellantworten waren lokale Fixtures. Die x86-Probe
+bildet weder den Supabase-Host noch dessen Control Plane ab und ist kein
+Produktions- oder Mock100-Nachweis.
+
 Stand: Korrekturen vorbereitet, Pflicht-CI und Rollout noch offen. Sie beweisen
 weder die Ursache der Produktionsneustarts noch einen wiederhergestellten
 Briefingbetrieb. Keine weiteren Betriebs-/Modelllaeufe oder Konfigurationsaenderung.
