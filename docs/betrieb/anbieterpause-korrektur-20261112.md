@@ -44,10 +44,20 @@ beginnt. Die Konfliktaufloesung behaelt diesen vorhandenen Fix und die geschloss
 Diagnose gemeinsam; keine Kopie oder Abschwaechung des Nachweises.
 Der integrierte native Kontodatenbanktest besteht lokal44/44Pruefungen mit echtem
 PostgreSQL17.6 und PostgREST12.2.3, einschliesslich aller neun Feldpatch-Faelle.
-Der Testcluster wurde danach beendet und entfernt. Der neue Pflichtlauf bleibt
+Der Testcluster wurde danach beendet und entfernt. Der neue Pflichtlauf blieb
 bis zu seinem tatsaechlichen erfolgreichen Abschluss offen.
 
-Status: Pflicht-CI und Coderollout ausstehend. Kein Nachweis fuer einen
+Status: PR1168 gemergt und Quellenkorrektur live. Kein Nachweis fuer einen
 wiederhergestellten Briefingbetrieb; weitere betriebliche Laeufe bleiben gestoppt.
 Ausfuehrliche Betriebsnachweise bleiben lokal, dieser Nachweis enthaelt nur die
 Codekorrektur und deren Pruefstand.
+
+Abschluss: Beide Pflichtchecks des integrierten Kopfes sind im
+[Lauf43261005785](https://github.com/ernisch/helmut-pilot/actions/runs/43261005785)
+erfolgreich, einschliesslich aller Datenbank-, Offline-, Bereichs- und abschliessenden
+Z22-Pruefungen. Browserausfuehrung planmaessig uebersprungen; Pflichtcheck erfolgreich.
+[PR1168](https://github.com/ernisch/helmut-pilot/pull/1168) ist auf3b790d2c gemergt.
+Regulaeres Deployment READY; Hauptdomain und exakter laufender Commit rein lesend
+bestaetigt. Kommunikationssperre und abgewiesene anonyme Sitzung bestaetigt.
+Keine Quellen-, Modell- oder Briefingausfuehrung fuer diese Rolloutkontrolle.
+Die Produktionsneustartursache bleibt offen; kein frisches Tagesbriefing behauptet.
