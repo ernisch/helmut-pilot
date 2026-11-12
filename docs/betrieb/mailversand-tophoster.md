@@ -119,3 +119,11 @@ Beide Erstbefunde bleiben erhalten; kein weiterer Wiederholungslauf. Der Testhar
 nach den langen synchronen SQL-Proben ein frisches lokales HTTP-Tor und nennt bei Netzwerkfehlern
 nur Methode/Pfad/Fehlerklasse. Die Datenbank, Testassertionen und Einmalbindung werden nicht geändert.
 Eine neue reguläre Pflicht-CI prüft den korrigierten Kopf; aktuelles Ergebnis siehe PR1155.
+
+Der folgende Lauf43249919213 bestand den erneuerten Kontoschreibschutz, brach später
+aber beim Start des unveränderten pg_cron-Testcontainers ab. Lokal reproduziert:
+`undefined symbol: heap_datum_check`. Der Build hatte neue PostgreSQL17.12-Header mit
+der fest gebundenen17.6-Laufzeit kombiniert. Der reine Testcontainer bindet nun auch
+sein17.6-Headerpaket per Version und SHA256 (amd64/arm64); pg_cron1.6.4, Laufzeitimage,
+Prüfungen und Production bleiben unverändert. Der korrigierte lokale Build ist erfolgreich;
+der vorhandene Offline-Belegtest besteht17/17 und der echte lokale PG17.6-/pg_cron-Test12/12. Neue Pflicht-CI: siehe PR1155.
