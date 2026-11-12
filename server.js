@@ -6501,6 +6501,7 @@ function handleAuthRequestReset(request, response) {
   if (!allowRate(request, "request-reset", 5, 15 * 60 * 1000)) {
     return sendTooManyRequests(response);
   }
+  resetTiming.bereiteLaufzeitVor();
   const beginn = Date.now();
   return handleJson(request, response, async (body) => {
     const email = accounts.normalizeEmail(body.email);

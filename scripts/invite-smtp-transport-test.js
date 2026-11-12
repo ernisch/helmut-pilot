@@ -59,6 +59,7 @@ async function httpFlow(factory, messages) {
   try {
     Object.assign(process.env, env);
     nodemailer.createTransport = factory;
+    require("../lib/helmut/reset-timing").bereiteLaufzeitVor({ VERCEL: "1" });
     const handler = require("../server"), accounts = require("../lib/helmut/accounts");
     server = http.createServer(handler); await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
     const port = server.address().port, start = messages.length;
@@ -95,6 +96,38 @@ async function httpFlow(factory, messages) {
     check("Anonyme Hilfe bleibt generisch; internes Fehleraudit nennt nur den festen SMTP-Grund", anonymous.status === 200
       && receipt?.detail.endsWith("versand=nein · grund=smtp-anmeldung-abgelehnt")
       && !JSON.stringify(anonymous.body).includes("smtp-") && messages.length === start + 2);
+    const slot = Symbol.for("@vercel/request-context");
+    const vorherigerKontext = Object.getOwnPropertyDescriptor(globalThis, slot);
+    const originalToken = accounts.createPasswordToken;
+    const gehalten = [];
+    let freigeben;
+    const blockiert = new Promise(resolve => { freigeben = resolve; });
+    try {
+      process.env.HELMUT_SMTP_PASSWORD = PASSWORT;
+      Object.defineProperty(globalThis, slot, { configurable: true, value: {
+        get: () => ({ waitUntil: promise => gehalten.push(promise) })
+      } });
+      accounts.createPasswordToken = async (...args) => { await blockiert; return originalToken(...args); };
+      const frueheAntwort = await request(port, "POST", "/api/auth/request-reset", { email });
+      let abgeschlossen = false;
+      gehalten[0]?.then(() => { abgeschlossen = true; });
+      await Promise.resolve();
+      check("Vercel haelt die echte Versandzusage ueber die fruehe generische HTTP-Antwort hinaus",
+        frueheAntwort.status === 200 && frueheAntwort.body.ok === true
+        && gehalten.length === 1 && typeof gehalten[0]?.then === "function"
+        && !abgeschlossen && messages.length === start + 2);
+      freigeben();
+      await gehalten[0];
+      const belegt = (await accounts.listAuditEvents()).find(e => e.action === "password.reset-requested" && e.userId === customer.id);
+      check("Gehaltene Anfrage beendet Token, tatsaechliches lokales SMTP und Versandquittung",
+        abgeschlossen && messages.length === start + 3 && belegt?.detail.endsWith("versand=ja"));
+    } finally {
+      freigeben();
+      await require("../lib/helmut/reset-timing").offeneArbeit();
+      accounts.createPasswordToken = originalToken;
+      if (vorherigerKontext) Object.defineProperty(globalThis, slot, vorherigerKontext);
+      else delete globalThis[slot];
+    }
   } finally {
     nodemailer.createTransport = originalFactory;
     if (server?.listening) await new Promise(resolve => server.close(resolve));
@@ -201,6 +234,16 @@ async function smtpLoopback() {
 }
 
 (async () => {
+  const ohneSdk = [
+    'const assert = require("node:assert/strict");',
+    'const Module = require("node:module"), original = Module._load; let versuche = 0;',
+    'Module._load = function(name, ...args) { if (name === "@vercel/functions") { versuche++; throw Object.assign(new Error("Plattformpaket fehlt im isolierten Node-Server"), {code:"MODULE_NOT_FOUND"}); } return original.call(this, name, ...args); };',
+    '(async () => { const t = require("./lib/helmut/reset-timing"); await t.starteHintergrundarbeit(() => Promise.resolve()); await t.offeneArbeit(); assert.equal(versuche, 0); console.log("standalone-without-sdk-ok"); })().catch(() => { process.exitCode = 1; });'
+  ].join("\n");
+  const lokal = spawnSync(process.execPath, [path.join(__dirname, "lokal.js"), "--", process.execPath, "-e", ohneSdk],
+    { cwd: path.resolve(__dirname, ".."), env: { ...process.env, VERCEL: "" }, encoding: "utf8", timeout: 10000 });
+  check("Normaler isolierter Node-Server startet und beendet Hintergrundarbeit ohne Vercel-Paket",
+    lokal.status === 0 && lokal.stdout.includes("standalone-without-sdk-ok"));
   const cfg = transport.transportKonfiguration(ENV);
   check("SMTP nur nach ausdruecklicher Auswahl und mit vollstaendigen Zugangsdaten", cfg.aktiv && cfg.transport === "smtp");
   check("Konfigurationsstatus enthaelt kein Passwort", !JSON.stringify(cfg).includes(PASSWORT));

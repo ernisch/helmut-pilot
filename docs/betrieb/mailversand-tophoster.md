@@ -127,3 +127,49 @@ der fest gebundenen17.6-Laufzeit kombiniert. Der reine Testcontainer bindet nun 
 sein17.6-Headerpaket per Version und SHA256 (amd64/arm64); pg_cron1.6.4, Laufzeitimage,
 Prüfungen und Production bleiben unverändert. Der korrigierte lokale Build ist erfolgreich;
 der vorhandene Offline-Belegtest besteht17/17 und der echte lokale PG17.6-/pg_cron-Test12/12. Neue Pflicht-CI: siehe PR1155.
+
+
+## Liveprobe und Bindung an die Vercel-Anfrage
+
+Verwaltung mit PR1155 auf `dc20e194` veröffentlicht: Production `dpl_3Pw2iEAbonJVigdPkY81jaG5E7ar`
+READY, Hauptadresse bestätigt. Pflicht-CI43252865079 erfolgreich. Der isolierte
+[Liveprüfer43259302941](https://github.com/ernisch/helmut-pilot/actions/runs/43259302941)
+belegt ausgelieferten Client bytegleich, geschützte Verwaltung/Assets/API anonym401,
+Passwortseite in Sie-Ansprache und genau einen anonymen Aufruf für das eigene Konto16:30:08UTC.
+HTTP200 ist kein Versandbeleg: keine Token-/Auditmutation gespeichert. Native Supabase-Spur
+zeigt nur zwei erfolgreiche Konten-GETs (Benutzerprojektion und vollständiger CAS-Lesestand),
+keinen anschließenden Schreibaufruf. Eigene Kontodaten und Kostenfingerabdrücke unverändert.
+Kein weiterer Mailaufruf während der Untersuchung und kein Passwortzugriff.
+
+Konkreter Codebefund: Die Hintergrundzusage wurde nach der HTTP-Antwort nur weiter abgewartet.
+Das sichert auf Vercel ihre Laufzeit nicht. `reset-timing.js` bindet nun dieselbe echte Promise
+vor der Antwort mit dem offiziellen `@vercel/functions`-`waitUntil` an die Anfrage.
+Generische Antwort, Zeitraster, ein Versandversuch, Rechte und Kommunikationsriegel bleiben erhalten.
+Ein zusätzlicher HTTP-/TLS-Test blockiert das Tokenschreiben über die frühe Antwort hinaus,
+prüft die vom tatsächlichen SDK registrierte Promise und danach SMTP plus Audit.
+
+Wegen nicht verfügbarer Arbeitsumgebung auf dem vorhandenen isolierten GitHub-Prüfrechner
+vorbereitet: [43264352918](https://github.com/ernisch/helmut-pilot/actions/runs/43264352918),
+SMTP65/65, bestehende Reset-Regression1/1, npm audit0. Der erste Vorbereitungslauf43263914199
+verwarf SDK3.10.4 wegen vier hohen transitiven Befunden; kein Runtimecode damit veröffentlicht.
+Npm bindet stattdessen exakt SDK3.11.2 samt Lockdatei, übrige direkte Abhängigkeiten unverändert.
+Das temporäre Vorbereitungsworkflow ist nicht Teil des Produktdiffs. Vor Veröffentlichung
+bleibt die Pflicht-CI am neuen Codekopf erforderlich; erneuter eigener Livebeleg danach offen.
+Aktueller Abschlussbeleg und Folge-PR werden in PR1155 geführt.
+
+
+## Plattformabgrenzung und aktuelle Hauptbranchintegration
+
+Pflichtlauf43265827684 auf `f61a83f3` brach im unveränderten nativen Drei-Profil-Vorflug
+mit `MODULE_NOT_FOUND` in der Arbeitsphase ab. Der isolierte normale Node-Server enthält
+keine Vercel-Pakete. Deshalb wird das SDK erst für die Passworthilfe auf Vercel geladen;
+der Import wird für jede anonyme Anfrage vor dem Lesen ihrer Adresse vorbereitet.
+Die Bindung an waitUntil bleibt aktiv. Keine Original-, Ressourcen- oder Prüfregel geändert.
+
+Eine neue Gegenprobe verbietet das Laden des SDK im normalen Node-Kindprozess und prüft
+seinen vollständigen Abschluss. Die echte HTTP-/SDK-/SMTP-Gegenprobe bleibt erhalten.
+[Vorbereitung43268596889](https://github.com/ernisch/helmut-pilot/actions/runs/43268596889):
+SMTP66/66, Reset-Regression1/1 und npm audit0. Geprüfte Dateien aus `572bd4e3` wurden
+bytegleich übernommen. Main `012b6111` samt paralleler Quellenkorrektur und ihren
+Datenbankprüfungen ist vollständig erhalten. Neues Pflicht-CI-Ergebnis und Liveabschluss
+weiter in PR1169 bzw. PR1155, kein blinder Versand-Retry.
