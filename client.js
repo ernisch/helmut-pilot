@@ -3157,7 +3157,7 @@ function renderAdminView() {
         <div class="adm-header-top">
           <div>
             <span class="eyebrow-line">Betrieb</span>
-            <a href="/verwaltung/">← Zur Verwaltung</a>
+            <a href="/verwaltung/einfach/">← Zur Verwaltung</a>
             <h1 class="adm-title">Erweiterte Werkzeuge</h1>
             <p class="adm-subtitle">Betriebsinstrument — Zustand, Handlungsbedarf, Kosten und Sicherheit auf einen Blick.${version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy.environment ? ` · ${escapeAttribute(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(version)}</span>` : ""}</p>
           </div>
@@ -4835,7 +4835,7 @@ function renderUiAccountTools() {
   return `<section class="ui-account-tools" aria-label="Weitere Arbeitsbereiche">
     ${showSwitcher ? `<label>Mandat wählen<select class="account-switch" data-profile-switch>${allowedProfiles.map(entry => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}</select></label>` : ""}
     ${roles.map(([id, label]) => `<button class="secondary-button" type="button" data-view="${escapeAttribute(id)}">${escapeHtml(label)}</button>`).join("")}
-    ${showAdministration ? '<a class="secondary-button" href="/verwaltung/">Verwaltung öffnen</a>' : ""}
+    ${showAdministration ? '<a class="secondary-button" href="/verwaltung/einfach/">Verwaltung öffnen</a>' : ""}
   </section>`;
 }
 

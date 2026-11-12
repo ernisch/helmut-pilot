@@ -1,8 +1,10 @@
 # Systemmails über das vorhandene Tophoster-Postfach
 
-Stand: 12.11.2026. **Im Draft vorbereitet und lokal geprüft, nicht live aktiviert.**
+Stand: 12.11.2026. **Veröffentlichung und eigener Zugangstest freigegeben.**
+Aktueller Bereitstellungs- und Mailteststand: [PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).
+Die folgenden Einrichtungsbelege beschreiben den vorbereiteten Stand vor dem Rollout.
 Kein neues Dienstkonto oder Postfach angelegt, keine DNS- oder Production-Änderung,
-keine Verbindung zum echten SMTP-Postfach und keine echte E-Mail versendet.
+bisher keine Verbindung zum echten SMTP-Postfach und keine echte E-Mail versendet.
 
 ## Bestätigte Verbindungsdaten
 
@@ -32,6 +34,7 @@ Eine neue Resend-Registrierung ist für diesen Weg nicht erforderlich.
 | `HELMUT_MAIL_REPLY_TO` | `hallo@mithelmut.de` |
 | `HELMUT_SMTP_USER` | `hallo@mithelmut.de` |
 | `HELMUT_SMTP_PASSWORD` | Postfachpasswort, ausschließlich in geschützten Einstellungen |
+| `HELMUT_ZUGANGSMAILS_FREIGEGEBEN` | `1` — nur Einladungen und Passwortmails an echte Konten |
 | `HELMUT_PUBLIC_URL` | Bestätigte öffentliche App-Adresse für die Zugangslinks |
 
 Kein Passwort im Chat, Repository oder Beispiel. Der lokale Schutzstarter entfernt
@@ -62,7 +65,7 @@ für beide echten Versandwege identisch.
 
 | Prüfung | Ergebnis |
 |---|---|
-| SMTP einschließlich lokalem TLS/HTTP-Kontenablauf und echtem TLS-Zeitabbruch | 50/50 |
+| SMTP einschließlich lokaler TLS/HTTP-Flows, enger Kanalfreigabe und Zeitabbruch | 62/62 |
 | Bestehende Mailvorlagen / Mutationsprobe | 152/152 und26/26 |
 | Bestehendes Mailpit / Resend | 119/119 und201/201 |
 | Variableninventar / lokaler Netzschutz | 38/38 und92/92 |
@@ -84,3 +87,20 @@ Vor Livebetrieb: Draft freigeben und erforderliche Checks abschließen, Postfach
 hinterlegen, Kommunikationsriegel und Tarifgrenzen prüfen. Danach einen ausdrücklich benannten
 Testempfänger bis zum Posteingang, zweimaliger Passworteingabe und späterer Anmeldung prüfen.
 Die tägliche Briefingversorgung ist ein eigenständiger Nachweis.
+
+
+## Freigabe und gespeichertes Passwort
+
+Am12.11. hat der Betreiber das Postfachpasswort in Vercel Production hinterlegt und danach
+die Veröffentlichung samt eigenem Test ausdrücklich freigegeben. Metadaten bestätigen
+`HELMUT_SMTP_PASSWORD`, Typ Secret/sensitive, nur Production; der Wert wurde nicht ausgelesen.
+Die bestehende globale Kommunikationsstellung ist `gesperrt`. Die zusätzliche, explizite
+Zugangsfreigabe erlaubt deshalb ausschließlich den serverseitigen Kanal `einladung` für
+als real eingeordnete Konten. Synthetische Kennungen/Adressen bleiben vor dieser Ausnahme
+gesperrt; allgemeine Mail, Push, WhatsApp, Monitoring und Jobtransporte werden nicht freigegeben.
+Rollback dieser Teilfreigabe: `HELMUT_ZUGANGSMAILS_FREIGEGEBEN` leeren/auf0 setzen.
+Die App-Verknüpfung „Verwaltung öffnen“ führt jetzt zur einfachen Verwaltung; die Originalansicht
+bleibt für vorhandene Spezialwerkzeuge unter `/verwaltung/` erreichbar.
+
+Lokale Freigabeprüfungen nach Hauptbranchintegration: Verwaltung57/57 Browser-/HTTP-Gruppen,
+Kommunikationsriegel48/48 und SMTP62/62; die übrigen vorherigen Nachweise bleiben erhalten.

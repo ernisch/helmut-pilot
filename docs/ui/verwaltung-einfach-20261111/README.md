@@ -1,7 +1,7 @@
 # Kundenverwaltung: einfache Bedienung mit vorhandenen App-Routen
 
 Stand: 12.11.2026. **App-Kandidat lokal geprüft, private Vorschau bereitgestellt;
-PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
+Veröffentlichung am12.11. ausdrücklich freigegeben; [Laufzeitstand in PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).**
 
 [Private Vorschau öffnen](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site)
 · [Offlinevorschau](vorschau.html)
@@ -40,8 +40,8 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
   wurden gelöscht; die Originalverwaltung bleibt unverändert erreichbar.
 
 Der Kandidat liegt bewusst unter **`/verwaltung/einfach/`**. `/verwaltung/` und
-`/?admin-tools=1` werden noch nicht ersetzt. Die Übernahme als Haupteinstieg folgt
-erst nach der gewünschten Durchsicht und vollständigen Pflicht-CI.
+`/?admin-tools=1` werden noch nicht ersetzt. Die App-Verknüpfung führt zur einfachen Verwaltung. Die Originalansicht bleibt
+unter `/verwaltung/` erreichbar. Historische Abnahme vor der gewünschten Durchsicht und vollständigen Pflicht-CI.
 
 ## Zwei unterschiedliche Nachweise
 

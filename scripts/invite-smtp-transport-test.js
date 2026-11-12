@@ -207,6 +207,26 @@ async function smtpLoopback() {
     }
   }
   {
+    const env = { ...ENV, HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", HELMUT_ZUGANGSMAILS_FREIGEGEBEN: "1" };
+    const f = fake();
+    const status = await invite.sendAccessMail(MAIL, { env, createSmtpTransport: f.createSmtpTransport });
+    check("Explizite Freigabe erlaubt Zugangsmails fuer echte Empfaenger", status.sent && f.seen.sends === 1);
+    for (const kanal of ["mail", "push", "whatsapp", "monitoring-webhook", "job-transport"]) {
+      const r = transport.kommunikationsriegel.pruefe({ kanal, empfaenger: MAIL.to, ziel: "https://ops.example.org" }, env);
+      check("Zugangsfreigabe laesst andere Kanaele gesperrt: " + kanal, !r.erlaubt);
+    }
+    const f2 = fake(), blocked = await invite.sendAccessMail(MAIL, { env, kennung: "test-mdb-smtp", createSmtpTransport: f2.createSmtpTransport });
+    check("Auch freigegebene Zugangsmails sperren synthetische Kennungen", blocked.gesperrt && f2.seen.starts === 0);
+    check("Globale Kommunikationsstellung wird nicht veraendert", env.HELMUT_TESTLAUF_KOMMUNIKATION === "gesperrt");
+    const kaputt = { ...env };
+    Object.defineProperty(kaputt, "HELMUT_ZUGANGSMAILS_FREIGEGEBEN", { get() { throw new Error("ungueltiger Kontext"); } });
+    check("Fehler beim Lesen der Teilfreigabe bleiben geschlossen", !transport.kommunikationsriegel.pruefe({ kanal: "einladung", empfaenger: MAIL.to }, kaputt).erlaubt);
+    for (const value of ["0", "true", "1 "]) {
+      const x = fake(), denied = await invite.sendAccessMail(MAIL, { env: { ...env, HELMUT_ZUGANGSMAILS_FREIGEGEBEN: value }, createSmtpTransport: x.createSmtpTransport });
+      check("Zugangsmail-Freigabe verlangt exakt1: " + JSON.stringify(value), denied.gesperrt && x.seen.starts === 0);
+    }
+  }
+  {
     const f = fake(), status = await transport.sendeSmtp(MAIL, { env: { ...ENV, HELMUT_MAIL_TRANSPORT: "" },
       konfiguration: { aktiv: true, transport: "smtp" }, createSmtpTransport: f.createSmtpTransport });
     check("Vorgetaeuschter Status umgeht die echte Transportauswahl nicht", !status.sent && f.seen.starts === 0);

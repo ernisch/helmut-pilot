@@ -1,7 +1,7 @@
 # Helmut: Einladung und Passwort-Hilfe
 
 Stand: 12.11.2026. Vorlagen und Zugangstexte vorbereitet, lokal geprüft.
-**PR1155 bleibt Draft ohne Merge. Kein echter Versand, keine Production-Konfiguration geändert.**
+**Veröffentlichung und eigener Zugangstest sind freigegeben; [Laufzeitstand in PR1155](https://github.com/ernisch/helmut-pilot/pull/1155).**
 
 [Private E-Mail-Vorschau öffnen](https://helmut-verwaltung-vorschau-20261111.lueynohut.chatgpt.site/emails/)
 · [Lokale Vorschau](index.html)
@@ -75,12 +75,11 @@ Prüfung in echten Apple-Mail-, Gmail- und Outlook-Postfächern steht noch aus.
 
 ## Nächster Schritt zur Veröffentlichung
 
-1. Gestaltung prüfen. PR1155 bis zur Aufhebung des bisherigen Merge-Halts als Draft lassen;
-   danach beide Pflichtchecks am aktuellen Kopf abwarten. Eine Übernahme unter `/verwaltung/`
-   als Haupteinstieg ist noch separat vorzubereiten: momentan ist `/verwaltung/einfach/` der Kandidat.
+1. Freigabe erteilt. Aktuellen Hauptbranch integrieren und beide Pflichtchecks am finalen Kopf
+   abwarten. Die App-Verknüpfung führt zu `/verwaltung/einfach/`; die Originalansicht bleibt erreichbar.
 2. Vorhandenes Tophoster-Postfach über [den vorbereiteten SMTP-Weg](../../betrieb/mailversand-tophoster.md)
    anbinden. Betreiber-Screenshot bestätigt `server44.configcenter.info`, SMTP465.
-   Das fehlende Postfachpasswort gehört ausschließlich in geschützte Einstellungen.
+   Das Postfachpasswort ist als Production-Secret gespeichert; der Wert wurde nicht ausgelesen.
 3. Bei bewusster Aktivierung `HELMUT_MAIL_TRANSPORT=smtp`, `HELMUT_SMTP_USER=hallo@mithelmut.de`,
    Absender `Helmut <hallo@mithelmut.de>` und dieselbe Antwortadresse setzen. Der Code erzwingt
    Port465 mit TLS und gültiger Zertifikatsprüfung. `HELMUT_PUBLIC_URL` bleibt die bestätigte
