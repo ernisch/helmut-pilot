@@ -1,6 +1,6 @@
 # Fehlendes Tagesbriefing: Diagnose und Reparatur, 12.11.2026
 
-## Rollout bestaetigt; heutiger Nachlauf offen
+## Rollout bestaetigt; heutiger Nachlauf teilweise gescheitert
 
 [PR1158](https://github.com/ernisch/helmut-pilot/pull/1158) wurde am12.11.,
 07:52:14UTC nach vollstaendig gruener Endkopf-CI gemergt: gepruefter Kopf
@@ -30,8 +30,67 @@ Der Betreiber hat fuer die Zeit nach dem Rollout genau ein weiteres Quellenfenst
 fuer den bestehenden Einprofilbetrieb sowie anschliessend die vorhandenen
 Lage-/Morgenlaeufe freigegeben, innerhalb1USD/UTC-Tag und30USD insgesamt,
 ohne Kontingentreset und ohne externe Nachrichten. Der echte angemeldete
-Adminstart ist noch erforderlich; ein Startbeleg nach dem Rollout fehlt bisher.
-Der Nachlauf und die produktive Wiederherstellung bleiben bis zur Kontrolle offen.
+Adminstart und die nachfolgenden Lage-/Morgenlaeufe sind erfolgt; Ergebnis unten.
+Die vollstaendige produktive Wiederherstellung bleibt offen.
+
+## Freigegebener Nachlauf und neuer Blocker
+
+Der Betreiber bestaetigte den Start mit „gestartet“. Nativer Quellenstart
+08:09:27UTC, Lauf
+`admin-quellen-2026-11-12-6d6ed153-9013-4cff-b6e4-28aa61d74fc9`,
+Production weiterhin d72cd218. Das eine zusaetzliche Fenster ist verbraucht:
+2/8 Fenster,600/2400Sekunden; Originale unveraendert16/16.
+Keine Wiederholung, kein Reset und keine neue Quellenfreigabe.
+
+Zwei vollstaendige Wissensobjekte sind um08:09:57 und08:10:11 gespeichert.
+Ihre echten Quellenpublikationen sind23.09. beziehungsweise30.10.; das ist
+Verarbeitungsfortschritt, kein Nachweis aktueller Meldungen. Der bearbeitete
+Auftrag enthaelt auch Quellen bis11.11., wurde aber nicht abgeschlossen.
+
+Ab08:10:12 meldet PostgREST Timeouts,08:10:49/51 native Statement-Timeouts
+beim Lesen von helmut_store beziehungsweise beim Zaehlen der Wissensobjekte.
+Um08:11:29 startet PostgreSQL tatsaechlich neu. Native Logmeldungen:
+„database system was interrupted“ und „was not properly shut down; automatic
+recovery in progress“; pg_postmaster_start_time bestaetigt08:11:29.034722UTC.
+Vercel meldet521 beim Speichern und503/PGRST002 beim Quellenabschluss.
+Die Ursache des ungeordneten Datenbankneustarts ist aus diesen Logs NICHT
+bestimmbar; kein belegter OOM-, Wartungs- oder App-Lastnachweis.
+Der Health-Advisor liefert keine Hinweise, beweist aber keine Fehlerfreiheit.
+Der Quellenprozess bleibt wegen fehlender Endquittung technisch running;
+der abgelaufene Joblease und die um08:19:43 abgelaufene Globalsperre wurden
+nicht manuell geloescht. Originalstatus und Fehler bleiben erhalten.
+
+Nach REST-Erholung, leerer lebender Lease-Menge, erneutem Kosten-/Vertrags-
+vorflug und bestaetigter Runtime-Nachrichtensperre genau einmal die vorhandenen
+Lage-/Morgenhandler aufgerufen. Lage08:25:32–08:26:05 HTTP200, ein Text neu
+gespeichert. Einzelergebnis meldet quellenversorgung-offen/ok=false;
+der bisherige Gesamtabschluss behauptet dennoch vollstaendig=true/success.
+Dieser damit produktiv reproduzierte fuenfte Fehler wird korrigiert:
+ein ausdruecklich negatives Einzelergebnis verhindert Gesamtgruen, bei weiter
+verfuegbarem Text wird der Quellenrueckstand als partial protokolliert.
+Gezielte echte Handler-/Persistenzpruefung10/10 und Fortsetzungspruefung14/14
+bestanden; offener, unbekannter, gemischter und gesunder Quellenstand geprueft.
+Zwei Testaufrufe auf nicht vorhandene Dateipfade fuehrten keine Suite aus;
+der vorhandene19/19-Paketnachweis bleibt unveraendert. Die tatsaechliche
+Statusgroessenpruefung current-state-groesse-test.js besteht4/4 bei29979Zeichen.
+
+Morgen08:26:23–08:26:33 HTTP200: Tagespaket und Erfolgsquittung gespeichert
+und gegengelesen, aber Paket vollstaendig=false, Versorgung partial/0von1.
+Native Inhaltspruefung quellenversorgung-unvollstaendig; Hauptthema weiterhin
+Pflegereform mit echter Publikation06.11. Push explizit gesperrt:
+testfenster-sperrt-alle-aussenkanaele. Kein zweiter Lage-/Morgenaufruf.
+
+Kostenbuch nach den Nachlaeufen:1,693918USD gebunden insgesamt,
+heute0,461436USD einschliesslich0,424000USD fuer zwei offene Reservierungen
+aus dem unterbrochenen Quellenjob. Beide bleiben konservativ voll gebunden;
+vier historische Reserven ebenfalls unveraendert. frozen=null, Vertrag und
+1USD/Tag/30USD insgesamt unveraendert. Kein blinder Wiederholungsaufruf.
+
+Noch offen: Ursache/Stabilitaet des Datenbankausfalls, Quellenauftraege und
+frisches vollstaendiges Tagesbriefing. Ein weiteres Quellenfenster liegt
+ausserhalb der verbrauchten Einmalfreigabe und benoetigt eine neue konkrete
+Betreiberentscheidung gemaess AGENTS.md/Production Schutz. Es besteht kein
+technischer Zwang, bis morgen zu warten; die Zusatzverarbeitung ist begrenzt.
 
 ## Produktionsbefund vor der Reparatur
 
