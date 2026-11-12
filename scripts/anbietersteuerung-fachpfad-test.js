@@ -357,6 +357,53 @@ async function main() {
   check("8.3 Der Grund benennt die Anbietergrenze ehrlich",
     /anbietergrenze:/.test(pipelineQuelle));
 
+  // Echter Uebergang vom Source-Handler in den gemeinsamen Worker. Die alten
+  // Quelltextwaechter oben sehen nicht, ob der Handler die Metadaten verliert.
+  const SP = require(path.join(ROOT, "lib", "helmut", "scalable-pipeline.js"));
+  async function quellenFall(vertagung, deferVerfuegbar = true) {
+    const finish = [], defer = [], frei = []; let persist = 0;
+    const auftrag = { id: "quelle-synthetisch", job_type: "source_fetch", attempts: 5,
+      max_attempts: 5, payload: { quelle: { id: "synthetisch", active: true } } };
+    const deps = {
+      now: () => Date.now(), handler: SP.HANDLER,
+      hardeningConfig: () => ({ enabled: false }),
+      crawlAllSources: async () => ({ rawItems: [], results: [{ ok: false,
+        error: "abruf-grenze-oder-stoerung", anbieterVertagung: vertagung }] }),
+      persistRohdokumente: async () => { persist++; throw Error("unerwartete Persistenz"); },
+      klassen: { belege: async () => ({ erlaubt: true, slot: "slot-synthetisch" }),
+        gebeFrei: async slot => { frei.push(slot); } },
+      finish: async args => { finish.push(args); return { verfuegbar: true,
+        uebernommen: true, neuerStatus: "fehlgeschlagen" }; },
+      zurueckstellen: async args => { defer.push(args); return { verfuegbar: deferVerfuegbar }; }
+    };
+    const result = await SP.fuehreAuftragAus({ auftrag, deps, besitzer: "worker-synthetisch" });
+    return { result, finish, defer, frei, persist };
+  }
+  const minute = await quellenFall({ bereich: { anbieter: "google", modell: "news", klasse: "quellenabruf" },
+    grund: "anbietergrenze-minutengrenze", wartenMs: 59000, vorAbruf: true });
+  check("8.4 Echte Source-Handler/Worker-Kette vertagt auch am letzten erlaubten Versuch",
+    minute.result.ausgang === "zurueckgestellt" && minute.result.bilanz.endgueltigFehlgeschlagen === 0);
+  check("8.5 Anbieterpause ruft nur die versuchserhaltende Vertagung mit derselben Lease auf",
+    minute.finish.length === 0 && minute.defer.length === 1
+    && minute.defer[0].id === "quelle-synthetisch" && minute.defer[0].owner === "worker-synthetisch"
+    && minute.defer[0].grund === "anbietergrenze: anbietergrenze-minutengrenze");
+  check("8.6 Kein Dokumentwrite und Klassenslot auch bei Vertagung freigegeben",
+    minute.persist === 0 && minute.frei.length === 1 && minute.frei[0] === "slot-synthetisch");
+  const lang = await quellenFall({ grund: "anbietergrenze-tag", wartenMs: 86400000, vorAbruf: true });
+  check("8.7 Lange Anbieterpause behaelt die vorhandene lange Worker-Wiedervorlage",
+    lang.result.ausgang === "zurueckgestellt" && lang.defer[0]?.delayMs === SP.BUDGET_WARTE_MS);
+  const normal = await quellenFall(null);
+  check("8.8 Ein echter Abruffehler ohne Vertagungsbeleg bleibt ein Fehlversuch",
+    normal.result.ausgang === "endgueltig-fehlgeschlagen" && normal.defer.length === 0
+    && normal.finish.length === 1 && normal.finish[0].ok === false);
+  const ohneDefer = await quellenFall({ grund: "anbietergrenze-minutengrenze", wartenMs: 30000 }, false);
+  check("8.9 Unverfuegbare Vertagung meldet die Luecke und schliesst nichts erfolgreich ab",
+    ohneDefer.result.ausgang === "zurueckgestellt"
+    && ohneDefer.result.bilanz.zurueckstellungNichtVerfuegbar === 1 && ohneDefer.finish.length === 0);
+  const ungueltig = await quellenFall("kein-strukturierter-Beleg");
+  check("8.10 Ungueltige Metadaten werden nicht zu einer Anbieterpause umgedeutet",
+    ungueltig.result.ausgang === "endgueltig-fehlgeschlagen" && ungueltig.defer.length === 0);
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail > 0 ? 1 : 0);
 }
