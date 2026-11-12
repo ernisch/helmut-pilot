@@ -11,7 +11,8 @@ Nicht hier, sondern dort:
 | Thema | Kanonische Quelle |
 |---|---|
 | Lokales Testpostfach starten und benutzen | [`lokale-mailtests-mailpit.md`](lokale-mailtests-mailpit.md) |
-| Echter Versand über Resend, Aktivierung, Domain, Schlüssel | [`mailversand-resend.md`](mailversand-resend.md) |
+| Vorhandenes Tophoster-Postfach, SMTP-Einrichtung und Test | [`mailversand-tophoster.md`](mailversand-tophoster.md) |
+| Alternativer Versand über Resend, Aktivierung, Domain, Schlüssel | [`mailversand-resend.md`](mailversand-resend.md) |
 | Umgebungsvariablen | [`env-inventar.md`](env-inventar.md) |
 
 ---
@@ -174,23 +175,14 @@ wieder gelöscht.
 
 ## 8 · Was für den echten Nutzerbetrieb noch fehlt
 
-Resend ist **weiterhin deaktiviert** (`HELMUT_MAIL_TRANSPORT` ist in Production nicht gesetzt).
-Diese Arbeit hat daran **nichts** geändert. Vor einem echten Versand an Nutzer fehlen
-unverändert:
+**Versand weiterhin deaktiviert.** Aktuell wird das vorhandene Tophoster-Postfach mit SMTP
+vorbereitet. Verbindungsdaten, sichere Konfiguration, Nachweise und Aktivierung stehen unter
+[Tophoster-SMTP](mailversand-tophoster.md). Das Passwort und der echte Posteingangstest fehlen.
+Resend bleibt als bereits vorbereitete Alternative erhalten; dessen Domainverifizierung und
+API-Schlüssel sind für SMTP nicht erforderlich. Historische Resend-Anforderungen bleiben in
+[der Resend-Anleitung](mailversand-resend.md) erhalten.
 
-1. **Eigene Versanddomain** inklusive DNS-Einträgen (SPF/DKIM/DMARC) und Verifizierung —
-   [`mailversand-resend.md`](mailversand-resend.md) §4.
-2. **Neuer API-Schlüssel** in den Vercel-Umgebungsvariablen (der Testschlüssel des
-   Vorsprints wurde nach dem Testversand gelöscht) — §3 und §6.
-3. **AVV mit Resend** als Auftragsverarbeiter — gehört zu **OP-02** in
-   [`../datenmotor-restliste.md`](../datenmotor-restliste.md).
-4. **Kontrollierte Aktivierung in Production** als ausdrückliche Betreiberentscheidung — §6.
-5. Offen bleibt außerdem: **Bounces und Beschwerden werden nicht ausgewertet** (keine
-   Resend-Webhooks) — §9.2.
-
-Bis dahin ist der Zustellweg unverändert der **Kopierlink im Admin**. Er bleibt auch nach der
-Aktivierung der Rückfallweg, wenn ein Versand scheitert.
-
+Bis zum bestätigten Versand bleibt der Kopierlink im Admin der Rückfallweg.
 
 ## 9 · Aktuelle Gestaltungsvorschau und Freigabestand (12.11.2026)
 

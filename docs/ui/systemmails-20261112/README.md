@@ -39,8 +39,8 @@ sind keine vollständige sprachliche Überarbeitung dieses Auftrags.
 Vorgesehener Absender nach Betreiberentscheidung: **Helmut <hallo@mithelmut.de>**.
 Vorgesehene Antwortadresse: **hallo@mithelmut.de**. Das bestehende Hauptpostfach dient zugleich
 für persönliche Kommunikation und Antworten auf automatische Mails. Ein zusätzliches Postfach
-ist nicht nötig; automatische Mails werden über den Versanddienst verschickt. Die Domain muss
-dafür noch verifiziert werden. `Reply-To` verweist ebenfalls auf das vorhandene Postfach.
+ist nicht nötig; automatische Mails werden über den vorhandenen SMTP-Server verschickt.
+Die SMTP-Zugangsdaten werden geschützt hinterlegt. `Reply-To` verweist ebenfalls auf das Postfach.
 
 ## Nachweise
 
@@ -52,6 +52,7 @@ Alle Läufe über `scripts/lokal.js`, nur lokale oder simulierte Dienste:
 | `mail-vorlagen-mutationsprobe.js` | 26/26 echte Fehler erkannt |
 | `mailpit-transport-test.js` | 119/119, simuliertes Mailpit |
 | `resend-transport-test.js` | 201/201, simulierte API, kein Anbieteraufruf |
+| `invite-smtp-transport-test.js` | 50/50; lokaler TLS-SMTP- und HTTP-Kontenablauf, keine echte Nachricht |
 | `invite-flow-test.js` | 39/39; echter lokaler HTTP-/Konten-/Tokenablauf |
 | `passwort-setzen-login-fix-test.js` | 39/39; lokaler HTTP- und Browserablauf, System-Chromium |
 | Mailvorschau im Chromium | 25/25; 320/390/600/1024 px, beide Mails, kein Überlauf, auch ohne Style-Block |
@@ -77,18 +78,13 @@ Prüfung in echten Apple-Mail-, Gmail- und Outlook-Postfächern steht noch aus.
 1. Gestaltung prüfen. PR1155 bis zur Aufhebung des bisherigen Merge-Halts als Draft lassen;
    danach beide Pflichtchecks am aktuellen Kopf abwarten. Eine Übernahme unter `/verwaltung/`
    als Haupteinstieg ist noch separat vorzubereiten: momentan ist `/verwaltung/einfach/` der Kandidat.
-2. `mithelmut.de` beim vorhandenen Versandweg Resend verifizieren. Die dort tatsächlich
-   angeforderten DNS-Einträge setzen; vorhandenen Empfang für `hallo@mithelmut.de` erhalten.
-   Zugangsdaten ausschließlich über die vorgesehenen geschützten Einstellungen eintragen.
-3. Folgende Production-Konfiguration vorbereiten und gezielt aktivieren:
-
-   | Schlüssel | Vorgesehener Wert |
-   |---|---|
-   | `HELMUT_MAIL_TRANSPORT` | `resend` |
-   | `HELMUT_MAIL_FROM` | `Helmut <hallo@mithelmut.de>` |
-   | `HELMUT_MAIL_REPLY_TO` | `hallo@mithelmut.de` |
-   | `HELMUT_RESEND_API_KEY` | Neuer, auf Versand begrenzter Schlüssel; nie im Repo/Chat |
-   | `HELMUT_PUBLIC_URL` | Bestätigte öffentliche App-Adresse, keine private Gestaltungsvorschau |
+2. Vorhandenes Tophoster-Postfach über [den vorbereiteten SMTP-Weg](../../betrieb/mailversand-tophoster.md)
+   anbinden. Betreiber-Screenshot bestätigt `server44.configcenter.info`, SMTP465.
+   Das fehlende Postfachpasswort gehört ausschließlich in geschützte Einstellungen.
+3. Bei bewusster Aktivierung `HELMUT_MAIL_TRANSPORT=smtp`, `HELMUT_SMTP_USER=hallo@mithelmut.de`,
+   Absender `Helmut <hallo@mithelmut.de>` und dieselbe Antwortadresse setzen. Der Code erzwingt
+   Port465 mit TLS und gültiger Zertifikatsprüfung. `HELMUT_PUBLIC_URL` bleibt die bestätigte
+   App-Adresse, keine private Vorschau. Resend bleibt eine vorbereitete Alternative.
 
    Vor Versand außerdem den bestehenden Kommunikationsriegel prüfen: ein aktives gesperrtes
    Testfenster darf nicht pauschal für alle Kanäle aufgehoben werden.

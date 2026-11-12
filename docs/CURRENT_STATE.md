@@ -199,7 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-**12.11.:** [Verwaltung](ui/verwaltung-einfach-20261111/README.md)/[Mails](ui/systemmails-20261112/README.md): privat geprüft; PR1155 Draft, kein Merge/Versand.
+**12.11.:** [Verwaltung](ui/verwaltung-einfach-20261111/README.md)/[SMTP](betrieb/mailversand-tophoster.md): lokal geprüft; PR1155 Draft, kein Merge/Versand.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

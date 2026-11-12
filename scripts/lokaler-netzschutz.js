@@ -71,6 +71,7 @@ function istLokalerHost(host) {
 //       `DATABASE_URL=postgres://…@127.0.0.1/…` ist der voellig normale lokale Testfall —
 //       ihn abzulehnen haette den Schutz unbenutzbar gemacht und damit zur Umgehung eingeladen.
 const REINE_ZUGANGSDATEN = [
+  "HELMUT_SMTP_PASSWORD",
   "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY", "SUPABASE_ANON_KEY",
   "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "SERPAPI_KEY",
   // BELEGTE LUECKE (Skalierungssprint Z3, 2026-08-26). Der TATSAECHLICHE Produktionsanbieter

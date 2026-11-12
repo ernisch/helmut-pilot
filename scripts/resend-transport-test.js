@@ -163,7 +163,7 @@ async function mitProtokollmitschnitt(fn) {
     transport.transportKonfiguration(RESEND_ENV).transport === "resend");
   check("A Transportname unempfindlich gegen Schreibweise/Leerraum",
     transport.transportKonfiguration({ ...RESEND_ENV, HELMUT_MAIL_TRANSPORT: "  ReSend " }).aktiv === true);
-  for (const name of ["resend-extern", "resendx", "re", "send", "smtp", "sendgrid", "mailpit-resend"]) {
+  for (const name of ["resend-extern", "resendx", "re", "send", "smtpx", "sendgrid", "mailpit-resend"]) {
     const konfig = transport.transportKonfiguration({ ...RESEND_ENV, HELMUT_MAIL_TRANSPORT: name });
     check(`A unbekannter Transportname bleibt inaktiv: ${name}`,
       konfig.aktiv === false && konfig.grund === "mail-transport-unbekannt", JSON.stringify(konfig));
