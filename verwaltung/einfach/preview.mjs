@@ -14,17 +14,19 @@ export function createPreviewApi() {
  const results={'mandat-nord':{...result('mandat-nord'),positionen:{briefing:pos(0,'fehlt'),lage:pos(),zustellung:pos(0,'fehlt')}},'mandat-mitte':result('mandat-mitte')};
  const validation=p=>({bereit:p.profileActive!==false,fehlendePflichtfelder:[],budgetProbleme:[]});
  const clone=value=>structuredClone(value);
+ const previewInvite=()=>({inviteUrl:(globalThis.location.origin==='null'?'https://vorschau.invalid':globalThis.location.origin)+'/passwort-setzen?token=fiktiver-vorschaulink',purpose:'invite',mail:{sent:false}});
  return {
   async load(){return clone({customers,overview:{mandates:Object.values(profiles).map(p=>({...p,validierung:validation(p)}))},results,resultDay:day,now,generatedAt:now});},
   async profile(id){return profiles[id]?clone({profile:profiles[id],validierung:validation(profiles[id])}):null;},
-  async createCustomer({name,email}){
+  async createCustomer({name,email,...fields}){
    if(customers.some(c=>c.email.toLowerCase()===email.toLowerCase()))throw Object.assign(new Error('Diese E-Mail-Adresse wird bereits verwendet.'),{status:409});
-   const c={userId:'preview-'+customers.length,id:'preview-'+customers.length,politicianId:'mandat-'+customers.length,name,email,role:'abgeordneter',active:false,status:'eingeladen'};
-   customers.push(c);return {user:clone({...c,id:c.userId}),invitationSent:false};
+   const c={userId:'preview-'+customers.length,id:'preview-'+customers.length,politicianId:'mandat-'+customers.length,name,email,role:'abgeordneter',active:true,status:'eingeladen'};
+   customers.push(c);profiles[c.politicianId]={...clone(fields),id:c.politicianId,fullName:name,profileActive:false};
+   return {user:clone(c),profile:clone(profiles[c.politicianId]),validierung:validation(profiles[c.politicianId]),invitation:previewInvite(),invitationSent:false};
   },
   async saveProfile(id,input){profiles[id]={...profiles[id],...clone(input),id,profileActive:profiles[id]?.profileActive===true};return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
   async activateProfile(id){profiles[id].profileActive=true;return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
-  async invite(id){const c=customers.find(c=>c.userId===id);c.active=true;const origin=globalThis.location.origin==='null'?'https://vorschau.invalid':globalThis.location.origin;return {inviteUrl:origin+'/passwort-setzen?token=fiktiver-vorschaulink',mail:{sent:false}};},
+  async invite(id){const c=customers.find(c=>c.userId===id);c.active=true;return previewInvite();},
   async settings(key){return key==='budget'?{kostenwahrheit:{gesamt:{kostenUsd:0.12,kostenUnbekannt:0}}}:key==='runs'?{processRuns:[{process:'Morgenbriefing',startedAt:now,status:'erfolgreich · fiktives Beispiel'}]}:{verfuegbar:true,zaehler:{abrufwege:12,herausgeber:8},statusCounts:{broken:1,degraded:0}};},
   dispose(){}
  };

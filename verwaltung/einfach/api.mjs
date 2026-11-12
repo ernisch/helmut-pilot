@@ -1,7 +1,8 @@
 import { createAdminReader } from '../api.mjs';
 import { createAdminActions, AdminMutationError } from '../original-actions.mjs';
 import { berlinDay, validId } from './model.mjs';
-export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date() }={}) {
+import { profilePartyOptions, profileFactionOptions, federalStateOptions, constituencyChoices } from './profil-auswahl.mjs';
+export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date(), origin=globalThis.location?.origin||'http://localhost' }={}) {
  const reader=createAdminReader({fetcher,timeoutMs}),actions=createAdminActions({fetcher,timeoutMs});
  let disposed=false, busy=false, writesAllowed=false;
  const pending=new Set();
@@ -56,23 +57,70 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
   }
   return data;
  }
- return {
-  load,
-  async profile(id){if(!validId(id))throw new AdminMutationError(400);try{return await request(`/api/admin/profile/${encodeURIComponent(id)}`);}catch(e){if(e.status===404)return null;throw e;}},
-  createCustomer(input){return mutate(()=>actions.createPersonalCustomerAccount(input));},
-  saveProfile(id,input){
+ async function saveProfile(id,input,{requireNew=false}={}){
    const keys=['fullName','party','faction','parliamentType','state','constituency','focusTopics'];
    if(!validId(id)||!input||Object.keys(input).some(k=>!keys.includes(k)))return Promise.reject(new AdminMutationError(400));
-   return mutate(async()=>{
     let existing;try{existing=await request(`/api/admin/profile/${encodeURIComponent(id)}`);}catch(e){if(e.status!==404)throw e;}
+    if(requireNew&&existing)throw new AdminMutationError(409);
     const body={...input,...(!existing?{profileActive:false}:{})};
     const saved=await request(`/api/admin/profile/${encodeURIComponent(id)}`,{method:'PATCH',body});
     if(saved.profile?.id!==id||saved.profile?.fullName!==input.fullName||(!existing&&saved.profile.profileActive!==false))throw new AdminMutationError(0,true);
     const readback=await request(`/api/admin/profile/${encodeURIComponent(id)}`);
     if(keys.some(k=>JSON.stringify(readback.profile?.[k])!==JSON.stringify(saved.profile?.[k])))throw new AdminMutationError(0,true);
     return readback;
-   });
-  },
+ }
+ async function invite(id){if(!validId(id))throw new AdminMutationError(400);
+   const users=await request('/api/admin/users');const user=users.find(u=>u.id===id);
+   if(!user||user.role!=='abgeordneter'||['gekuendigt','deaktiviert'].includes(user.status))throw new AdminMutationError(409);
+   if(user.active===false)await actions.setAccess(id,true);
+   const result=await request(`/api/admin/users/${encodeURIComponent(id)}/invite`,{method:'POST',body:{}});
+   const url=new URL(result.inviteUrl,origin);
+   // Kanonische App-Adresse nur ausgeben, niemals als Fetch-Ziel verwenden.
+   const sameOrigin=url.origin===origin;
+   if((url.protocol!=='https:'&&!(sameOrigin&&url.protocol==='http:'))||url.username||url.password||url.pathname!=='/passwort-setzen'||!url.searchParams.get('token')||typeof result.mail?.sent!=='boolean')throw new AdminMutationError(0,true);
+   return result;
+ }
+ function customerInput(input){
+   const keys=['name','email','party','faction','parliamentType','state','constituency','focusTopics'];
+   if(!input||Object.getPrototypeOf(input)!==Object.prototype||Object.keys(input).some(k=>!keys.includes(k)))throw new AdminMutationError(400);
+   const fieldErrors={},text=(value,max)=>typeof value==='string'&&value.trim().length>0&&value.trim().length<=max&&!/[\x00-\x1f\x7f]/.test(value);
+   if(!text(input.name,160))fieldErrors.name='Bitte einen Namen angeben.';
+   if(!text(input.email,254)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim()))fieldErrors.email='Bitte eine gültige E-Mail-Adresse angeben.';
+   if(!['Bundestag','Landtag'].includes(input.parliamentType))fieldErrors.parliamentType='Bitte ein Parlament wählen.';
+   if(!federalStateOptions.includes(input.state))fieldErrors.state='Bitte ein Bundesland wählen.';
+   if(!profilePartyOptions.includes(input.party))fieldErrors.party='Bitte eine Partei wählen.';
+   if(!profileFactionOptions.includes(input.faction))fieldErrors.faction='Bitte eine Fraktion wählen.';
+   if(!input.constituency||!constituencyChoices(input.parliamentType,input.state).includes(input.constituency))fieldErrors.constituency='Bitte einen passenden Wahlkreis wählen.';
+   if(!Array.isArray(input.focusTopics)||!input.focusTopics.length||input.focusTopics.length>30||input.focusTopics.some(t=>!text(t,160)))fieldErrors.topics='Bitte ein bis 30 Themen mit jeweils höchstens 160 Zeichen angeben.';
+   if(Object.keys(fieldErrors).length)throw new AdminMutationError(400,false,{fieldErrors});
+   return {...input,name:input.name.trim(),email:input.email.trim().toLowerCase(),focusTopics:input.focusTopics.map(t=>t.trim())};
+ }
+ return {
+  load,
+  async profile(id){if(!validId(id))throw new AdminMutationError(400);try{return await request(`/api/admin/profile/${encodeURIComponent(id)}`);}catch(e){if(e.status===404)return null;throw e;}},
+  createCustomer(input){return mutate(async()=>{
+   const dto=customerInput(input);let account=null,stage='account';
+   try{
+    account=(await actions.createPersonalCustomerAccount({name:dto.name,email:dto.email})).user;
+    stage='profile';
+    const {name,email,...fields}=dto;
+    const saved=await saveProfile(account.politicianId,{fullName:name,...fields},{requireNew:true});
+    if(saved.profile?.profileActive!==false||!Array.isArray(saved.validierung?.fehlendePflichtfelder)||saved.validierung.fehlendePflichtfelder.length||Object.keys(fields).some(k=>JSON.stringify(saved.profile?.[k])!==JSON.stringify(fields[k])))throw new AdminMutationError(0,true);
+    stage='invite';
+    const invitation=await invite(account.id);
+    const users=await request('/api/admin/users'),matches=users.filter(u=>u.id===account.id);
+    if(matches.length!==1||matches[0].active!==true||matches[0].politicianId!==account.politicianId||matches[0].email!==dto.email||invitation.purpose!=='invite')throw new AdminMutationError(0,true);
+    return {user:matches[0],...saved,invitation,invitationSent:invitation.mail.sent===true};
+   }catch(error){
+    const known=error instanceof AdminMutationError?error:new AdminMutationError(0,true);
+    if(account){
+     known.partialAccount={id:account.id,politicianId:account.politicianId,email:account.email};known.stage=stage;
+     known.message=stage==='profile'?'Der Kunde wurde angelegt. Die Mandatsangaben wurden nicht vollständig bestätigt; es wurde keine Einladung versendet. Bitte den angelegten Kunden prüfen.':'Kunde und Mandat wurden angelegt. Die Einladung wurde nicht bestätigt. Bitte den angelegten Kunden prüfen, bevor du die Einladung erneut sendest.';
+    }
+    throw known;
+   }
+  });},
+  saveProfile(id,input){return mutate(()=>saveProfile(id,input));},
   activateProfile(id){if(!validId(id))return Promise.reject(new AdminMutationError(400));return mutate(async()=>{
    const before=await request(`/api/admin/profile/${encodeURIComponent(id)}`);
    if(before.profile?.id!==id||before.profile.profileActive!==false||!Array.isArray(before.validierung?.fehlendePflichtfelder)||before.validierung.fehlendePflichtfelder.length||before.validierung?.budgetProbleme?.length)throw new AdminMutationError(409);
@@ -82,18 +130,7 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    if(after.profile?.id!==id||after.profile.profileActive!==true)throw new AdminMutationError(0,true);
    return after;
   });},
-  async invite(id){if(!validId(id))throw new AdminMutationError(400);return mutate(async()=>{
-   const users=await request('/api/admin/users');const user=users.find(u=>u.id===id);
-   if(!user||user.role!=='abgeordneter'||['gekuendigt','deaktiviert'].includes(user.status))throw new AdminMutationError(409);
-   if(user.active===false)await actions.setAccess(id,true);
-   const result=await request(`/api/admin/users/${encodeURIComponent(id)}/invite`,{method:'POST',body:{}});
-   const url=new URL(result.inviteUrl,globalThis.location?.origin||'http://localhost');
-   // Der bestehende Server darf HELMUT_PUBLIC_URL bzw. die kanonische Domain
-   // verwenden. Das ist ein auszugebender Link, niemals ein Fetch-Ziel.
-   const sameOrigin=url.origin===(globalThis.location?.origin||'http://localhost');
-   if((url.protocol!=='https:'&&!(sameOrigin&&url.protocol==='http:'))||url.username||url.password||url.pathname!=='/passwort-setzen'||!url.searchParams.get('token'))throw new AdminMutationError(0,true);
-   return result;
-  });},
+  invite(id){return mutate(()=>invite(id));},
   async settings(key){if(!['budget','sources','runs'].includes(key))throw new AdminMutationError(400);return reader.read(key);},
   dispose(){disposed=true;writesAllowed=false;reader.dispose();actions.dispose();for(const c of pending)c.abort();}
  };

@@ -9,9 +9,10 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
 
 ## Was sich für den Betreiber ändert
 
-- **Kunde anlegen:** nur Name und E-Mail. Kein zweiter Ansprechpartner, kein
-  Tarifwunsch und kein Passwort. Der Kunde ist die Person des Mandats.
-- **Eine Kundenseite:** Mandat ergänzen, Versorgung ausdrücklich aktivieren,
+- **Kunde anlegen:** Name, E-Mail und alle Mandatsangaben in einem Formular.
+  Ein Klick speichert Konto und Mandat und löst danach die Einladung aus. Kein
+  zweiter Ansprechpartner, Tarifwunsch oder vom Betreiber gesetztes Passwort.
+- **Eine Kundenseite:** Mandat bearbeiten, Versorgung ausdrücklich aktivieren,
   heutigen Briefingstand prüfen und bei Bedarf einen Zugangslink erstellen.
 - **Mandat auswählen:** Partei, Fraktion und Wahlkreis als Dropdowns mit denselben
   Listen wie im Profil. Wahlkreise passen zu Parlament und Bundesland; ein Wechsel
@@ -47,11 +48,11 @@ Die Kopie unter Sites erhält ihren bestehenden privaten Zugriff.
 | Funktion im App-Kandidaten | Vorhandener Anschluss / Ergebnis |
 | --- | --- |
 | Kundenbestand und Profilzuordnung | `GET /api/admin/customers`, `GET /api/admin/overview`; bestätigte IDs statt Namensraten; neue Personen erhalten eine neue Zuordnung, auch bei gleichnamigem Bestandsprofil. Unklare Profilquellen oder Mehrfachzuordnungen erlauben keinen erfolgreichen Versorgungsstatus. |
-| Kunde anlegen | Vorhandene `createAdminActions` um eine persönliche Zweifeldanlage ergänzt: frischer Kontobestand, CSRF, gesperrter POST auf `/api/admin/users`, bestehende Kundenfelder per PATCH. Kein neuer CRM-Speicher und keine automatische Einladung. Unterschiedliche Namen/Tarife bleiben für das alte Formular weiter unterstützt. |
+| Kunde anlegen | Alle Angaben vorab prüfen; vorhandene `createAdminActions` legt zuerst ein gesperrtes Konto mit neuer Profilreferenz an. Danach Profil speichern und zurücklesen, Zugang bedingt freigeben und bestehende Einladungsroute aufrufen. Bei einem Teilabbruch keine zweite Anlage oder automatische Wiederholung. Unterschiedliche Namen/Tarife bleiben für das alte Formular weiter unterstützt. |
 | Mandat laden und speichern | `GET/PATCH /api/admin/profile/:id`; vorhandene Mandatsprüfung und Zulassung bleiben serverseitig wirksam. Neue Profile bleiben ausdrücklich inaktiv. Bestehende Zusatzfelder werden erhalten; gespeicherte Werte werden wieder gelesen. |
 | Versorgung aktivieren | Bewusste Einzelaktion mit Bestätigung; vorherige Profilprüfung, ausschließlich PATCH `{profileActive:true}`, anschließende Leseprüfung. Aktivierung erzeugt keinen Briefing-Erfolgsnachweis und startet keinen zusätzlichen Crawl oder Modellaufruf. |
 | Briefing heute | Vorhandene `GET /api/admin/ergebnisse` mit Seitennachladen. Prüft aktuellen Berliner Tag und zusammenpassende Antwortseiten; fehlende/abweichende Antworten erzeugen keinen Erfolg. Briefing, Lage und Bereitstellungsquittung bleiben einzelne Aussagen. |
-| Zugangslink | Vorhandene servergeprüfte Zugangsfreigabe und `POST /api/admin/users/:id/invite`. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Keine Passworteingabe durch den Betreiber. Der Link lebt nur in der aktuellen Ansicht und lässt sich ausblenden. |
+| Einladung und Passwort | Nach vollständiger Anlage automatisch vorhandene Zugangsfreigabe und `POST /api/admin/users/:id/invite`. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Die bestehende Appseite `/passwort-setzen` verlangt zwei gleiche Passwörter, setzt die Sitzung und leitet zur App weiter. Kein Passwort durch den Betreiber. Link nur in der aktuellen Ansicht; beim Erneuern wird der alte Link sofort ausgeblendet. |
 | Kosten, Quellen, Abläufe | Bestehende Budget-/Quellen-/Prozessrouten. Unbekannte Beträge und fehlende Quelldaten werden erklärt; der vollständige Quellenbericht bleibt verlinkt. |
 | Seltene Funktionen | Tatsächliche Verweise zur bestehenden Profilansicht und zu den erweiterten Werkzeugen. In der privaten Vorschau werden diese Verweise als noch in der bisherigen Verwaltung liegend erklärt. |
 
@@ -68,32 +69,51 @@ und [klare, kurze Beschriftungen](https://developer.apple.com/design/human-inter
 eine Hauptaufgabe je Seite, vertraute Wörter, klar benannte Aktionen und Details
 erst bei Bedarf. Technische Prüfkennungen stehen nicht im normalen Bedienablauf.
 
+Eine erfolgreiche Anlage öffnet den Kunden mit bestätigtem Mandat und
+Einladungsbefund. Nur `mail.sent === true` wird als versendet gemeldet. Ohne
+Versand bleibt der Link verfügbar; die private Site nennt dies ausdrücklich
+eine simulierte Einladung. Die Briefingversorgung bleibt bis zur bewussten
+Aktivierung pausiert, unabhängig vom freigegebenen Kontozugang.
+
 Lade-, Leer- und Fehlerzustände bieten einen nächsten Schritt. Eine fehlende
 Profilquelle ist kein leeres Kundeninventar. Ein inaktives neues Profil gilt nicht
 als versorgt. Unklare Schreibausgänge sperren weiteres Speichern und verweisen auf
-Lesekontrolle; keine automatische Wiederholung oder Löschung. HTTP401/403 entfernt
+Lesekontrolle; keine automatische Wiederholung oder Löschung. Ein bekannter
+Teilabbruch erhält die Formularwerte, sperrt eine zweite Anlage und bietet
+„Angelegten Kunden prüfen“ an. HTTP401/403 entfernt
 Kundendaten und Formularwerte aus der Oberfläche. In direkten Vercel-Prüfvorschauen
 sperrt die neue Oberfläche ihre Schreibaktionen gegen echte Kunden. Der reguläre Servereinstieg importiert
 niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **30 Gruppen mit Browser und echtem isoliertem Backend:**
+- **40 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
-  nachgewiesen, einschließlich gespeicherter Dropdownwerte und abhängiger
-  Wahlkreislisten. Ergebnisstatus zusätzlich gegen synthetische bestehende
+  nachgewiesen, einschließlich vollständiger Einformularanlage, Dropdownwerten,
+  Teilabbrüchen, E-Mail-Übergabe an den gesperrten Mailweg und anschließender
+  Passwortseite: Abweichung abgewiesen, zwei gleiche Passwörter, echte Sitzung,
+  richtiges Mandat und HTTP410 bei erneuter Tokenverwendung. Die positive
+  Versandanzeige ist mit einer ausdrücklich synthetischen Antwort geprüft;
+  eine echte E-Mail wurde nicht versendet. Ergebnisstatus gegen synthetische bestehende
   Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
-- **16 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
-  1440/390/360/320 Pixel, Zweifeldanlage, Dropdowns, Beispielzustände, keine JavaScriptfehler
+- **18 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+  1440/390/360/320 Pixel, vollständige Anlage, erhaltenes Mandat, simulierte
+  Einladung, Dropdowns, Beispielzustände, keine JavaScriptfehler
   und keine App-/Netzwerkverbindung.
-- Bestehende Adminansicht: **104/104 Renderprüfungen** und **5/5 bestehende
-  Verwaltungs-Ergebnisprüfungen** grün. Kein fachfremder Last- oder Modelltest.
-- Ein zusätzlicher Negativfall erzeugte erwartungsgemäß eine HTTP401-Konsolenmeldung.
-  Die erste Testfassung wertete auch diese erwartete Meldung als Fehler; die
-  Korrektur unterscheidet ausschließlich den bewusst erzwungenen 401 von unerwarteten
-  Browserfehlern. Die Entfernung der privaten Daten blieb ausdrücklich geprüft.
+- Vorhandener Nachweis vom 11.11. für die bestehende Adminansicht:
+  **104/104 Renderprüfungen** und **5/5 Verwaltungs-Ergebnisprüfungen** grün.
+  Diese unveränderten Bereiche wurden am 12.11. nicht erneut geprüft.
+- Erwartete HTTP400-/401-Negativfälle werden von unerwarteten Browserfehlern
+  unterschieden. Die Entfernung privater Daten bei Sitzungsverlust ist geprüft.
+- Prüfkorrekturen am 12.11.: Der Node-HTTP-Test benötigt die wirkliche lokale
+  Herkunft für HTTP-Einladungslinks. Nach erstmaligem Passwortsetzen erzeugt
+  ein erneuter Link einen Reset statt einer weiteren offenen Einladung.
+  Der alte Link wird beim Erneuern sofort entfernt; die Prüfung wartet auf den neuen.
+
+[Vollständiges Formular auf dem Handy](vorschau-kunde-komplett-mobil.png)
+· [Bestehende Passwortseite](app-passwort-setzen-mobil.png).
 
 Reproduzierbar, jeweils ohne Productionkennungen:
 

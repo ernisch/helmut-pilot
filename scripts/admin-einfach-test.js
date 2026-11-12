@@ -27,6 +27,9 @@ async function run({browser=false,evidenceDir=null}={}){
  try{
   const accounts=require(path.join(clone,'lib/helmut/accounts'));
   const storage=require(path.join(clone,'lib/helmut/storage'));
+  const mailer=require(path.join(clone,'lib/helmut/invite-mail')),mailCalls=[];
+  const originalSend=mailer.sendAccessMail;
+  mailer.sendAccessMail=async(message,context)=>{const u=await accounts.getUserByEmailRaw(message.to);mailCalls.push({message,profile:await storage.getProfile(u.politicianId)});return originalSend(message,context);};
   const handler=require(path.join(clone,'server'));
   const admin=await accounts.createUser({name:'Fiktive Verwaltung',email:'admin@example.invalid',role:'admin',password:'Only-Synthetic-123!'});
   await accounts.createUser({name:'Fiktives Fremdkonto',email:'member@example.invalid',role:'abgeordneter',password:'Only-Synthetic-123!'});
@@ -37,7 +40,7 @@ async function run({browser=false,evidenceDir=null}={}){
   const authenticated=(url,options={})=>fetch(base+url,{...options,headers:{...options.headers,Cookie:cookie}});
   const {createSimpleApi}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/api.mjs')));
   const {customerState,berlinDay}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/model.mjs')));
-  const api=createSimpleApi({fetcher:authenticated});
+  const api=createSimpleApi({fetcher:authenticated,origin:base});
   await check('Alle Kandidatenassets nur fuer angemeldete Administratoren',async()=>{
    for(const asset of ['','app.mjs','api.mjs','styles.css','profil-auswahl.mjs']){
     const route='/verwaltung/einfach/'+asset;
@@ -55,22 +58,47 @@ async function run({browser=false,evidenceDir=null}={}){
    const d=await api.load();assert.equal(d.customers.length,1);assert.notEqual(d.customers[0].userId,admin.id);
    assert.equal(d.resultDay,null);assert.equal(customerState(d,d.customers[0]).key,'setup');
   });
+  const mandate={party:'SPD',faction:'SPD',parliamentType:'Bundestag',state:'Berlin',constituency:'Kein Wahlkreis (Landesliste)',focusTopics:['Fiktives Thema']};
   let user;
-  await check('Name und E-Mail erzeugen bestaetigtes gesperrtes Konto ohne Ansprechpartner/Tarif/Einladung',async()=>{
+  await check('Vollstaendige Anlage speichert Konto und Mandat vor der einmaligen Einladung',async()=>{
    await storage.saveProfile({id:'fiktiver-kunde-einfach',fullName:'Fiktiver Kunde Einfach',party:'SPD',faction:'SPD',profileActive:false});
-   const result=await api.createCustomer({name:'Fiktiver Kunde Einfach',email:'einfach@example.invalid'});user=result.user;
+   const result=await api.createCustomer({...mandate,name:'Fiktiver Kunde Einfach',email:'einfach@example.invalid'});user=result.user;
    assert.match(user.politicianId,/^kunde-/);assert.notEqual(user.politicianId,'fiktiver-kunde-einfach');
    assert.equal((await storage.getProfile('fiktiver-kunde-einfach')).fullName,'Fiktiver Kunde Einfach');
-   const stored=await accounts.getUserByIdRaw(user.id);assert.equal(stored.name,'Fiktiver Kunde Einfach');assert.equal(stored.active,false);assert.equal(stored.passwordHash,null);
+   const stored=await accounts.getUserByIdRaw(user.id);assert.equal(stored.name,'Fiktiver Kunde Einfach');assert.equal(stored.active,true);assert.equal(stored.status,'eingeladen');assert.equal(stored.passwordHash,null);
    assert.doesNotMatch(stored.customer.internalNote,/Ansprechpartner|Tarifwunsch/);
-   assert.equal((await accounts.listPendingInvites())[user.id],undefined);
-   assert.equal(await storage.getProfile(user.politicianId),null);
+   assert.ok((await accounts.listPendingInvites())[user.id]);
+   assert.equal((await storage.getProfile(user.politicianId)).profileActive,false);
+   assert.deepEqual((await storage.getProfile(user.politicianId)).focusTopics,mandate.focusTopics);
+   assert.equal(mailCalls.length,1);assert.equal(mailCalls[0].message.to,user.email);
+   assert.equal(mailCalls[0].profile.fullName,user.name);assert.equal(result.invitation.mail.sent,false);
    assert.equal((await api.load()).customers.some(c=>c.userId===user.id),true);
   });
   await check('Doppelte E-Mail legt kein zweites Konto an',async()=>{
    const before=(await accounts.listUsers()).length;
-   await assert.rejects(api.createCustomer({name:'Fiktiv Duplikat',email:'einfach@example.invalid'}),e=>e.status===409);
+   await assert.rejects(api.createCustomer({...mandate,name:'Fiktiv Duplikat',email:'einfach@example.invalid'}),e=>e.status===409);
    assert.equal((await accounts.listUsers()).length,before);
+  });
+  await check('Unvollstaendige Angaben erzeugen weder Konto noch Einladung',async()=>{
+   const before=(await accounts.listUsers()).length,mailCount=mailCalls.length;
+   await assert.rejects(api.createCustomer({name:'Fiktiv Unvollstaendig',email:'leer@example.invalid'}),e=>e.status===400);
+   await assert.rejects(api.createCustomer({...mandate,name:'Fiktiv Falsch',email:'falsch@example.invalid',constituency:'Falscher Wahlkreis'}),e=>e.status===400);
+   assert.equal((await accounts.listUsers()).length,before);assert.equal(mailCalls.length,mailCount);
+  });
+  await check('Mandatsfehler behaelt gesperrtes Konto und sendet keine Einladung',async()=>{
+   const mailCount=mailCalls.length;
+   const broken=createSimpleApi({origin:base,fetcher:(url,options={})=>url.startsWith('/api/admin/profile/')&&options.method==='PATCH'?Promise.resolve(new Response('{}',{status:400})):authenticated(url,options)});
+   await broken.load();let failure;
+   await assert.rejects(broken.createCustomer({...mandate,name:'Fiktiver Abbruch',email:'abbruch@example.invalid'}),e=>{failure=e;return e.stage==='profile'&&!!e.partialAccount;});
+   const c=await accounts.getUserByIdRaw(failure.partialAccount.id);assert.equal(c.active,false);
+   assert.equal(await storage.getProfile(c.politicianId),null);assert.equal((await accounts.listPendingInvites())[c.id],undefined);assert.equal(mailCalls.length,mailCount);broken.dispose();
+  });
+  await check('Unklare Einladungsantwort wird nicht wiederholt und nennt bestehenden Kunden',async()=>{
+   let sends=0;
+   const broken=createSimpleApi({origin:base,fetcher:async(url,options={})=>{const r=await authenticated(url,options);if(url.endsWith('/invite')){sends++;throw new Error('Synthetischer Antwortverlust');}return r;}});
+   await broken.load();let failure;
+   await assert.rejects(broken.createCustomer({...mandate,name:'Fiktiver Antwortverlust',email:'antwortverlust@example.invalid'}),e=>{failure=e;return e.stage==='invite'&&e.outcomeUnknown&&!!e.partialAccount;});
+   assert.equal(sends,1);assert.ok((await accounts.listPendingInvites())[failure.partialAccount.id]);assert.equal((await storage.getProfile(failure.partialAccount.politicianId)).profileActive,false);broken.dispose();
   });
   await check('Mandatsangaben werden wirklich gespeichert und bleiben zunaechst inaktiv',async()=>{
    const input={fullName:user.name,party:'SPD',faction:'SPD',parliamentType:'Bundestag',state:'Berlin',constituency:'Fiktiver Wahlkreis',focusTopics:['Fiktives Thema']};
@@ -139,13 +167,10 @@ async function run({browser=false,evidenceDir=null}={}){
    await check('Vorhandene freie Bezeichnungen bleiben beim Oeffnen im Dropdown erhalten',async()=>{assert.equal(await page.locator('#party').inputValue(),'Fiktive Regionalpartei');assert.equal(await page.locator('#faction').inputValue(),'Fiktive Fraktion');assert.equal(await page.locator('#constituency').inputValue(),'Fiktive Region');});
    await page.locator('[data-nav="customers"]').click();
    await page.locator('[data-action="new"]').first().click();
-   await check('Kundenanlage hat genau Name und E-Mail',async()=>{assert.equal(await page.locator('#new-customer input').count(),2);assert.equal(await page.getByText('Ansprechpartner',{exact:true}).count(),0);});
+   await check('Ein Formular enthaelt Kontaktdaten und alle Mandatsangaben ohne Adminpasswort',async()=>{assert.equal(await page.locator('#new-customer input').count(),2);assert.equal(await page.locator('#new-customer select').count(),5);assert.equal(await page.locator('#new-customer textarea').count(),1);assert.equal(await page.getByText('Ansprechpartner',{exact:true}).count(),0);});
    await page.locator('#name').fill('Fiktiver Browserkunde');await page.locator('#email').fill('browser@example.invalid');
    await page.locator('#new-customer button[type="submit"]').click();
-   await page.getByRole('heading',{name:'Fiktiver Browserkunde',exact:true}).waitFor();
-   await check('Browserkonto liegt wirklich im isolierten Backend',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');assert.ok(c);assert.equal(c.active,false);assert.equal(await storage.getProfile(c.politicianId),null);assert.equal(await page.locator('h1').evaluate(el=>el===document.activeElement),true);});
-   await page.locator('[data-action="profile"]').first().click();
-   await page.getByRole('heading',{name:'Mandat einrichten.'}).waitFor();
+   await check('Fehlende Mandatsangaben verhindern die Anlage im Browser',async()=>{assert.equal((await accounts.listUsers()).some(u=>u.email==='browser@example.invalid'),false);assert.equal(await page.locator('#new-customer').count(),1);});
    const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/profil-wahlkreise.json'),'utf8')).constituencies;
    await check('Partei, Fraktion und Wahlkreis sind native Dropdowns',async()=>{for(const key of ['party','faction','constituency'])assert.equal(await page.locator('#'+key).evaluate(el=>el.tagName),'SELECT');assert.equal(await page.locator('#constituency').isDisabled(),true);});
    await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');
@@ -157,21 +182,65 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.locator('#constituency').selectOption(catalog.Landtag.Berlin[0]);await page.locator('#state').selectOption('Brandenburg');
    await check('Bundeslandwechsel verlangt eine neue passende Wahlkreisauswahl',async()=>{assert.equal(await page.locator('#constituency').inputValue(),'');const values=await page.locator('#constituency option').evaluateAll(options=>options.map(o=>o.value).filter(Boolean));assert.deepEqual(values,[...catalog.Landtag.Brandenburg,'Kein Wahlkreis (Landesliste)']);});
    await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('SPD');await page.locator('#faction').selectOption('SPD');await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');await page.locator('#topics').fill('Fiktives Thema');
-   if(evidenceDir){await page.setViewportSize({width:390,height:1100});await page.screenshot({path:path.join(evidenceDir,'app-mandat-dropdown-mobil.png'),fullPage:true});}
-   await page.locator('#profile-form button[type="submit"]').click();
+   if(evidenceDir){await page.setViewportSize({width:390,height:1100});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(evidenceDir,'app-mandat-dropdown-mobil.png'),fullPage:true});}
+   await page.locator('#new-customer button[type="submit"]').click();
    await page.getByRole('heading',{name:'Fiktiver Browserkunde',exact:true}).waitFor();
    await check('Browser speichert Dropdownwerte, ohne den Kunden als versorgt auszugeben',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');const p=await storage.getProfile(c.politicianId);assert.equal(p.parliamentType,'Landtag');assert.equal(p.party,'SPD');assert.equal(p.faction,'SPD');assert.equal(p.constituency,'Kein Wahlkreis (Landesliste)');assert.equal(p.profileActive,false);assert.match(await page.locator('main').innerText(),/Versorgung pausiert/);});
+   await check('Ein Klick legt den Kunden an und uebergibt die Einladung an den gesperrten Mailweg',async()=>{
+    const c=await accounts.getUserByEmailRaw('browser@example.invalid');assert.equal(c.active,true);assert.equal(c.status,'eingeladen');assert.equal(c.passwordHash,null);
+    assert.equal(mailCalls.filter(m=>m.message.to===c.email).length,1);assert.ok(mailCalls.find(m=>m.message.to===c.email).profile);
+    assert.ok((await accounts.listPendingInvites())[c.id]);assert.equal(await page.getByText('Kunde angelegt.',{exact:true}).count(),1);
+    assert.equal(await page.getByText('Einladung versendet.',{exact:true}).count(),0);assert.equal(await page.locator('#invite-url').count(),1);
+   });
+   const invitationUrl=await page.locator('#invite-url').inputValue(),invitation=new URL(invitationUrl);
+   const customerContext=await browserInstance.newContext({viewport:{width:390,height:900}});
+   await customerContext.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+   const customerPage=await customerContext.newPage();
+   await customerPage.goto(base+invitation.pathname+invitation.search);await customerPage.locator('#formView').waitFor({state:'visible'});
+   await check('Einladungslink oeffnet die bestehende Appseite mit zwei Passwortfeldern',async()=>{assert.equal(await customerPage.locator('#setForm input[type="password"]').count(),2);assert.equal(await customerPage.locator('#setForm input[type="email"]').count(),0);});
+   if(evidenceDir)await customerPage.screenshot({path:path.join(evidenceDir,'app-passwort-setzen-mobil.png'),fullPage:true});
+   await customerPage.locator('#pw1').fill('Only-Customer-Synthetic-123!');await customerPage.locator('#pw2').fill('Abweichendes-Testpasswort');await customerPage.locator('#setSubmit').click();
+   await check('Unterschiedliche Passwoerter lassen Einmaltoken und Passwort unbenutzt',async()=>{await customerPage.getByText('Die Passwörter stimmen nicht überein.',{exact:true}).waitFor();assert.equal((await accounts.getUserByEmailRaw('browser@example.invalid')).passwordHash,null);assert.equal((await accounts.inspectPasswordToken(invitation.searchParams.get('token'))).valid,true);});
+   await customerPage.locator('#pw2').fill('Only-Customer-Synthetic-123!');await customerPage.locator('#setSubmit').click();await customerPage.waitForURL(base+'/');
+   await check('Passwortsetzen meldet den Kunden in seiner App mit seinem Mandat an',async()=>{
+    const session=await (await customerContext.request.get(base+'/api/auth/session')).json(),c=await accounts.getUserByEmailRaw('browser@example.invalid');
+    assert.equal(session.authenticated,true);assert.equal(session.user.id,c.id);assert.equal(c.status,'aktiv');assert.ok(c.passwordHash);
+    const profile=await (await customerContext.request.get(base+'/api/profile/current')).json();assert.equal(profile.id,c.politicianId);
+    const reused=await customerContext.request.post(base+'/api/auth/set-password',{data:{token:invitation.searchParams.get('token'),password:'Only-Customer-Synthetic-123!'}});assert.equal(reused.status(),410);
+   });
+   await customerContext.close();
    await page.locator('[data-action="activate"]').click();
    await page.getByText('Aktiv',{exact:true}).waitFor();
    await check('Aktivieren bleibt getrennt vom tatsaechlichen Briefing',async()=>{assert.equal(await page.getByText('Heute bereit',{exact:true}).count(),0);});
    await page.locator('[data-action="invite"]').click();await page.locator('#invite-url').waitFor();
-   await check('Zugangslink ist wirklich ein lokales Einmaltoken; keine Mailzustellung behauptet',async()=>{const c=(await accounts.listUsers()).find(u=>u.email==='browser@example.invalid');assert.ok((await accounts.listPendingInvites())[c.id]);assert.equal(await page.getByText('Zugangslink versendet.',{exact:true}).count(),0);});
+   await check('Nach Passwortsetzen entsteht ein Reset-Einmaltoken statt einer zweiten Einladung',async()=>{const token=new URL(await page.locator('#invite-url').inputValue()).searchParams.get('token');const state=await accounts.inspectPasswordToken(token);assert.equal(state.valid,true);assert.equal(state.purpose,'reset');assert.equal(await page.getByText('Einladung versendet.',{exact:true}).count(),0);});
    await page.locator('[data-action="hide-invite"]').click();
    for(const width of [1440,390,360,320]){
     await page.setViewportSize({width,height:900});
     await check('Kundenseite ohne horizontalen Ueberlauf bei '+width,async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true));
     if(evidenceDir&&width===390)await page.screenshot({path:path.join(evidenceDir,'app-kunde-mobil.png'),fullPage:true});
    }
+   async function fillNewCustomer(name,email){
+    await page.locator('[data-nav="customers"]').click();await page.locator('[data-action="new"]').first().click();
+    await page.locator('#name').fill(name);await page.locator('#email').fill(email);
+    await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('SPD');await page.locator('#faction').selectOption('SPD');await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');await page.locator('#topics').fill('Fiktives Thema');
+   }
+   const invitePattern='**/api/admin/users/*/invite';
+   await context.route(invitePattern,async route=>{const response=await route.fetch();const body=await response.json();body.mail={sent:true,synthetic:true};await route.fulfill({response,json:body});});
+   await fillNewCustomer('Fiktive Versandprobe','versandprobe@example.invalid');await page.locator('#new-customer button[type="submit"]').click();
+   await page.getByRole('heading',{name:'Fiktive Versandprobe',exact:true}).waitFor();
+   await check('Ein synthetischer positiver Versandbeleg zeigt die abgeschickte Einladung',async()=>{assert.match(await page.locator('[role="status"]').innerText(),/an versandprobe@example.invalid versendet/);assert.equal(await page.getByText('Einladung versendet.',{exact:true}).count(),1);assert.equal(mailCalls.filter(m=>m.message.to==='versandprobe@example.invalid').length,1);});
+   await context.unroute(invitePattern);
+   assert.deepEqual(consoleErrors,[]);
+   const profilePattern='**/api/admin/profile/*';
+   await context.route(profilePattern,route=>route.request().method()==='PATCH'?route.fulfill({status:400,contentType:'application/json',body:'{}'}):route.fallback());
+   await fillNewCustomer('Fiktiver Formularabbruch','formularabbruch@example.invalid');await page.locator('#new-customer button[type="submit"]').click();
+   await page.locator('[data-action="check-created"]').waitFor();
+   await check('Teilabbruch bewahrt Formulardaten, sperrt erneute Anlage und bietet bestehenden Kunden an',async()=>{assert.equal(await page.locator('#new-customer button[type="submit"]').isDisabled(),true);assert.equal(await page.locator('#name').inputValue(),'Fiktiver Formularabbruch');assert.equal(await page.locator('#party').inputValue(),'SPD');assert.equal(mailCalls.filter(m=>m.message.to==='formularabbruch@example.invalid').length,0);assert.equal((await accounts.listUsers()).filter(u=>u.email==='formularabbruch@example.invalid').length,1);});
+   await context.unroute(profilePattern);await page.locator('[data-action="check-created"]').click();
+   await page.getByRole('heading',{name:'Fiktiver Formularabbruch',exact:true}).waitFor();
+   await check('Teilabbruch laesst sich ohne doppelte Anlage am bestehenden Kunden pruefen',async()=>{assert.equal(await page.getByRole('button',{name:'Mandat ergänzen',exact:true}).count(),1);assert.equal((await accounts.getUserByEmailRaw('formularabbruch@example.invalid')).active,false);});
+   assert.ok(consoleErrors.every(message=>message.includes('400 (Bad Request)')),'Nur der bewusst erzwungene Profilfehler darf einen HTTP400-Konsolenhinweis erzeugen');consoleErrors.length=0;
    await page.locator('[data-nav="settings"]').click();await page.locator('[data-setting="budget"]').click();await page.getByRole('heading',{name:'Kosten',exact:true}).waitFor();
    await check('Kostenansicht liest die vorhandene Route',async()=>assert.ok(requests.some(r=>r.url==='/api/admin/stats/budget-today')));
    await page.setViewportSize({width:1440,height:1000});

@@ -1,7 +1,7 @@
 {
   "status": "PASS",
-  "observedAt": "2026-11-12T07:30:12.540Z",
-  "checks": 16,
+  "observedAt": "2026-11-12T07:48:33.770Z",
+  "checks": 18,
   "pageErrors": [],
   "externalRequests": 0,
   "scope": "Export derselben Appkomponente mit fiktivem Beispieladapter; keine echten Appdaten"

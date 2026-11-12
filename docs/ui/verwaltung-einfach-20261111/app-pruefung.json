@@ -1,7 +1,7 @@
 {
   "status": "PASS",
-  "observedAt": "2026-11-12T07:30:10.762Z",
-  "checks": 30,
+  "observedAt": "2026-11-12T07:48:02.055Z",
+  "checks": 40,
   "requests": [
     {
       "url": "/verwaltung/einfach/",
@@ -56,11 +56,11 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-883a3bf6-4162-4f61-9924-093b7be09355",
+      "url": "/api/admin/profile/kunde-c62b184a-f8ca-4a7e-a289-de68c2cf0a52",
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-883a3bf6-4162-4f61-9924-093b7be09355",
+      "url": "/api/admin/profile/kunde-c62b184a-f8ca-4a7e-a289-de68c2cf0a52",
       "method": "GET"
     },
     {
@@ -76,27 +76,11 @@
       "method": "POST"
     },
     {
-      "url": "/api/admin/users/user-2db0e113655e208ada",
+      "url": "/api/admin/users/user-b8be583bebbf5f4b56",
       "method": "PATCH"
     },
     {
-      "url": "/api/admin/customers",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/overview",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/ergebnisse",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
       "method": "GET"
     },
     {
@@ -104,55 +88,11 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
       "method": "PATCH"
     },
     {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/customers",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/overview",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/ergebnisse",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
-      "method": "GET"
-    },
-    {
-      "url": "/api/security/csrf",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
-      "method": "PATCH"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/customers",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/overview",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/ergebnisse",
-      "method": "GET"
-    },
-    {
-      "url": "/api/admin/profile/kunde-5a034886-edc0-460f-894f-418bad1ce2fb",
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
       "method": "GET"
     },
     {
@@ -168,7 +108,7 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/users/user-2db0e113655e208ada/restore-access",
+      "url": "/api/admin/users/user-b8be583bebbf5f4b56/restore-access",
       "method": "POST"
     },
     {
@@ -180,7 +120,67 @@
       "method": "GET"
     },
     {
-      "url": "/api/admin/users/user-2db0e113655e208ada/invite",
+      "url": "/api/admin/users/user-b8be583bebbf5f4b56/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-de85c13b-98b2-4022-ac0b-5d8aae56cc95",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-b8be583bebbf5f4b56/invite",
       "method": "POST"
     },
     {
@@ -193,6 +193,126 @@
     },
     {
       "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-052785b3ccdcc746d4",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-90cb8103-a70f-4626-96e3-83f9cd3bd9b8",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-90cb8103-a70f-4626-96e3-83f9cd3bd9b8",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-90cb8103-a70f-4626-96e3-83f9cd3bd9b8",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-052785b3ccdcc746d4/restore-access",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users/user-052785b3ccdcc746d4/invite",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST"
+    },
+    {
+      "url": "/api/admin/users/user-fc7a3361aefa977db4",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/profile/kunde-2ee34006-4730-47f2-890b-f351df38f302",
+      "method": "GET"
+    },
+    {
+      "url": "/api/security/csrf",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-2ee34006-4730-47f2-890b-f351df38f302",
+      "method": "PATCH"
+    },
+    {
+      "url": "/api/admin/customers",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/overview",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/ergebnisse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/admin/profile/kunde-2ee34006-4730-47f2-890b-f351df38f302",
       "method": "GET"
     },
     {
