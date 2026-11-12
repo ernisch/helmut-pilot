@@ -112,7 +112,7 @@ Reset, kein Entlastungsbeweis fuer den vorangegangenen Ausfall. Ursache bleibt U
 
 ### Auth-Schreibentlastung vorbereitet, noch nicht aktiviert
 
-Branch `codex/auth-schreiblast-vorbereiten-20261112`: kleine Auth-Aenderungen
+[PR1165](https://github.com/ernisch/helmut-pilot/pull/1165): kleine Auth-Aenderungen
 sollen nur geaenderte oberste JSON-Felder uebertragen. Die ganze Zeilenrevision
 bleibt atomare Schreibbedingung, auch bei verschiedenen geaenderten Feldern.
 Unveraenderliche SHA256-Fingerabdruecke erkennen verschachtelte Aenderungen und
@@ -139,8 +139,28 @@ Altbestand, Eingabeabwehr und datenbewahrendem Rollback bestanden. Budget16/16,
 CAS15/15, Env38/38 und Migration71/71 zuvor bestanden. Zwei lokale REST-Aufbauten
 scheiterten an Containerstart/Portbereitstellung vor den neuen Testfaellen;
 kein bestandener lokaler REST-Nachweis behauptet. Der bestehende verpflichtende
-PG17-/PostgREST-CI-Schritt enthaelt neun neue echte REST-/SQL-Gruppen und muss vor
-Merge erfolgreich sein. Pflicht-CI und Production-Rollout fuer diesen Kopf noch offen.
+PG17-/PostgREST-CI-Schritt enthaelt neun neue echte REST-/SQL-Gruppen und ist
+im Pflichtlauf erfolgreich. Beide Pflichtchecks auf dem exakten Kopf
+2968bb57e8c151b38e1549eeeb487fca0aed1aac SUCCESS in
+[CI43228665680](https://github.com/ernisch/helmut-pilot/actions/runs/43228665680).
+Alle nativen DB-, Standard-, Fach- und Z22-Schritte bestanden. Browserausfuehrung
+beim Backenddiff planmaessig uebersprungen; erfolgreicher Pflichtcheck ist kein
+neuer authentifizierter Browsernachweis. Vor Merge main16700435, voller Diff,
+Konfliktfreiheit und0lebende Job-/Pipeline-/Klassensperren bestaetigt.
+Die Connector-Env-Liste kuerzt einzelne Metadaten; deshalb vollstaendige rein
+lesende API-Nachkontrolle ohne Ausgabe von Werten:86Eintraege, Flag nicht gesetzt.
+
+Merge4450622a8c11d287eaa1eddab8557ded0de1da79 am12.11.,14:05:25UTC,
+Deploymentdpl_8Q98eu5joJCVNLeKWuhSLiE9JNib READY, Hauptalias bestaetigt.
+Reine GET-Kontrolle14:06:48UTC: Startseitenversion4450622a, exakter Mergecommit,
+production=true, kommunikationGesperrt=true, anonyme Sitzung nicht authentifiziert.
+Im abgefragten neuen Deploymentfenster keine error/warning/fatal-Gruppen;
+kurze Ruhekontrolle, kein Last- oder Briefingnachweis. Native Kontrolle14:07:11UTC:
+RPC weiterhin NICHT installiert, PostgreSQL seit12:47:29UTC ohne neuen Neustart,
+0lebende Job-/Pipeline-/Klassensperren. Code ist inaktiv auf Production vorhanden;
+Migration, Flag-Aktivierung und gesonderter Redeploy sind NICHT ausgefuehrt.
+Keine weiteren Quellen-/Modell-/Lage-/Morgenlaeufe. Naechster Schritt bleibt die
+konkrete Freigabe fuer den folgenden Aktivierungsplan, keine alte Lauf-GO-Verwendung.
 
 Konkreter Aktivierungsplan nach gruener CI und inaktivem Coderollout:
 1. Frischen Productionstand, fehlenden RPC, Ziel-ID-Endung,0lebende Schreiber
