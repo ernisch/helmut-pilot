@@ -24,6 +24,11 @@ PR1155 bleibt auf Betreiberwunsch Draft ohne Merge. Kein Liveumbau von Helmut.**
   auswählbar. [Ansicht auf dem Handy](vorschau-mandat-dropdown-mobil.png).
 - **Drei Einstiege:** Übersicht, Kunden, Einstellungen. Die Übersicht zeigt
   Kunden mit Handlungsbedarf. Fehlende Nachweise bleiben offen.
+- **Quellen & Versorgung:** direkt von der Übersicht oder unter Einstellungen.
+  Vorhandenen Quellenlauf starten, Status prüfen und heutige Kundenbriefings
+  sehen. Ein Laufabschluss erzeugt keinen erfolgreichen Briefingstatus.
+- **Helmut-Gestaltung:** originales Zeichen, Hanken Grotesk und Spectral aus
+  der App; ruhige dunkle Farben, kurze Beschriftungen und native Formularfelder.
 - **Weitere Funktionen:** Kosten, Quellen und letzte Abläufe verwenden vorhandene
   Leserouten. Profilbestand, Zuweisungen, Datenschutz und Diagnose bleiben in
   den bisherigen Werkzeugen erreichbar. Keine bestehenden Funktionen oder Daten
@@ -58,6 +63,7 @@ Die Kopie unter Sites erhält ihren bestehenden privaten Zugriff.
 | Briefing heute | Vorhandene `GET /api/admin/ergebnisse` mit Seitennachladen. Prüft aktuellen Berliner Tag und zusammenpassende Antwortseiten; fehlende/abweichende Antworten erzeugen keinen Erfolg. Briefing, Lage und Bereitstellungsquittung bleiben einzelne Aussagen. |
 | Einladung und Passwort | Nach bestätigter Anlage automatisch vorhandene Zugangsfreigabe und `POST /api/admin/users/:id/invite`, auch mit leerer Schwerpunktliste. Einmalbindung, Gültigkeit und echter `mail.sent`-Status bleiben erhalten. Die bestehende Appseite `/passwort-setzen` verlangt zwei gleiche Passwörter, setzt die Sitzung und leitet zur App weiter. Kein Passwort durch den Betreiber. Link nur in der aktuellen Ansicht; beim Erneuern wird der alte Link sofort ausgeblendet. |
 | Kosten, Quellen, Abläufe | Bestehende Budget-/Quellen-/Prozessrouten. Unbekannte Beträge und fehlende Quelldaten werden erklärt; der vollständige Quellenbericht bleibt verlinkt. |
+| Manueller Quellenstart | Bestehendes `createQuellenlauf` und `POST/GET /api/admin/quellenlauf`. Admin/CSRF, Auftragskennung, Kontingente, Status und Reload bleiben erhalten. Bei unbekanntem Ausgang kein weiterer Start. Ein bestätigtes HTTP401/403 des Startversuchs entfernt den sicher abgewiesenen Auftrag; fehlende Folgeabfragen bleiben sichtbar. |
 | Seltene Funktionen | Tatsächliche Verweise zur bestehenden Profilansicht und zu den erweiterten Werkzeugen. In der privaten Vorschau werden diese Verweise als noch in der bisherigen Verwaltung liegend erklärt. |
 
 Ein vollständiger technischer Nachweis heißt **„Heute bereit“**, mit gesondertem
@@ -97,7 +103,7 @@ niemals den fiktiven Beispieladapter.
 
 ## Tatsächliche Prüfung
 
-- **44 Gruppen mit Browser und echtem isoliertem Backend:**
+- **57 Gruppen mit Browser und echtem isoliertem Backend:**
   [Prüfbeleg](app-pruefung.json), [Desktop](app-uebersicht.png),
   [Kundenseite Mobil](app-kunde-mobil.png). Von der UI ausgelöste Kontoanlage,
   Profil-PATCH, explizite Aktivierung und Einmallink sind im lokalen Speicher
@@ -110,10 +116,15 @@ niemals den fiktiven Beispieladapter.
   Versandanzeige ist mit einer ausdrücklich synthetischen Antwort geprüft;
   eine echte E-Mail wurde nicht versendet. Ergebnisstatus gegen synthetische bestehende
   Antwortverträge geprüft; die lokale Umgebung besitzt keinen produktiven V3-Speicher.
-- **22 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
+- **30 Gruppen für den Offlineexport:** [Prüfbeleg](vorschau-v2-pruefung.json),
   1440/390/360/320 Pixel, vollständige Anlage, erhaltenes Mandat, simulierte
   Einladung, optionale/leer speicherbare Schwerpunkte, Dropdowns, Beispielzustände, keine JavaScriptfehler
   und keine App-/Netzwerkverbindung.
+- **17/17 bestehende Quellenstartgruppen einschließlich Originalbrowser:**
+  lokale Queue-/Storage-Injektion; keine externe Quellen- oder Modellarbeit.
+  Der neue Client erreicht die echte Route im ausgeschalteten Arbeitsfenster;
+  erfolgreiche und unklare Laufantworten sind zusätzlich synthetisch geprüft.
+  Doppelklick, Reload ohne Neustart, Folgeabruf und Sitzungsverlust sind abgedeckt.
 - Vorhandener Nachweis vom 11.11. für die bestehende Adminansicht:
   **104/104 Renderprüfungen** und **5/5 Verwaltungs-Ergebnisprüfungen** grün.
   Diese unveränderten Bereiche wurden am 12.11. nicht erneut geprüft.
@@ -127,6 +138,10 @@ niemals den fiktiven Beispieladapter.
 [Vollständiges Formular auf dem Handy](vorschau-kunde-komplett-mobil.png)
 · [Anlage ohne Schwerpunkte](vorschau-ohne-schwerpunkte-mobil.png)
 · [Bestehende Passwortseite](app-passwort-setzen-mobil.png).
+
+[Quellen & Versorgung auf dem Handy](vorschau-quellen-mobil.png)
+· [Desktop](vorschau-quellen-desktop.png)
+· [Einordnung, Altbestand und Live-Momentaufnahme](versorgung-20261112.md).
 
 Reproduzierbar, jeweils ohne Productionkennungen:
 

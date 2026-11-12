@@ -3370,13 +3370,13 @@ async function serveOriginalAdministration(request, response, url) {
   // Getrennt pruefbarer Kandidat; Originalverwaltung und alte Werkzeuge bleiben.
   // Dieselbe vorstehende Session-/Adminpruefung schuetzt jede einzelne Datei.
   if (key === "einfach") return end(308, "", "text/plain; charset=utf-8", { Location: "/verwaltung/einfach/" });
-  if (key.startsWith("einfach/") || ["api.mjs", "model.mjs", "original-actions.mjs"].includes(key)) {
+  if (key.startsWith("einfach/") || ["api.mjs", "model.mjs", "original-actions.mjs", "original-quellenlauf.mjs"].includes(key)) {
     const assets = require("./scripts/einfache-verwaltung-paket").simpleAdministrationPackage();
     if (!assets.has(key)) return end(404, '{"error":"Nicht gefunden."}');
     const type = key.endsWith("/") || key.endsWith(".html") ? "text/html; charset=utf-8"
-      : key.endsWith(".css") ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8";
+      : key.endsWith(".css") ? "text/css; charset=utf-8" : key.endsWith(".svg") ? "image/svg+xml" : key.endsWith(".woff2") ? "font/woff2" : "text/javascript; charset=utf-8";
     return end(200, assets.get(key), type, {
-      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     });
   }
   try {

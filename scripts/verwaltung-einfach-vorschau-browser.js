@@ -12,6 +12,8 @@ const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
  try{
   await page.setContent(html);await page.getByRole('heading',{name:'Auf einen Blick.'}).waitFor();
   check('Vorschau bootet dieselbe Appkomponente',await page.locator('.nav button').count()===3);
+  await page.evaluate(()=>document.fonts.ready);
+  check('Originales Helmut-Zeichen und Schrift sind auch offline vorhanden',await page.locator('.brand-logo').evaluate(el=>el.complete&&el.naturalWidth>0)&&await page.evaluate(()=>document.fonts.check('16px "Hanken Grotesk"')));
   check('Fiktive Daten sind sichtbar gekennzeichnet',await page.locator('.demo').innerText().then(t=>t.includes('Fiktive Daten')));
   await page.screenshot({path:path.join(dir,'vorschau-v2-uebersicht.png'),fullPage:true});
   await page.locator('[data-nav="customers"]').click();await page.locator('[data-customer="preview-mitte"]').click();
@@ -49,6 +51,12 @@ const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
   check('Vorschau bietet keine Briefingaktivierung ohne fachliche Angaben an',await page.locator('[data-action="activate"]').count()===0);
   await page.locator('[data-action="profile"]').first().click();await page.locator('#profile-form').waitFor();await page.locator('#profile-form button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv ohne Schwerpunkte',exact:true}).waitFor();
   check('Leere Schwerpunkte bleiben auch beim Bearbeiten speicherbar',await page.getByText('Schwerpunkte offen',{exact:true}).count()===1);
+  await page.locator('[data-nav="settings"]').click();await page.locator('[data-setting="sources"]').click();
+  check('Quellenstart liegt verstaendlich unter Einstellungen und Quellenversorgung',await page.getByRole('heading',{name:'Quellen & Versorgung.',exact:true}).isVisible()&&await page.getByRole('button',{name:'Quellenlauf jetzt starten',exact:true}).isVisible());
+  await page.locator('[data-action="source-start"]').click();await page.getByRole('heading',{name:'Quellenlauf abgeschlossen.',exact:true}).waitFor();
+  check('Simulierter Quellenabschluss laesst fehlende Kundenbriefings offen',await page.locator('.check').filter({hasText:'Heute bereit'}).innerText().then(t=>t.includes('1 von')));
+  for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:1000});check('Quellenversorgung ohne Ueberlauf bei '+width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));if(width===390||width===1440){await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(dir,'vorschau-quellen-'+(width===390?'mobil':'desktop')+'.png'),fullPage:true});}}
+  await page.locator('[data-nav="overview"]').click();check('Versorgungsstand ist von der Uebersicht direkt erreichbar',await page.locator('.supply-overview [data-setting="sources"]').count()===1);
   check('Keine JavaScriptfehler',errors.length===0);check('Keine App-/Netzwerkverbindung',external.length===0);
   fs.writeFileSync(path.join(dir,'vorschau-v2-pruefung.json'),JSON.stringify({status:'PASS',observedAt:new Date().toISOString(),checks,pageErrors:errors,externalRequests:external.length,scope:'Export derselben Appkomponente mit fiktivem Beispieladapter; keine echten Appdaten'},null,2)+'\n');
  }finally{await browser.close();}

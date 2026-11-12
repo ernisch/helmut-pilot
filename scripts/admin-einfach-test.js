@@ -13,7 +13,7 @@ function isolatedBackend(){
  // CI installiert Laufzeitpakete im Ausgangscheckout. Nur diese vorhandenen
  // Pakete teilen; Daten und Zugangsdaten bleiben im wegwerfbaren Klon isoliert.
  if(fs.existsSync(path.join(root,'node_modules')))fs.symlinkSync(path.join(root,'node_modules'),path.join(clone,'node_modules'),'dir');
- for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js','scripts/profil-auswahl-paket.js'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
+ for(const file of ['server.js','verwaltung/original-actions.mjs','scripts/einfache-verwaltung-paket.js','scripts/profil-auswahl-paket.js','verwaltung/original-quellenlauf.mjs'])fs.copyFileSync(path.join(root,file),path.join(clone,file));
  fs.cpSync(path.join(root,'verwaltung/einfach'),path.join(clone,'verwaltung/einfach'),{recursive:true});
  assert.equal(fs.existsSync(path.join(clone,'.helmut-data')),false);
  return {temp,clone};
@@ -21,7 +21,7 @@ function isolatedBackend(){
 async function run({browser=false,evidenceDir=null}={}){
  assert.ok(process.env.NODE_OPTIONS?.includes('lokaler-netzschutz'));
  assert.equal(process.env.HELMUT_STORAGE_BACKEND,'local');
- process.env.HELMUT_AUTH_MODE='accounts';process.env.HELMUT_STORE_CACHE_MS='0';process.env.HELMUT_TESTLAUF_KOMMUNIKATION='gesperrt';
+ process.env.HELMUT_AUTH_MODE='accounts';process.env.HELMUT_STORE_CACHE_MS='0';process.env.HELMUT_QUELLEN_ARBEITSFENSTER='off';process.env.HELMUT_TESTLAUF_KOMMUNIKATION='gesperrt';
  const {temp,clone}=isolatedBackend();let server,browserInstance;
  const errors=[],consoleErrors=[],requests=[];
  try{
@@ -42,7 +42,7 @@ async function run({browser=false,evidenceDir=null}={}){
   const {customerState,berlinDay}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/model.mjs')));
   const api=createSimpleApi({fetcher:authenticated,origin:base});
   await check('Alle Kandidatenassets nur fuer angemeldete Administratoren',async()=>{
-   for(const asset of ['','app.mjs','api.mjs','styles.css','profil-auswahl.mjs']){
+   for(const asset of ['','app.mjs','api.mjs','styles.css','profil-auswahl.mjs','versorgung.mjs','logo.svg','sans.woff2','serif.woff2']){
     const route='/verwaltung/einfach/'+asset;
     assert.equal((await fetch(base+route)).status,401);
     assert.equal((await fetch(base+route,{headers:{Cookie:memberCookie}})).status,403);
@@ -53,6 +53,8 @@ async function run({browser=false,evidenceDir=null}={}){
   await check('Feste Assetliste ohne Quellcode-/Traversalfreigabe',async()=>{
    for(const route of ['/verwaltung/einfach/server.js','/verwaltung/einfach/%2e%2e%2fserver.js','/verwaltung/einfach/preview.mjs'])assert.equal((await authenticated(route)).status,404);
    assert.equal((await authenticated('/verwaltung/einfach/',{method:'POST'})).status,405);
+   for(const [file,type] of [['logo.svg','image/svg+xml'],['sans.woff2','font/woff2'],['serif.woff2','font/woff2']])assert.equal((await authenticated('/verwaltung/einfach/'+file)).headers.get('content-type'),type);
+   assert.equal((await fetch(base+'/verwaltung/original-quellenlauf.mjs')).status,401);assert.equal((await authenticated('/verwaltung/original-quellenlauf.mjs')).status,200);
   });
   await check('Tatsaechlicher Kundenbestand wird gelesen; Admin ist kein Kunde',async()=>{
    const d=await api.load();assert.equal(d.customers.length,1);assert.notEqual(d.customers[0].userId,admin.id);
@@ -137,7 +139,7 @@ async function run({browser=false,evidenceDir=null}={}){
    let writes=0;const p=createSimpleApi({fetcher:async(url,options={})=>{
     if(options.method&&options.method!=='GET')writes++;
     return {ok:true,status:200,json:async()=>url.includes('customers')?{kunden:[]}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'preview'}}}:{verfuegbar:false}};
-   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);assert.equal(writes,0);p.dispose();
+   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);assert.equal(writes,0);p.dispose();
   });
   await check('401 entfernt statt erfolgreichem Leerbestand den gesamten Zugriff',async()=>{
    const denied=createSimpleApi({fetcher:async()=>({ok:false,status:401,json:async()=>({})})});await assert.rejects(denied.load(),e=>e.status===401);denied.dispose();
@@ -153,6 +155,23 @@ async function run({browser=false,evidenceDir=null}={}){
     else if(route.endsWith('/invite'))value={inviteUrl:url,mail:{sent:false}};
     return {ok:true,status:200,json:async()=>value};
    }});await p.load();assert.equal((await p.invite('synthetic-invite')).inviteUrl,url);assert.ok(calls.every(x=>x.startsWith('/api/')));p.dispose();
+  });
+  await check('Quellenmetadaten und UTC-Zeitplan bleiben von einem Briefingerfolg getrennt',async()=>{
+   const {latestSourceRun,nextSourceCheck,sourceRunView,briefingSummary}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/versorgung.mjs')));
+   const history={processRuns:[{process:'warteschlange-crawl',startedAt:'2026-11-12T03:00:00Z',status:'running'}],zeitplan:[{path:'/api/cron/crawl?arbeitsfenster=1',schedule:'0,15,30,45 3 * * *'},{path:'/api/cron/crawl',schedule:'0 4 * * *'}]};
+   assert.equal(latestSourceRun(history,'2026-11-12T03:02:00Z').label,'Läuft');assert.equal(latestSourceRun(history,'2026-11-12T08:00:00Z').label,'Abschluss offen');
+   assert.equal(nextSourceCheck(history,'2026-11-12T03:16:00Z'),'2026-11-12T03:30:00.000Z');assert.equal(nextSourceCheck(history,'2026-11-12T05:00:00Z'),'2026-11-13T03:00:00.000Z');
+   assert.equal(nextSourceCheck({zeitplan:[{path:'/api/cron/crawl',schedule:'*/15 * * * *'}]}),null);
+   assert.equal(sourceRunView({zustand:'gesperrt',grund:'fensterkontingent-erschoepft'}).disabled,true);
+   assert.equal(briefingSummary(await api.load()).ready,0);
+  });
+  await check('Abgewiesener Quellenstart raeumt die Auftragskennung auf und entzieht Schreibzugriff',async()=>{
+   const saved=new Map(),events=[];
+   const p=createSimpleApi({host:{crypto:require('node:crypto').webcrypto,sessionStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)}},fetcher:async(url,options={})=>{
+    if(url==='/api/admin/quellenlauf'&&options.method==='POST')return new Response('{}',{status:401});
+    let value=url.includes('customers')?{kunden:[]}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'local'}}}:url==='/api/security/csrf'?{token:'s'.repeat(32)}:{verfuegbar:false};
+    return new Response(JSON.stringify(value),{status:200,headers:{'Content-Type':'application/json'}});
+   }});await p.load();p.sourceRun.subscribe(s=>events.push(s));await p.sourceRun.start();assert.ok(events.some(s=>s.accessStatus===401));assert.equal(saved.has('helmut-admin-quellenauftrag-v1'),false);await assert.rejects(p.sourceRun.start());p.dispose();
   });
   if(browser){
    const oldProfile=await storage.getProfile(user.politicianId);
@@ -275,9 +294,49 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.locator('[data-action="settings"]').click();await page.locator('[data-setting="sources"]').click();
    await page.getByText('Der Quellenstand konnte noch nicht bestätigt werden.',{exact:true}).waitFor();
    await check('Fehlende Quelldaten sind ein erklaerter Zustand mit echtem Detailzugang',async()=>{assert.equal(await page.locator('a[href="/verwaltung/#/betrieb/quellen"]').count(),1);assert.equal(await page.getByText('Quellenzugänge',{exact:true}).count(),0);});
+   await page.locator('[data-action="source-start"]').click();await page.getByRole('status').filter({hasText:'Die Quellenarbeit ist ausgeschaltet.'}).waitFor();
+   await check('Neuer Quellenknopf erreicht die echte geschuetzte Route und erhaelt deren Sperrgrund',async()=>{assert.equal(requests.filter(r=>r.url==='/api/admin/quellenlauf'&&r.method==='POST').length,1);assert.equal(await page.getByRole('heading',{name:'Quellenlauf kann gerade nicht starten.',exact:true}).count(),1);});
+   let sourcePosts=0,currentSource=null,releaseSource,loseSource=false,sourceStarted=()=>{};
+   const sourcePattern='**/api/admin/quellenlauf*';
+   await context.route(sourcePattern,async route=>{
+    const req=route.request();
+    if(req.method()==='GET'){const q=new URL(req.url()).searchParams;return route.fulfill({json:{laufId:'admin-quellen-'+q.get('tag')+'-'+q.get('auftragId'),zustand:loseSource?'abgeschlossen':'laeuft',verarbeitet:loseSource?3:null}});}
+    sourcePosts++;currentSource=req.postDataJSON();
+    if(loseSource)return route.fulfill({status:502,contentType:'application/json',body:'{}'});
+    await new Promise(resolve=>{releaseSource=resolve;sourceStarted();});
+    return route.fulfill({json:{...currentSource,laufId:'admin-quellen-'+currentSource.tag+'-'+currentSource.auftragId,zustand:'abgeschlossen',verarbeitet:3,fehlgeschlagen:0}});
+   });
+   await page.locator('[data-action="source-start"]').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('[data-action="source-start"]').disabled);
+   await page.locator('[data-action="source-start"]').click();await page.getByRole('status').filter({hasText:'Start wird geprüft'}).waitFor();
+   await page.locator('[data-action="source-start"]').evaluate(el=>el.click());
+   await page.locator('[data-action="source-status"]').click();await page.getByRole('status').filter({hasText:'Quellen werden verarbeitet'}).waitFor();
+   await check('Ein Quellenauftrag blockiert Doppelklicks und bleibt ueber lesenden Status pruefbar',async()=>{assert.equal(sourcePosts,1);assert.equal(await page.locator('[data-action="source-start"]').isDisabled(),true);});
+   releaseSource();await page.getByRole('heading',{name:'Quellenlauf abgeschlossen.',exact:true}).waitFor();await page.waitForFunction(()=>!document.querySelector('[data-action="source-start"]').disabled);
+   await check('Quellenabschluss erzeugt keinen erfundenen Briefingerfolg',async()=>{const readiness=page.locator('.check').filter({hasText:'Heute bereit'});assert.match(await readiness.innerText(),/0 von/);assert.equal(sourcePosts,1);});
+   for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:1000});await check('Quellen und Versorgung ohne Ueberlauf bei '+width,async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true));if(evidenceDir&&width===390){await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(evidenceDir,'app-quellen-versorgung-mobil.png'),fullPage:true});}}
+   const followupStarted=new Promise(resolve=>{sourceStarted=resolve;});
+   await page.locator('[data-action="source-start"]').click();await followupStarted;assert.equal(sourcePosts,2);
+   await context.route('**/api/admin/customers',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));releaseSource();
+   await page.getByText('Der aktuelle Briefingstand konnte nicht geladen werden. Bitte „Stand neu laden“ wählen.',{exact:true}).waitFor();
+   await check('Fehlende Folgeabfrage wird sichtbar und verhindert weitere Starts bis zur Lesekontrolle',async()=>assert.equal(await page.locator('[data-action="source-start"]').isDisabled(),true));
+   await context.unroute('**/api/admin/customers');await page.locator('[data-action="refresh"]:visible').first().click();await page.waitForFunction(()=>document.querySelector('[data-action="source-start"]')&&!document.querySelector('[data-action="source-start"]').disabled);
+   const beforeLoss=sourcePosts;
+   loseSource=true;await page.locator('[data-action="source-start"]').click();await page.getByRole('status').filter({hasText:'Der Abschluss ist noch offen.'}).waitFor();
+   await check('Verlorene Startantwort bleibt offen und verhindert einen blinden Neustart',async()=>{assert.equal(sourcePosts,beforeLoss+1);assert.equal(await page.locator('[data-action="source-start"]').isDisabled(),true);assert.ok(await page.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')));});
+   await page.reload();await page.getByRole('heading',{name:'Auf einen Blick.',exact:true}).waitFor();await page.locator('[data-setting="sources"]').click();await page.getByRole('heading',{name:'Quellenlauf abgeschlossen.',exact:true}).waitFor();
+   await check('Reload liest denselben Auftrag und startet keinen zweiten Lauf',async()=>{assert.equal(sourcePosts,beforeLoss+1);assert.equal(await page.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')),null);});
+   await context.unroute(sourcePattern);
+   assert.ok(consoleErrors.every(message=>message.includes('502 (Bad Gateway)')||message.includes('503 (Service Unavailable)')),'Nur die synthetischen HTTP502-/503-Faelle duerfen Konsolenhinweise erzeugen');consoleErrors.length=0;
+   const sourceAuth=await browserInstance.newContext({viewport:{width:390,height:900}});
+   await sourceAuth.addCookies([{name:'helmut_session',value:cookie.slice(cookie.indexOf('=')+1),url:base}]);
+   await sourceAuth.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+   await sourceAuth.route('**/api/admin/quellenlauf*',route=>route.fulfill({status:401,contentType:'application/json',body:'{}'}));
+   const sourceAuthPage=await sourceAuth.newPage();await sourceAuthPage.goto(base+'/verwaltung/einfach/');await sourceAuthPage.locator('[data-setting="sources"]').click();await sourceAuthPage.locator('[data-action="source-start"]').click();await sourceAuthPage.getByRole('heading',{name:'Bitte melde dich erneut an.',exact:true}).waitFor();
+   await check('Sitzungsverlust beim Quellenstart entfernt Kundendaten und den sicher abgewiesenen Auftrag',async()=>{assert.doesNotMatch(await sourceAuthPage.locator('main').innerText(),/Fiktiver|example.invalid/);assert.equal(await sourceAuthPage.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')),null);});
+   await sourceAuth.close();
    assert.deepEqual(consoleErrors,[]);
    await context.route('**/api/admin/customers',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":"Bitte erneut anmelden."}'}));
-   await page.locator('[data-action="refresh"]').first().click();
+   await page.locator('[data-action="refresh"]:visible').first().click();
    await page.getByRole('heading',{name:'Bitte melde dich erneut an.',exact:true}).waitFor();
    await check('Zugriffsentzug entfernt Kundendaten aus dem Browser',async()=>{assert.doesNotMatch(await page.locator('main').innerText(),/Fiktiver|browser@example/);});
    assert.deepEqual(errors,[]);assert.ok(consoleErrors.every(message=>message.includes('401 (Unauthorized)')),'Nur der bewusst erzwungene HTTP401 darf einen Konsolenhinweis erzeugen');

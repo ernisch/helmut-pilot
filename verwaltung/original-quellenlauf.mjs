@@ -13,7 +13,7 @@ export function createQuellenlauf({ fetcher = globalThis.fetch, host = globalThi
     try {
       const r = await fetcher(url, { credentials: "same-origin", mode: "same-origin", redirect: "error",
         cache: "no-store", ...options, signal: controller.signal });
-      if (!r.ok) throw new Error(r.status === 401 ? "Bitte erneut anmelden." : r.status === 403 ? "Keine Berechtigung oder Sicherheitsprüfung abgelaufen." : "Antwort nicht bestätigt.");
+      if (!r.ok) throw Object.assign(new Error(r.status === 401 ? "Bitte erneut anmelden." : r.status === 403 ? "Keine Berechtigung oder Sicherheitsprüfung abgelaufen." : "Antwort nicht bestätigt."), { status: r.status });
       return await r.json();
     } finally { clearTimeout(limit); controllers.delete(controller); }
   }
@@ -53,8 +53,9 @@ export function createQuellenlauf({ fetcher = globalThis.fetch, host = globalThi
       update(r);
       if (r.zustand !== "unbekannt") forget();
     } catch (e) {
-      if (!sent) forget();
-      update({ zustand: sent ? "unbekannt" : "fehler", grund: sent ? "abschluss-nicht-bestaetigt" : e.message });
+      const rejected = [401, 403].includes(e.status);
+      if (!sent || rejected) forget();
+      update({ zustand: sent && !rejected ? "unbekannt" : "fehler", grund: sent && !rejected ? "abschluss-nicht-bestaetigt" : e.message });
     } finally { busy = false; clearInterval(timer); if (!closed) changed(); }
   }
   function restore() {

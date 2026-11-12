@@ -2,10 +2,27 @@ import { createAdminReader } from '../api.mjs';
 import { createAdminActions, AdminMutationError } from '../original-actions.mjs';
 import { berlinDay, validId } from './model.mjs';
 import { profilePartyOptions, profileFactionOptions, federalStateOptions, constituencyChoices } from './profil-auswahl.mjs';
-export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date(), origin=globalThis.location?.origin||'http://localhost' }={}) {
+import { createQuellenlauf } from '../original-quellenlauf.mjs';
+export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date(), origin=globalThis.location?.origin||'http://localhost', host=globalThis.window }={}) {
  const reader=createAdminReader({fetcher,timeoutMs}),actions=createAdminActions({fetcher,timeoutMs});
  let disposed=false, busy=false, writesAllowed=false;
  const pending=new Set();
+ let sourceController=null,sourceListener=()=>{};
+ const sourceRun={
+  state:()=>sourceController?.state()||{zustand:'bereit',busy:false,offen:false},
+  subscribe(listener){sourceListener=listener;return ()=>{sourceListener=()=>{};};},
+  restore(){if(host?.sessionStorage)controller().restore();},
+  async start(){if(disposed||!writesAllowed)throw new AdminMutationError(409,false,{message:'Diese Vorschau erlaubt keinen Quellenlauf gegen echte Daten.'});if(busy)throw new AdminMutationError(409);await controller().start();},
+  async status(){if(disposed)return;await controller().status();}
+ };
+ function controller(){
+  if(!sourceController)sourceController=createQuellenlauf({host,fetcher:async(url,options)=>{
+   const response=await fetcher(url,options);
+   if([401,403].includes(response.status)){writesAllowed=false;sourceController.dispose();sourceListener({accessStatus:response.status});}
+   return response;
+  },changed:()=>{if(!disposed)sourceListener(sourceRun.state());}});
+  return sourceController;
+ }
  async function request(url,{method='GET',body}={}) {
   if(disposed)throw new AdminMutationError();
   const controller=new AbortController();pending.add(controller);
@@ -32,12 +49,13 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
  async function mutate(work){if(busy||disposed)throw new AdminMutationError(409);if(!writesAllowed)throw new AdminMutationError(409,false,{message:'Diese Vorschau erlaubt keine Änderungen an echten Kunden.'});busy=true;try{return await work();}finally{busy=false;}}
  async function load(){
   writesAllowed=false;reader.clear();const instant=now();
-  const values=await Promise.allSettled(['customers','overview','ergebnisse'].map(key=>reader.read(key)));
+  const values=await Promise.allSettled([...['customers','overview','ergebnisse','sources'].map(key=>reader.read(key)),request('/api/admin/stats/process-runs?limit=5&process=warteschlange-crawl')]);
   for(const v of values)if(v.status==='rejected'&&[401,403].includes(v.reason?.status))throw v.reason;
   if(values[0].status!=='fulfilled'||!Array.isArray(values[0].value?.kunden))throw new AdminMutationError();
   const customers=values[0].value.kunden;
   if(customers.some(c=>!validId(c?.userId))||new Set(customers.map(c=>c.userId)).size!==customers.length)throw new AdminMutationError();
   const data={customers,overview:values[1].status==='fulfilled'?values[1].value:null,results:{},resultDay:null,now:instant.toISOString(),generatedAt:values[0].value.generatedAt};
+  data.supply={sources:values[3].status==='fulfilled'?values[3].value:null,history:values[4].status==='fulfilled'?values[4].value:null};
   data.readOnly=!data.overview||data.overview.system?.deploy?.environment==='preview';
   writesAllowed=!data.readOnly;
   if(values[2].status==='fulfilled'){
@@ -97,7 +115,7 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    return {...input,name:input.name.trim(),email:input.email.trim().toLowerCase(),focusTopics:topics.map(t=>t.trim())};
  }
  return {
-  load,
+  load,sourceRun,
   async profile(id){if(!validId(id))throw new AdminMutationError(400);try{return await request(`/api/admin/profile/${encodeURIComponent(id)}`);}catch(e){if(e.status===404)return null;throw e;}},
   createCustomer(input){return mutate(async()=>{
    const dto=customerInput(input);let account=null,stage='account';
@@ -134,6 +152,6 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
   });},
   invite(id){return mutate(()=>invite(id));},
   async settings(key){if(!['budget','sources','runs'].includes(key))throw new AdminMutationError(400);return reader.read(key);},
-  dispose(){disposed=true;writesAllowed=false;reader.dispose();actions.dispose();for(const c of pending)c.abort();}
+  dispose(){disposed=true;writesAllowed=false;sourceListener=()=>{};sourceController?.dispose();reader.dispose();actions.dispose();for(const c of pending)c.abort();}
  };
 }
