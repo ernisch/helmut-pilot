@@ -131,6 +131,38 @@ async function check(name, work) { reset(); await work(); passed++; console.log(
       const result = await storage.getRunCostReport({ readAuth: async () => { reads++; return blob; } });
       assert.equal(reads, 1); assert.equal(result.laeufe.length, 1); assert.equal(calls.length, 0);
     });
+    await check("Modellvorpruefung und Mandatskosten lesen nur das unverkuerzte Nutzungslog", async () => {
+      blob.legacyHistory = "x".repeat(3000000);
+      blob.llmUsage = [
+        { id: "a", politicianId: "mandat-a", createdAt: "2026-11-12T07:00:00Z", callType: "understanding", success: true, estimatedCost: 0.1 },
+        { id: "b", politicianId: "mandat-b", createdAt: "2026-11-12T08:00:00Z", callType: "understanding", success: false, estimatedCost: 0.2 },
+        { id: "c", userId: "mandat-a", createdAt: "2026-11-11T08:00:00Z", callType: "understanding", success: true, estimatedCost: 0.3 },
+        { id: "d", politicianId: "mandat-a", createdAt: "2026-11-12T09:00:00Z", callType: "skipped-understanding", success: false, estimatedCost: 0 }
+      ];
+      const before = hash(blob), fullBytes = Buffer.byteLength(JSON.stringify(blob));
+      assert.deepEqual(await storage.getLlmUsage("mandat-a", 2), [blob.llmUsage[0], blob.llmUsage[2]]);
+      assert.deepEqual(await storage.getLlmUsageToday("mandat-a", "2026-11-12"), { day: "2026-11-12", calls: 1, successfulCalls: 1, estimatedCostUsd: 0.1 });
+      assert.deepEqual(await storage.getLlmCostSince("mandat-a", "2026-11-01"), { calls: 2, estimatedCostUsd: 0.4 });
+      assert.deepEqual(await storage.getLlmUsageToday(null, "2026-11-12"), { day: "2026-11-12", calls: 2, successfulCalls: 1, estimatedCostUsd: 0.3 });
+      assert.ok(calls.every(c => c.method === "GET" && c.select === "id,llmUsage:data->llmUsage"));
+      assert.ok(bytes < fullBytes / 100);
+      assert.equal(hash(blob), before);
+    });
+    await check("Unvollstaendige Kostenantwort sperrt bei aktivem Fail-Closed das Modellbudget", async () => {
+      const previous = process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
+      process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED = "1";
+      try {
+        for (reply of [[{ id: "main-auth" }], [{ id: "main-auth", llmUsage: {} }],
+          [{ id: "fremd", llmUsage: [] }], [{ id: "main-auth", llmUsage: [] }, { id: "main-auth", llmUsage: [] }]]) {
+          await assert.rejects(storage.getLlmCostSince("mandat-a", "2026-11-01"));
+          assert.equal((await storage.canSpendLlm(null, "2026-11-12")).allowed, false);
+        }
+      } finally {
+        if (previous === undefined) delete process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
+        else process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED = previous;
+      }
+      assert.ok(calls.every(c => c.method === "GET"));
+    });
     console.log(`${passed}/${passed} Auth-Lesegruppen bestanden. Kein Production Funktionsnachweis.`);
   } finally { globalThis.fetch = originalFetch; }
 })().catch(error => { console.error(error); process.exitCode = 1; });
