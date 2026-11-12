@@ -4398,6 +4398,11 @@ function sendSetPasswordPage(response) {
       button { margin-top: 8px; width: 100%; min-height: 48px; padding: 0 24px; font: inherit; font-size: 16px; font-weight: 500; color: #0a0f1c; background: #e9edf5; border: 0; border-radius: 24px; cursor: pointer; transition: background 160ms; }
       button:hover { background: #fff; } button[disabled] { opacity: .6; cursor: wait; }
       button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      .password-field { position: relative; }
+      .password-field input { padding-right: 52px; }
+      .password-toggle { position: absolute; top: 2px; right: 2px; width: 44px; min-height: 44px; margin: 0; padding: 10px; border-radius: 6px; background: transparent; color: var(--text); }
+      .password-toggle:hover { background: rgba(255, 255, 255, .06); color: var(--ink); }
+      .password-toggle svg { display: block; width: 24px; height: 24px; pointer-events: none; }
       .error { min-height: 20px; margin: 4px 0 0; font-size: 14px; color: var(--risk); }
       .notice { padding: 14px 0; margin: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 15px; color: var(--text); }
       footer, .legal { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
@@ -4419,9 +4424,19 @@ function sendSetPasswordPage(response) {
         <p>Wählen Sie ein Passwort für Ihren Helmut-Zugang. Mindestens 8 Zeichen.</p>
         <form id="setForm">
           <label for="pw1">Neues Passwort</label>
-          <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="password-field">
+            <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+            <button class="password-toggle" type="button" aria-label="Neues Passwort anzeigen" aria-controls="pw1" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18" hidden/></svg>
+            </button>
+          </div>
           <label for="pw2">Passwort wiederholen</label>
-          <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="password-field">
+            <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+            <button class="password-toggle" type="button" aria-label="Passwortwiederholung anzeigen" aria-controls="pw2" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18" hidden/></svg>
+            </button>
+          </div>
           <button type="submit" id="setSubmit">Passwort setzen</button>
           <p class="error" id="formError" hidden></p>
         </form>
@@ -4459,6 +4474,16 @@ function sendSetPasswordPage(response) {
             .then(function (data) { show(data && data.valid ? "formView" : "expiredView"); })
             .catch(function () { show("expiredView"); });
         }
+
+        document.querySelectorAll(".password-toggle").forEach(function (toggle) {
+          toggle.addEventListener("click", function () {
+            var input = document.getElementById(toggle.getAttribute("aria-controls"));
+            var visible = input.type === "password";
+            input.type = visible ? "text" : "password";
+            toggle.setAttribute("aria-pressed", String(visible));
+            toggle.querySelector(".eye-slash").toggleAttribute("hidden", !visible);
+          });
+        });
 
         document.getElementById("setForm").addEventListener("submit", function (event) {
           event.preventDefault();
