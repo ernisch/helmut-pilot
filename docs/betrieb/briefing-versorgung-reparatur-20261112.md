@@ -1,5 +1,38 @@
 # Fehlendes Tagesbriefing: Diagnose und Reparatur, 12.11.2026
 
+## Rollout bestaetigt; heutiger Nachlauf offen
+
+[PR1158](https://github.com/ernisch/helmut-pilot/pull/1158) wurde am12.11.,
+07:52:14UTC nach vollstaendig gruener Endkopf-CI gemergt: gepruefter Kopf
+`d751de20419b7a69e1e6e004c47e2adad56c6d93`, Merge
+`d72cd2189e37dfe56260f925ef44c8a2f9c45fb0`.
+[CI43174627705](https://github.com/ernisch/helmut-pilot/actions/runs/43174627705):
+189/189 Standardsuiten,367/367 Fachsuiten,48/48 Z22-Datenbankpruefungen;
+beide Pflichtchecks SUCCESS. Die Browserausfuehrung wurde fuer diesen Backend-
+Diff gemaess unveraendertem Pruefplan bewusst uebersprungen, kein ausgefuehrter
+Browsernachweis und kein neuer Mock100-/500er-Lasttest.
+
+Vercel `dpl_7kWQ2pfTsTej4Gnb8iF76BSEmmof`, Production/fra1, READY,
+aliasError=null; die Hauptdomain verweist auf genau diesen Merge.
+Startseite und oeffentlicher Releasecheck HTTP200, ok/ready/storage true;
+Client und Styles tragen die neue Versionskennungd72cd218.
+Diese technischen Auslieferungsbelege beweisen noch kein frisches Tagesbriefing.
+
+Native Vor-/Nachkontrolle07:51–07:53UTC:1 aktives Profil,0 laufende Prozesse,
+0 lebende Pipeline-/Jobleases; Kostenbuch unveraendert1,244553USD,
+heute12.071MikroUSD und0 offene heutige Geldreservierungen, frozen=null.
+Vertraghash unveraendert
+`8c98b2e18ee5dc21c73561bbf5bad2d8cb6c76f8ccd533b3153270bbd7d9a348`.
+Fenster1/8, Sekunden300/2400, Originalabrufe16/16; Wissensstand weiter09.11.
+Kein Quellen-, Modell-, Profil-, Budget- oder Cron-Eingriff durch den Rollout.
+
+Der Betreiber hat fuer die Zeit nach dem Rollout genau ein weiteres Quellenfenster von maximal300s
+fuer den bestehenden Einprofilbetrieb sowie anschliessend die vorhandenen
+Lage-/Morgenlaeufe freigegeben, innerhalb1USD/UTC-Tag und30USD insgesamt,
+ohne Kontingentreset und ohne externe Nachrichten. Der echte angemeldete
+Adminstart ist noch erforderlich; ein Startbeleg nach dem Rollout fehlt bisher.
+Der Nachlauf und die produktive Wiederherstellung bleiben bis zur Kontrolle offen.
+
 ## Produktionsbefund vor der Reparatur
 
 Rein lesende Aufnahme am12.11.,06:22–06:30UTC. Production953c1dfe,
@@ -60,13 +93,17 @@ Vorbefund Kosten: heute0,012071USD, keine heutigen offenen Geldreservierungen;
 gebundener Gesamtbestand1,244553USD einschliesslich historischer Reserven.
 Bestehender Vertrag1USD/UTC-Tag und30USD insgesamt, unveraendert.
 Originalabrufe heute16/16; alle16 endeten ohne gelieferten Originalbeleg.
+Die begrenzte Zusatzaufnahme ordnet5/16 Fehler den reparierten Bundestagswegen
+zu. Zwei echte HTML-Antworten bestaetigen diesen Parserfehler. Die uebrigen11
+Cachebindungen sind aus396 verfuegbaren Quellenfassungen nicht rekonstruierbar;
+Ausleseausgang UNKNOWN, weder als Sicherheitsablehnung noch als behoben gewertet.
 Parserkorrekturen setzen weder negative Cachebelege noch Kontingente zurueck.
 
 Codebereitstellung und normale Merges/Deployments sind dauerhaft freigegeben.
 Ein manueller Production-Nachlauf samt bezahlter Verarbeitung benoetigt laut
 AGENTS.md eine gesonderte konkrete Freigabe. Vorgesehener Umfang nach READY:
-nur das vorhandene eine aktive Profil, vorhandene noch freie Arbeitsfenster,
-hoechstens sieben weitere Fenster/2100Sekunden Quellenarbeit am selben UTC-Tag,
+nur das vorhandene eine aktive Profil, genau ein weiteres freies Arbeitsfenster,
+hoechstens300Sekunden Quellenarbeit am selben UTC-Tag,
 danach bestehende Lage-/Morgenhandler; unveraenderte1USD/30USD-Gates.
 Keine Profil-, Cron-, Budget-, Reserve- oder Secret-Aenderung, keine externen
 Nachrichten, kein Zuruecksetzen gescheiterter Quellenversionen.
@@ -94,7 +131,10 @@ HTML-Fixtures werden vollstaendig gelesen; manipulierte Ziele, Titel, Tage,
 versteckte Texte, Sperrmetadaten und widerspruechliche Artikeldeklarationen
 bleiben gesperrt. Die beiden HTML-Fixtures enthalten nur oeffentlichen Kopf
 und Artikelbereich. Keine Cacheversionsaenderung oder neue Abruffreigabe.
-Der erste Pflichtlauf43169501323 wurde nach bestaetigtem viertem Fehler bewusst
-abgebrochen, bevor seine Erfolge als Endabnahme gelten konnten; kein Testfehler
-und keine Productionmutation. Finale Pflicht-CI und Production-Nachkontrolle folgen am
-tatsaechlichen Endstand; hieraus wird noch kein produktiver Erfolg abgeleitet.
+Der erste Pflichtlauf43169501323 wurde wegen des vierten Fehlers bewusst
+abgebrochen. Lauf43171311844 bestand188/189 Standardsuiten und scheiterte
+ausschliesslich an30368/30000 Statuszeichen; nachfolgende Bereichs-/Z22-Schritte
+liefen dort nicht. Die erste Kuerzung liess54 Restzeichen; ihr Zwischenlauf
+43174509306 wurde vom korrigierten Kopf abgeloest. Lokale Dokumentationsgrenze
+danach29978 Zeichen/4 von4 Pruefungen PASS. Der oben belegte Endlauf ist die
+massgebliche Abnahme, keine Umwertung der Vorlaeufe. Produktiver Nachlauf offen.

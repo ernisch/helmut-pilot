@@ -2,7 +2,7 @@
 
 **Stand: 12.11.2026.** Betreibersteuerung und frische Productionbelege gelten. [PR1105 live](betrieb/validierungsdiagnose-20261108.md). [Agentenregeln vereinfacht](../AGENTS.md): bis drei Agenten, Schutz/CI/Kosten erhalten.
 
-**12.11.:** Briefingreparatur PR1158 in CI.
+**12.11.:** PR1158 live; Nachlauf offen.
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
