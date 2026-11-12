@@ -127,3 +127,32 @@ der fest gebundenen17.6-Laufzeit kombiniert. Der reine Testcontainer bindet nun 
 sein17.6-Headerpaket per Version und SHA256 (amd64/arm64); pg_cron1.6.4, Laufzeitimage,
 Prüfungen und Production bleiben unverändert. Der korrigierte lokale Build ist erfolgreich;
 der vorhandene Offline-Belegtest besteht17/17 und der echte lokale PG17.6-/pg_cron-Test12/12. Neue Pflicht-CI: siehe PR1155.
+
+
+## Liveprobe und Bindung an die Vercel-Anfrage
+
+Verwaltung mit PR1155 auf `dc20e194` veröffentlicht: Production `dpl_3Pw2iEAbonJVigdPkY81jaG5E7ar`
+READY, Hauptadresse bestätigt. Pflicht-CI43252865079 erfolgreich. Der isolierte
+[Liveprüfer43259302941](https://github.com/ernisch/helmut-pilot/actions/runs/43259302941)
+belegt ausgelieferten Client bytegleich, geschützte Verwaltung/Assets/API anonym401,
+Passwortseite in Sie-Ansprache und genau einen anonymen Aufruf für das eigene Konto16:30:08UTC.
+HTTP200 ist kein Versandbeleg: keine Token-/Auditmutation gespeichert. Native Supabase-Spur
+zeigt nur zwei erfolgreiche Konten-GETs (Benutzerprojektion und vollständiger CAS-Lesestand),
+keinen anschließenden Schreibaufruf. Eigene Kontodaten und Kostenfingerabdrücke unverändert.
+Kein weiterer Mailaufruf während der Untersuchung und kein Passwortzugriff.
+
+Konkreter Codebefund: Die Hintergrundzusage wurde nach der HTTP-Antwort nur weiter abgewartet.
+Das sichert auf Vercel ihre Laufzeit nicht. `reset-timing.js` bindet nun dieselbe echte Promise
+vor der Antwort mit dem offiziellen `@vercel/functions`-`waitUntil` an die Anfrage.
+Generische Antwort, Zeitraster, ein Versandversuch, Rechte und Kommunikationsriegel bleiben erhalten.
+Ein zusätzlicher HTTP-/TLS-Test blockiert das Tokenschreiben über die frühe Antwort hinaus,
+prüft die vom tatsächlichen SDK registrierte Promise und danach SMTP plus Audit.
+
+Wegen nicht verfügbarer Arbeitsumgebung auf dem vorhandenen isolierten GitHub-Prüfrechner
+vorbereitet: [43264352918](https://github.com/ernisch/helmut-pilot/actions/runs/43264352918),
+SMTP65/65, bestehende Reset-Regression1/1, npm audit0. Der erste Vorbereitungslauf43263914199
+verwarf SDK3.10.4 wegen vier hohen transitiven Befunden; kein Runtimecode damit veröffentlicht.
+Npm bindet stattdessen exakt SDK3.11.2 samt Lockdatei, übrige direkte Abhängigkeiten unverändert.
+Das temporäre Vorbereitungsworkflow ist nicht Teil des Produktdiffs. Vor Veröffentlichung
+bleibt die Pflicht-CI am neuen Codekopf erforderlich; erneuter eigener Livebeleg danach offen.
+Aktueller Abschlussbeleg und Folge-PR werden in PR1155 geführt.
