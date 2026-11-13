@@ -15,6 +15,9 @@ auf73b34b02 abgeschlossen:140Ziel,15erledigt,8Fehler,96zurueckgestellt,
 21wiederholt. Sechs Abrufe und neun Understandingauftraege erledigt. Sieben
 historische Artikelversionen vor Modellen gesperrt: fuenf Herausgeberanzeigewechsel,
 zwei Publikationszeitabweichungen. Keine allgemeine Archiv-/Queuefehlfunktion.
+Enger Publikationsdatumsnachweis der neun erledigten Understandingauftraege:
+sechs Artikel vom13.11., zwei vom12.11. und einer vom12.06. Damit ist Fortschritt
+frischer Tagesarbeit im echten Lauf belegt; keine heutige Frische aus Abrufzeit abgeleitet.
 Ein DIP-Quellenauftrag scheiterte an `dip-quellfelder-nicht-bestaetigt`;
 belegte Isolationsluecke: ein ungueltiges Dokument kann seinen gesamten DIP-Stapel
 vor Persistenz stoppen. Ein Adapterfehler oder elf tatsaechlich brauchbare Nachbarn
