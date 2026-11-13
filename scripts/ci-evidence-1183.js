@@ -87,8 +87,11 @@ async function request(token,route,body){
 }
 async function publishOne(api,expected){
   const read=async()=>{
-    const state=await api(`commits/${TARGET}/status`);need(Array.isArray(state.statuses),"commit-status-response");
-    const matches=state.statuses.filter(s=>s.context===expected.context);
+    // Die zusammengefasste /status-Antwort enthaelt keinen creator. Nur die
+    // vollstaendige Liste erlaubt die unveraenderte Actions-Herkunftspruefung.
+    const statuses=await api(`commits/${TARGET}/statuses?per_page=100`);need(Array.isArray(statuses),"commit-status-response");
+    need(statuses.length<100,"commit-status-window-incomplete");
+    const matches=statuses.filter(s=>s.context===expected.context);
     need(matches.length<=1,"ambiguous-existing-status:"+expected.context);return matches[0];
   };
   const existing=await read();

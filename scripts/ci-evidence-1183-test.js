@@ -63,18 +63,27 @@ const success=c=>({...c,state:"success",creator:{login:"github-actions[bot]",typ
     }
   });
   await test("bestehender identischer Actionsstatus verursacht keinen neuen Write",async()=>{
-    let posts=0;A.equal(await E.publishOne(async(_route,body)=>{if(body)posts++;return{statuses:[success(E.CONTEXTS[0])]};},E.CONTEXTS[0]),"already-present");A.equal(posts,0);
+    let posts=0;A.equal(await E.publishOne(async(_route,body)=>{if(body)posts++;return[success(E.CONTEXTS[0])];},E.CONTEXTS[0]),"already-present");A.equal(posts,0);
   });
   await test("unklare POST-Antwort wird lesend bestaetigt ohne zweiten Sendversuch",async()=>{
-    let posts=0,written=false;const api=async(_route,body)=>{if(body){posts++;written=true;throw Error("Antwort verloren");}return{statuses:written?[success(E.CONTEXTS[0])]:[]};};
+    let posts=0,written=false;const api=async(_route,body)=>{if(body){posts++;written=true;throw Error("Antwort verloren");}return written?[success(E.CONTEXTS[0])]:[];};
     A.equal(await E.publishOne(api,E.CONTEXTS[0]),"confirmed-by-read");A.equal(posts,1);
-    posts=0;await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body){posts++;throw Error("nicht bestaetigt");}return{statuses:[]};},E.CONTEXTS[0]));A.equal(posts,1);
+    posts=0;await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body){posts++;throw Error("nicht bestaetigt");}return[];},E.CONTEXTS[0]));A.equal(posts,1);
   });
   await test("widerspruechlicher vorhandener Status wird nicht ueberschrieben",async()=>{
-    let posts=0;await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body)posts++;return{statuses:[{...success(E.CONTEXTS[0]),state:"failure"}]};},E.CONTEXTS[0]));A.equal(posts,0);
+    let posts=0;await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body)posts++;return[{...success(E.CONTEXTS[0]),state:"failure"}];},E.CONTEXTS[0]));A.equal(posts,0);
     const older={...success(E.CONTEXTS[0]),id:10,created_at:"2026-11-13T19:00:00Z"};
     const newer={...older,id:11,created_at:"2026-11-13T20:00:00Z",state:"failure"};
-    await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body)posts++;return{statuses:[older,newer]};},E.CONTEXTS[0]),/ambiguous-existing-status/);A.equal(posts,0);
+    await A.rejects(()=>E.publishOne(async(_route,body)=>{if(body)posts++;return[older,newer];},E.CONTEXTS[0]),/ambiguous-existing-status/);A.equal(posts,0);
+  });
+  await test("vollstaendige Statusliste ist Pflicht; gekuerzte Combined-Antwort bleibt gesperrt",async()=>{
+    let posts=0;await A.rejects(()=>E.publishOne(async(route,body)=>{
+      A.equal(route,`commits/${E.TARGET}/statuses?per_page=100`);if(body)posts++;
+      return{statuses:[success(E.CONTEXTS[0])]};
+    },E.CONTEXTS[0]),/commit-status-response/);A.equal(posts,0);
+    await A.rejects(()=>E.publishOne(async(_route,body)=>{
+      if(body)posts++;return Array.from({length:100},()=>({context:"anderer Kontext"}));
+    },E.CONTEXTS[0]),/commit-status-window-incomplete/);A.equal(posts,0);
   });
   A.ok(count>0,"Mindestens eine ausgewaehlte Gruppe muss wirklich ausgefuehrt sein");
   console.log(`${count}/${count} neue Publisher-Gruppen bestanden; keine alten Tests oder externen Zugriffe.`);
