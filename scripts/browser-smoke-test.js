@@ -31,6 +31,8 @@ const path = require("path");
 const fs = require("fs");
 const root = path.join(__dirname, "..");
 const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
+const tagespaketRuhelageOnly = process.argv.includes("--nur-ruhelage");
+if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage braucht --tagespaket-jsonb");
 const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb;
 
 function loadPlaywright() {
@@ -54,7 +56,7 @@ function check(name, cond, detail = "") {
 // Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
 // Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
 // Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
-async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
+async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false } = {}) {
   const assert = require("node:assert/strict");
   process.env.HELMUT_AUTH_MODE = "accounts";
   process.env.HELMUT_STORAGE_BACKEND = "local";
@@ -178,6 +180,34 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
   accounts.recordUserActivity = async () => {};
   const read = D.lese;
   D.lese = args => read({ ...args, now }); // Vorhandene Fixture-Uhr, kein Umstempeln.
+  async function pruefeRuhelage(page, label, nav) {
+    await page.locator(`${nav} [data-view="helmut"]`).click();
+    const quiet = page.locator('.hstand-state-card[data-empty-kind="quiet"]');
+    const started = Date.now(), introBefore = await page.locator(".helmut-refresh--intro").count();
+    let visible = true;
+    // Der bestehende Client zeigt beim ersten Oeffnen 1400ms Intro. Auf das
+    // fachliche Ergebnis warten, ohne Timer oder Laufzeitverhalten zu veraendern.
+    try { await quiet.waitFor({ state: "visible" }); }
+    catch { visible = false; }
+    const dom = await page.evaluate(() => ({
+      frame: document.querySelector(".app-frame")?.className || null,
+      intro: Boolean(document.querySelector(".helmut-refresh--intro")),
+      status: briefing.currentHelmutState?.status,
+      emptyKind: briefing.currentHelmutState?.emptyState?.kind,
+      frischeAktuell: briefing.currentHelmutState?.frischeVertrag?.aktuell,
+      cards: [...document.querySelectorAll(".hstand-state-card")].map(card => ({
+        kind: card.dataset.emptyKind, title: card.querySelector(".hstand-state-title")?.innerText || null,
+        sub: card.querySelector(".hstand-state-sub")?.innerText || null,
+        lage: card.querySelector(".hstand-state-lage")?.innerText || null
+      }))
+    }));
+    const detail = JSON.stringify({ introBefore, waitedMs: Date.now() - started, ...dom });
+    console.log(`DIAG  ${label}: Ruhelage-DOM ${detail}`);
+    check(`${label}: Briefing zeigt ehrliche gespeicherte Ruhelage mit weiterlaufenden Lagekarten`,
+      visible && dom.cards.length === 1 && dom.cards[0].kind === "quiet"
+      && dom.cards[0].sub === "Das ist keine Entwarnung."
+      && String(dom.cards[0].lage).includes("2 Themen weiter"), detail);
+  }
   let server, browser;
   try {
     const handler = require(path.join(root, "server.js"));
@@ -188,6 +218,7 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
       executablePath: process.env.HELMUT_BROWSER_EXECUTABLE_PATH || undefined,
       headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
     });
+    if (ruhelageOnly) console.log("WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT: 13 erfolgreiche JSONB-Browserchecks aus CI43511072972. Hier nur die zwei fehlgeschlagenen Ruhelageanzeigen.");
     for (const [label, viewport, isMobile] of [
       ["Desktop", { width: 1280, height: 800 }, false], ["Mobil", { width: 390, height: 844 }, true]
     ]) {
@@ -223,6 +254,11 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
         const response = await responsePromise, start = await response.json();
         if (jsonb) {
           const b = start.briefing;
+          if (ruhelageOnly) {
+            await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+            await pruefeRuhelage(page, label, isMobile ? ".mobile-dock" : ".nav-list");
+            continue;
+          }
           check(`${label}: JSONB-Paket mit aktiver Sperre kommt durch echte Sitzungs-/HTTP-Autorisierung`,
             response.status() === 200 && start.profile?.id === profile.id && b?.available === true
             && b.paketStatus?.zustand === "gespeichert" && b.paketStatus.vollstaendig === true
@@ -242,11 +278,7 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
               && !briefing.currentHelmutState.tagesAnlass,
             { tenant: profile.id, hash: row.payload.inhaltHash }));
           const nav = isMobile ? ".mobile-dock" : ".nav-list";
-          await page.locator(`${nav} [data-view="helmut"]`).click();
-          const quiet = page.locator('.hstand-state-card[data-empty-kind="quiet"]');
-          check(`${label}: Briefing zeigt ehrliche gespeicherte Ruhelage mit weiterlaufenden Lagekarten`,
-            await quiet.count() === 1 && (await quiet.innerText()).includes("Das ist keine Entwarnung.")
-            && (await quiet.innerText()).includes("2 Themen weiter"));
+          await pruefeRuhelage(page, label, nav);
           await page.locator(`${nav} [data-view="radar"]`).click();
           const radar = page.locator('.radar2-card--dynamic[href="https://example.invalid/dokument/1"]');
           check(`${label}: gespeicherte Radar-Dynamik mit oeffnender Originalquelle bleibt sichtbar`,
@@ -308,8 +340,13 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
         finally { await anonymous.close(); }
       } finally { await context.close(); }
     }
-    check(jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
-      && JSON.stringify([...rows]) === before, forbidden.join(", "));
+    if (ruhelageOnly) {
+      // Schutzwachen bleiben aktiv; daraus wird kein wiederholter 13. PASS.
+      assert.deepEqual(forbidden, []); assert.equal(JSON.stringify([...rows]), before);
+    } else {
+      check(jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
+        && JSON.stringify([...rows]) === before, forbidden.join(", "));
+    }
   } finally {
     if (browser) await browser.close();
     if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
@@ -341,8 +378,8 @@ async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
   }
 
   if (tagespaketOnly) {
-    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb });
-    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
+    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly });
+    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 

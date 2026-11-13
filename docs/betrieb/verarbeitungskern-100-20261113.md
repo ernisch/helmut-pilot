@@ -43,11 +43,33 @@ und keine authentifizierte Production-HTTP-/Browserabnahme.
 Die korrigierte Quellenentscheidung erlaubt mit echten schmalen Tagesmetadaten
 `automatik-restarbeit`; sieben GETs, keine Reservierung oder Verarbeitung.
 
-Noch offen: Integration/Pflicht-CI/gesonderte konkrete Mergefreigabe sowie danach
-echter Quellenfortschritt und neue Paketerstellung. Der sichere vorhandene
-Admin-Quellenstart braucht eine echte Admin-Sitzung samt CSRF. Betreiberzugang ist
-in der Arbeitsumgebung nicht vorhanden; geschuetzte Bereitstellung angefragt.
-Keine Authentifizierungsumgehung, Uhr-/Quotenmanipulation oder Budgeterhoehung.
+Die Fachreparatur ist in [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184)
+integriert. Die eng gebundene automatische PR-CI behaelt beide echten Pflichtjobs;
+ganzer Dateibaum und exakte Runtime-/Test-/Konfigurationsblobs werden geprueft.
+Keine breite Standard-/Datenbank-/Mengenwiederholung, keine Statuspublisher.
+Unabhaengiges CI-Review ohne Befund. Erster echter
+[CI-Lauf43511072972](https://github.com/ernisch/helmut-pilot/actions/runs/43511072972)
+auf `6aaaee5c`:11 neue Planpruefgruppen und13 neue JSONB-Browserchecks bestanden.
+Der Lauf bleibt fehlgeschlagen: die letzte Plangruppe zaehlte auch Bash-Verwendungen
+statt nur Env-Deklarationen; zwei UI-Checks liefen nach50ms waehrend des bestehenden
+1400ms-Intros. Korrektur nur in Tests: Zeilenanker sowie Warten auf sichtbare Karte.
+Naechster Lauf prueft nur diese drei Gegenfaelle und bisher nicht gestartete Syntax;
+11/13 bereits positive Faelle bleiben ausdruecklich wiederverwendete Teilbelege,
+kein gruener Gesamtjob im ersten Lauf behauptet. Produktcode/24 lokale Faelle unveraendert.
+
+Radar zusaetzlich fachlich rein lesend geprueft:48 Rohartikel insgesamt, nur4 vom
+heutigen Berliner Tag. Sechs gebundene Kandidaten mit22 Originalquellen und echte
+Profil-/Policywerte reproduzieren exakt die gespeicherte Pflegereform-Beobachtung
+mit juengstem Beleg08.11. Andere Kandidaten haben keinen belegten Mandatsbezug oder
+kein mehrtaegiges/fristgebundenes Beobachtungssignal. Kein weiterer Radarfehler
+nachgewiesen; Kriterien bleiben unveraendert. Neue geeignete Signale sind damit
+nicht garantiert. Dies ersetzt keinen neuen Quellenlauf oder Production-Klicktest.
+
+Noch offen: gezielte Nachtrags-CI/gesonderte konkrete Mergefreigabe sowie danach
+echter Quellenfortschritt und neue Paketerstellung. Der Betreiber uebernimmt den
+sicheren vorhandenen Admin-Quellenstart selbst in seiner Admin-Sitzung samt CSRF;
+keine Zugangsdaten an Codex weitergegeben. Keine Authentifizierungsumgehung,
+Uhr-/Quotenmanipulation oder Budgeterhoehung.
 
 ## Ausgefuehrter Einprofil-Rollout und damaliger Stand (13.11.2026)
 
