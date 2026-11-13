@@ -50,11 +50,11 @@ const reasons={
 export function sourceRunView(state={}) {
  const states={bereit:['Quellen bei Bedarf neu einlesen.','Der Lauf nutzt die vorhandenen Tageskontingente.'],
   prueft:['Start wird geprüft …','Der Quellenlauf kann bis zu fünf Minuten dauern.'],
-  laeuft:['Quellen werden verarbeitet …','Du kannst die Verwaltung weiter benutzen. Der Laufstatus bleibt beim Neuladen erhalten.'],
+  laeuft:['Quellen werden verarbeitet …','Sie können die Verwaltung weiter benutzen. Der Laufstatus bleibt beim Neuladen erhalten.'],
   abgeschlossen:['Quellenlauf abgeschlossen.','Der Briefingstand der Kunden wird anschließend neu geprüft.'],
-  teilweise:['Quellenlauf mit offenen Aufgaben beendet.','Prüfe den Kundenstand und bei Bedarf den Quellenbericht.'],
+  teilweise:['Quellenlauf mit offenen Aufgaben beendet.','Prüfen Sie den Kundenstand und bei Bedarf den Quellenbericht.'],
   gesperrt:['Quellenlauf kann gerade nicht starten.','Bitte den Quellenstand prüfen.'],
-  unbekannt:['Der Abschluss ist noch offen.','Prüfe den Status. Der Lauf wird nicht automatisch erneut gestartet.'],
+  unbekannt:['Der Abschluss ist noch offen.','Prüfen Sie den Status. Der Lauf wird nicht automatisch erneut gestartet.'],
   fehler:['Der Start wurde nicht bestätigt.','Bitte den Stand neu laden und erneut prüfen.']};
  const [title,text]=states[state.zustand]||states.unbekannt;
  return {title,text:reasons[state.grund]||text,disabled:Boolean(state.busy||state.offen||['fensterkontingent-erschoepft','sekundenkontingent-erschoepft'].includes(state.grund))};

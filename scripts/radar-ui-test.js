@@ -16,6 +16,9 @@ function loadClient(now) {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__radarTest = {
     render: () => renderRadarView(),
+    lageLink: (item) => radarLageVerweis(item),
+    briefingLageLink: (item) => briefingLageVerweis(item),
+    additionalContext: (item) => radarAdditionalContext(item),
     topbar: () => { currentView = "radar"; return renderTopbar(); },
     setBriefing: (b) => { briefing = b; },
     setArticlesExpanded: (v) => { radarArticlesExpanded = v; },
@@ -320,6 +323,17 @@ api.setBriefing({ currentRadarState: { ...state, mentions: [], articles: [], dyn
   emptyState: { kind: "gap", detail: "Für dein Mandat fehlen Quellen." } } });
 check("Auch gelieferter Radar-Leerhinweis verwendet Sie-Ansprache", api.render().includes("Für Ihr Mandat fehlen Quellen."));
 api.setBriefing({ currentRadarState: state });
+
+const sourceHint = { vorgangId: "vg-sammel", anzeigeId: "vg-sammel:quelle:a", quellenhinweis: true,
+  sources: [{ url: "https://example.org/quelle/a" }] };
+api.setBriefing({ lageBriefing: { vorgaenge: [sourceHint] } });
+check("Radar verweist nicht auf den falschen Restartikel einer aufgeteilten Sammelkarte",
+  api.lageLink({ vorgangId: "vg-sammel" }) === "");
+check("Briefing verweist nicht auf einen Quellenhinweis ohne seinen Sachstand",
+  api.briefingLageLink({ id: "vg-sammel" }) === "");
+api.setBriefing({ lageBriefing: { vorgaenge: [sourceHint, { ...sourceHint, anzeigeId: undefined, quellenhinweis: false }] } });
+check("Verweis bevorzugt den vorhandenen echten Sachstand", api.lageLink({ vorgangId: "vg-sammel" }).includes('data-radar-lage="vg-sammel"'));
+check("Ein alleiniger Fachbezug wird sichtbar benannt", api.additionalContext({ relationTypes: ["subject"] }).includes("Ihr Fachthema"));
 
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }

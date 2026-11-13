@@ -32,7 +32,8 @@ export function createPreviewApi() {
   },
   async saveProfile(id,input){profiles[id]={...profiles[id],...clone(input),id,profileActive:profiles[id]?.profileActive===true};return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
   async activateProfile(id){if(validation(profiles[id]).fehlendePflichtfelder.length)throw new Error('Bitte zuerst die Schwerpunkte im Profil ergänzen.');profiles[id].profileActive=true;return {profile:clone(profiles[id]),validierung:validation(profiles[id])};},
-  async invite(id){const c=customers.find(c=>c.userId===id);c.active=true;return previewInvite();},
+  async invite(id){const c=customers.find(c=>c.userId===id);return {...previewInvite(),purpose:c.status==='eingeladen'?'invite':'reset'};},
+  async setAccess(id,active){const c=customers.find(c=>c.userId===id);c.active=active;return clone(c);},
   async settings(key){return key==='budget'?{kostenwahrheit:{gesamt:{kostenUsd:0.12,kostenUnbekannt:0}}}:key==='runs'?{processRuns:[{process:'Morgenbriefing',startedAt:now,status:'erfolgreich · fiktives Beispiel'}]}:{verfuegbar:true,zaehler:{abrufwege:12,herausgeber:8},statusCounts:{broken:1,degraded:0}};},
   dispose(){closed=true;listener=()=>{};}
  };

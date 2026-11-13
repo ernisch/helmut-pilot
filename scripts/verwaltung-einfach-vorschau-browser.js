@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const {previewHtml}=require('./verwaltung-einfach-export');
-const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
+const dir=process.argv[2]?path.resolve(process.argv[2]):path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
 (async()=>{
  const html=previewHtml();assert.equal(html,fs.readFileSync(path.join(dir,'vorschau.html'),'utf8'));
  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--disable-background-networking']});
@@ -46,7 +46,7 @@ const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
   check('Mandatsangaben bleiben nach der Anlage in der Vorschau erhalten',(await page.locator('#party').inputValue())==='CDU'&&(await page.locator('#state').inputValue())==='Brandenburg'&&(await page.locator('#topics').inputValue())==='Fiktives Thema');
   for(const width of [1440,390,360,320]){await page.setViewportSize({width,height:900});check('Vorschau ohne Ueberlauf bei '+width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.locator('[data-nav="customers"]').click();await page.locator('[data-action="new"]').click();
-  check('Schwerpunkte sind als optional erklaert und mit der Wirkung beschriftet',await page.getByLabel('Politische Schwerpunkte (optional)',{exact:true}).evaluate(el=>!el.required)&&await page.locator('#topics-help').innerText().then(t=>t.includes('Damit wählt Helmut passende Nachrichten für dein Briefing aus.')&&t.includes('Kann später im Profil ergänzt werden.')));
+  check('Schwerpunkte sind als optional erklaert und mit der Wirkung beschriftet',await page.getByLabel('Politische Schwerpunkte (optional)',{exact:true}).evaluate(el=>!el.required)&&await page.locator('#topics-help').innerText().then(t=>t.includes('Damit wählt Helmut passende Nachrichten für das Briefing des Kunden aus.')&&t.includes('Kann später im Profil ergänzt werden.')));
   await page.locator('#name').fill('Fiktiv ohne Schwerpunkte');await page.locator('#email').fill('ohne@example.invalid');await page.locator('#parliamentType').selectOption('Bundestag');await page.locator('#state').selectOption('Berlin');await page.locator('#party').selectOption('SPD');await page.locator('#faction').selectOption('SPD');await page.locator('#constituency').selectOption('Kein Wahlkreis (Landesliste)');
   await page.setViewportSize({width:390,height:900});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:path.join(dir,'vorschau-ohne-schwerpunkte-mobil.png'),fullPage:true});
@@ -54,7 +54,7 @@ const dir=path.resolve(__dirname,'../docs/ui/verwaltung-einfach-20261111');
   check('Vorschau erlaubt Anlage ohne Schwerpunkte mit Einladung und ehrlichem offenem Stand',await page.locator('main').innerText().then(t=>t.includes('Kunde angelegt.')&&t.includes('Schwerpunkte können später ergänzt werden.'))&&await page.locator('#invite-url').count()===1);
   check('Vorschau bietet keine Briefingaktivierung ohne fachliche Angaben an',await page.locator('[data-action="activate"]').count()===0);
   await page.locator('[data-action="profile"]').first().click();await page.locator('#profile-form').waitFor();await page.locator('#profile-form button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv ohne Schwerpunkte',exact:true}).waitFor();
-  check('Leere Schwerpunkte bleiben auch beim Bearbeiten speicherbar',await page.getByRole('heading',{name:'Schwerpunkte können später ergänzt werden.',exact:true}).count()===1);
+  check('Leere Schwerpunkte bleiben auch beim Bearbeiten speicherbar',await page.locator('.customer-tools .setting-row small').filter({hasText:'Schwerpunkte können später ergänzt werden.'}).count()===1);
   await page.locator('[data-nav="settings"]').click();check('Seltene Werkzeuge sind eingeklappt und bleiben erreichbar',await page.locator('main details').evaluate(el=>!el.open)&&await page.locator('a[href="/verwaltung/#/profile"]').count()===1);await page.locator('[data-setting="sources"]').click();
   check('Zeitplan und Quellenzahlen bleiben hinter Details erreichbar',await page.locator('.source-details').evaluate(el=>!el.open)&&await page.getByText('Nächste automatische Prüfung',{exact:true}).count()===1);
   check('Quellenstart liegt verstaendlich unter Einstellungen und Quellenversorgung',await page.getByRole('heading',{name:'Quellen & Versorgung.',exact:true}).isVisible()&&await page.getByRole('button',{name:'Quellenlauf jetzt starten',exact:true}).isVisible());

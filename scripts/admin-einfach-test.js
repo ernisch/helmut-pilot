@@ -39,7 +39,7 @@ async function run({browser=false,evidenceDir=null}={}){
   const cookie=await login(admin.email),memberCookie=await login('member@example.invalid');
   const authenticated=(url,options={})=>fetch(base+url,{...options,headers:{...options.headers,Cookie:cookie}});
   const {createSimpleApi}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/api.mjs')));
-  const {customerState,berlinDay}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/model.mjs')));
+  const {customerState,berlinDay,accessState,canManageAccess}=await import(pathToFileURL(path.join(root,'verwaltung/einfach/model.mjs')));
   const api=createSimpleApi({fetcher:authenticated,origin:base});
   await check('Alle Kandidatenassets nur fuer angemeldete Administratoren',async()=>{
    for(const asset of ['','app.mjs','api.mjs','styles.css','profil-auswahl.mjs','versorgung.mjs','logo.svg','sans.woff2','serif.woff2']){
@@ -139,6 +139,48 @@ async function run({browser=false,evidenceDir=null}={}){
    const r=await api.activateProfile(user.politicianId);assert.equal(r.profile.profileActive,true);
    const d=await api.load(),c=d.customers.find(c=>c.userId===user.id);assert.equal(customerState(d,c).key,'unknown');
   });
+  const managed=await accounts.createUser({name:'Fiktive Zugangsprobe',email:'zugangsprobe@example.invalid',role:'abgeordneter',password:'Only-Synthetic-123!'});
+  await storage.saveProfile({id:managed.politicianId,fullName:managed.name,party:'SPD',faction:'SPD',profileActive:false});
+  await check('Zugangsanzeige trennt Einladung, Freigabe, Sperre und unbekannten Stand',async()=>{
+   assert.equal(accessState({active:true,status:'eingeladen'}).key,'invited');
+   assert.equal(accessState({active:true,status:'aktiv'}).key,'active');
+   assert.equal(accessState({active:false,status:'aktiv'}).key,'blocked');
+   assert.equal(accessState({active:true,status:'gekuendigt'}).key,'blocked');
+   assert.equal(accessState({status:'aktiv'}).key,'unknown');
+   assert.equal(canManageAccess({...managed,role:'admin'}),false);
+  });
+  await check('Sperren und Freigeben nutzt echte Kontorouten ohne Mail oder Mandatsaktivierung',async()=>{
+   const profile=JSON.stringify(await storage.getProfile(managed.politicianId)),mails=mailCalls.length;
+   const session=await login(managed.email);
+   await api.setAccess(managed.id,false);
+   assert.equal((await accounts.getUserByIdRaw(managed.id)).active,false);
+   assert.equal((await (await fetch(base+'/api/auth/session',{headers:{Cookie:session}})).json()).authenticated,false);
+   await api.setAccess(managed.id,true);
+   const again=await login(managed.email);assert.ok(again);
+   assert.equal((await accounts.getUserByIdRaw(managed.id)).active,true);
+   assert.equal(JSON.stringify(await storage.getProfile(managed.politicianId)),profile);
+   assert.equal(mailCalls.length,mails);
+  });
+  await check('Zugangsaktionen lehnen Administratoren und gekuendigte Konten ab',async()=>{
+   await assert.rejects(api.setAccess(admin.id,false),e=>e.status===409);
+   assert.equal((await accounts.getUserByIdRaw(admin.id)).active,true);
+   await accounts.updateUser(managed.id,{status:'gekuendigt'});
+   await assert.rejects(api.setAccess(managed.id,true),e=>e.status===409);
+   assert.equal((await accounts.getUserByIdRaw(managed.id)).active,false);
+   await accounts.updateUser(managed.id,{status:'aktiv'});
+  });
+  await check('Verlorener Lesebeleg nach Zugangsaenderung bleibt offen und erzeugt keinen zweiten Write',async()=>{
+   let applied=false,writes=0;
+   const p=createSimpleApi({origin:base,fetcher:async(url,options={})=>{
+    if(url==='/api/admin/users'&&applied)return new Response('{}',{status:503});
+    const result=await authenticated(url,options);
+    if(url==='/api/admin/users/'+managed.id&&options.method==='PATCH'){applied=true;writes++;}
+    return result;
+   }});
+   await p.load();await assert.rejects(p.setAccess(managed.id,false),e=>e.outcomeUnknown===true);
+   assert.equal(writes,1);assert.equal((await accounts.getUserByIdRaw(managed.id)).active,false);p.dispose();
+   await api.load();await api.setAccess(managed.id,true);
+  });
   await check('Status aus aktuellen gebundenen Antwortpositionen; Qualitaetsurteil bleibt offen',async()=>{
    const d=await api.load(),c=d.customers.find(c=>c.userId===user.id),pos={stufe:3,ursache:null};
    d.resultDay=berlinDay(d.now);d.results={[user.politicianId]:{positionen:{briefing:pos,zustellung:pos,lage:pos}}};
@@ -151,7 +193,7 @@ async function run({browser=false,evidenceDir=null}={}){
    let writes=0;const p=createSimpleApi({fetcher:async(url,options={})=>{
     if(options.method&&options.method!=='GET')writes++;
     return {ok:true,status:200,json:async()=>url.includes('customers')?{kunden:[],customerScope:'regular'}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'preview'}}}:{verfuegbar:false}};
-   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);assert.equal(writes,0);p.dispose();
+   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);await assert.rejects(p.setAccess('synthetic-customer',false),/Vorschau/);assert.equal(writes,0);p.dispose();
   });
   await check('401 entfernt statt erfolgreichem Leerbestand den gesamten Zugriff',async()=>{
    const denied=createSimpleApi({fetcher:async()=>({ok:false,status:401,json:async()=>({})})});await assert.rejects(denied.load(),e=>e.status===401);denied.dispose();
@@ -249,12 +291,33 @@ async function run({browser=false,evidenceDir=null}={}){
     const reused=await customerContext.request.post(base+'/api/auth/set-password',{data:{token:invitation.searchParams.get('token'),password:'Only-Customer-Synthetic-123!'}});assert.equal(reused.status(),410);
    });
    await customerContext.close();
+   await page.locator('[data-action="refresh"]:visible').first().click();
    await page.locator('[data-action="activate"]').click();
    await page.getByText('Aktiv',{exact:true}).waitFor();
    await check('Aktivieren bleibt getrennt vom tatsaechlichen Briefing',async()=>{assert.equal(await page.getByText('Heute bereit',{exact:true}).count(),0);});
    await page.locator('[data-action="invite"]').click();await page.locator('#invite-url').waitFor();
    await check('Nach Passwortsetzen entsteht ein Reset-Einmaltoken statt einer zweiten Einladung',async()=>{const token=new URL(await page.locator('#invite-url').inputValue()).searchParams.get('token');const state=await accounts.inspectPasswordToken(token);assert.equal(state.valid,true);assert.equal(state.purpose,'reset');assert.equal(await page.getByText('Einladung versendet.',{exact:true}).count(),0);});
    await page.locator('[data-action="hide-invite"]').click();
+   await check('Kundenzugang hat einen klaren Passwortlink statt einer erneuten Einladung',async()=>{
+    assert.equal(await page.locator('[data-action="invite"]').count(),1);
+    assert.match(await page.locator('[data-action="invite"]').innerText(),/Passwort zurücksetzen/);
+    assert.ok(await page.getByText('Zugang aktiv',{exact:true}).isVisible());
+   });
+   const managedBrowser=await accounts.getUserByEmailRaw('browser@example.invalid'),profileBefore=JSON.stringify(await storage.getProfile(managedBrowser.politicianId)),mailsBefore=mailCalls.length;
+   await page.locator('[data-action="access-disable"]').click();
+   await page.getByText('Zugang gesperrt.',{exact:true}).waitFor();
+   await check('Mobile Kontosperre zeigt den bestaetigten Zustand ohne Einladung oder Profilaktion',async()=>{
+    assert.equal((await accounts.getUserByIdRaw(managedBrowser.id)).active,false);
+    assert.equal(await page.locator('[data-action="access-enable"]').count(),1);
+    assert.equal(await page.locator('[data-action="invite"]').isDisabled(),true);
+    assert.equal(mailCalls.length,mailsBefore);
+   });
+   await page.locator('[data-action="access-enable"]').click();await page.getByText('Zugang freigegeben.',{exact:true}).waitFor();
+   await check('Erneute Freigabe bestaetigt Anmeldung und erhaelt das unveraenderte Mandat',async()=>{
+    assert.equal((await accounts.getUserByIdRaw(managedBrowser.id)).active,true);
+    assert.equal(JSON.stringify(await storage.getProfile(managedBrowser.politicianId)),profileBefore);
+    assert.equal(mailCalls.length,mailsBefore);
+   });
    for(const width of [1440,390,360,320]){
     await page.setViewportSize({width,height:900});
     await check('Kundenseite ohne horizontalen Ueberlauf bei '+width,async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true));
@@ -275,7 +338,7 @@ async function run({browser=false,evidenceDir=null}={}){
    await page.setViewportSize({width:390,height:900});await page.locator('h1').focus();await page.evaluate(()=>scrollTo(0,0));
    if(evidenceDir)await page.screenshot({path:path.join(evidenceDir,'app-kunde-ohne-schwerpunkte-mobil.png'),fullPage:true});
    await page.locator('#new-customer button[type="submit"]').click();await page.getByRole('heading',{name:'Fiktiv spaetere Schwerpunkte',exact:true}).waitFor();
-   await check('Browser legt einen Kunden ohne Schwerpunkte an und bietet den Einladungslink an',async()=>{assert.equal(await page.locator('[data-action="activate"]').count(),0);assert.equal(await page.getByRole('heading',{name:'Schwerpunkte können später ergänzt werden.',exact:true}).count(),1);assert.ok((await accounts.listPendingInvites())[(await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid')).id]);});
+   await check('Browser legt einen Kunden ohne Schwerpunkte an und bietet den Einladungslink an',async()=>{assert.equal(await page.locator('[data-action="activate"]').count(),0);assert.equal(await page.locator('.customer-tools .setting-row small').filter({hasText:'Schwerpunkte können später ergänzt werden.'}).count(),1);assert.ok((await accounts.listPendingInvites())[(await accounts.getUserByEmailRaw('spaetere-schwerpunkte@example.invalid')).id]);});
    const laterInvitation=new URL(await page.locator('#invite-url').inputValue());
    const laterContext=await browserInstance.newContext({viewport:{width:390,height:900}});
    await laterContext.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
@@ -344,13 +407,13 @@ async function run({browser=false,evidenceDir=null}={}){
    await sourceAuth.addCookies([{name:'helmut_session',value:cookie.slice(cookie.indexOf('=')+1),url:base}]);
    await sourceAuth.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
    await sourceAuth.route('**/api/admin/quellenlauf*',route=>route.fulfill({status:401,contentType:'application/json',body:'{}'}));
-   const sourceAuthPage=await sourceAuth.newPage();await sourceAuthPage.goto(base+'/verwaltung/einfach/');await sourceAuthPage.locator('[data-setting="sources"]').click();await sourceAuthPage.locator('[data-action="source-start"]').click();await sourceAuthPage.getByRole('heading',{name:'Bitte melde dich erneut an.',exact:true}).waitFor();
+   const sourceAuthPage=await sourceAuth.newPage();await sourceAuthPage.goto(base+'/verwaltung/einfach/');await sourceAuthPage.locator('[data-setting="sources"]').click();await sourceAuthPage.locator('[data-action="source-start"]').click();await sourceAuthPage.getByRole('heading',{name:'Bitte melden Sie sich erneut an.',exact:true}).waitFor();
    await check('Sitzungsverlust beim Quellenstart entfernt Kundendaten und den sicher abgewiesenen Auftrag',async()=>{assert.doesNotMatch(await sourceAuthPage.locator('main').innerText(),/Fiktiver|example.invalid/);assert.equal(await sourceAuthPage.evaluate(()=>sessionStorage.getItem('helmut-admin-quellenauftrag-v1')),null);});
    await sourceAuth.close();
    assert.deepEqual(consoleErrors,[]);
    await context.route('**/api/admin/customers*',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":"Bitte erneut anmelden."}'}));
    await page.locator('[data-action="refresh"]:visible').first().click();
-   await page.getByRole('heading',{name:'Bitte melde dich erneut an.',exact:true}).waitFor();
+   await page.getByRole('heading',{name:'Bitte melden Sie sich erneut an.',exact:true}).waitFor();
    await check('Zugriffsentzug entfernt Kundendaten aus dem Browser',async()=>{assert.doesNotMatch(await page.locator('main').innerText(),/Fiktiver|browser@example/);});
    assert.deepEqual(errors,[]);assert.ok(consoleErrors.every(message=>message.includes('401 (Unauthorized)')),'Nur der bewusst erzwungene HTTP401 darf einen Konsolenhinweis erzeugen');
    if(evidenceDir)fs.writeFileSync(path.join(evidenceDir,'app-pruefung.json'),JSON.stringify({status:'PASS',observedAt:new Date().toISOString(),checks:passed,requests,pageErrors:errors,scope:'Isolierter echter lokaler HTTP-/Konten-/Profilspeicher; Ergebnisstatus zusaetzlich mit synthetischen Antwortvertraegen. Keine Production- oder Modellpruefung.'},null,2)+'\n');
