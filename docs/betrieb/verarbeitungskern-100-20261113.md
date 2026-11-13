@@ -2,8 +2,8 @@
 
 Stand 13.11.2026. Entwicklungsbranch `codex/verarbeitungskern-100-20261113`,
 Ausgangsstand `fe94f3eb`. Kerncommit `8d780785`; die Auslieferung ist ein
-getrennter Folgecommit desselben Reviewbranches. **Teilweise umgesetzt und gezielt lokal geprueft;
-keine Production-Freigabe und kein Kapazitaetsnachweis fuer 100 Kunden.**
+getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach gezielten Korrekturen lokal abgenommen;
+Pflicht-CI und Production-Freigabe offen. Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Architekturentscheidung und Umsetzung
 
@@ -206,6 +206,55 @@ Mandatsreihenfolge geprueft; gefundene Integrationsfehler wurden behoben.
 Kein neuer Kostenplan und kein RAM-/Durchsatzversprechen fuer 100 folgt daraus.
 Der sichere Einprofil-Rollout braucht noch separate konkrete Freigabe.
 
+## Gezielte Codeabnahme nach Betreiber-Go (13.11.2026)
+
+Ausgangskopf [699dc501 / PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
+Zwei neue unabhaengige Codex-Pruefer untersuchten Verarbeitung und Auslieferung;
+der fuehrende Agent pruefte SQL, Kosten und Integration. Bestehende erfolgreiche
+Nachweise wurden weiterverwendet. Die Abnahme fand fuenf konkrete Fehler und
+behob sie im selben Branch:
+
+| Befund | Korrektur |
+| --- | --- |
+| P1: Abgewiesene Rohzeilen konnten den FK-gesicherten Fundstellenbatch guter Artikel zurueckrollen | Nur bestaetigte Artikel gelangen in den Batch; echter Fundstellenausfall verhindert Quellenabschluss, bestaetigte Kinder bleiben erhalten |
+| P1: Alter Lagecache konnte unter neuer Profil-/Quellenbindung erscheinen | Der aktuelle cacheOnly-Leser liefert den exakt akzeptierten KO-/Quellenhash; Paketbau prueft zusaetzlich Absatz-/Quellenidentitaeten. Abgewiesener oder fehlender Cache ergibt ehrliche Teilausgabe mit Karten, keinen alten Text unter neuer Bindung |
+| P1: Alte Clients haetten waehrend Migration/Code-Rueckweg synthetische Felder im Fortschritts-CAS verwendet | Die alte Direktclaim-RPC behaelt ihre exakte Payload. Nur der neue Wrapper ergaenzt Metadaten innerhalb derselben Transaktion; alte und neue Clients bleiben kompatibel |
+| P2: Lagekarten ausserhalb der Briefingauswahl fehlten im Publikationsmanifest | Hintergrundbau uebernimmt die Vereinigung der tatsaechlich geladenen Briefing-/Lage-KO-Abhaengigkeiten; keine zusaetzliche Korpussuche beim Appstart |
+| P2: Alte Metrik-RPC haette Bereitschaft trotz fehlender Kernmigration signalisiert | Ein lesender Vorflug auf die neue Tagesstand-RPC mit leeren Filtern bestaetigt die Migration vor Metriken und vor Quellenkontingenten |
+
+Der moderne Queue-Paketbauer reicht auch eine fehlende Lageansicht ausdruecklich
+als `null` weiter. Damit kann er nicht unbeabsichtigt den alten optionalen
+Materialisierungsvertrag nutzen. Bei unbestaetigter aktueller Textbindung bleiben
+Karten und vorheriger Archivstand erhalten.
+
+Nur neue oder tatsaechlich geaenderte Faelle ausgefuehrt, jeweils ueber `lokal.js`:
+
+- `verarbeitungskern-abnahme-test.js`: fuenf neue Bereitschafts-/Materialisierungs-
+  faelle bestanden. Drei bestanden sofort, der Quellenfensterfall nach Ergaenzen
+  der im ersten Fixture fehlenden Fensterlimits; nur dieser Fall erneut geprueft.
+- `quellen-arbeitsfenster-test.js --only='echte Workerbereitschaft'`: ein
+  tatsaechlich geaenderter bestehender Vorflugfall bestanden.
+- `verarbeitungskern-rohbestand-test.js --only=findings-fk` und
+  `--only=findings-write`: je ein neuer Fall bestanden; Transport simuliert den
+  wirklichen Fremdschluessel und einen echten Fundstellenschreibfehler.
+- `verarbeitungskern-claim-datenbank-test.js --kompatibilitaet`: drei neue echte
+  PostgreSQL-Faelle bestanden: alte Payloadgleichheit, erfolgreicher alter
+  Fortschritts-CAS, neue getrennte Metadaten. Ausschliesslich zwei Jobs im
+  netzlosen lokalen Container; danach Rollback und Containerbereinigung.
+- `tagespaket-auslieferung-test.js`: fuenf ausgewaehlte neue/geaenderte Gruppen
+  bestanden: Profil-/Quellenkontextwechsel, Cacheaustausch, Lage-only-Abhaengigkeit
+  bei Publikationssperre, echter cacheOnly-Lagebauer sowie geaenderte Teilfortsetzung.
+  Unvollstaendige Zeit-/Quellendatum-Testfixtures wurden korrigiert; kein
+  fachlicher Produktfilter wurde dafuer gelockert.
+
+Nach den Korrekturen kein verbleibender Befund im unabhaengig geprueften Umfang.
+Drift-Pruefhashes stimmen mit den neuen Funktionskoerpern ueberein. Die gezielte
+Codeabnahme ersetzt weder die weiterhin fehlenden Pflichtchecks noch echte
+Kundenbedienung, wirtschaftliche Dimensionierung oder eine Production-Freigabe.
+Keine breite CI, alten Mengenfaelle, bezahlten Modelle oder Production-Aenderungen
+in diesem Abnahmeschritt. Der im ersten Umsetzungsschritt versehentlich gelaufene
+500er Altfall bleibt ausschliesslich als oben dokumentierte Abweichung erhalten.
+
 ## Rueckweg und verbleibende Grenze
 
 Die neue Migration liegt mit passender `rollback_...sql` vor und ist **nicht**
@@ -221,5 +270,6 @@ authentifizierte echte Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
 Dimensionierung vor Zulassung weiterer Kunden. Weder der erste zahlende Kunde
 noch 100 aktive Kunden werden durch diesen Entwicklungsstand automatisch aktiviert.
 
-**Genau naechster Schritt:** Den isolierten Pull Request fachlich und technisch
-abnehmen, bevor eine konkrete Production-Freigabe erwogen wird.
+**Genau naechster Schritt:** Den Pflicht-CI-Pruefumfang fuer diesen Endstand
+gezielt begrenzen, damit keine untersagten alten Mengenlaeufe gestartet werden.
+Bis erfolgreiche Pflichtchecks vorliegen bleibt der PR ein Entwurf ohne Mergefreigabe.

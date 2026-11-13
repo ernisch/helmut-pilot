@@ -1,17 +1,19 @@
 # CURRENT STATE — Helmut
 
 **13.11.2026: Verarbeitungskern fuer den ersten zahlenden Kunden und danach
-100 aktive Kunden gezielt umgebaut; Entwicklungsstand, nicht ausgerollt.**
+100 aktive Kunden gezielt umgebaut; lokale Codeabnahme nach Korrekturen, nicht ausgerollt.**
 Branch `codex/verarbeitungskern-100-20261113`, Basis `fe94f3eb`.
 Einzelne Artikelversionen, Tagesvorrang statt Altrueckstand, bestaetigte
 Lagephasen, verteilte Grenzen und gespeicherte App-Tagespakete umgesetzt.
 [Architekturentscheidung, konkrete Nachweise, Dimensionierung und Grenzen](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine Production-Daten-/Profil-/Budget-/Cronaenderung,
 keine Aktivierung, kein Merge/Deployment. Neue Migration nur vorbereitet.
-Sieben alte Workerfixtures gezielt angepasst/geprueft; Pflicht-CI/Mergereife offen.
+PR1183 nach Betreiber-Go unabhaengig geprueft: fuenf Integrationsfehler korrigiert,
+16 gezielte neue/geaenderte Pruefgruppen/Faelle bestanden. Pflicht-CI/Mergereife offen.
 Kein erneuter Mock100, kein neuer Lastnachweis; versehentlich ausgefuehrter
 rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
-**Naechster Schritt:** den isolierten Pull Request fachlich und technisch abnehmen.
+**Naechster Schritt:** den Pflicht-CI-Pruefumfang fuer diesen Endstand gezielt
+begrenzen, ohne untersagte alte Mengenlaeufe zu starten.
 
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
