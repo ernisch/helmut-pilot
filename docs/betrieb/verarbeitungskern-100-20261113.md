@@ -9,6 +9,32 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**DIP-Isolation nach konkretem Merge-Go ausgerollt:**
+[PR1185](https://github.com/ernisch/helmut-pilot/pull/1185), freigegebener Kopf
+`737ac9b68158a947845bb676e390e2724bb4a1e8`, normale Merge-SHA
+`cc283e0bae8ed7b9f25c551379a9ee1f8895a91c`. Parents73b34b02/737ac9b6,
+Dateibaum identisch zum geprueften Kopf. Beide Pflichtchecks in
+[CI43518358156](https://github.com/ernisch/helmut-pilot/actions/runs/43518358156)
+gruen: acht neue Artikelisolationsfaelle, sechs neue CI-Profilgegenfaelle,
+geaenderte JS-Syntax. Browser bewusst unveraendert wiederverwendet; keine alten
+Fach-/Browser-/DB-/Mengenpruefungen wiederholt. Unabhaengige Fach-/CI-Reviews ohne Befund.
+
+Pro DIP-Dokument gilt dieselbe strenge Quellenbindung. Bestaetigte Nachbarn laufen
+weiter; abgewiesene bekommen begrenzte idempotente Fehlerjobs mit einem Versuch,
+ohne Rohpayload-/Modellzugriff. Ungeklaerte Persistenz-/Einreihung bleibt gesperrt.
+Quelle meldet ehrlich Teilstand. Endgueltigen alten DIP-Auftrag nicht zurueckgesetzt.
+
+Regulaeres Gitdeployment `dpl_HBoMQ2Jvq5ZK2mCGm9egL8dDF4Wk` READY, fra1,
+Hauptalias und rein lesende Runtime bestaetigencc283e0b. Anonymer Appstart401,
+Kommunikation/Kohortenquellen gesperrt, exklusiver relationaler Profilpfad bestaetigt.
+Vor Merge null neuere laufende Prozesse/null aktive Jobleases. Keine breite main-CI,
+Migration, Limits-/Cron-/Env-/Profilaktivierung oder neuer Quellen-/Modelllauf.
+Paket nach Rollout unveraendert22:05:03.882 UTC,69Eintraege/2Absaetze/8Karten,
+Hash `665f55fb9f5c7d95e96cd305e14d1b67d37eeb6042f3a4c2f12afa9f70e2acbf`;
+Kostenbuchbindung unveraendert2,603647USDgesamt. Sources weiter unvollstaendig,
+kein Tagesanlass/Radarstale. Keine vollstaendige frische Kundenversorgung behauptet.
+Naechster Schritt: naechsten regulaeren Quellen-/Morgenlauf samt Paketstand pruefen.
+
 **Echter Betreiberlauf und neuer Paketstand,21:58–22:05 UTC:**
 Adminlauf `admin-quellen-2026-11-13-8e21b6a7-ccc5-4f15-b28c-8d5b3b328938`
 auf73b34b02 abgeschlossen:140Ziel,15erledigt,8Fehler,96zurueckgestellt,
