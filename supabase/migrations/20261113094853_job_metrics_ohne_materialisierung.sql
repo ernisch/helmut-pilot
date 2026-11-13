@@ -2,7 +2,7 @@
 -- Drei schmale Tabellenscans statt breiter Materialisierung und 17 CTE-Scans.
 -- Alle 17 Ergebnisformeln bleiben gleich; skalare Aggregate teilen einen Scan. CREATE OR REPLACE erhaelt OID, Owner, ACL
 -- und Kommentar; kein DROP, GRANT, Daten-, Index- oder Konfigurationswechsel.
--- Rueckweg: rollback_20261113080937_job_metrics_ohne_materialisierung.sql
+-- Rueckweg: rollback_20261113094853_job_metrics_ohne_materialisierung.sql
 begin;
 
 create or replace function public.helmut_job_metrics(p_seit_minuten integer default 1440)

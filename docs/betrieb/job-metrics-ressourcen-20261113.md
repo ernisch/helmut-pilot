@@ -1,7 +1,9 @@
 # Job-Metriken: lokale SQL-Optimierung, 13.11.2026
 
-Status: vorbereitet, nicht in Production angewendet. Kein Merge oder Deployment
-ohne konkrete Betreiberfreigabe. Keine Neustartursache oder Betriebsbereitschaft bewiesen.
+Status13.11.,09:49UTC: Nach konkreter Betreiberfreigabe auf Production angewendet.
+Registrierte Migration20261113094853; deshalb die vorbereiteten Dateinamen und
+Testpfade dieser Kennung angeglichen. Der gepruefte SQL-Koerper bleibt bytegleich.
+Keine Neustartursache oder Betriebsbereitschaft bewiesen.
 
 ## Befund und Korrektur
 
@@ -44,17 +46,31 @@ erfolgreiche breite Nachweise bleiben historisch; keine erneute Gesamtpruefung.
 
 ## Umfang, Rueckweg und offene Grenzen
 
-Nur vorbereitete Migration `20261113080937_job_metrics_ohne_materialisierung.sql`
+Angewendete Migration `20261113094853_job_metrics_ohne_materialisierung.sql`
 und ihr `rollback_`-Gegenstueck; `CREATE OR REPLACE` erhaelt Identitaet, Owner,
 ACL und Kommentar ohne DROP/GRANT. Rueckweg stellt den bisherigen 17-Feld-Koerper
-wieder her. Keine Anwendung auf Production; Auth, Mandanten- und Kostenlogik unveraendert.
+wieder her. Production-Anwendung mit atomaren Ausgangs-/Metadatenpruefungen; Auth,
+Mandanten- und Kostenlogik unveraendert.
 
 Andere Aggregat-/DISTINCT-Sortierungen koennen bei grossen Bestandsmengen weiter
-Temp-IO erzeugen. Keine Produktionsgeschwindigkeit oder Ausfallbehebung bewiesen.
+Temp-IO erzeugen. Keine allgemeine Produktionsbeschleunigung oder Ausfallbehebung bewiesen.
 Unabhaengiges Codex-Review auf494ad4fa: kein SQL-/Rueckweg-Befund; gefundene
 Assertion-Testluecke korrigiert und per Negativprobe belegt. Nachreview auf2737fb3c
 abgeschlossen: keine blockierenden Befunde. SQL und Teststand bleiben unveraendert.
-PR bleibt Entwurf. `[skip ci]` haelt die Pruefung wie beauftragt lokal;
+Betreiberfreigabe zur gezielten Uebernahme liegt vor. `[skip ci]` haelt die Pruefung
+wie beauftragt lokal;
 keine gruene Pflicht-CI behauptet. Der eigene bestehende Branch mit deaktiviertem
 Vercel-Deployment wird weiterverwendet; keine Deploymentkonfiguration geaendert.
-Merge, Deployment und Datenbankanwendung brauchen konkrete Freigabe.
+
+## Rein lesende Production-Nachkontrolle
+
+Die Funktion entspricht exakt dem freigegebenen Aggregatkoerper. OID, alle
+17 Rueckgabefelder, Owner/ACL, Funktionsattribute und Kommentar sind unveraendert.
+Einmaliger EXPLAIN-ANALYZE-Lesecheck in READ ONLY als service_role, begrenzt auf5s:
+119,022ms Gesamtausfuehrung, eine Ergebniszeile, Temp-IO0/0. Keine alte schwere
+Funktion erneut ausgefuehrt, keine Zaehler zurueckgesetzt. Die Datenbank blieb
+auf ihrem bisherigen Startzeitpunkt. Kein Quellen-, Lage-, Morgen- oder Modelllauf.
+
+Der Repository-Merge darf nur regulaer ohne Admin-/Schutzumgehung erfolgen.
+GitHub-CI wurde nicht als bestanden ausgegeben. Dateinamen und Testpfade sind
+reine Historienangleichung, keine neue fachliche SQL-/Testaenderung.

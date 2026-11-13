@@ -35,8 +35,8 @@ const BASIS = M("20260808_scalable_job_queue.sql");
 const BASIS_ROLLBACK = M("20260808_scalable_job_queue_rollback.sql");
 const ALTER = M("20260812_jobqueue_altersmessung.sql");
 const ALTER_ROLLBACK = M("20260812_jobqueue_altersmessung_rollback.sql");
-const METRIKEN = M("20261113080937_job_metrics_ohne_materialisierung.sql");
-const METRIKEN_ROLLBACK = M("rollback_20261113080937_job_metrics_ohne_materialisierung.sql");
+const METRIKEN = M("20261113094853_job_metrics_ohne_materialisierung.sql");
+const METRIKEN_ROLLBACK = M("rollback_20261113094853_job_metrics_ohne_materialisierung.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",
