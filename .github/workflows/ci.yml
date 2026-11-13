@@ -43,6 +43,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}${{ inputs.mode == 'mock100' && '-mock100' || '' }}
@@ -152,16 +153,36 @@ jobs:
         if: steps.plan.outputs.verarbeitungskern == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
-        run: node scripts/lokal.js scripts/ci-verarbeitungskern-plan-test.js
+        run: node scripts/lokal.js scripts/ci-verarbeitungskern-plan-test.js --nachtrag
+      - name: Begrenzter SQL-Nachtrag - drei neue Production-Kommentarfaelle
+        if: steps.plan.outputs.verarbeitungskern == 'true'
+        timeout-minutes: 3
+        env:
+          HELMUT_SOURCE_MODE: "off"
+          HELMUT_TEST_CORE_CONTAINER: helmut-core-pg
+        run: |
+          set -euo pipefail
+          HELMUT_CORE_PG_IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
+          docker pull "$HELMUT_CORE_PG_IMAGE"
+          docker run -d --network none --name "$HELMUT_TEST_CORE_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust "$HELMUT_CORE_PG_IMAGE"
+          trap 'docker rm -fv "$HELMUT_TEST_CORE_CONTAINER" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$HELMUT_TEST_CORE_CONTAINER" pg_isready -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          docker exec "$HELMUT_TEST_CORE_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
+          node scripts/lokal.js scripts/verarbeitungskern-claim-datenbank-test.js --production-kommentarstand
       - name: Wiederverwendete Kernnachweise sichtbar abgrenzen
         if: steps.plan.outputs.verarbeitungskern == 'true'
         run: |
           {
             echo '### Begrenzte Kernabnahme PR1183'
-            echo 'Anwendungscode, SQL, Guards und Abhaengigkeiten exakt wie im geprueften bce55393.'
+            echo 'Anwendungscode, Guards und Abhaengigkeiten unveraendert; genau zwei SQL-Nachtragsdateien per abgenommenen Blob-IDs gebunden.'
             echo 'Bisherige lokale Code-/SQL-Nachweise: WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT.'
             echo 'Beleg: https://github.com/ernisch/helmut-pilot/blob/bce55393256d3ab17f84761452a386bf1f5d9f30/docs/betrieb/verarbeitungskern-100-20261113.md'
-            echo 'Hier ausgefuehrt: neue CI-Auswahl-/Negativpruefungen. Neuer Paket-Browserweg im Browser-Pflichtjob vorgesehen; Ergebnis dort.'
+            echo 'Hier ausgefuehrt: nur neue SQL-Ausnahme-/Belegbindungspruefungen und Syntax; alte 15 Auswahlgruppen nicht wiederholt.'
+            echo 'Drei neue SQL-Guardfaelle gegen isolierten netzlosen PostgreSQL17.6; keine alten Datenbankfaelle wiederholt.'
+            echo 'Browser: 29/29 aus CI43483196284 auf f7f3d6eb WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT; Erfolgsstatus und unveraenderter Eingabebaum geprueft.'
             echo 'Kein Mock100/500, kein Mengenlauf, keine Production- oder Kapazitaetsfreigabe.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: SOURCE23 geschlossener Tuple-Codec (synthetisch/offline)
@@ -589,10 +610,10 @@ jobs:
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
       - name: Abhängigkeiten installieren (aus package-lock.json)
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.verarbeitungskern == 'true'
+        if: steps.plan.outputs.browser == 'true'
         run: npm ci
       - name: Playwright + Chromium installieren
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.verarbeitungskern == 'true'
+        if: steps.plan.outputs.browser == 'true'
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
@@ -636,12 +657,16 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js
 
-      - name: Gespeichertes Tagespaket - neuer Desktop-/Mobilweg
+      - name: Gespeichertes Tagespaket - gebundenen Browserbeleg wiederverwenden
         if: steps.plan.outputs.verarbeitungskern == 'true'
-        env:
-          HELMUT_REQUIRE_BROWSER: "1"
-          HELMUT_SOURCE_MODE: "off"
-        run: node scripts/lokal.js scripts/browser-smoke-test.js --tagespaket
+        run: |
+          {
+            echo '### Tagespaket-Browserbeleg: WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT'
+            echo '29/29 Desktop-/Mobilpruefungen: https://github.com/ernisch/helmut-pilot/actions/runs/43483196284'
+            echo 'Ursprung f7f3d6eb086fa7b8200f6d3628b950b42032ae85; Run, Browserjob und Paketpruefschritt weiterhin erfolgreich.'
+            echo 'Hier geprueft: aktueller PR-/Checkout-Kopf, exakte SQL-Nachtragsblobs und unveraenderter Browser-/Anwendungsbaum.'
+            echo 'In diesem Job kein Chromium installiert oder gestartet; kein neuer Browser-PASS behauptet.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   synthetic-resource-diagnostic:
     name: Mock100 — einmalig, synthetisch und ohne Anbieteraufrufe

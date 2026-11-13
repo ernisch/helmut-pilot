@@ -38,6 +38,25 @@ async function main() {
   // Netzwerk ist Container-Eigenschaft und wird vor jeder Datenanlage kontrolliert.
   const network = execFileSync("docker", ["--host=unix:///var/run/docker.sock", "inspect", "--format", "{{.HostConfig.NetworkMode}}", container], { encoding: "utf8" }).trim();
   assert.equal(network, "none");
+  if(process.argv.includes("--production-kommentarstand")){
+    // Nur der neu entdeckte Live-Ausgangsstand, aus Repository-Code erzeugt.
+    // Keine Production-Verbindung und keine alten Kompatibilitaetsfaelle.
+    execFileSync("docker",["--host=unix:///var/run/docker.sock","exec",container,"psql","-X","-U","postgres","-v","ON_ERROR_STOP=1","-c","CREATE DATABASE helmut_test_core"],{stdio:"pipe"});
+    sql("create role anon; create role authenticated; create role service_role bypassrls;");
+    sql(file("20260808_scalable_job_queue.sql"));
+    const original=functionSql("helmut_claim_job_by_id",file("20260814090000_queue_verbraucher.sql"));
+    const live=original.replace(/^[\t ]*--[^\n]*(?:\n|$)/gm, "");
+    sql(live);
+    check("exakter Production-Kommentarstand ist reproduziert",()=>assert.equal(sql("select md5(prosrc) from pg_proc where oid='public.helmut_claim_job_by_id(uuid,text,bigint)'::regprocedure;"),"80e91814dd75c7c893caf047b39a2cff"));
+    sql(live.replace("return query", "-- unbekannte weitere Drift\n    return query"));
+    check("weitere Drift bleibt vor DDL gesperrt",()=>{
+      assert.throws(()=>sql(file(migration)),/Command failed/);
+      assert.equal(sql("select count(*) from information_schema.columns where table_schema='public' and table_name='helmut_jobs' and column_name='last_seen_window';"),"0");
+    });
+    sql(live);sql(file(migration));
+    check("gepruefter Live-Ausgangsstand migriert bei erhaltener Driftwache",()=>assert.equal(sql("select count(*) from information_schema.columns where table_schema='public' and table_name='helmut_jobs' and column_name='last_seen_window';"),"1"));
+    console.log("3/3 neue Production-Kommentarstand-Pruefungen bestanden; keine alten Faelle.");return;
+  }
   if(process.argv.includes("--kompatibilitaet")){
     // Frischer lokaler Container, nur diese drei neuen Uebergangsfaelle.
     execFileSync("docker",["--host=unix:///var/run/docker.sock","exec",container,"psql","-X","-U","postgres","-v","ON_ERROR_STOP=1","-c","CREATE DATABASE helmut_test_core"],{stdio:"pipe"});

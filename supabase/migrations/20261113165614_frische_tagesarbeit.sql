@@ -14,7 +14,11 @@ begin
     ('public.helmut_claim_job_by_id(uuid,text,bigint)','76982a28ea50df628a3547de293e13a1','2cf079d5331f47b04dbef8fe09eac5d7'),
     ('public.helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)','eae95f83c3216c217e6b434c8f3c19be','c2e01bf1edc204a03b66c96cb28eaec6')) f(sig,alt,neu) loop
     select md5(prosrc),prosecdef into v_hash,v_definer from pg_proc where oid=to_regprocedure(v_sig);
-    if v_hash is null or v_hash not in (v_alt,v_neu) or v_definer then
+    -- Production-Fassung vom 13.11.: dieselben 52 Codezeilen, nur ohne
+    -- zehn volle Kommentarzeilen. Exakt verglichen; keine allgemeine Normalisierung.
+    if v_hash is null or (v_hash not in (v_alt,v_neu) and not
+      (v_sig = 'public.helmut_claim_job_by_id(uuid,text,bigint)'
+       and v_hash = '80e91814dd75c7c893caf047b39a2cff')) or v_definer then
       raise exception 'Verarbeitungskern: unbekannter Ausgangsstand fuer %',v_sig;
     end if;
   end loop;

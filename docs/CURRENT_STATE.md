@@ -10,17 +10,21 @@ Keine neue Infrastruktur, keine Production-Daten-/Profil-/Budget-/Cronaenderung,
 keine Aktivierung, kein Merge/Deployment. Neue Migration nur vorbereitet.
 PR1183 nach Betreiber-Go unabhaengig geprueft: fuenf Integrationsfehler korrigiert,
 16 gezielte neue/geaenderte Pruefgruppen/Faelle bestanden. Begrenzte Pflicht-CI
-vorbereitet: manueller, exakt kopfgebundener PR1183-Modus bei unveraendertem
-abgenommenem Anwendungscode `bce55393`; neue CI-Gegenpruefungen und neuer
-Desktop-/Mobil-Paketweg. Alte Nachweise explizit wiederverwendet. Aktuelles
-Laufergebnis und zugehoeriger Kopf stehen in [PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
+[43483196284](https://github.com/ernisch/helmut-pilot/actions/runs/43483196284)
+auf `f7f3d6eb` gruen: 15 neue Auswahlgruppen, 29 Desktop-/Mobilpruefungen.
+Rolloutvorflug: Live-Direktclaim unterscheidet sich nur in zehn Kommentaren;
+seinen exakten Hash in der vorbereiteten Driftwache ergaenzt. Neuer CI-Nachtrag
+prueft nur sieben neue Policygruppen und drei neue lokale SQL-Faelle; Browser-
+und alte Fachbelege streng gebunden wiederverwendet. Aktuelles Kopf-/Laufergebnis:
+[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
 Kein erneuter Mock100, kein neuer Lastnachweis; versehentlich ausgefuehrter
 rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
-Keine automatische Ausnahme fuer spaetere PRs oder `main`-Pushes; deren breite
-CI bleibt vor einem moeglichen Merge noch zu beruecksichtigen.
-**Naechster Schritt nach erfolgreicher begrenzter CI:** kontrollierten
-Einprofil-Rollout einschliesslich Migrationsreihenfolge und Rueckweg zur
-gesonderten konkreten Freigabe vorlegen; noch kein Merge/Deployment.
+Konkreter Einprofilplan im Architekturbericht: SQL vor Code; normaler Mergecommit
+mit `[skip ci]` vermeidet einmalig die breite main-CI, kein neuer PASS am Merge.
+Aktuelle Vercelkonfiguration: Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`,
+Kommunikation `gesperrt`; alte Betriebsnotiz zu Pipeline `off` ist ueberholt.
+**Naechster Schritt nach gruener Nachtrags-CI:** gesonderte konkrete Freigabe
+fuer den dokumentierten Einprofil-Rollout einholen. Bis dahin kein Merge/Deployment.
 
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.

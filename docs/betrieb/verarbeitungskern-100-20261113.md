@@ -3,7 +3,8 @@
 Stand 13.11.2026. Entwicklungsbranch `codex/verarbeitungskern-100-20261113`,
 Ausgangsstand `fe94f3eb`. Kerncommit `8d780785`; die Auslieferung ist ein
 getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach gezielten Korrekturen lokal abgenommen;
-Pflicht-CI und Production-Freigabe offen. Kein Kapazitaetsnachweis fuer 100 Kunden.**
+Pflicht-CI am jeweiligen Kopf laut PR, Production-Freigabe offen.
+Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Architekturentscheidung und Umsetzung
 
@@ -296,6 +297,120 @@ ist keine automatische Ausnahme fuer Merge, andere PRs oder Folgeaenderungen.
 Vor einem spaeter freigegebenen Merge muss auch dieser Ausloesepfad geklaert sein,
 damit keine untersagten alten Mengenlaeufe ausgeloest werden.
 
+## Konkreter Einprofil-Rolloutplan nach Betreiber-Go (13.11.2026)
+
+**Nur vorbereitet; keine Ausfuehrungsfreigabe aus dem Planungs-Go.**
+Geltungsbereich: PR1183 mit exakt freizugebendem aktuellem Kopf, Basis/Production
+`fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f`, Vercelprojekt
+`prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`, Team `team_bTAfzDHwD3mT03r1z7rh1TC3`,
+Supabaseprojekt `ddckuvvpcytqbyfmbvie`, ausschliesslich bestehendes `cem-ince`.
+
+### Frische Primaerbelege und notwendige kleine Korrektur
+
+Productiondeployment `dpl_9pPQ7jtKwrXeQx6Puzr7a8ZkZNRd` ist READY auf `fe94f3eb`
+mit regulaerem Alias. Supabase-Migrationsregister bestaetigt #1179 weiterhin;
+neue Kernmigration/Spalte fehlen. Enger read-only-Vorflug bestaetigt ein aktives
+Profil (`cem-ince`), Jobtabelle einschliesslich Indizes 27.279.360 Bytes,
+22.709 statistisch geschaetzte Zeilen und null wartende Tabellensperren zum
+Abfragezeitpunkt. Kein Vollscan von Jobpayloads und keine Lastprobe.
+
+Vercel-Konfiguration einzeln rein lesend bestaetigt: Pipeline **on**, Narrativqueue
+**off**, globale Phase/Abrufe **off**, Dispatch **shadow**, Kommunikation
+**gesperrt**. Zulassung enthaelt nur `cem-ince`; Geldvertrag weiterhin
+1 USD/UTC-Tag und 30 USD insgesamt. Die Betriebsnotiz vom 05.11. mit Pipeline
+`off` ist an dieser Stelle ueberholt. Die neue Quellen-/Artikel-/Projektions-
+und Paketlogik wird deshalb bereits beim Code-Rollout wirksam; das Narrativ
+bleibt beim direkten Cron. Schalter und Zulassung werden nicht erweitert.
+
+Der Vorflug fand einen echten Migrationsblocker: Live-`helmut_claim_job_by_id`
+hat `md5(prosrc)=80e91814dd75c7c893caf047b39a2cff`; Repositoryaltstand
+`76982a28ea50df628a3547de293e13a1`. Unabhaengiger Vergleich bestaetigt exakt
+52 identische Codezeilen; live fehlen ausschliesslich zehn volle Kommentarzeilen.
+Die vorbereitete Migration akzeptiert jetzt genau diesen zusaetzlichen Hash
+und ausschliesslich fuer diese Signatur. Keine allgemeine Normalisierung oder
+Lockerung der unbekannten Drift-/Invokerwache; kein Umschreiben in Production.
+SQL-Blob `baa2d2f743731dd3b076cfb467d38b5c9c563a6b`, Test-Blob
+`2fab9a3d48c17889fc6c15c895f4dccda54c4fe9`, unabhaengig ohne Befund abgenommen.
+
+Neue Nachtrags-CI bindet genau diese zwei Blob-IDs; alle uebrigen Laufzeitdateien
+und das Browserprogramm sind unveraendert. Sie prueft sieben neue Policygruppen
+und drei neue echte SQL-Guardfaelle (reproduzierter Livehash, weitere Drift
+stoppt vor DDL, exakt akzeptierter Livehash migriert). Nur diese Faelle laufen.
+Ein lokaler Containerstart scheiterte nach Imagepull an vollem Entwicklungs-
+datentraeger; kein SQL-Fall gestartet. Ausschliesslich das frisch geladene Image
+entfernt, danach wieder 3 GB frei. SQL-Pruefung deshalb einmalig in bestehender
+CI, gepinnter netzloser PostgreSQL17.6, drei Minuten Grenze, anschliessend Cleanup.
+Die alten 15 Policygruppen und 29 Browserpruefungen werden nicht wiederholt.
+Ihr echter Erfolgsbeleg [CI43483196284](https://github.com/ernisch/helmut-pilot/actions/runs/43483196284)
+auf `f7f3d6eb` bleibt erhalten. Der neue Plan prueft Run, Commit, Repository,
+Workflow, Versuch, Browserjob/-pruefschritt und kompletten Eingabebaum live.
+Wiederverwendung wird ausdruecklich ausgewiesen; kein neuer Browserlauf behauptet.
+
+### Ausfuehrungsfolge, ausschliesslich nach konkreter Freigabe
+
+1. Unmittelbar vorher aktuellen PR-Kopf, main/Production, zugehoerige gruene
+   Pflichtchecks, genau ein aktives zugelassenes Profil und dieselben Schalter
+   bestaetigen. Laufendes Kostenbuch/offene Reserven mit bestehendem Leser pruefen;
+   kein Reset, keine Erhoehung und keine neue bezahlte Probe. Abweichung stoppt.
+2. Ruhiges Fenster ausserhalb der vorhandenen UTC-Termine 03:00 bis 05:15 waehlen;
+   Beginn fruehestens 06:00 UTC, Ende vor 02:50 UTC des Folgetags. Laufende
+   Verbraucher, Leases und Tabellensperren lesend pruefen; bei Konkurrenz warten
+   oder stoppen, keine eigenmaechtige Cron-/Flagpause. Alte Vercelfunktionen duerfen
+   waehrend der Umstellung noch bis 300s laufen, verteilte Slots bis 360s.
+3. Ausschliesslich `20261113165614_frische_tagesarbeit.sql` anwenden, SHA256
+   `1ea818f8c63e87ea05b4915099ada2663f6f446dabd20d1d4f05c69bf0bce35d`.
+   Die Datei ist atomar; `lock_timeout=3s`, `statement_timeout=30s` je Anweisung.
+   ALTER TABLE haelt ACCESS EXCLUSIVE bis COMMIT, auch waehrend der beiden normalen
+   Indexbauten. Das ist **keine** Zusage von 30s Gesamtdauer oder stoerungsfreier
+   Online-DDL. Timeout, Drift oder unklare Antwort: stoppen, Register/Katalog lesen,
+   kein blinder Retry, kein Freigeben unbekannter Reserven.
+4. Register, neue Spalte, beide gueltigen Indizes, Invoker/ACL der drei neuen RPCs
+   lesend bestaetigen. `helmut_jobs_tagesstand([],[],null)` muss genau eine Zeile
+   mit fuenf Nullzaehlern liefern. Keine Arbeitsclaims oder Testjobs auf Production.
+5. Erst danach normaler Merge von PR1183 mit `merge_method=merge`, `sha` exakt
+   freigegebener Kopf und finaler Commitnachricht mit **`[skip ci]`**. Normale
+   GitHub-Schutzregeln gelten, kein Adminbypass. Der Kopf bleibt zweiter Parent;
+   Mergebaum muss exakt dem geprueften Kopfbaum entsprechen. Laut
+   [GitHub-Doku](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)
+   unterdrueckt der Marker den einmaligen push-/PR-Lauf; er ist kein neuer PASS.
+   So startet keine verbotene breite main-Pruefung, der Defaultworkflow bleibt gleich.
+6. Bestehende Vercel-Gitintegration baut main; die Entwicklungsbranchsperre bleibt.
+   Runtime-/Konfigurationsdiff erzwingt im Ignore-Skript einen Build. Dass Vercel
+   den GitHub-Marker tatsaechlich ignoriert, wird nicht vorausgesetzt: READY,
+   exakten Mergecommit und regulaeren Alias lesen. Bei CANCELLED/fehlendem Build
+   stoppen, keinen zweiten Deploymentweg automatisch starten. Ein explizites
+   Ersatzdeployment waere erneut gesondert freizugeben.
+7. Keine manuellen bezahlten Cron-/Modellaufrufe. Auslieferung an `cem-ince` lesen:
+   Mandat, Profilhash, Berliner Tag, Quellenmanifest und Frischequittung pruefen.
+   Fehlendes/teilweises Paket bleibt ehrlich sichtbar; der naechste regulaere
+   05:15-UTC-Lauf baut es im Hintergrund. Den naechsten regulaeren Quellen-/Lage-/
+   Morgenlauf nur beobachten, keine zweite Ausfuehrung. Erst dessen bestaetigtes
+   Paket und authentifizierte Bedienabnahme erlauben die Aussage live lieferfaehig.
+
+### Rueckweg und Umfang der angefragten Freigabe
+
+Bevorzugter Rueckweg bei Fehlern: vorhandenes Productiondeployment `fe94f3eb`
+wiederherstellen und die kompatible neue SQL zunaechst behalten. Bestaetigte
+Artikel, Quellenarchive, Phasen, Pakete, Kosten und Reserven bleiben erhalten.
+Ein Vercelrollback kann automatische Domainzuweisung deaktivieren; diesen Zustand
+belegen und keine automatische Wiederaktivierung anschliessen. Die konkrete
+Rolloutfreigabe muss diesen bedingten Code-Rueckweg einschliessen.
+
+SQL-Rueckbau ist kein automatischer Teil davon. Erst neue Verbraucher beenden,
+Drift erneut pruefen und gesondert freigeben. Bereits **vor** Inhalt der
+Rollbackdatei muessen Session-`lock_timeout=3s` und `statement_timeout=30s` gelten:
+die Datei setzt ihren Locktimeout erst nach zwei DROP FUNCTION und hat keinen
+Statementtimeout. Sie stellt die fachlich identische Repositoryaltfunktion mit
+Kommentaren her; der Livekommentarstand ist separat als Codeoriginal gesichert.
+`last_seen_window` geht beim SQL-Rueckbau verloren, fachliche Datensaetze nicht.
+
+Angefragt wird nach gruener Nachtrags-CI ausschliesslich: die oben gebundene
+Migration, der exakt kopfgebundene normale Merge samt einmaligem CI-Marker,
+das dadurch ausgeloeste regulaere Productiondeployment und der bedingte
+Code-Rueckweg, danach rein lesende Einprofilkontrolle. Keine neue Aktivierung,
+keine fachlichen Datenkorrekturen, keine Erweiterung von Budget/Profilen/Quellen,
+keine Schalter-/Cron-/Secret-/Registrierungs-/Mailaenderung und kein SQL-Rueckbau.
+
 ## Rueckweg und verbleibende Grenze
 
 Die neue Migration liegt mit passender `rollback_...sql` vor und ist **nicht**
@@ -306,12 +421,12 @@ Indizes sowie `last_seen_window`; eigentliche Artikel, Jobs, Abschluesse, Kosten
 Reservierungen, Quellenarchive und Tagespakete bleiben erhalten. Die neue
 Wiederbeobachtungsmetadaten-Spalte faellt beim Rueckweg weg.
 
-Offen bleiben das konkrete Pflicht-CI-Ergebnis laut PR, der spaetere `main`-CI-
-Ausloesepfad, gesonderte Mergefreigabe, freizugebende Migration und Deployment,
+Offen bleiben das konkrete Nachtrags-CI-Ergebnis laut PR, gesonderte
+Mergefreigabe, freizugebende Migration und Deployment,
 authentifizierte echte Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
 Dimensionierung vor Zulassung weiterer Kunden. Weder der erste zahlende Kunde
 noch 100 aktive Kunden werden durch diesen Entwicklungsstand automatisch aktiviert.
 
-**Genau naechster Schritt nach erfolgreicher begrenzter CI:** kontrollierten
-Einprofil-Rollout einschliesslich Migrationsreihenfolge und Rueckweg konkret zur
-gesonderten Freigabe vorlegen. Der PR bleibt bis dahin ein Entwurf ohne Mergefreigabe.
+**Genau naechster Schritt nach erfolgreicher Nachtrags-CI:** gesonderte konkrete
+Freigabe fuer den oben dokumentierten Einprofil-Rollout einholen.
+Der PR bleibt bis dahin ein Entwurf ohne Mergefreigabe.
