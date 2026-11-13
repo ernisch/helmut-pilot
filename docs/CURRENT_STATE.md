@@ -5,7 +5,7 @@ Pilot lesend bestätigt: Sammelwiederholung entfernt, alle 24 Artikel erhalten,
 1 Fachhinweis mit Lageverweis und Quellenstand 08.11.
 [Nachweise, Grenzen, Rückweg](betrieb/lage-radar-zusatznutzen-20261113.md).
 
-**Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
+**Stand: 13.11.2026.** [Metriken](betrieb/job-metrics-ressourcen-20261113.md): live. [Regeln](../AGENTS.md).
 
 **12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; 4.DB-Abbruch, bezahlte Arbeit STOP. Budgetleser live: PR1175.
 
