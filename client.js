@@ -5018,7 +5018,7 @@ function lageData() {
 
 function lageVorgangZumBriefing(item) {
   if (!item || !item.id) return null;
-  return lageVisibleVorgaenge(lageData()).find(v => String(v.vorgangId || v.id) === String(item.id)) || null;
+  return lageVisibleVorgaenge(lageData()).find(v => !v.quellenhinweis && String(v.vorgangId || v.id) === String(item.id)) || null;
 }
 
 function lageBriefingVerweis(v) {
@@ -8321,7 +8321,7 @@ function zeigeLageVorgang(id) {
 
 function radarLageVerweis(item) {
   const matches = lageVisibleVorgaenge(lageData()).filter(v => String(v.vorgangId || v.id) === String(item.vorgangId || ""));
-  const card = matches.find(v => !v.quellenhinweis) || matches[0];
+  const card = matches.find(v => !v.quellenhinweis);
   return card ? `<button type="button" class="radar2-more-link" data-lage-verweis data-radar-lage="${escapeAttribute(lageAnzeigeId(card))}">Sachstand in der Lage öffnen</button>` : "";
 }
 
@@ -8490,7 +8490,7 @@ function radarPrimaryRelationLabel(types) {
 function radarAdditionalContext(item) {
   const labels = [...new Set((item.relationTypes || []).map(t => RADAR_RELATION_LABELS[t]).filter(Boolean))];
   const signals = [...new Set(item.zusatzSignale || [])].filter(s => s && s !== item.evidence);
-  const text = [...(labels.length > 1 ? [labels.join(" · ")] : []), ...signals];
+  const text = [...(labels.length > 1 || (item.relationTypes || []).includes("subject") ? [labels.join(" · ")] : []), ...signals];
   return text.map(s => `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(s)}</p>`).join("");
 }
 
