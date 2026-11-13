@@ -8,7 +8,7 @@ const REPOSITORY = "ernisch/helmut-pilot";
 const BASE = "597d7876d3f1ce963174fe749ffb28bd98f15065";
 const BRANCH = "codex/einprofil-lieferfaehigkeit-20261113";
 const PR = 1184;
-const LOCAL_EVIDENCE_COMMIT = "ca7c123dad06cbe621978a1de94a3798c128a3db";
+const LOCAL_EVIDENCE_COMMIT = "80b80ee8fbafbd65a726dfb90e540c785cc01a72";
 const LOCAL_EVIDENCE_PATH = "docs/betrieb/verarbeitungskern-100-20261113.md";
 const RUNTIME_FILES = Object.freeze([
   "lib/helmut/admin-ergebnisstand.js", "lib/helmut/briefing-speicher.js",
@@ -19,13 +19,13 @@ const REGRESSION_FILES = Object.freeze([
   "scripts/tagespaket-ruhelage-test.js"
 ]);
 const BLOBS = Object.freeze({
-  "docs/CURRENT_STATE.md": "e037166dba1fca82ff36bade299234f874188673",
-  "docs/betrieb/verarbeitungskern-100-20261113.md": "abbb3cdf26109d54c20663b8a14a49bfd0e5c2ef",
+  "docs/CURRENT_STATE.md": "43a9119cf7805aac20dae017307a271324355606",
+  "docs/betrieb/verarbeitungskern-100-20261113.md": "4300f83d1d46854d69582c45a5fc89f58f16d1fc",
   "lib/helmut/admin-ergebnisstand.js": "0249b1774ef73fbb2d2aea5b19177fb8565e80e8",
   "lib/helmut/briefing-speicher.js": "a29cadf29b276291dbd2636d51272637a02ff1e8",
   "lib/helmut/publication-eligibility.js": "3da807cec654fd88993d01711a0b4981b2756fba",
   "lib/helmut/quellen-automatik.js": "192d7719227c5407b5f7f4b40fd3777d70e31897",
-  "scripts/browser-smoke-test.js": "dd676ec1d3da0d074cab8e368675ee9cb996889a",
+  "scripts/browser-smoke-test.js": "6c02aa995c5f62066c6b741590d7324efc4c8707",
   "scripts/publication-eligibility-jsonb-test.js": "048574fc61b5259fee6f6125483baeaa0ac28184",
   "scripts/quellen-automatik-tagesfortsetzung-test.js": "f413f2bbbade1c0fd6837915e76d61910d59ada5",
   "scripts/tagespaket-ruhelage-test.js": "658bb6e435b95467eb0989311181720275d9e31d",
@@ -76,8 +76,8 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
     reused: { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: ["Neue CI-Plan-Negativfaelle", "Syntax der tatsaechlich geaenderten JavaScriptdateien",
-      "Neuer autorisierter Tagespaket-JSONB-/Ruhelage-Browserweg auf Desktop und Mobil"]
+    execute: ["Betroffene CI-Zeilenankergruppe", "Syntax der tatsaechlich geaenderten JavaScriptdateien",
+      "Nur zwei betroffene Ruhelage-Browserfaelle auf Desktop und Mobil"]
   };
 }
 function git(args) {

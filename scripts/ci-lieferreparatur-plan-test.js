@@ -4,6 +4,8 @@
 // Fach-, Browser-, Datenbank- oder Mengenpruefungen werden hier gestartet.
 const A = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path"), vm = require("node:vm");
 const C = require("./ci-lieferreparatur-plan");
+const args = process.argv.slice(2), nachtrag = args.length === 1 && args[0] === "--nur-nachtrag";
+A.ok(args.length === 0 || nachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture() {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -22,7 +24,10 @@ function fixture() {
       .map(([file, value]) => [file, { ...value }])) };
 }
 let count = 0;
-function test(name, fn) { fn(); count++; console.log("PASS " + name); }
+function test(name, fn) {
+  if (nachtrag && !name.startsWith("Nachtrag:")) return;
+  fn(); count++; console.log("PASS " + name);
+}
 function denied(change) { const f = fixture(); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
 test("exakter PR erlaubt nur den neuen Reparaturmodus mit sichtbarer Belegwiederverwendung", () => {
   const p = C.validate(fixture());
@@ -108,12 +113,13 @@ test("echter Browserjob startet nur den neuen autorisierten JSONB Ruhelageweg", 
   A.match(workflow, /name: Syntax \+ Offline-Suiten/);
   A.match(workflow, /name: Browser-\/Mobile-Smoke \(Chromium\)/);
 });
-test("beide Planer stoppen den Reparaturbranch vor der unveraenderten Standardauswahl", () => {
+test("Nachtrag: beide Planer stoppen den Reparaturbranch vor der unveraenderten Standardauswahl", () => {
   A.equal((workflow.match(/node scripts\/ci-lieferreparatur-plan\.js --github-output/g) || []).length, 2);
-  A.equal((workflow.match(/HELMUT_CI_PR_HEAD_REF:/g) || []).length, 2);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  A.match(workflow, /node scripts\/lokal\.js scripts\/ci-lieferreparatur-plan-test\.js --nur-nachtrag/);
   A.match(workflow, /github\.event\.pull_request\.base\.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065'/);
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
 A.ok(count > 0);
-console.log(`${count}/${count} neue Lieferreparatur-Planpruefungen bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);

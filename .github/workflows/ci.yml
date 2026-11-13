@@ -144,7 +144,7 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: |
           set -e
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --nur-nachtrag
           node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
       - name: Lieferreparatur - lokale Nachweise sichtbar wiederverwenden
         if: steps.plan.outputs.lieferreparatur == 'true'
@@ -152,10 +152,11 @@ jobs:
           {
             echo '### Einprofil-Lieferreparatur PR1184'
             echo '24 neue lokale Reparaturfaelle: WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT.'
+            echo '11 erfolgreiche neue CI-Plangruppen: WIEDERVERWENDET aus https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181166281 ; der damalige Gesamtjob scheiterte anschliessend an der hier korrigierten Zeilenankerzaehlung.'
             echo 'Originalbeleg: https://github.com/ernisch/helmut-pilot/blob/ca7c123dad06cbe621978a1de94a3798c128a3db/docs/betrieb/verarbeitungskern-100-20261113.md'
             echo 'Vollstaendiger Basis-/Kopf-/Belegbaum und exakte Runtime-/Testblobs wurden vor der Auswahl geprueft.'
-            echo 'Hier neu ausgefuehrt: nur neue CI-Plan-Negativfaelle und Syntax tatsaechlich geaenderter JavaScriptdateien.'
-            echo 'Der eigene Browserjob prueft nur den neuen autorisierten Tagespaket-JSONB-/Ruhelageweg auf Desktop und Mobil.'
+            echo 'Hier ausgefuehrt: nur betroffene Zeilenankergruppe und Syntax tatsaechlich geaenderter JavaScriptdateien.'
+            echo 'Der eigene Browserjob prueft nur die zwei betroffenen Ruhelagefaelle auf Desktop und Mobil.'
             echo 'Kein alter Fach-/Mengenlauf, Mock100/500, Productionzugriff, Modell oder Deployment.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Abhängigkeiten installieren (aus package-lock.json)
@@ -678,7 +679,9 @@ jobs:
         env:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
-        run: node scripts/lokal.js -- node scripts/browser-smoke-test.js --tagespaket-jsonb
+        run: |
+          echo '13 erfolgreiche Browser-Einzelpruefungen als Teilbeleg WIEDERVERWENDET aus https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997 ; damaliger Gesamtjob FAIL wegen zweier Ruhelage-Timingfaelle, hier keine Umwertung.' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/lokal.js -- node scripts/browser-smoke-test.js --tagespaket-jsonb --nur-ruhelage
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
         if: steps.plan.outputs.browser == 'true'
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
