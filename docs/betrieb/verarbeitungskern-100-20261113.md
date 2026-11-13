@@ -2,9 +2,151 @@
 
 Stand 13.11.2026. Entwicklungsbranch `codex/verarbeitungskern-100-20261113`,
 Ausgangsstand `fe94f3eb`. Kerncommit `8d780785`; die Auslieferung ist ein
-getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach gezielten Korrekturen lokal abgenommen;
-Pflicht-CI am jeweiligen Kopf laut PR, Production-Freigabe offen.
+getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach konkreter
+Einprofilfreigabe auf Production `597d7876`; gespeicherter heutiger Paketstand
+teilweise. Neuer regulaerer Tageslauf und Kundenbedienabnahme offen.
 Kein Kapazitaetsnachweis fuer 100 Kunden.**
+
+## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
+
+Isolierter Reparaturbranch `codex/einprofil-lieferfaehigkeit-20261113`, Basis
+Production/main `597d7876`; Preview ausdruecklich deaktiviert. Vier kleine
+Laufzeitkorrekturen, keine Migration oder neue Infrastruktur:
+
+- `publication-eligibility.assertRecorded` verglich JSON-Serialisierungen.
+  Supabase-JSONB ordnet identische Policyfelder anders; der echte Paketleser
+  verwarf deshalb gueltige Pakete vor dem Quellenidentitaetsnachschlag.
+  Struktureller strikter Vergleich erlaubt nur die andere Feldreihenfolge;
+  veraenderte Werte, Typen, fehlende und zusaetzliche Felder bleiben gesperrt.
+- Die Quellenautomatik stoppte nach einzelnen abschliessend belegten Jobfehlern.
+  Heute waren alle155 wartenden Jobs faellig, aber erst3/8 Fenster und900/2400
+  Sekunden verbraucht. Kontrolliert abgeschlossene Teilstaende mit ausgeglichener
+  Telemetrie duerfen andere faellige Tagesarbeit fortsetzen. Unklarer Ausgang,
+  Transportfehler oder Leaseverlust bleiben gesperrt. Nur heutiger Tagesbezug
+  zaehlt; historischer Planrest erzwingt keine neuen Fenster.
+- Eine ausdrueckliche Ruhelage (`empty`/`quiet`) ist ohne Tagesanlass vollstaendig,
+  wenn alle anderen Belege vorliegen. Gap, stale, offene/unbekannte Versorgung
+  und fehlende Lage bleiben unvollstaendig. Der Verwaltungshinweis bleibt erhalten.
+
+Gezielte neue lokale Nachweise ueber `scripts/lokal.js`: Quellenfortsetzung7/7,
+Ruhelage-Auslieferung7/7, strikter JSONB-Policyvergleich7/7 und Verwaltung3/3.
+Keine historischen erfolgreichen Suiten oder Mengenlaeufe wiederholt.
+Unabhaengige gegenseitige Codepruefung der beiden Fachreparaturen ohne Restbefund.
+
+Rein lesende Gegenprobe auf echten unveraenderten Production-Snapshots21:14 UTC:
+alter Paketleser `available:false`, korrigierter Leser `available:true`,65 gespeicherte
+Eintraege, volle Lage mit2 geprueften Absaetzen/9 Karten und gebundener Quittung.
+Echte Profil-/Policy-/Quellenschutzwerte und70 gebundene KO-Identitaeten bestaetigt;
+kein Modell, kein Schreibzugriff. Radar liefert den gespeicherten ehrlichen Stand:
+eine Dynamik vom08.11., weiterhin stale. Dies ist kein frischer Radar-Nachweis
+und keine authentifizierte Production-HTTP-/Browserabnahme.
+Die korrigierte Quellenentscheidung erlaubt mit echten schmalen Tagesmetadaten
+`automatik-restarbeit`; sieben GETs, keine Reservierung oder Verarbeitung.
+
+Noch offen: Integration/Pflicht-CI/gesonderte konkrete Mergefreigabe sowie danach
+echter Quellenfortschritt und neue Paketerstellung. Der sichere vorhandene
+Admin-Quellenstart braucht eine echte Admin-Sitzung samt CSRF. Betreiberzugang ist
+in der Arbeitsumgebung nicht vorhanden; geschuetzte Bereitstellung angefragt.
+Keine Authentifizierungsumgehung, Uhr-/Quotenmanipulation oder Budgeterhoehung.
+
+## Ausgefuehrter Einprofil-Rollout und damaliger Stand (13.11.2026)
+
+**Nachtrag nach weiterem ausdruecklichem Test-Go, 20:49–20:50 UTC:**
+Manueller Production-Einprofiltest jetzt ausgefuehrt, ausschliesslich `cem-ince`.
+Vorflug bestaetigte genau ein aktives Profil, null laufende Leases, unveraenderte
+Runtime597d7876 und gesperrte Kommunikation/Kohortenquellen. Bestehendes Kostenbuch
+konsistent; Tagesbindung0,301504 USD, verfuegbarer Rest0,698496 USD. Keine Erhoehung.
+Einmal `/api/cron/lage-briefing`, danach einmal `/api/cron/morning-briefing`;
+jeweils HTTP200, ohne Wiederholungen oder erzwungenes Leeren bestaetigter Caches.
+
+Lage neu erzeugt (`fromCache=false`), zwei belegte Absaetze/neun Vorgangskarten.
+Tagespaket um20:50:34 UTC mit voller Lageansicht gespeichert, Morgenquittung
+um20:50:35 UTC. Persistierte Primarschluessel nachgelesen; Inhaltshash, Mandat/Tag,
+Quellenbeleg, identischer Lagequelltext und Paket-/Quittungsbindung mit bestehender
+Produktlogik bestaetigt. Zwei Modellaufrufe vollstaendig abgerechnet; zusaetzlich
+**0,015513 USD** im Kostenbuch, Tagesbindung danach0,317017 USD, gesamt2,538017 USD.
+Keine neuen offenen Reserven; acht bestehende offene Reserven unangetastet.
+Der KI-freie Paketbau verursachte keine weiteren Modellaufrufe. Push explizit
+gesperrt (`testfenster-sperrt-alle-aussenkanaele`), keine ausgehenden Mails.
+
+**Kein fachlicher Gesamt-PASS:** Beide Handler melden den Quellenzustand ehrlich
+offen; Morgenlauf `ok=false`, `morgenversorgung-unvollstaendig`, obwohl Paket und
+Quittung gespeichert/verifiziert sind. Paketfehler bleiben
+`quellenversorgung-unvollstaendig` und `briefing-ohne-tagesanlass`.
+Heutiger Plan ist fertig eingereiht (Cursor157/157). Enger relationaler Zaehler
+fuer2026-11-13T00Z:152 wartende source_fetch,1 document_understanding,
+1 mandate_projection,1 briefing_materialization, keine laufenden/fehlgeschlagenen
+Jobs in diesem Fenster;1 Abruf erledigt. Dies belegt offene Vorarbeiten, noch
+nicht deren Ursache oder Faelligkeit. Keine historischen Jobs oder Quellenmassen
+im Test abgearbeitet, keine Flags/Limits/Profile veraendert. Ein echter
+authentifizierter Kundenklicktest bleibt offen.
+
+**Genau naechster Schritt nach dem Live-Test:** Ursache der offenen heutigen
+Quellenvorarbeiten klaeren. Der nachstehende Rolloutbefund ist der vorherige Stand;
+die damals fehlende volle Lageansicht ist durch diesen Test inzwischen gespeichert.
+
+[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183) ist nach ausdruecklichem
+Betreiber-Ja normal gemergt. Mergecommit `597d7876d3f1ce963174fe749ffb28bd98f15065`
+hat die Parents `fe94f3eb` und exakt den freigegebenen Kopf `4f764317`;
+Baum `7126f6a196be7ba6552fe368a02f293deabeb1dc` ist mit diesem Kopf identisch.
+Vercel-Productiondeployment `dpl_AZEUX1v4DgPbdDPGBSmcE1HDTzQC` ist READY,
+regulaerer Alias und rein lesender Runtimebeleg bestaetigen denselben Commit.
+Anonymer Appstart liefert weiterhin401. Keine breite main-CI gestartet.
+
+Die exakt freigegebene SQL-Datei `20261113165614_frische_tagesarbeit.sql`
+(SHA256 `1ea818f8c63e87ea05b4915099ada2663f6f446dabd20d1d4f05c69bf0bce35d`)
+wurde vor Code angewendet. Supabase vergab im Anwendungsregister die Version
+**`20261113193319`**, Name `frische_tagesarbeit`. Das ist dieselbe eine Migration;
+wegen des abweichenden Quelldateistempels keinesfalls erneut anwenden.
+Spalte/Indizes gueltig, drei neue RPCs Invoker und ausschliesslich service_role,
+erwartete Funktionshashes und fuenf Nullzaehler des leeren Tagesvorflugs bestaetigt,
+auch ueber den wirklichen PostgREST-Appzugang. #1179 wurde nicht erneut angewendet.
+
+Der anfaengliche Mergeblocker hatte eine belegte Ursache: Laut
+[GitHub-Dokumentation](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#checks-from-some-workflow-jobs-are-not-evaluated)
+zaehlen native `workflow_dispatch`-Jobchecks nicht fuer PR-Pflichtregeln.
+Die Tests waren erfolgreich, wurden aber nicht ausgewertet. Ein isolierter
+Hilfsbranch `codex/ci-evidence-1183-20261113` (Deployment ausdruecklich aus)
+liess den Produktkopf unveraendert. Sein kurzer Ablauf prueft Publisher-SHA,
+PR/Basis, Originalruns/-jobs/-schritte, Hoechstalter sieben Tage, vollen Dateibaum
+und erforderliche GitHub-App vor jeder Statusuebernahme. Danach veroeffentlicht
+er die tatsaechlichen Belege ausdruecklich als wiederverwendete Commitstatuswerte
+mit Originaljob-URLs. Ausschliesslich GitHub-Actions-Token mit minimalen Rechten,
+keine Produktzugangsdaten, Schutzaenderung, Adminumgehung oder Testwiederholung.
+
+[Nachweisuebernahme43501971324](https://github.com/ernisch/helmut-pilot/actions/runs/43501971324)
+auf Hilfscommit `18cc3559` ist erfolgreich. Der erste Hilfslauf43501202256
+stoppte nach bestaetigtem ersten Status: die kombinierte Statusantwort enthaelt
+keinen Ersteller. Der Leser wurde auf die vollstaendige Statusliste korrigiert;
+der zweite Lauf erkannte den vorhandenen Status und schrieb ihn nicht erneut.
+Konflikte/mehrdeutige oder abgeschnittene Listen stoppen, unbekannte POST-Ausgaenge
+werden nur lesend geklaert. Neun neue lokale Negativgruppen bestanden, danach
+nur drei wegen des API-Adapters geaenderte Gruppen plus ein neuer Schemafall;
+dessen neue Fenstergrenze separat nachgeprueft. Unabhaengige Sicherheitsabnahme
+ohne Befund. Kein alter Fach-/Browser-/Mengenlauf und kein neuer Modellaufruf.
+GitHub erkannte danach beide erforderlichen Kontexte regulaer an (PR clean).
+Der genehmigte Merge mit `[skip ci]` loeste keine breite Wiederholungs-CI aus;
+Vercels regulaere Gitintegration baute und veroeffentlichte Production.
+
+Schalter/Zulassung/Kostenbuch vor Merge erneut lesend bestaetigt: ausschliesslich
+`cem-ince`, Pipeline on, Narrativqueue off, globale Phase/Abrufe off, Dispatch
+shadow, Kommunikation gesperrt, 1 USD/UTC-Tag und 30 USD insgesamt. Kostenbuch
+konsistent, acht bestehende offene Reserven unveraendert. Keine weiteren Kunden,
+keine manuellen Modell-/Quellen-/Recoverylaeufe, keine Profil-/Budget-/Cron-/Env-
+oder fachlichen Datenkorrekturen. Kein Code-/SQL-Rueckbau erforderlich.
+
+Heutiges gespeichertes Paket und Morgenquittung fuer `cem-ince` wurden nur ueber
+ihre beiden Primaerschluessel gelesen: Mandat/Tag/Inhaltshash und gespeicherte
+Quittungsbindung stimmen. Der vorhandene Stand vom 13.11. bleibt **teilweise**:
+Quellenversorgung unvollstaendig, kein Tagesanlass, keine volle gespeicherte
+Lageansicht. Der Rollout hat dieses Paket nicht umgeschrieben oder durch einen
+bezahlten Aufruf ersetzt. Keine authentifizierte Kundenbedienabnahme und kein
+neuer erfolgreicher regulaerer Tageslauf behauptet.
+
+**Genau naechster Schritt:** den naechsten regulaeren Morgenlauf fuer `cem-ince`
+am 14.11. ab 06:15 Berlin samt neuer Paketvollstaendigkeit beobachten.
+Die folgenden Implementierungs- und Planabschnitte erhalten den historischen
+Vorbereitungsstand; fuer den ausgefuehrten Betrieb gilt dieser Statuskopf.
 
 ## Architekturentscheidung und Umsetzung
 
@@ -413,20 +555,18 @@ keine Schalter-/Cron-/Secret-/Registrierungs-/Mailaenderung und kein SQL-Rueckba
 
 ## Rueckweg und verbleibende Grenze
 
-Die neue Migration liegt mit passender `rollback_...sql` vor und ist **nicht**
-auf Production angewendet. Rueckweg: zuerst neuen Worker kontrolliert stoppen,
+Die neue Migration liegt mit passender `rollback_...sql` vor und ist inzwischen
+wie im Statuskopf belegt angewendet. Rueckweg: zuerst neuen Worker kontrolliert stoppen,
 Code zuruecknehmen und nur nach konkreter Freigabe SQL zuruecknehmen. Der
 SQL-Rueckweg stellt alte Funktionskoerper wieder her und entfernt neue RPCs,
 Indizes sowie `last_seen_window`; eigentliche Artikel, Jobs, Abschluesse, Kosten,
 Reservierungen, Quellenarchive und Tagespakete bleiben erhalten. Die neue
 Wiederbeobachtungsmetadaten-Spalte faellt beim Rueckweg weg.
 
-Offen bleiben das konkrete Nachtrags-CI-Ergebnis laut PR, gesonderte
-Mergefreigabe, freizugebende Migration und Deployment,
-authentifizierte echte Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
+Offen bleiben der neue regulaere Tageslauf und die authentifizierte echte
+Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
 Dimensionierung vor Zulassung weiterer Kunden. Weder der erste zahlende Kunde
 noch 100 aktive Kunden werden durch diesen Entwicklungsstand automatisch aktiviert.
 
-**Genau naechster Schritt nach erfolgreicher Nachtrags-CI:** gesonderte konkrete
-Freigabe fuer den oben dokumentierten Einprofil-Rollout einholen.
-Der PR bleibt bis dahin ein Entwurf ohne Mergefreigabe.
+Die konkrete Einprofilfreigabe und der technische Rollout sind abgeschlossen.
+Der naechste Schritt steht im aktuellen Statuskopf; keine weitere Aktivierung.
