@@ -66,3 +66,31 @@ ausdrücklich freigegebenen aktiven Pilotmandats kontrollieren. Keine neue
 Generierung, Profilaktivierung, Migration, Cron-, Budget- oder Env-Änderung.
 Rückweg bei einem belegten Fehler: gezielter Revert dieses Code-Commits über
 denselben Pflicht-CI-/Mergeweg; gespeicherte Quellen und Texte sind unverändert.
+
+## Bestätigter Rollout
+
+[PR1178](https://github.com/ernisch/helmut-pilot/pull/1178) gemergt auf
+`f18298ad0b7375e129f4f82b5a2e66de377fd8d3`. Beide Pflichtchecks auf PR-Kopf
+`1e86518f99221eda66dd9124eef92554d63a254c` erfolgreich:
+[CI43392398587](https://github.com/ernisch/helmut-pilot/actions/runs/43392398587),
+189/189 Standard- und 372/372 Bereichssuiten sowie Browser-/Mobile-Smoke.
+
+Production READY für `dpl_5dHQL4qCDSsV9ANJeXfMaCfC5tGW`, Hauptdomain auf
+genau diesem Merge. Öffentliches `client.js?v=f18298ad` bytegleich zum geprüften
+Client. Lesender Pilotabruf 13.11.2026, 09:49:38 Europe/Berlin (08:49:38 UTC):
+Version `f18298ad`, elf Lageeinträge, davon drei Quellenhinweise, vorhandener
+Textcache genutzt. Alle 24 unterschiedlichen Originalartikel des vorigen Stands
+erhalten; wiederholende Sammelprosa entfernt, spezifische Karte erhalten.
+
+Radar zeigt einen Fachhinweis mit einem vorhandenen echten Lagevorgang als Ziel,
+leeren allgemeinen Zusammenfassungsfeldern und wirklichem Beobachtungstag
+08.11.2026. Kein künstlicher heutiger Quellenstand und keine zweite Artikelliste.
+Die Browserbedienung wurde synthetisch geprüft; die reale Nachkontrolle liest
+App-Antwort und ausgelieferten Client. Keine angemeldete Kundensitzung bedient,
+kein realer Landtagsnachweis behauptet, keine neue Modellgenerierung oder
+Production-Datenänderung durch die Kontrolle.
+
+Status: erfolgreich abgeschlossen für den beauftragten Fix und den konkreten
+Pilotnachweis. Nächster Schritt: App neu öffnen und die neue Nutzerführung ansehen.
+Ein reiner Abschluss-Doku-PR benötigt nach seinem belegten Merge/Build-Skip
+keinen weiteren Dokumentations-PR.

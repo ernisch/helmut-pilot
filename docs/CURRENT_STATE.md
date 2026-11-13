@@ -1,5 +1,10 @@
 # CURRENT STATE — Helmut
 
+**13.11., Lage/Radar live:** PR1178, Production `f18298ad` READY, Pflicht-CI grün.
+Pilot lesend bestätigt: Sammelwiederholung entfernt, alle 24 Artikel erhalten,
+1 Fachhinweis mit Lageverweis und Quellenstand 08.11.
+[Nachweise, Grenzen, Rückweg](betrieb/lage-radar-zusatznutzen-20261113.md).
+
 **Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
 **12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; 4.DB-Abbruch, bezahlte Arbeit STOP. Budgetleser live: PR1175.
@@ -10,7 +15,8 @@
 
 **Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
 
-**11.11., Quellen/Radar14:31UTC:** [Adminstart PR1126](betrieb/admin-quellenstart-rollout-20261111.md) live; AutomatikPR1133 auf `88c876f1` READY. [Radar-Ausschlussdiagnose](betrieb/radar-ausschlussdiagnose-20261111.md):acht alte Signale, vier neuere Fachartikel ohne Umfeldbezug, keine belegte kommende Frist. Replay bestätigt0sichtbare Signale. Nachschub seit09.11. ausgeblieben; heute8/8Fenster und2400/2400Sekunden reserviert,0Prozesse/Sperren. Kein Reset oder neuer Lauf. Nächster regulärer Start12.11.,03:00UTC; Erfolg danach prüfen.
+**Historie 11.11., Quellen/Radar:** [Adminstart/Automatik live](betrieb/admin-quellenstart-rollout-20261111.md).
+[Damals 0 sichtbare Radarsignale, Nachschub ausgeblieben; Diagnose und Kontingentbelege](betrieb/radar-ausschlussdiagnose-20261111.md).
 
 ## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
 
