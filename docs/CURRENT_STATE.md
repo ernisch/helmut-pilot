@@ -1,30 +1,32 @@
 # CURRENT STATE — Helmut
 
-**13.11.2026: Verarbeitungskern fuer den ersten zahlenden Kunden und danach
-100 aktive Kunden gezielt umgebaut; lokale Codeabnahme nach Korrekturen, nicht ausgerollt.**
-Branch `codex/verarbeitungskern-100-20261113`, Basis `fe94f3eb`.
+**13.11.2026: Verarbeitungskern nach konkreter Einprofilfreigabe auf Production;
+heutiger gespeicherter Paketstand teilweise, neue regulaere Tagesversorgung offen.**
+[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183) normal gemergt:
+Production `597d7876`, freigegebener Kopf `4f764317`, Basis `fe94f3eb`.
 Einzelne Artikelversionen, Tagesvorrang statt Altrueckstand, bestaetigte
 Lagephasen, verteilte Grenzen und gespeicherte App-Tagespakete umgesetzt.
 [Architekturentscheidung, konkrete Nachweise, Dimensionierung und Grenzen](betrieb/verarbeitungskern-100-20261113.md).
-Keine neue Infrastruktur, keine Production-Daten-/Profil-/Budget-/Cronaenderung,
-keine Aktivierung, kein Merge/Deployment. Neue Migration nur vorbereitet.
-PR1183 nach Betreiber-Go unabhaengig geprueft: fuenf Integrationsfehler korrigiert,
-16 gezielte neue/geaenderte Pruefgruppen/Faelle bestanden. Begrenzte Pflicht-CI
-[43483196284](https://github.com/ernisch/helmut-pilot/actions/runs/43483196284)
-auf `f7f3d6eb` gruen: 15 neue Auswahlgruppen, 29 Desktop-/Mobilpruefungen.
-Rolloutvorflug: Live-Direktclaim unterscheidet sich nur in zehn Kommentaren;
-seinen exakten Hash in der vorbereiteten Driftwache ergaenzt. Neuer CI-Nachtrag
-prueft nur sieben neue Policygruppen und drei neue lokale SQL-Faelle; Browser-
-und alte Fachbelege streng gebunden wiederverwendet. Aktuelles Kopf-/Laufergebnis:
-[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
+Neue SQL angewendet, Registerversion `20261113193319_frische_tagesarbeit`
+(Quelldatei `20261113165614`, nicht erneut anwenden). Indizes, ACL und leerer
+Tagesstand-RPC verifiziert. Keine fachlichen Datenkorrekturen, Aktivierung,
+Profil-/Budget-/Cron-/Env-Aenderung oder manuellen Modellaufrufe.
+[CI43491668407](https://github.com/ernisch/helmut-pilot/actions/runs/43491668407):
+7 neue Policygruppen und 3 echte SQL-Faelle gruen; vorhandene 29 Browserpruefungen
+streng gebunden wiederverwendet. GitHub wertet native manuelle Jobchecks nicht
+als Pflichtchecks; [Nachweisuebernahme43501971324](https://github.com/ernisch/helmut-pilot/actions/runs/43501971324)
+validierte Originaljobs/Dateibaum und stellte explizite Wiederverwendungsstatus
+bereit. Keine Schutzregel-/Anwendungsaenderung, kein Adminbypass, keine alten Tests.
 Kein erneuter Mock100, kein neuer Lastnachweis; versehentlich ausgefuehrter
 rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
-Konkreter Einprofilplan im Architekturbericht: SQL vor Code; normaler Mergecommit
-mit `[skip ci]` vermeidet einmalig die breite main-CI, kein neuer PASS am Merge.
-Aktuelle Vercelkonfiguration: Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`,
-Kommunikation `gesperrt`; alte Betriebsnotiz zu Pipeline `off` ist ueberholt.
-**Naechster Schritt nach gruener Nachtrags-CI:** gesonderte konkrete Freigabe
-fuer den dokumentierten Einprofil-Rollout einholen. Bis dahin kein Merge/Deployment.
+Vercel `dpl_AZEUX1v4DgPbdDPGBSmcE1HDTzQC` READY; regulaerer Alias/Runtimecommit
+bestaetigt, Appstart anonym401. `[skip ci]` verhinderte breite main-CI.
+Nur `cem-ince`, Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`, Kommunikation
+`gesperrt`, bestehend 1 USD/UTC-Tag und 30 USD insgesamt. Heutiger PaketinhaltHash
+und Quittung stimmen; Quellenversorgung unvollstaendig/kein Tagesanlass,
+volle gespeicherte Lageansicht fehlt. Keine authentifizierte Kundenbedienabnahme.
+**Naechster Schritt:** naechsten regulaeren Morgenlauf fuer `cem-ince`
+am 14.11. ab 06:15 Berlin samt Paketvollstaendigkeit beobachten.
 
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.

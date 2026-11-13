@@ -2,9 +2,75 @@
 
 Stand 13.11.2026. Entwicklungsbranch `codex/verarbeitungskern-100-20261113`,
 Ausgangsstand `fe94f3eb`. Kerncommit `8d780785`; die Auslieferung ist ein
-getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach gezielten Korrekturen lokal abgenommen;
-Pflicht-CI am jeweiligen Kopf laut PR, Production-Freigabe offen.
+getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach konkreter
+Einprofilfreigabe auf Production `597d7876`; gespeicherter heutiger Paketstand
+teilweise. Neuer regulaerer Tageslauf und Kundenbedienabnahme offen.
 Kein Kapazitaetsnachweis fuer 100 Kunden.**
+
+## Ausgefuehrter Einprofil-Rollout und aktueller Stand (13.11.2026)
+
+[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183) ist nach ausdruecklichem
+Betreiber-Ja normal gemergt. Mergecommit `597d7876d3f1ce963174fe749ffb28bd98f15065`
+hat die Parents `fe94f3eb` und exakt den freigegebenen Kopf `4f764317`;
+Baum `7126f6a196be7ba6552fe368a02f293deabeb1dc` ist mit diesem Kopf identisch.
+Vercel-Productiondeployment `dpl_AZEUX1v4DgPbdDPGBSmcE1HDTzQC` ist READY,
+regulaerer Alias und rein lesender Runtimebeleg bestaetigen denselben Commit.
+Anonymer Appstart liefert weiterhin401. Keine breite main-CI gestartet.
+
+Die exakt freigegebene SQL-Datei `20261113165614_frische_tagesarbeit.sql`
+(SHA256 `1ea818f8c63e87ea05b4915099ada2663f6f446dabd20d1d4f05c69bf0bce35d`)
+wurde vor Code angewendet. Supabase vergab im Anwendungsregister die Version
+**`20261113193319`**, Name `frische_tagesarbeit`. Das ist dieselbe eine Migration;
+wegen des abweichenden Quelldateistempels keinesfalls erneut anwenden.
+Spalte/Indizes gueltig, drei neue RPCs Invoker und ausschliesslich service_role,
+erwartete Funktionshashes und fuenf Nullzaehler des leeren Tagesvorflugs bestaetigt,
+auch ueber den wirklichen PostgREST-Appzugang. #1179 wurde nicht erneut angewendet.
+
+Der anfaengliche Mergeblocker hatte eine belegte Ursache: Laut
+[GitHub-Dokumentation](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#checks-from-some-workflow-jobs-are-not-evaluated)
+zaehlen native `workflow_dispatch`-Jobchecks nicht fuer PR-Pflichtregeln.
+Die Tests waren erfolgreich, wurden aber nicht ausgewertet. Ein isolierter
+Hilfsbranch `codex/ci-evidence-1183-20261113` (Deployment ausdruecklich aus)
+liess den Produktkopf unveraendert. Sein kurzer Ablauf prueft Publisher-SHA,
+PR/Basis, Originalruns/-jobs/-schritte, Hoechstalter sieben Tage, vollen Dateibaum
+und erforderliche GitHub-App vor jeder Statusuebernahme. Danach veroeffentlicht
+er die tatsaechlichen Belege ausdruecklich als wiederverwendete Commitstatuswerte
+mit Originaljob-URLs. Ausschliesslich GitHub-Actions-Token mit minimalen Rechten,
+keine Produktzugangsdaten, Schutzaenderung, Adminumgehung oder Testwiederholung.
+
+[Nachweisuebernahme43501971324](https://github.com/ernisch/helmut-pilot/actions/runs/43501971324)
+auf Hilfscommit `18cc3559` ist erfolgreich. Der erste Hilfslauf43501202256
+stoppte nach bestaetigtem ersten Status: die kombinierte Statusantwort enthaelt
+keinen Ersteller. Der Leser wurde auf die vollstaendige Statusliste korrigiert;
+der zweite Lauf erkannte den vorhandenen Status und schrieb ihn nicht erneut.
+Konflikte/mehrdeutige oder abgeschnittene Listen stoppen, unbekannte POST-Ausgaenge
+werden nur lesend geklaert. Neun neue lokale Negativgruppen bestanden, danach
+nur drei wegen des API-Adapters geaenderte Gruppen plus ein neuer Schemafall;
+dessen neue Fenstergrenze separat nachgeprueft. Unabhaengige Sicherheitsabnahme
+ohne Befund. Kein alter Fach-/Browser-/Mengenlauf und kein neuer Modellaufruf.
+GitHub erkannte danach beide erforderlichen Kontexte regulaer an (PR clean).
+Der genehmigte Merge mit `[skip ci]` loeste keine breite Wiederholungs-CI aus;
+Vercels regulaere Gitintegration baute und veroeffentlichte Production.
+
+Schalter/Zulassung/Kostenbuch vor Merge erneut lesend bestaetigt: ausschliesslich
+`cem-ince`, Pipeline on, Narrativqueue off, globale Phase/Abrufe off, Dispatch
+shadow, Kommunikation gesperrt, 1 USD/UTC-Tag und 30 USD insgesamt. Kostenbuch
+konsistent, acht bestehende offene Reserven unveraendert. Keine weiteren Kunden,
+keine manuellen Modell-/Quellen-/Recoverylaeufe, keine Profil-/Budget-/Cron-/Env-
+oder fachlichen Datenkorrekturen. Kein Code-/SQL-Rueckbau erforderlich.
+
+Heutiges gespeichertes Paket und Morgenquittung fuer `cem-ince` wurden nur ueber
+ihre beiden Primaerschluessel gelesen: Mandat/Tag/Inhaltshash und gespeicherte
+Quittungsbindung stimmen. Der vorhandene Stand vom 13.11. bleibt **teilweise**:
+Quellenversorgung unvollstaendig, kein Tagesanlass, keine volle gespeicherte
+Lageansicht. Der Rollout hat dieses Paket nicht umgeschrieben oder durch einen
+bezahlten Aufruf ersetzt. Keine authentifizierte Kundenbedienabnahme und kein
+neuer erfolgreicher regulaerer Tageslauf behauptet.
+
+**Genau naechster Schritt:** den naechsten regulaeren Morgenlauf fuer `cem-ince`
+am 14.11. ab 06:15 Berlin samt neuer Paketvollstaendigkeit beobachten.
+Die folgenden Implementierungs- und Planabschnitte erhalten den historischen
+Vorbereitungsstand; fuer den ausgefuehrten Betrieb gilt dieser Statuskopf.
 
 ## Architekturentscheidung und Umsetzung
 
@@ -413,20 +479,18 @@ keine Schalter-/Cron-/Secret-/Registrierungs-/Mailaenderung und kein SQL-Rueckba
 
 ## Rueckweg und verbleibende Grenze
 
-Die neue Migration liegt mit passender `rollback_...sql` vor und ist **nicht**
-auf Production angewendet. Rueckweg: zuerst neuen Worker kontrolliert stoppen,
+Die neue Migration liegt mit passender `rollback_...sql` vor und ist inzwischen
+wie im Statuskopf belegt angewendet. Rueckweg: zuerst neuen Worker kontrolliert stoppen,
 Code zuruecknehmen und nur nach konkreter Freigabe SQL zuruecknehmen. Der
 SQL-Rueckweg stellt alte Funktionskoerper wieder her und entfernt neue RPCs,
 Indizes sowie `last_seen_window`; eigentliche Artikel, Jobs, Abschluesse, Kosten,
 Reservierungen, Quellenarchive und Tagespakete bleiben erhalten. Die neue
 Wiederbeobachtungsmetadaten-Spalte faellt beim Rueckweg weg.
 
-Offen bleiben das konkrete Nachtrags-CI-Ergebnis laut PR, gesonderte
-Mergefreigabe, freizugebende Migration und Deployment,
-authentifizierte echte Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
+Offen bleiben der neue regulaere Tageslauf und die authentifizierte echte
+Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
 Dimensionierung vor Zulassung weiterer Kunden. Weder der erste zahlende Kunde
 noch 100 aktive Kunden werden durch diesen Entwicklungsstand automatisch aktiviert.
 
-**Genau naechster Schritt nach erfolgreicher Nachtrags-CI:** gesonderte konkrete
-Freigabe fuer den oben dokumentierten Einprofil-Rollout einholen.
-Der PR bleibt bis dahin ein Entwurf ohne Mergefreigabe.
+Die konkrete Einprofilfreigabe und der technische Rollout sind abgeschlossen.
+Der naechste Schritt steht im aktuellen Statuskopf; keine weitere Aktivierung.
