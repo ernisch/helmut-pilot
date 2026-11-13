@@ -75,7 +75,7 @@ async function state({ partial = false } = {}) {
       briefing: { available: false, items: [], currentHelmutState: { versorgung: { version: 1, zustand: "unbekannt" } },
         currentRadarState: {} }, lageAnsicht: null });
     const row = f.rows.get(f.row.id);
-    A.deepEqual(row.payload.lage, before.payload.lage);
+    A.equal(row.payload.lage, null, "Kein aktueller Narrativbeleg bei ausgefallenem cacheOnly-Leser");
     A.deepEqual(row.payload.lageAnsicht, before.payload.lageAnsicht);
     A.deepEqual(row.payload.briefing.items, before.payload.briefing.items);
     A.deepEqual(row.payload.briefing.currentRadarState, before.payload.briefing.currentRadarState);
@@ -137,6 +137,88 @@ async function state({ partial = false } = {}) {
     const f=await state(), row=f.rows.get(f.row.id);
     row.payload.quellenStand.sicherheitsHash="f".repeat(64);
     A.equal((await f.read()).briefing.reason,"tagespaket-nicht-bestaetigt");
+  });
+  await test("Neuer Profil- oder Quellenkontext bekommt keinen abgewiesenen alten Lagecache", async () => {
+    for (const geaendert of ["profil", "quellen"]) {
+      const f = await state(); f.rows.delete(f.row.id);
+      const aktuell = geaendert === "profil" ? { ...profile, focusTopics: ["Bildung"] } : profile;
+      const ansicht = { ...clone(f.lageAnsicht), fromCache: false, pendingNarrative: true,
+        paragraphs: [], quellenBindung: undefined };
+      await B.materialisiere({ profile: aktuell, userId: profile.id, now, briefing: f.briefing,
+        lageAnsicht: ansicht, storage: f.storage });
+      const row = f.rows.get(f.row.id), out = await f.read({ profile: aktuell });
+      A.equal(row.payload.profilHash, B.profilHash(aktuell)); A.equal(row.payload.lage, null);
+      A.deepEqual(out.briefing.lageBriefing.paragraphs, []);
+      A.deepEqual(out.briefing.lageBriefing.vorgaenge, f.lageAnsicht.vorgaenge);
+      A.equal(out.briefing.paketStatus.zustand, "teilweise");
+      A.deepEqual(out.briefing.currentRadarState, f.briefing.currentRadarState);
+    }
+  });
+  await test("Ausgetauschter Rohcache nach cacheOnly-Pruefung wird nicht neu gebunden", async () => {
+    const f = await state(); A.ok(f.row.payload.lage, "Exakt gebundener aktueller Cache bleibt zulaessig"); f.rows.delete(f.row.id);
+    f.rows.get(`bf-${profile.id}-lage-${day}`).payload.koSetHash = "e".repeat(32);
+    await B.materialisiere({ profile, userId: profile.id, now, briefing: f.briefing,
+      lageAnsicht: f.lageAnsicht, storage: f.storage });
+    A.equal(f.rows.get(f.row.id).payload.lage, null);
+    A.deepEqual((await f.read()).briefing.lageBriefing.vorgaenge, f.lageAnsicht.vorgaenge);
+  });
+  await test("Echter cacheOnly-Lagebauer bindet alle bereits geladenen Karten-KOs", async () => {
+    const lage = require("../lib/helmut/lage"), safety = require("../lib/helmut/sourceSafety"), ai = require("../lib/helmut/ai");
+    const names = ["v3StoreReady", "listKnowledgeObjects", "listMatchingResults", "listAktuelleLageQuellen",
+      "getSourcesForVorgang", "getRenderedBriefingV3"], old = Object.fromEntries(names.map(k => [k, S[k]]));
+    const oldSafety = safety.guardKnowledgeObject, oldAi = ai.generateLageBriefing;
+    const kos = [1,2].map(i => ({ id: `ko-karten-${i}`, vorgang_id: `vg-karten-${i}`, status: "update", understanding_status: "complete",
+      headline: "Rentenberatung " + i, was_ist_passiert: "Ein Vorschlag zur Rente wird beraten.", warum_wichtig: "Rentenrecht.",
+      display_title: "Rentenberatung " + i, display_summary: "Ein Vorschlag zur Rente wird beraten.",
+      why_relevant: "Rente im Ausschuss.", recommendation: "Beratung verfolgen.",
+      best_source_url: `https://example.invalid/rente/${i}`, updated_at: new Date().toISOString() }));
+    S.v3StoreReady = () => true; S.listKnowledgeObjects = async () => kos;
+    S.listMatchingResults = async () => [];
+    S.getSourcesForVorgang = async id => [{ id: "rd-" + id, url: `https://example.invalid/rente/${id.endsWith("1") ? 1 : 2}`,
+      source_name: "Synthetische Quelle", source_type: "official", title: "Vorschlag zur Rente",
+      summary: "Ein synthetischer Vorschlag zur Rente wird im zustaendigen parlamentarischen Ausschuss beraten. Die Beratung betrifft die Ausgestaltung der Rentenversicherung und die naechsten Verfahrensschritte.",
+      published_at: new Date(Date.now() - 3600000).toISOString() }];
+    S.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(kos, id => S.getSourcesForVorgang(id));
+    S.getRenderedBriefingV3 = async () => null;
+    safety.guardKnowledgeObject = () => ({ status: "ok" });
+    ai.generateLageBriefing = async () => { throw Error("Kein Modell im cacheOnly-Lagebauer"); };
+    try {
+      const result = await lage.buildLageBriefing({ id: profile.id, committees: ["Arbeit und Soziales"], focusTopics: ["Rente"] },
+        { politicianId: profile.id, cacheOnly: true });
+      A.equal(result.pendingNarrative, true, JSON.stringify(result)); A.equal(result.vorgaenge.length,2);
+      A.deepEqual(result.tagespaketGrundlage, kos.map(k => ({ id: k.id, vorgang_id: k.vorgang_id })));
+      const read = S.getSourcesForVorgang;
+      S.getSourcesForVorgang = async id => (await read(id)).map(doc => ({ ...doc, published_at: null }));
+      const ohneText = await lage.buildLageBriefing({ id: profile.id, committees: ["Arbeit und Soziales"], focusTopics: ["Rente"] },
+        { politicianId: profile.id, cacheOnly: true });
+      A.equal(ohneText.reason,"no-current-sources"); A.equal(ohneText.vorgaenge.length,2);
+      A.deepEqual(ohneText.tagespaketGrundlage, result.tagespaketGrundlage);
+    } finally { Object.assign(S, old); safety.guardKnowledgeObject = oldSafety; ai.generateLageBriefing = oldAi; }
+  });
+  await test("Lage-only-Karten behalten ihre Quellenbindung bei unbeteiligter Publikationssperre", async () => {
+    const f = await state(); f.rows.delete(f.row.id);
+    process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{ publicationUrl: "https://example.invalid/unbeteiligt",
+      reason: "unresolved-event-relation", review: { id: "synthetic", receiptSHA256: "a".repeat(64),
+        koSHA256: "b".repeat(64), sourceSHA256: "c".repeat(64) } }] });
+    try {
+      f.briefing.publicationEligibilityPolicy = P.publicInfo();
+      f.briefing.items = f.briefing.items.slice(0,1);
+      f.briefing.tagespaketGrundlage = [{ id: "ko-synth-1", vorgang_id: "vg-synth-1" }];
+      f.lageAnsicht.tagespaketGrundlage = [1,2].map(i => ({ id: `ko-synth-${i}`, vorgang_id: `vg-synth-${i}` }));
+      await B.materialisiere({ profile, userId: profile.id, now, briefing: f.briefing,
+        lageAnsicht: f.lageAnsicht, storage: f.storage });
+      let reads = 0;
+      f.storage.getPublicationSourceIdentities = async deps => {
+        reads++; A.deepEqual(deps.map(d => d.id), ["ko-synth-1", "ko-synth-2"]);
+        return { "ko-synth-1": [{ url: "https://example.invalid/dokument/1" }],
+          "ko-synth-2": [{ url: "https://example.invalid/dokument/2" }] };
+      };
+      const result = await f.read(); A.equal(result.briefing.available, true); A.equal(reads,1);
+      A.deepEqual(result.briefing.lageBriefing.vorgaenge, f.lageAnsicht.vorgaenge);
+      f.storage.getPublicationSourceIdentities = async () => ({ "ko-synth-1": [],
+        "ko-synth-2": [{ url: "https://example.invalid/unbeteiligt" }] });
+      A.equal((await f.read()).briefing.reason, "tagespaket-quellenstand-nicht-bestaetigt");
+    } finally { delete process.env[P.ENV]; }
   });
   await test("Echter HTTP-Einstieg liefert denselben Paketstand fuer App, Briefing und Lage", async () => {
     const f = await state(), accounts = require("../lib/helmut/accounts");
