@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/ci-evidence-1183-20261113": false,
       "codex/verarbeitungskern-100-20261113": false,
       "codex/db-speicherspitzen-20261113": false,
       "codex/auth-schreiblast-vorbereiten-20261112": false,
