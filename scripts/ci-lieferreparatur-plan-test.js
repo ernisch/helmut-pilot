@@ -6,7 +6,8 @@ const A = require("node:assert/strict"), fs = require("node:fs"), path = require
 const C = require("./ci-lieferreparatur-plan");
 const args = process.argv.slice(2), nachtrag = args.length === 1 && args[0] === "--nur-nachtrag";
 const dipOnly = args.length === 1 && args[0] === "--dip-only";
-A.ok(args.length === 0 || nachtrag || dipOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const mandatOnly = args.length === 1 && args[0] === "--mandat-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -28,6 +29,7 @@ let count = 0;
 function test(name, fn) {
   if (nachtrag && !name.startsWith("Nachtrag:")) return;
   if (dipOnly && !name.startsWith("DIP:")) return;
+  if (mandatOnly && !name.startsWith("Mandat:")) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -171,5 +173,58 @@ test("DIP: Browserjob bestaetigt unveraenderte Eingaben ohne Installation oder a
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Mandat: drittes festes Profil aktiviert nur neue Workerpruefungen ohne alte Gruppen", () => {
+  const p = C.validate(fixture(C.MANDAT));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "mandatsarbeitvorrang");
+  A.equal(p.source.pr, C.MANDAT.PR); A.equal(p.source.base, C.MANDAT.BASE);
+  A.match(p.reused.status, /Browser bewusst nicht erneut/);
+});
+test("Mandat: falsche Profile Metadaten und Checkoutkoepfe bleiben gesperrt", () => {
+  for (const change of [f => { f.pr.base.sha = C.DIP.BASE; }, f => { f.prNumber = C.DIP.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.DIP.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "anderer-branch"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "anderer-branch"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.MANDAT);
+});
+test("Mandat: jede Abnahmeblobabweichung und jede fremde Runtimeaenderung stoppen", () => {
+  for (const file of Object.keys(C.MANDAT.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.MANDAT);
+    denied(f => { f.headTree.delete(file); }, C.MANDAT);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.MANDAT);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.MANDAT);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.MANDAT);
+  denied(f => { f.headTree.set("lib/helmut/unerwartet.js", row("1")); }, C.MANDAT);
+  denied(f => { f.headTree.set("scripts/browser-smoke-test.js", row("1")); }, C.MANDAT);
+});
+test("Mandat: fehlender Belegbaum fremde Abhaengigkeiten und ungueltige CI bleiben gesperrt", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.MANDAT);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.MANDAT);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.MANDAT);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.MANDAT);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.MANDAT);
+  }
+});
+test("Mandat: echter Offlinejob startet nur neue Profilgegenfaelle Workerregression und Syntax", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.MANDAT))), [
+    "Prüfplan aus geänderten Dateien", "Mandat - begrenzte Ausgabephase und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --mandat-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.MANDAT.REGRESSION_FILES[0]));
+  A.match(workflow, /ci-lieferreparatur-plan\.js --syntax/);
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c'/);
+});
+test("Mandat: Browserjob belegt unveraenderte Eingaben ohne alten Browser oder Mengenlauf", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.MANDAT))), [
+    "Prüfplan aus geänderten Dateien", "Mandat - Browser bewusst nicht erneut ausfuehren"
+  ]);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);

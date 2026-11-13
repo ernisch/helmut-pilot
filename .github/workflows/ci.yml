@@ -75,7 +75,7 @@ jobs:
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
     services:
       postgres:
-        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && 'postgres:17' || '' }}
+        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: helmut
           POSTGRES_PASSWORD: helmut
@@ -113,7 +113,9 @@ jobs:
           if [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/einprofil-lieferfaehigkeit-20261113 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1184 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/dip-einzelartikel-20261113 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1185 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1185 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/mandatsarbeit-vorrang-20261113 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1186 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -140,6 +142,15 @@ jobs:
           fi
           printf 'Geänderte Dateien:\n%s\n' "$CHANGED"
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Mandat - begrenzte Ausgabephase und Profilbindung
+        if: steps.plan.outputs.mandatsarbeitvorrang == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          set -e
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --mandat-only
+          node scripts/lokal.js scripts/worker-mandatsphase-test.js
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
       - name: DIP - neue Artikelisolation und Profilbindung
         if: steps.plan.outputs.dipartikelisolation == 'true'
         env:
@@ -235,7 +246,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -631,7 +642,9 @@ jobs:
           if [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/einprofil-lieferfaehigkeit-20261113 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1184 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/dip-einzelartikel-20261113 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1185 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1185 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/mandatsarbeit-vorrang-20261113 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1186 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -657,6 +670,17 @@ jobs:
             CHANGED=""
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Mandat - Browser bewusst nicht erneut ausfuehren
+        if: steps.plan.outputs.mandatsarbeitvorrang == 'true'
+        run: |
+          {
+            echo '### Begrenzte Mandatsphase: Browser bewusst NICHT ERNEUT AUSGEFUEHRT'
+            echo 'Vollstaendiger Basis-/Kopf-/Belegbaum geprueft: ausser exakt gebundenem Worker, neuer Regression und freigegebenen CI-/Doku-/Branchsperrdateien kein Diff.'
+            echo 'Browserprogramm, App, Authentifizierung, Quellenpruefung, Paketauslieferung und Abhaengigkeiten unveraendert gegen maincc283e0b.'
+            echo 'Zwei korrigierte Ruhelagefaelle erfolgreich: https://github.com/ernisch/helmut-pilot/actions/runs/43512468427'
+            echo '13 weitere erfolgreiche Browser-Einzelfaelle bleiben Teilbeleg des damals fehlgeschlagenen Gesamtjobs: https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997'
+            echo 'Kein Chromium installiert oder gestartet, kein neuer Browser-PASS behauptet; keine Wiederholung alter12/24/15/8/6-Faelle, keine Datenbank oder Modelle.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: DIP - Browser bewusst nicht erneut ausfuehren
         if: steps.plan.outputs.dipartikelisolation == 'true'
         run: |

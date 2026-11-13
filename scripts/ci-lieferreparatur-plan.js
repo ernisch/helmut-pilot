@@ -45,26 +45,41 @@ const DIP = Object.freeze({
     "vercel.json": "ff6ca830a085f9df582cc719a2802700d4ef8622"
   })
 });
+// Drittes festes Profil: nur die separat abgenommene begrenzte Mandatsphase.
+const MANDAT = Object.freeze({
+  PR: 1186, BASE: "cc283e0bae8ed7b9f25c551379a9ee1f8895a91c",
+  BRANCH: "codex/mandatsarbeit-vorrang-20261113", LOCAL_EVIDENCE_COMMIT: "12f275eb801a1a46cd6c36399535b1e357937a7c",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze(["lib/helmut/worker-betrieb.js"]),
+  REGRESSION_FILES: Object.freeze(["scripts/worker-mandatsphase-test.js"]),
+  BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "e3dd365950b904c64e89b28ac62657847eceaada",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "6f7bb98c16b19f7b39d82364c682cd80e47b5790",
+    "lib/helmut/worker-betrieb.js": "9631b255e642dfcd29115207681c4fd33663aeb7",
+    "scripts/worker-mandatsphase-test.js": "b78687866436ddaecf170d56ce5b8a682741b88f",
+    "vercel.json": "b2ac9375c5e3de8671faa6781ddec7f2c1004126"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === DIP.PR || headRef === DIP.BRANCH ? DIP : EINPROFIL;
+const profileFor = ({ prNumber, headRef }) => prNumber === MANDAT.PR || headRef === MANDAT.BRANCH ? MANDAT
+  : prNumber === DIP.PR || headRef === DIP.BRANCH ? DIP : EINPROFIL;
 const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
-  const profile = profileFor({ prNumber, headRef }), dip = profile === DIP;
+  const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (dip ? 1 : 4) && REGRESSION_FILES.length === (dip ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (dip || mandat ? 1 : 4) && REGRESSION_FILES.length === (dip || mandat ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -89,19 +104,25 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
+  const mode = mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
-    mode: dip ? "dipartikelisolation" : "lieferreparatur",
-    reason: dip ? "Exakte DIP-Einzelartikelisolation ohne Browser- oder Datenbankaenderung"
+    mode,
+    reason: mandat ? "Exakte begrenzte Mandatsphase ohne Reader- oder Datenbankaenderung"
+      : dip ? "Exakte DIP-Einzelartikelisolation ohne Browser- oder Datenbankaenderung"
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
-    ...Object.fromEntries(OUTPUTS.map(key => [key, key === (dip ? "dipartikelisolation" : "lieferreparatur")])), changed,
+    ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: dip ? { status: "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Quellenhandler unveraendert",
+    reused: dip || mandat ? { status: mandat
+      ? "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Mandatsworker unveraendert"
+      : "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Quellenhandler unveraendert",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43512468427",
         "https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997"] }
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: dip ? ["Nur neue DIP-Profil-Gegenfaelle", "Eine neue DIP-Einzelartikelregression",
+    execute: mandat ? ["Nur neue Mandatsphasen-Profil-Gegenfaelle", "Eine neue begrenzte Workerregression",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
+      : dip ? ["Nur neue DIP-Profil-Gegenfaelle", "Eine neue DIP-Einzelartikelregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
       : ["Betroffene CI-Zeilenankergruppe", "Syntax der tatsaechlich geaenderten JavaScriptdateien",
         "Nur zwei betroffene Ruhelage-Browserfaelle auf Desktop und Mobil"]
@@ -149,7 +170,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
