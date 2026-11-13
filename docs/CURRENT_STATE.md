@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 12.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
+**Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
 **12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; 4.DB-Abbruch, bezahlte Arbeit STOP. Budgetleser live: PR1175.
 
@@ -199,7 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-**12.11.:** [Verwaltung/SMTP](betrieb/mailversand-tophoster.md): UI live, Belege PR1155/1169. Passwortaugen/Kundenweg: PR1171.
+**13.11.:** [Verwaltung](ui/verwaltung-marke-kundenstatus-20261113/README.md): Marke/Zugang. [SMTP](betrieb/mailversand-tophoster.md); PR1171 Passwortaugen.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

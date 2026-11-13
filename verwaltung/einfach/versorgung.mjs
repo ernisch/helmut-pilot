@@ -50,7 +50,7 @@ const reasons={
 export function sourceRunView(state={}) {
  const states={bereit:['Quellen bei Bedarf neu einlesen.','Der Lauf nutzt die vorhandenen Tageskontingente.'],
   prueft:['Start wird geprüft …','Der Quellenlauf kann bis zu fünf Minuten dauern.'],
-  laeuft:['Quellen werden verarbeitet …','Du kannst die Verwaltung weiter benutzen. Der Laufstatus bleibt beim Neuladen erhalten.'],
+  laeuft:['Quellen werden verarbeitet …','Sie können die Verwaltung weiter benutzen. Der Laufstatus bleibt beim Neuladen erhalten.'],
   abgeschlossen:['Quellenlauf abgeschlossen.','Der Briefingstand der Kunden wird anschließend neu geprüft.'],
   teilweise:['Quellenlauf mit offenen Aufgaben beendet.','Prüfe den Kundenstand und bei Bedarf den Quellenbericht.'],
   gesperrt:['Quellenlauf kann gerade nicht starten.','Bitte den Quellenstand prüfen.'],
