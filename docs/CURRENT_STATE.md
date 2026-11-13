@@ -1,9 +1,9 @@
 # CURRENT STATE — Helmut
 
-**13.11.2026: PR1184 nach konkreter Freigabe gemergt und ausgerollt;
-Paketauslieferung repariert, echte heutige Quellenfortsetzung noch offen.**
-Production/main `73b34b02`, [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), gepruefter Kopf `addc25aa`.
-Vercel `dpl_52Mv2RdSfHQW6u9YHz22XL8t9bsa`
+**13.11.2026: PR1184 und DIP-Isolation PR1185 nach konkreter Freigabe ausgerollt;
+frische Verarbeitung und neues Tagespaket belegt, Quellenversorgung weiter teilweise.**
+Production/main `cc283e0b`, [PR1185](https://github.com/ernisch/helmut-pilot/pull/1185), gepruefter Kopf `737ac9b6`.
+Vercel `dpl_HBoMQ2Jvq5ZK2mCGm9egL8dDF4Wk`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
@@ -32,7 +32,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Naechster Schritt:** belegte DIP-Stapelisolation reparieren; sieben historische Metadatendrifts bleiben sicher isoliert. Kein weiterer manueller Quellenlauf noetig.
+**Naechster Schritt:** Mandatsverdrängung beheben und echte Lage-Ablehnung profilbezug-fehlt klaeren. ZweiterLauf16erledigt/6Fehler; Paket14.11.(23:08UTC)58Eintraege/8Karten ohneLagetext, weiter gap/Teilstand; Tagesbindung0,461751USD.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,

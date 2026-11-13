@@ -9,6 +9,64 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Weiterer echter Lieferblocker,22:52–22:56 UTC:**
+Der zweite Adminlauf endete22:59:38 UTC:151Ziel,16erledigt,6Fehler,
+121zurueckgestellt,8wiederholt. Bisherige Grenzen unveraendert.
+Nach Berliner Mitternacht auf weiterem ausdruecklichen Testauftrag genau einmal
+Lagecron und Morgenpaket fuer14.11. ausgefuehrt. Lage nicht auslieferbar:
+bestaetigte Qualitaetsantwort `profilbezug-fehlt` bei Absatz0. Kein Urteil gelockert.
+Paket14.11. um23:08:08.792 UTC gespeichert/verifiziert,58Eintraege/8Karten,
+ohne bestaetigten Lagetext; offen/kein Tagesanlass/fehlender Lagequellenbeleg.
+Kein heutiger vollstaendiger Briefingnachweis. Beide neuen Modellphasen abgerechnet,
+0,014532USD, Tagesbindung danach0,461751USD. Keine weitere Modellwiederholung.
+Die bestaetigten Entwurfs-/Pruefantworten bleiben unveraendert; separater
+rein lesender Qualitaetscheck laeuft. Quellen13.11. und Berliner Pakettag14.11.
+sind ausdruecklich verschieden; kein Umstempeln des13.11.-Pakets.
+
+Heutige Abrufe145 und Understanding74 warten. Projektion seit04:15 und
+Paketbau seit04:30 ebenfalls faellig, aber attempts0/wiedervorlagen0.
+Vier von acht Tagesfenstern waren verbraucht,1200/2400Sekunden, also kein
+ausgeschoepftes Arbeitskontingent. Weiterer Betreiberlauf22:55:52 UTC gestartet.
+Die aktuelle SQL vergibt strikt nach priority,due_at,created_at,id:
+Understanding80/Quellen100 verdrängen Projektion200/Paket250 im endlichen
+seriellen Workerfenster. Moderne Projektion wartet fachlich ausdruecklich nicht
+mehr auf saemtliche Quellen; die Claimreihenfolge verhindert dennoch ihren Start.
+Drei schmale Live-GETs bestaetigen die Prioritaeten und den nie erfolgten Claim.
+
+Isolierter Folgefix in Vorbereitung: kurze sequentielle Mandats-Teilphase ueber
+vorhandene typedClaims im selben reservierten Quellenfenster, maximal45Sekunden
+und20Prozent des vorhandenen Workerbudgets. Mindestens80Prozent bleiben fuer
+Quellen reserviert; anschliessend nur tatsaechlicher Zeitrest. Gleicher verteilten
+worker-drain-Slot,parallel1/stapel1, gleiche Handler-/Planrest-/Kostenwaechter,
+ein Blobspiegelwrite, addierte Bilanz. Keine Migration, neuen Dienste, Cron- oder
+Budgeterhoehung. Dies erzeugt keinen kuenstlichen Vollversorgungsstatus.
+
+**DIP-Isolation nach konkretem Merge-Go ausgerollt:**
+[PR1185](https://github.com/ernisch/helmut-pilot/pull/1185), freigegebener Kopf
+`737ac9b68158a947845bb676e390e2724bb4a1e8`, normale Merge-SHA
+`cc283e0bae8ed7b9f25c551379a9ee1f8895a91c`. Parents73b34b02/737ac9b6,
+Dateibaum identisch zum geprueften Kopf. Beide Pflichtchecks in
+[CI43518358156](https://github.com/ernisch/helmut-pilot/actions/runs/43518358156)
+gruen: acht neue Artikelisolationsfaelle, sechs neue CI-Profilgegenfaelle,
+geaenderte JS-Syntax. Browser bewusst unveraendert wiederverwendet; keine alten
+Fach-/Browser-/DB-/Mengenpruefungen wiederholt. Unabhaengige Fach-/CI-Reviews ohne Befund.
+
+Pro DIP-Dokument gilt dieselbe strenge Quellenbindung. Bestaetigte Nachbarn laufen
+weiter; abgewiesene bekommen begrenzte idempotente Fehlerjobs mit einem Versuch,
+ohne Rohpayload-/Modellzugriff. Ungeklaerte Persistenz-/Einreihung bleibt gesperrt.
+Quelle meldet ehrlich Teilstand. Endgueltigen alten DIP-Auftrag nicht zurueckgesetzt.
+
+Regulaeres Gitdeployment `dpl_HBoMQ2Jvq5ZK2mCGm9egL8dDF4Wk` READY, fra1,
+Hauptalias und rein lesende Runtime bestaetigencc283e0b. Anonymer Appstart401,
+Kommunikation/Kohortenquellen gesperrt, exklusiver relationaler Profilpfad bestaetigt.
+Vor Merge null neuere laufende Prozesse/null aktive Jobleases. Keine breite main-CI,
+Migration, Limits-/Cron-/Env-/Profilaktivierung oder neuer Quellen-/Modelllauf.
+Paket nach Rollout unveraendert22:05:03.882 UTC,69Eintraege/2Absaetze/8Karten,
+Hash `665f55fb9f5c7d95e96cd305e14d1b67d37eeb6042f3a4c2f12afa9f70e2acbf`;
+Kostenbuchbindung unveraendert2,603647USDgesamt. Sources weiter unvollstaendig,
+kein Tagesanlass/Radarstale. Keine vollstaendige frische Kundenversorgung behauptet.
+Naechster Schritt: naechsten regulaeren Quellen-/Morgenlauf samt Paketstand pruefen.
+
 **Echter Betreiberlauf und neuer Paketstand,21:58–22:05 UTC:**
 Adminlauf `admin-quellen-2026-11-13-8e21b6a7-ccc5-4f15-b28c-8d5b3b328938`
 auf73b34b02 abgeschlossen:140Ziel,15erledigt,8Fehler,96zurueckgestellt,
