@@ -199,7 +199,7 @@ dieser Übergangsweg wurde lokal mit echten Sessions geprüft.
 Der umfassendere historische Verwaltungstest
 stoppt im unveränderten Kontoclient an einer alten Null-IO-Erwartung beim Freigeben
 eines Kontos; die gezielte Navigationsauswahl führt keine Schreibaktion aus.
-**13.11.:** [Verwaltung](ui/verwaltung-marke-kundenstatus-20261113/README.md): Marke/Zugang. [SMTP](betrieb/mailversand-tophoster.md); PR1171 Passwortaugen.
+**13.11.:** [Verwaltung](ui/verwaltung-marke-kundenstatus-20261113/README.md): PR1177. [SMTP](betrieb/mailversand-tophoster.md); PR1171 Passwortaugen.
 
 ## Verwaltung: Darstellungskorrekturen gegen Design v3 (06.11.2026)
 

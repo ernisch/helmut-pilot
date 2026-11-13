@@ -50,7 +50,8 @@ node scripts/lokal.js -- node scripts/verwaltung-einfach-vorschau-browser.js /tm
 
 Das Ausgabeverzeichnis zuvor anlegen. Der kanonische CI-Prüfplan verlangt wegen
 der geänderten Vorschau-Prüfdatei die vollständigen Pflichtchecks. Verbindliche
-CI-, Merge- und Deploymentbelege werden im zugehörigen Pull Request festgehalten.
+CI-, Merge- und Deploymentbelege sowie der aktuelle Rolloutstand stehen in
+[PR #1177](https://github.com/ernisch/helmut-pilot/pull/1177).
 
 ## Umfang und Rückweg
 
