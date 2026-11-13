@@ -9,6 +9,61 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Echter Betreiberlauf und neuer Paketstand,21:58–22:05 UTC:**
+Adminlauf `admin-quellen-2026-11-13-8e21b6a7-ccc5-4f15-b28c-8d5b3b328938`
+auf73b34b02 abgeschlossen:140Ziel,15erledigt,8Fehler,96zurueckgestellt,
+21wiederholt. Sechs Abrufe und neun Understandingauftraege erledigt. Sieben
+historische Artikelversionen vor Modellen gesperrt: fuenf Herausgeberanzeigewechsel,
+zwei Publikationszeitabweichungen. Keine allgemeine Archiv-/Queuefehlfunktion.
+Enger Publikationsdatumsnachweis der neun erledigten Understandingauftraege:
+sechs Artikel vom13.11., zwei vom12.11. und einer vom12.06. Damit ist Fortschritt
+frischer Tagesarbeit im echten Lauf belegt; keine heutige Frische aus Abrufzeit abgeleitet.
+Ein DIP-Quellenauftrag scheiterte an `dip-quellfelder-nicht-bestaetigt`;
+belegte Isolationsluecke: ein ungueltiges Dokument kann seinen gesamten DIP-Stapel
+vor Persistenz stoppen. Ein Adapterfehler oder elf tatsaechlich brauchbare Nachbarn
+sind ohne Antwortsnapshot nicht belegt. Kleinster Isolationsfix in Vorbereitung;
+streng gleiche Quellenbindung behalten, keine historischen Fehler blind wiederholen.
+
+Nach abgeschlossenem Lauf genau einmal Lagecron, danach Morgenpaketlauf ausgefuehrt,
+beide200. Neue Lage und Paket um22:05:03.882 UTC:69Eintraege,zwei gepruefte
+Absaetze/acht Karten. Paket und gebundene Morgenquittung gespeichert/verifiziert;
+weiterhin `quellenversorgung-unvollstaendig`/`briefing-ohne-tagesanlass`, Radarstale.
+Kein fachlicher Gesamt-PASS oder authentifizierter Kundenklicknachweis.
+Acht abgerechnete Understandingcalls0,051080USD und zwei Lagecalls0,014550USD,
+zusammen0,065630USD. Tagesbindung0,382647USD, Grenzen1USD/Tag und30USDgesamt
+unveraendert. Push ausdruecklich gesperrt, keine ausgehenden Nachrichten.
+Betreiber muss vorerst keinen weiteren Quellenlauf starten.
+
+**Ausgerollt nach gesonderter konkreter Freigabe:** PR1184 mit exakt freigegebenem
+Kopf `addc25aa3ee7fe97a06b5a406fdcb9cae1fda2bd`, beide Pflichtchecks in
+[CI43512468427](https://github.com/ernisch/helmut-pilot/actions/runs/43512468427)
+erfolgreich. Der Nachtrag pruefte nur die korrigierte Ankergruppe, geaenderte
+JavaScript-Syntax und zwei Ruhelageanzeigen. Die DOM-Diagnose bestaetigt das
+vorhandene Intro und danach korrekte Ruhelage mit zwei weiterlaufenden Lagekarten;
+je Viewport1797ms gewartet. Die ersten11/13 positiven Teilbelege bleiben erhalten,
+der erste Gesamtlauf bleibt fehlgeschlagen. Keine alten Faelle wiederholt.
+
+Normaler Merge `73b34b02c7690656191a5d45d5efd32c954ff771`, Parents597d7876/addc25aa,
+Dateibaum identisch zum geprueften Kopf. Vercel-Gitdeployment
+`dpl_52Mv2RdSfHQW6u9YHz22XL8t9bsa` READY, fra1, regulaere Aliase zugeordnet,
+aliasError=null. Rein lesende Runtime am Hauptalias bestaetigt exakt73b34b02,
+Supabase/V3/exklusive relationale Profile, Quellenmodus an und Kommunikation/
+Kohortenquellen gesperrt. Anonymer Appstart401. Keine neue Migration oder Limits.
+Vor Merge null laufende neuere Prozesse und null aktive Jobleases.
+
+Nach Rollout gezielt nur Paketmetadaten und Tageszaehler gelesen: Erzeugungszeit
+20:50:34.423 UTC und Inhaltshash `ed23ffd180c9cdb3427c5a6e3f456f7badf0c3b28d194985839e17eaad6ee50b`
+identisch zum zuvor mit korrigiertem Leser verifizierten echten Snapshot;
+Profilhash identisch, zwei Lageabsaetze/neun Karten erhalten. Keine erneute
+Erzeugung oder Modellkosten. Weiterhin offene Versorgung/kein Tagesanlass und
+ehrlich stale Radar. Kein neuer Quellenlauf registriert,155 heutige Aufgaben
+warten unveraendert. Betreiber hat Quellenstart in eigener Admin-Sitzung uebernommen;
+Rueckmeldung zum angezeigten Startzustand angefragt. Kein Production-Klicknachweis.
+
+**Naechster Schritt:** den Betreiber-Quellenlauf auswerten und seinen resultierenden
+Tagespaketstand pruefen. Keine zugesagte Vollversorgung oder100-Kunden-Kapazitaet.
+Die folgenden datierten Befunde erhalten die urspruengliche Reparatur-/Testfolge.
+
 Isolierter Reparaturbranch `codex/einprofil-lieferfaehigkeit-20261113`, Basis
 Production/main `597d7876`; Preview ausdruecklich deaktiviert. Vier kleine
 Laufzeitkorrekturen, keine Migration oder neue Infrastruktur:
@@ -65,8 +120,9 @@ kein mehrtaegiges/fristgebundenes Beobachtungssignal. Kein weiterer Radarfehler
 nachgewiesen; Kriterien bleiben unveraendert. Neue geeignete Signale sind damit
 nicht garantiert. Dies ersetzt keinen neuen Quellenlauf oder Production-Klicktest.
 
-Noch offen: gezielte Nachtrags-CI/gesonderte konkrete Mergefreigabe sowie danach
-echter Quellenfortschritt und neue Paketerstellung. Der Betreiber uebernimmt den
+Zum Zeitpunkt dieses Vorbereitungsbefunds noch offen: Nachtrags-CI/Freigabe;
+beides inzwischen wie oben belegt abgeschlossen. Weiter offen ist echter
+Quellenfortschritt und neue Paketerstellung. Der Betreiber uebernimmt den
 sicheren vorhandenen Admin-Quellenstart selbst in seiner Admin-Sitzung samt CSRF;
 keine Zugangsdaten an Codex weitergegeben. Keine Authentifizierungsumgehung,
 Uhr-/Quotenmanipulation oder Budgeterhoehung.

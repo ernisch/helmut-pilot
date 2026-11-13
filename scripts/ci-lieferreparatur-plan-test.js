@@ -5,30 +5,32 @@
 const A = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path"), vm = require("node:vm");
 const C = require("./ci-lieferreparatur-plan");
 const args = process.argv.slice(2), nachtrag = args.length === 1 && args[0] === "--nur-nachtrag";
-A.ok(args.length === 0 || nachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const dipOnly = args.length === 1 && args[0] === "--dip-only";
+A.ok(args.length === 0 || nachtrag || dipOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
-function fixture() {
+function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
     ["scripts/lokal.js", row("c")], ["supabase/migrations/unveraenderte-basis.sql", row("d")]]);
-  for (const file of Object.keys(C.BLOBS)) baseTree.set(file, row("a"));
+  for (const file of Object.keys(profile.BLOBS)) baseTree.set(file, row("a"));
   baseTree.set(".github/workflows/ci.yml", row("a"));
   const headTree = new Map([...baseTree].map(([file, value]) => [file, { ...value }]));
-  for (const [file, blob] of Object.entries(C.BLOBS)) headTree.set(file, { ...row("a"), oid: blob });
+  for (const [file, blob] of Object.entries(profile.BLOBS)) headTree.set(file, { ...row("a"), oid: blob });
   for (const file of C.CI_FILES) headTree.set(file, row("e"));
-  return { event: "pull_request", repository: C.REPOSITORY, ref: `refs/pull/${C.PR}/merge`,
-    headRef: C.BRANCH, baseRef: "main", prNumber: C.PR, checkedOutHead: oid("f"),
-    pr: { number: C.PR, state: "open", draft: false,
-      base: { sha: C.BASE, ref: "main", repo: { full_name: C.REPOSITORY } },
-      head: { sha: oid("f"), ref: C.BRANCH, repo: { full_name: C.REPOSITORY } } },
+  return { event: "pull_request", repository: C.REPOSITORY, ref: `refs/pull/${profile.PR}/merge`,
+    headRef: profile.BRANCH, baseRef: "main", prNumber: profile.PR, checkedOutHead: oid("f"),
+    pr: { number: profile.PR, state: "open", draft: false,
+      base: { sha: profile.BASE, ref: "main", repo: { full_name: C.REPOSITORY } },
+      head: { sha: oid("f"), ref: profile.BRANCH, repo: { full_name: C.REPOSITORY } } },
     baseTree, headTree, evidenceTree: new Map([...headTree].filter(([file]) => !C.CI_FILES.includes(file))
       .map(([file, value]) => [file, { ...value }])) };
 }
 let count = 0;
 function test(name, fn) {
   if (nachtrag && !name.startsWith("Nachtrag:")) return;
+  if (dipOnly && !name.startsWith("DIP:")) return;
   fn(); count++; console.log("PASS " + name);
 }
-function denied(change) { const f = fixture(); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
+function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
 test("exakter PR erlaubt nur den neuen Reparaturmodus mit sichtbarer Belegwiederverwendung", () => {
   const p = C.validate(fixture());
   for (const key of C.OUTPUTS) A.equal(p[key], key === "lieferreparatur");
@@ -121,5 +123,53 @@ test("Nachtrag: beide Planer stoppen den Reparaturbranch vor der unveraenderten 
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("DIP: exaktes zweites Profil aktiviert nur neue Artikelisolation ohne alte Pruefungen", () => {
+  const p = C.validate(fixture(C.DIP));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "dipartikelisolation");
+  A.equal(p.source.pr, 1185); A.equal(p.source.base, C.DIP.BASE);
+  A.match(p.reused.status, /Browser bewusst nicht erneut/);
+});
+test("DIP: falsche Base PR Branch Repo oder Ereignis stoppen ohne anderes Profil", () => {
+  for (const change of [f => { f.pr.base.sha = C.BASE; }, f => { f.prNumber = C.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.event = "workflow_dispatch"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.DIP);
+});
+test("DIP: unerwartete Dateien sowie falsche fehlende oder ausfuehrbare Abnahmeblobs bleiben gesperrt", () => {
+  for (const file of Object.keys(C.DIP.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.DIP);
+    denied(f => { f.headTree.delete(file); }, C.DIP);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.DIP);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.DIP);
+  denied(f => { f.headTree.set("lib/helmut/unerwartet.js", row("1")); }, C.DIP);
+  denied(f => { f.headTree.set("scripts/browser-smoke-test.js", row("1")); }, C.DIP);
+});
+test("DIP: fehlender Belegbaum fremde Abhaengigkeiten und verlinkte CI Dateien stoppen", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.DIP);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.DIP);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.DIP);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.DIP);
+  }
+});
+test("DIP: echter Offlinejob startet nur neue Profilgegenfaelle Artikelisolation und Syntax", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.DIP))), [
+    "Prüfplan aus geänderten Dateien", "DIP - neue Artikelisolation und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --dip-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.DIP.REGRESSION_FILES[0]));
+  A.match(workflow, /ci-lieferreparatur-plan\.js --syntax/);
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == '73b34b02c7690656191a5d45d5efd32c954ff771'/);
+});
+test("DIP: Browserjob bestaetigt unveraenderte Eingaben ohne Installation oder alten Browserlauf", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.DIP))), [
+    "Prüfplan aus geänderten Dateien", "DIP - Browser bewusst nicht erneut ausfuehren"
+  ]);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);

@@ -31,20 +31,40 @@ const BLOBS = Object.freeze({
   "scripts/tagespaket-ruhelage-test.js": "658bb6e435b95467eb0989311181720275d9e31d",
   "vercel.json": "c53a0a0f3b214102665325cf02b6ca39c527d7de"
 });
+// Zweites festes Profil: nur der separat abgenommene DIP-Einzelartikelfix.
+const DIP = Object.freeze({
+  PR: 1185, BASE: "73b34b02c7690656191a5d45d5efd32c954ff771",
+  BRANCH: "codex/dip-einzelartikel-20261113", LOCAL_EVIDENCE_COMMIT: "6797d89159de7b8fd56a0e0e932663176fa81e2b",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze(["lib/helmut/scalable-pipeline.js"]),
+  REGRESSION_FILES: Object.freeze(["scripts/dip-einzelartikel-isolation-test.js"]),
+  BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "1e1a694fabcfd6eac8871a2241956253d9fe08c9",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "fc916dff904a474c26e5f47498b8daf8f04f8845",
+    "lib/helmut/scalable-pipeline.js": "7261b5a21fd58aeefb47c9d6657e6162c13556ac",
+    "scripts/dip-einzelartikel-isolation-test.js": "4e47a94a34fcc5491be0dbc311886b300096df87",
+    "vercel.json": "ff6ca830a085f9df582cc719a2802700d4ef8622"
+  })
+});
+const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
+const profileFor = ({ prNumber, headRef }) => prNumber === DIP.PR || headRef === DIP.BRANCH ? DIP : EINPROFIL;
 const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
+  const profile = profileFor({ prNumber, headRef }), dip = profile === DIP;
+  const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
+    RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === 4 && REGRESSION_FILES.length === 3
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, "scripts/browser-smoke-test.js"].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (dip ? 1 : 4) && REGRESSION_FILES.length === (dip ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -70,14 +90,21 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
   return {
-    mode: "lieferreparatur", reason: "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
-    ...Object.fromEntries(OUTPUTS.map(key => [key, key === "lieferreparatur"])), changed,
+    mode: dip ? "dipartikelisolation" : "lieferreparatur",
+    reason: dip ? "Exakte DIP-Einzelartikelisolation ohne Browser- oder Datenbankaenderung"
+      : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
+    ...Object.fromEntries(OUTPUTS.map(key => [key, key === (dip ? "dipartikelisolation" : "lieferreparatur")])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
+    reused: dip ? { status: "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Quellenhandler unveraendert",
+      urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43512468427",
+        "https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997"] }
+      : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: ["Betroffene CI-Zeilenankergruppe", "Syntax der tatsaechlich geaenderten JavaScriptdateien",
-      "Nur zwei betroffene Ruhelage-Browserfaelle auf Desktop und Mobil"]
+    execute: dip ? ["Nur neue DIP-Profil-Gegenfaelle", "Eine neue DIP-Einzelartikelregression",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
+      : ["Betroffene CI-Zeilenankergruppe", "Syntax der tatsaechlich geaenderten JavaScriptdateien",
+        "Nur zwei betroffene Ruhelage-Browserfaelle auf Desktop und Mobil"]
   };
 }
 function git(args) {
@@ -96,14 +123,15 @@ function fromCheckout(env = process.env) {
   need(env.GITHUB_EVENT_PATH && env.GITHUB_EVENT_NAME === "pull_request", "pr-metadaten-fehlen");
   const event = JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH, "utf8"));
   need(event.repository?.full_name === REPOSITORY, "ereignis-repository-abweichend");
+  const profile = profileFor({ prNumber: event.number, headRef: env.GITHUB_HEAD_REF });
   const checkedOutHead = git(["rev-parse", "HEAD"]).trim();
   git(["diff", "--quiet", "HEAD", "--"]);
-  git(["merge-base", "--is-ancestor", BASE, checkedOutHead]);
-  git(["merge-base", "--is-ancestor", LOCAL_EVIDENCE_COMMIT, checkedOutHead]);
+  git(["merge-base", "--is-ancestor", profile.BASE, checkedOutHead]);
+  git(["merge-base", "--is-ancestor", profile.LOCAL_EVIDENCE_COMMIT, checkedOutHead]);
   return validate({ event: env.GITHUB_EVENT_NAME, repository: env.GITHUB_REPOSITORY,
     ref: env.GITHUB_REF, headRef: env.GITHUB_HEAD_REF, baseRef: env.GITHUB_BASE_REF,
     prNumber: event.number, pr: event.pull_request, checkedOutHead,
-    baseTree: tree(BASE), headTree: tree(checkedOutHead), evidenceTree: tree(LOCAL_EVIDENCE_COMMIT) });
+    baseTree: tree(profile.BASE), headTree: tree(checkedOutHead), evidenceTree: tree(profile.LOCAL_EVIDENCE_COMMIT) });
 }
 function main() {
   const args = process.argv.slice(2);
@@ -116,12 +144,12 @@ function main() {
       console.log("Syntax OK: " + file);
     }
   } else {
-    fs.appendFileSync(args[1], OUTPUTS.map(key => `${key}=${result[key]}\n`).join("") + "mode=lieferreparatur\n");
+    fs.appendFileSync(args[1], OUTPUTS.map(key => `${key}=${result[key]}\n`).join("") + `mode=${result.mode}\n`);
     console.log(JSON.stringify(result));
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

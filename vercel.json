@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/dip-einzelartikel-20261113": false,
       "codex/einprofil-lieferfaehigkeit-20261113": false,
       "codex/verarbeitungskern-100-20261113": false,
       "codex/db-speicherspitzen-20261113": false,
