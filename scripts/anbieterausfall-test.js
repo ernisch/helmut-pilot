@@ -30,6 +30,8 @@ function check(name, ok, detail = "") {
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 
 const AN = { HELMUT_SCALABLE_PIPELINE: "on" };
+const klein = process.argv.includes("--klein");
+const D = require("../lib/helmut/dedup"), H = require("../lib/helmut/roh-quellenstaende");
 const T0 = Date.parse("2026-08-08T00:00:00Z");
 const eigeneQuellen = (p) => [sched.personNewsSource(p), ...sched.mandateNewsSources(p)];
 
@@ -57,15 +59,22 @@ function abrufAttrappe({ ausgefallen = [] } = {}) {
 }
 
 function grundAttrappen(u, w) {
+  const raw = new Map();
   return {
+    env: AN,
+    klassen: { aktiv: true, belege: async () => ({ erlaubt: true, slot: "isolierter-anbieter-slot" }), gebeFrei: async () => {} },
     now: u.jetzt,
     hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
     createGate: () => null, sharedLedger: () => null,
     // Option B (2026-08-19): der Handler persistiert relational — die Attrappe liefert
     // deterministische rd-Kennungen als NEU eingefuegte Zeilen.
-    persistRohdokumente: async (items) => ({
-      ok: true, neuIds: items.map((it, i) => `rd-${i}-${it.url.length}`), vorhandene: 0
-    }),
+    persistRohdokumente: async items => {
+      const rows = items.map(D.toRawDocumentRow); rows.forEach(row => raw.set(row.id, row));
+      return { ok: true, neuIds: rows.map(row => row.id), bestaetigteIds: rows.map(row => row.id),
+        quellenstaende: Object.fromEntries(rows.map(row => [row.id, H.standHash(row)])), vorhandene: 0 };
+    },
+    ladeRohdokumentStaende: async ids => ids.map(id => raw.get(id)),
+    lageNarrativ: async () => ({ available: false, paragraphs: [], vorgaenge: [] }),
     ladeRohdokumente: async () => [],
     eagerUnderstanding: async () => ({ processed: 0, deferred: 0 }),
     getActiveProfile: async (id) => w.profile.find((p) => p.id === id) || null,
@@ -80,7 +89,7 @@ async function main() {
   console.log("Helmut — Anbieterausfall (Google News) im Warteschlangenpfad (OP-30, Phase 6)");
   console.log("  offline · kein Netz · zwei Attrappen: Anbieter erreichbar / Anbieter ausgefallen\n");
 
-  const profile = erzeugeMandate(50);
+  const profile = erzeugeMandate(klein ? 3 : 50);
 
   // ═══ 1 · Welche Arbeit haengt ueberhaupt an Google? ═══════════════════════
   abschnitt("1 · Welche Auftraege brauchen zwingend Google News (Phase 6.1)");
@@ -137,7 +146,7 @@ async function main() {
     };
 
     // Alle Abrufauftraege einreihen und arbeiten lassen, bis sie endgueltig scheitern.
-    for (const a of bedarf.auftraege.slice(0, 30)) {
+    for (const a of bedarf.auftraege.slice(0, klein ? 3 : 30)) {
       await q.enqueue({ ...a, maxAttempts: 2, dueAt: new Date(u.jetzt()).toISOString() });
     }
     await q.enqueue({
@@ -146,7 +155,7 @@ async function main() {
     });
 
     for (let runde = 0; runde < 4; runde += 1) {
-      await SP.arbeite({ env: AN, owner: `w${runde}`, budgetMs: 600000, leaseMs: 60000, stapel: 100, deps });
+      await SP.arbeite({ env: AN, owner: `w${runde}`, budgetMs: 600000, leaseMs: 60000, stapel: klein ? 3 : 100, deps });
       u.vor(3600 * 1000);
     }
 
@@ -167,8 +176,8 @@ async function main() {
 
     // Der entscheidende Produktpunkt.
     const ergebnis = await SP.HANDLER.briefing_materialization(
-      { id: "b", jobType: "briefing_materialization", freshnessWindow: "X", payload: { mandatsId: profile[0].id } },
-      { ...deps, offeneVorbedingungen: undefined });
+      { id: "b", tenantId: profile[0].id, jobType: "briefing_materialization", freshnessWindow: "X", payload: { mandatsId: profile[0].id } },
+      { ...deps, offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 0 }) });
     check("3.5 Das Briefing meldet einen EHRLICHEN Leerzustand, keinen ruhigen Tag",
       ergebnis.ok === true && ergebnis.verfuegbar === false && ergebnis.grund === "kein-material",
       JSON.stringify(ergebnis));
