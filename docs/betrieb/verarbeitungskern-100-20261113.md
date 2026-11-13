@@ -9,6 +9,28 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Echter Betreiberlauf und neuer Paketstand,21:58–22:05 UTC:**
+Adminlauf `admin-quellen-2026-11-13-8e21b6a7-ccc5-4f15-b28c-8d5b3b328938`
+auf73b34b02 abgeschlossen:140Ziel,15erledigt,8Fehler,96zurueckgestellt,
+21wiederholt. Sechs Abrufe und neun Understandingauftraege erledigt. Sieben
+historische Artikelversionen vor Modellen gesperrt: fuenf Herausgeberanzeigewechsel,
+zwei Publikationszeitabweichungen. Keine allgemeine Archiv-/Queuefehlfunktion.
+Ein DIP-Quellenauftrag scheiterte an `dip-quellfelder-nicht-bestaetigt`;
+belegte Isolationsluecke: ein ungueltiges Dokument kann seinen gesamten DIP-Stapel
+vor Persistenz stoppen. Ein Adapterfehler oder elf tatsaechlich brauchbare Nachbarn
+sind ohne Antwortsnapshot nicht belegt. Kleinster Isolationsfix in Vorbereitung;
+streng gleiche Quellenbindung behalten, keine historischen Fehler blind wiederholen.
+
+Nach abgeschlossenem Lauf genau einmal Lagecron, danach Morgenpaketlauf ausgefuehrt,
+beide200. Neue Lage und Paket um22:05:03.882 UTC:69Eintraege,zwei gepruefte
+Absaetze/acht Karten. Paket und gebundene Morgenquittung gespeichert/verifiziert;
+weiterhin `quellenversorgung-unvollstaendig`/`briefing-ohne-tagesanlass`, Radarstale.
+Kein fachlicher Gesamt-PASS oder authentifizierter Kundenklicknachweis.
+Acht abgerechnete Understandingcalls0,051080USD und zwei Lagecalls0,014550USD,
+zusammen0,065630USD. Tagesbindung0,382647USD, Grenzen1USD/Tag und30USDgesamt
+unveraendert. Push ausdruecklich gesperrt, keine ausgehenden Nachrichten.
+Betreiber muss vorerst keinen weiteren Quellenlauf starten.
+
 **Ausgerollt nach gesonderter konkreter Freigabe:** PR1184 mit exakt freigegebenem
 Kopf `addc25aa3ee7fe97a06b5a406fdcb9cae1fda2bd`, beide Pflichtchecks in
 [CI43512468427](https://github.com/ernisch/helmut-pilot/actions/runs/43512468427)
