@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
 **13.11.2026UTC/14.11.Berlin: Mandatsphase PR1186 ausgerollt und live bestaetigt;
-Lagetext fuer14.11. wegen Profilbezug abgelehnt, gepruefter Teilstand in Arbeit.**
+Lagetext fuer14.11. wegen Profilbezug abgelehnt; [Teilstand-PR1187](https://github.com/ernisch/helmut-pilot/pull/1187) unabhaengig geprueft, Tests/Rollout noch offen.**
 Production/main `32311c78`, [PR1186](https://github.com/ernisch/helmut-pilot/pull/1186), gepruefter Kopf `97901263`.
 Vercel `dpl_8gAYArheEw81mYsUP1WoQSJg9M8q`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
