@@ -163,6 +163,79 @@ async function check(name, work) { reset(); await work(); passed++; console.log(
       }
       assert.ok(calls.every(c => c.method === "GET"));
     });
+
+    await check("Admin-Monatskosten lesen die Historie einmal fuer drei auch inaktive Profile", async () => {
+      const handler = require("../server");
+      const day = new Date().toISOString().slice(0, 10), month = day.slice(0, 7) + "-01";
+      blob.legacyHistory = "x".repeat(3000000);
+      blob.llmUsage = [
+        { userId: "mandat-a", politicianId: "mandat-b", createdAt: day, callType: "office", estimatedCost: 0.1000004 },
+        { userId: "mandat-a", politicianId: "mandat-a", createdAt: day, callType: "office", estimatedCost: 0.2 },
+        { politicianId: "mandat-a", createdAt: day, callType: "skipped-office", estimatedCost: 9 },
+        { politicianId: "mandat-a", createdAt: "2000-01-01", callType: "office", estimatedCost: 5 },
+        { politicianId: "mandat-a", createdAt: day, callType: "pipeline-probe", estimatedCost: 0.000002 },
+        { politicianId: "mandat-a", createdAt: day, callType: "office", estimatedCost: "unknown" }
+      ];
+      const profiles = ["mandat-a", "mandat-b", "mandat-leer"].map((id, i) => ({
+        id, fullName: id, profileActive: i === 0, aiBudgetDailyCents: 1000, aiBudgetMonthlyCents: 10000
+      }));
+      const expected = await Promise.all(profiles.map(p => storage.getLlmCostSince(p.id, month)));
+      calls = [];
+      const before = hash(blob);
+      const actual = await handler.__buildAdminCostsPerUser(30, { listProfiles: async () => profiles });
+      assert.deepEqual(actual.tenantBudgets.map(p => p.politicianId), profiles.map(p => p.id));
+      assert.deepEqual(actual.tenantBudgets.map(p => p.monatUsd), expected.map(e => e.estimatedCostUsd));
+      assert.deepEqual(actual.tenantBudgets.map(p => p.monatUsd), [0.300002, 0.1, 0]);
+      assert.ok(actual.tenantBudgets.every(p => p.allowed));
+      assert.equal(hash(blob), before);
+      const historyReads = calls.filter(c => c.select === "data" || c.select?.includes("llmUsage"));
+      assert.equal(historyReads.length, 1, "ein Historienabruf statt eines Abrufs je Profil plus Teilstatistiken");
+      assert.equal(historyReads[0].select, "id,llmUsage:data->llmUsage");
+      assert.ok(calls.every(c => c.method === "GET"));
+    });
+
+    await check("Admin-Statistikleser waehlen nur Nutzung und behalten ihre Berechnung", async () => {
+      blob.llmUsage = [
+        { politicianId: "mandat-a", createdAt: new Date().toISOString(), callType: "office", estimatedCost: 0.25, totalTokens: 11 },
+        { userId: "mandat-b", createdAt: new Date().toISOString(), callType: "office", estimatedCost: 0.75, totalTokens: 13, success: false },
+        { userId: "mandat-a", createdAt: new Date().toISOString(), callType: "skipped-office", estimatedCost: 100 }
+      ];
+      const before = hash(blob);
+      const stats = await storage.getAdminStatsCosts({ days: 30 });
+      const users = await storage.getAdminCostsPerUser({ days: 30 });
+      const today = await storage.getLlmUsageBreakdownToday();
+      assert.equal(stats.totalCalls, 2); assert.equal(stats.totalCostUsd, 1);
+      assert.equal(stats.totalTokens, 24); assert.equal(stats.failedCalls, 1);
+      assert.equal(users.totalCostUsd, 1); assert.equal(users.perUser.length, 2);
+      assert.equal(today.calls, 2); assert.equal(today.skips, 1);
+      assert.equal(hash(blob), before);
+      assert.deepEqual(calls.map(c => c.select), Array(3).fill("id,llmUsage:data->llmUsage"));
+    });
+
+    await check("Geteilter Kostenlesestand behaelt Fehler statt erfundener Nullkosten", async () => {
+      reply = [{ id: "main-auth", llmUsage: {} }];
+      const handler = require("../server");
+      await assert.rejects(handler.__buildAdminCostsPerUser(30, {
+        listProfiles: async () => [{ id: "mandat-a", profileActive: false, aiBudgetMonthlyCents: 100 }]
+      }));
+      assert.equal(calls.filter(c => c.select?.includes("llmUsage")).length, 1);
+      assert.ok(calls.every(c => c.method === "GET"));
+    });
+    await check("Eine Periodenstatistik verwendet einen Kostenlesestand fuer beide Auswertungen", async () => {
+      let reads = 0;
+      const entries = [{ politicianId: "mandat-a", createdAt: new Date().toISOString(),
+        callType: "office", estimatedCost: 0.25 }];
+      process.env.HELMUT_STORAGE_BACKEND = "local";
+      try {
+        const result = await storage.getAdminPeriodStats(30, { readAuth: async options => {
+          assert.deepEqual(options, { fields: ["llmUsage"] });
+          reads++; return { llmUsage: entries };
+        } });
+        assert.equal(reads, 1); assert.equal(result.totalCostUsd, 0.25);
+        assert.equal(result.totalCalls, 1); assert.equal(result.perUser.length, 1);
+        assert.equal(calls.length, 0);
+      } finally { process.env.HELMUT_STORAGE_BACKEND = "supabase"; }
+    });
     console.log(`${passed}/${passed} Auth-Lesegruppen bestanden. Kein Production Funktionsnachweis.`);
   } finally { globalThis.fetch = originalFetch; }
 })().catch(error => { console.error(error); process.exitCode = 1; });

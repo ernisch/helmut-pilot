@@ -4794,6 +4794,7 @@ module.exports.__normalizeProfile = normalizeProfile;
 // nicht lesbar/nicht gebundelt ist — Rueckgabe null bzw. { verfuegbar:false }.
 module.exports.__readVercelCronSchedule = readVercelCronSchedule;
 module.exports.__readWorkflowWatchdog = readWorkflowWatchdog;
+module.exports.__buildAdminCostsPerUser = buildAdminCostsPerUser;
 // Test-Hooks (Offline, Audit-Folgebranch): Monitoring-Zweitkanal + Asset-Version.
 module.exports.__sendMonitoringWebhook = sendMonitoringWebhook;
 module.exports.__ASSET_VERSION = () => ASSET_VERSION;
@@ -6844,6 +6845,8 @@ function buildHelmutConfigDiagnose(env = process.env) {
 }
 
 async function buildAdminOverview() {
+  let usage;
+  const usageDeps = { readAuth: () => usage || (usage = readAuthStore({ fields: ["llmUsage"] })) };
   const [users, profiles, mandates, assignments, errors, audit, feedback, koCountTotal, statsToday, stats30d, crawlReport] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
@@ -6853,8 +6856,8 @@ async function buildAdminOverview() {
     accounts.listAuditEvents(50),
     listFeedback(80),
     getKnowledgeObjectCount(),
-    getAdminPeriodStats(1),
-    getAdminPeriodStats(30),
+    getAdminPeriodStats(1, usageDeps),
+    getAdminPeriodStats(30, usageDeps),
     getAdminStatsCrawlReport()
   ]);
   const storage = getStorageStatus();
@@ -6868,7 +6871,7 @@ async function buildAdminOverview() {
   // Budget-Wahrheit (Phase 8): heutiger Stand im EXAKTEN Fenster des Budget-Gates
   // (UTC-Kalendertag) — Skips/Fehler getrennt, pro Pfad, pro Mandant, Limit/Rest.
   // Die 24h-Rolling-Statistik (stats.today) bleibt fuer Kostentrends bestehen.
-  const llmBudget = await getLlmUsageBreakdownToday().catch(() => null);
+  const llmBudget = await getLlmUsageBreakdownToday(null, usageDeps).catch(() => null);
 
   const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
   const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
@@ -7030,12 +7033,17 @@ function readWorkflowWatchdog(rel) {
   }
 }
 
-async function buildAdminCostsPerUser(days = 30) {
+async function buildAdminCostsPerUser(days = 30, deps = {}) {
+  // Anfrageweit genau eine unverkuerzte Historie statt eines DB-Abrufs je
+  // Profil (einschliesslich inaktiver Profile). Die bestehenden Rechenwege und
+  // ihre unterschiedlichen Tages-/Monatszuordnungen bleiben unveraendert.
+  const usage = readAuthStore({ fields: ["llmUsage"] });
+  const usageDeps = { readAuth: () => usage };
   const [per, users, profiles, heute] = await Promise.all([
-    getAdminCostsPerUser({ days }),
+    getAdminCostsPerUser({ days }, usageDeps),
     accounts.listUsers().catch(() => []),
-    listFullProfiles().catch(() => []),
-    getLlmUsageBreakdownToday().catch(() => null)
+    (deps.listProfiles || listFullProfiles)().catch(() => []),
+    getLlmUsageBreakdownToday(null, usageDeps).catch(() => null)
   ]);
   const nameByUserId = new Map(users.map((u) => [u.id, u.name || u.email]));
   const nameByPoliticianId = new Map(profiles.map((p) => [p.id, p.fullName || p.id]));
@@ -7057,7 +7065,7 @@ async function buildAdminCostsPerUser(days = 30) {
     const spentTodayUsd = heute ? (heuteTenant ? Number(heuteTenant.estimatedCostUsd) || 0 : 0) : null;
     let spentMonthUsd = null;
     if (monthStart) {
-      try { spentMonthUsd = (await getLlmCostSince(p.id, monthStart)).estimatedCostUsd; } catch (_) { spentMonthUsd = null; }
+      try { spentMonthUsd = (await getLlmCostSince(p.id, monthStart, null, usageDeps)).estimatedCostUsd; } catch (_) { spentMonthUsd = null; }
     }
     const budget = llmBudgetLib.evaluateTenantBudget({ dailyBudgetCent, monthlyBudgetCent, spentTodayUsd, spentMonthUsd });
     tenantBudgets.push({

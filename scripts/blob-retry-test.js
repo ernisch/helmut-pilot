@@ -61,6 +61,32 @@ const backup = fs.existsSync(authFile) ? fs.readFileSync(authFile, "utf8") : nul
     check("Transient dann Erfolg: recovered", eventualOk === "recovered");
     check("Transient: genau 2 Versuche (1 Retry)", attempt === 2);
 
+    // Zeitabstaende deterministisch beobachten, ohne echte Wartezeit oder Netz.
+    const originalRandom = Math.random;
+    const originalTimer = global.setTimeout;
+    const waits = [];
+    try {
+      global.setTimeout = (callback, ms) => { waits.push(ms); queueMicrotask(callback); };
+      for (const sample of [0, 0.999]) {
+        Math.random = () => sample;
+        let tries = 0;
+        await withStoreRetry(async () => {
+          if (++tries < 3) throw new Error("Supabase storage failed (503): synthetic retry");
+          return "ok";
+        });
+      }
+    } finally { Math.random = originalRandom; global.setTimeout = originalTimer; }
+    check("Jitter bleibt je Versuch im begrenzten exponentiellen Intervall",
+      waits.length === 4 && waits.every((ms, i) => ms >= 2 ** (i % 2) && ms < 2 ** (i % 2 + 1)));
+    check("Zufaellige Wiederholungsabstaende sind nicht mehr synchron", waits[1] !== waits[3]);
+
+    let noReplayCalls = 0;
+    try {
+      await withStoreRetry(async () => { noReplayCalls += 1; throw new Error("ECONNRESET synthetic write"); },
+        { label: "blob-write", allowReplay: false });
+    } catch (_) { /* der urspruengliche Fehler ist beabsichtigt */ }
+    check("Unklarer Write bleibt trotz Jitter ohne Wiederholung", noReplayCalls === 1);
+
     // ── (3) Permanenter 4xx-Fehler: sofort durchgereicht, KEIN Retry ─────────
     let permCalls = 0;
     let threw = false;

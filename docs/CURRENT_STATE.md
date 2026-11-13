@@ -7,7 +7,7 @@ Pilot lesend bestätigt: Sammelwiederholung entfernt, alle 24 Artikel erhalten,
 
 **Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
-**12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; 4.DB-Abbruch, bezahlte Arbeit STOP. Budgetleser live: PR1175.
+**13.11.:** [DB-Speicher](betrieb/db-speicherspitzen-20261113.md): OOM bestaetigt; Schutz lokal geprueft, nicht live. Bezahlte Arbeit STOP.
 
 **11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
 
