@@ -26,6 +26,9 @@ vergleichen alle 17 Feldwerte in derselben Transaktion und damit mit demselben `
 OID, gesamte `pg_proc`-Metadaten ausser dem Funktionskoerper, Kommentar, ACL und
 Jobdaten bleiben gleich; zweifache Anwendung und zweifacher Rueckweg bestanden.
 Die bestehenden 26 Alters-/Rechte-/Rollback-Gruppen bleiben erhalten.
+Assertions werden lokal explizit aktiviert. Auch mit anfangs ausgeschaltetem
+`plpgsql.check_asserts` bestehen 35 Gruppen; eine private Fassung mit falschem
+Wartend-Zaehler wird mit dem erwarteten Feldvergleichsfehler zurueckgewiesen.
 
 Direktes `EXPLAIN (ANALYZE, BUFFERS)` am Funktionsaufruf, 192 synthetische Jobs,
 lokales `work_mem=64kB`: Temp-Bloecke gelesen/geschrieben **64/4 → 0/0**,
@@ -48,4 +51,9 @@ wieder her. Keine Anwendung auf Production; Auth, Mandanten- und Kostenlogik unv
 
 Andere Aggregat-/DISTINCT-Sortierungen koennen bei grossen Bestandsmengen weiter
 Temp-IO erzeugen. Keine Produktionsgeschwindigkeit oder Ausfallbehebung bewiesen.
-Unabhaengiges Review und PR folgen; Merge, Deployment und Datenbankanwendung brauchen GO.
+Unabhaengiges Codex-Review auf494ad4fa: kein SQL-/Rueckweg-Befund; gefundene
+Assertion-Testluecke korrigiert und per Negativprobe belegt. Enges Nachreview offen.
+PR bleibt Entwurf. `[skip ci]` haelt die Pruefung wie beauftragt lokal;
+keine gruene Pflicht-CI behauptet. Der eigene bestehende Branch mit deaktiviertem
+Vercel-Deployment wird weiterverwendet; keine Deploymentkonfiguration geaendert.
+Merge, Deployment und Datenbankanwendung brauchen konkrete Freigabe.

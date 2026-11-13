@@ -153,7 +153,8 @@ function pruefeMetrikenMaterialisierung() {
   psql("grant execute on function public.helmut_job_metrics(integer) to service_role;");
   for (const [name, fixture] of faelle) {
     const ressourcen = fixture === breiterBestand;
-    const ausgabe = psql(`begin; set local work_mem='64kB'; delete from public.helmut_jobs; ${fixture}
+    const ausgabe = psql(`begin; set local work_mem='64kB'; set local plpgsql.check_asserts=on;
+      delete from public.helmut_jobs; ${fixture}
       create temp table meta as select ${katalog} as katalog, ${daten} as daten,
         pg_get_functiondef('public.helmut_job_metrics(integer)'::regprocedure) as definition,
         obj_description('public.helmut_job_metrics(integer)'::regprocedure) as kommentar;
