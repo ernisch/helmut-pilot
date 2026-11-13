@@ -1,0 +1,17 @@
+[
+  {
+    "status": "PASS",
+    "observedAt": "2026-11-13T08:05:55.666Z",
+    "checks": 65,
+    "pageErrors": [],
+    "scope": "Isolierter echter lokaler HTTP-/Konten-/Profilspeicher; Ergebnisstatus zusaetzlich mit synthetischen Antwortvertraegen. Keine Production- oder Modellpruefung."
+  },
+  {
+    "status": "PASS",
+    "observedAt": "2026-11-13T08:05:40.231Z",
+    "checks": 35,
+    "pageErrors": [],
+    "externalRequests": 0,
+    "scope": "Export derselben Appkomponente mit fiktivem Beispieladapter; keine echten Appdaten"
+  }
+]

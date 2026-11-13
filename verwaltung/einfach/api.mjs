@@ -1,6 +1,6 @@
 import { createAdminReader } from '../api.mjs';
 import { createAdminActions, AdminMutationError } from '../original-actions.mjs';
-import { berlinDay, validId } from './model.mjs';
+import { berlinDay, validId, canManageAccess } from './model.mjs';
 import { profilePartyOptions, profileFactionOptions, federalStateOptions, constituencyChoices } from './profil-auswahl.mjs';
 import { createQuellenlauf } from '../original-quellenlauf.mjs';
 export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now=()=>new Date(), origin=globalThis.location?.origin||'http://localhost', host=globalThis.window }={}) {
@@ -135,7 +135,7 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
     const known=error instanceof AdminMutationError?error:new AdminMutationError(0,true);
     if(account){
      known.partialAccount={id:account.id,politicianId:account.politicianId,email:account.email};known.stage=stage;
-     known.message=stage==='profile'?'Der Kunde wurde angelegt. Die Mandatsangaben wurden nicht vollständig bestätigt; es wurde keine Einladung versendet. Bitte den angelegten Kunden prüfen.':'Kunde und Mandat wurden angelegt. Die Einladung wurde nicht bestätigt. Bitte den angelegten Kunden prüfen, bevor du die Einladung erneut sendest.';
+     known.message=stage==='profile'?'Der Kunde wurde angelegt. Die Mandatsangaben wurden nicht vollständig bestätigt; es wurde keine Einladung versendet. Bitte den angelegten Kunden prüfen.':'Kunde und Mandat wurden angelegt. Die Einladung wurde nicht bestätigt. Bitte den angelegten Kunden prüfen, bevor Sie die Einladung erneut senden.';
     }
     throw known;
    }
@@ -149,6 +149,19 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    const after=await request(`/api/admin/profile/${encodeURIComponent(id)}`);
    if(after.profile?.id!==id||after.profile.profileActive!==true)throw new AdminMutationError(0,true);
    return after;
+  });},
+  setAccess(id,active){return mutate(async()=>{
+   if(!validId(id)||typeof active!=='boolean')throw new AdminMutationError(400);
+   const users=await request('/api/admin/users'),matches=Array.isArray(users)?users.filter(u=>u.id===id):[];
+   const before=matches[0];
+   if(matches.length!==1||!canManageAccess(before)||before.active===active)throw new AdminMutationError(409);
+   const consistent=u=>u?.id===id&&u.role===before.role&&u.status===before.status&&u.politicianId===before.politicianId&&u.active===active;
+   const result=await actions.setAccess(id,active);
+   if(!consistent(result))throw new AdminMutationError(0,true);
+   let current;try{current=await request('/api/admin/users');}catch(error){throw new AdminMutationError(error.status,true);}
+   const confirmed=Array.isArray(current)?current.filter(u=>u.id===id):[];
+   if(confirmed.length!==1||!consistent(confirmed[0]))throw new AdminMutationError(0,true);
+   return confirmed[0];
   });},
   invite(id){return mutate(()=>invite(id));},
   async settings(key){if(!['budget','sources','runs'].includes(key))throw new AdminMutationError(400);return reader.read(key);},
