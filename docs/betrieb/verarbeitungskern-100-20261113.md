@@ -255,6 +255,47 @@ Keine breite CI, alten Mengenfaelle, bezahlten Modelle oder Production-Aenderung
 in diesem Abnahmeschritt. Der im ersten Umsetzungsschritt versehentlich gelaufene
 500er Altfall bleibt ausschliesslich als oben dokumentierte Abweichung erhalten.
 
+## Begrenzte Pflicht-CI nach weiterem Betreiber-Go (13.11.2026)
+
+Die beiden Pflichtnamen bleiben erhalten. Ein neuer ausdruecklich manueller
+`verarbeitungskern`-Modus gilt ausschliesslich fuer PR1183. Anfrage, Workflow,
+Checkout und aktueller PR-Kopf muessen denselben exakten Commit benennen;
+Repository, PR-Basis und Branch werden gegen aktuelle GitHub-Metadaten geprueft.
+Alle Dateien ausser den fuenf konkret benannten CI-Dateien und diesen beiden
+Statusdokumenten muessen samt Modus/Blob-ID exakt dem unabhaengig abgenommenen
+Stand `bce55393` entsprechen. Neue, geloeschte, umbenannte, ausfuehrbare oder
+verlinkte Laufzeitdateien sowie unbekannte SQL-/Guard-/CI-Aenderungen stoppen.
+Fehlende Bindungen oder unbekannte Modi starten niemals ersatzweise alte Suiten.
+
+Neu ausgefuehrt werden die kleinen CI-Auswahl-/Negativfaelle und ein neuer
+Chromium-Weg fuer das gespeicherte Tagespaket bei 1280/390 Pixeln. Dieser verwendet
+vorhandene synthetische Daten und die echte SPA/HTTP-Autorisierung. Geprueft
+werden Paket-/Profil-/Quellen-/Tagesbindung, belegter Narrativtext, ehrlicher
+Teilstatus, Lage/Radar/Briefing/Buero-Navigation sowie Tenantmanipulation und
+anonymer Zugriff. Korpus-/Modell-/Schreibzugriffe und externe Browserabrufe sind
+gesperrt; Paket/Quittung werden nur gelesen. Fehlender Chromium ist ein Fehler.
+
+Die bisherigen Fach-/SQL-Nachweise sind **wiederverwendet, nicht erneut in CI
+ausgefuehrt**; Offline-Zusammenfassung und beide Planausgaben grenzen den Umfang ab.
+Kein alter Browsergesamtlauf, Mock100/500, Mengenlauf oder DB-Dienst im begrenzten
+Modus. Das bestehende angeheftete Playwright und die bisherigen zwei Pflichtchecks
+werden weiterverwendet. Der GitHub-Token liest nur PR-Metadaten im Planschritt;
+Checkout speichert ihn in diesem Modus nicht fuer nachfolgende Testprozesse.
+
+Lokal bestanden die 15 neuen Auswahlpruefgruppen gezielt (12 beim ersten Lauf,
+zwei nach Korrektur einer zu breit gefassten Testassertion, eine neue Token-/
+Zusammenfassungspruefung separat). YAML lesbar; Syntax und Diff geprueft.
+Zwei unabhaengige Codex-Auftraege fuer Browserimplementation und read-only Review,
+klar getrennte Dateien; finales Review ohne Befund. Kein lokaler Browserdoppellauf.
+Das tatsaechliche CI-Ergebnis ist erst am konkreten Lauf/Commit belegt, siehe
+[PR1183 und dessen Checks](https://github.com/ernisch/helmut-pilot/pull/1183).
+
+Die normale konservative Auswahl bleibt unveraendert. Insbesondere startet ein
+spaeterer `main`-Push weiterhin den normalen Pruefplan; dieser enge manuelle Modus
+ist keine automatische Ausnahme fuer Merge, andere PRs oder Folgeaenderungen.
+Vor einem spaeter freigegebenen Merge muss auch dieser Ausloesepfad geklaert sein,
+damit keine untersagten alten Mengenlaeufe ausgeloest werden.
+
 ## Rueckweg und verbleibende Grenze
 
 Die neue Migration liegt mit passender `rollback_...sql` vor und ist **nicht**
@@ -265,11 +306,12 @@ Indizes sowie `last_seen_window`; eigentliche Artikel, Jobs, Abschluesse, Kosten
 Reservierungen, Quellenarchive und Tagespakete bleiben erhalten. Die neue
 Wiederbeobachtungsmetadaten-Spalte faellt beim Rueckweg weg.
 
-Offen bleiben Mergereife/Pflicht-CI, freizugebende Migration und Deployment,
+Offen bleiben das konkrete Pflicht-CI-Ergebnis laut PR, der spaetere `main`-CI-
+Ausloesepfad, gesonderte Mergefreigabe, freizugebende Migration und Deployment,
 authentifizierte echte Kundenabnahme sowie die belegte Zeit-/Kosten-/RAM-
 Dimensionierung vor Zulassung weiterer Kunden. Weder der erste zahlende Kunde
 noch 100 aktive Kunden werden durch diesen Entwicklungsstand automatisch aktiviert.
 
-**Genau naechster Schritt:** Den Pflicht-CI-Pruefumfang fuer diesen Endstand
-gezielt begrenzen, damit keine untersagten alten Mengenlaeufe gestartet werden.
-Bis erfolgreiche Pflichtchecks vorliegen bleibt der PR ein Entwurf ohne Mergefreigabe.
+**Genau naechster Schritt nach erfolgreicher begrenzter CI:** kontrollierten
+Einprofil-Rollout einschliesslich Migrationsreihenfolge und Rueckweg konkret zur
+gesonderten Freigabe vorlegen. Der PR bleibt bis dahin ein Entwurf ohne Mergefreigabe.

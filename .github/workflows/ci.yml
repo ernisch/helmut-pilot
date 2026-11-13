@@ -23,12 +23,12 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Standard-CI oder genau ein Mock100 nach bestandener Pflicht-CI'
+        description: 'Standard, explizite Kernabnahme ohne alte Mengenlaeufe oder gesonderter Mock100'
         type: choice
-        options: [standard, mock100]
+        options: [standard, verarbeitungskern, mock100]
         default: standard
       expected_commit:
-        description: 'Mock100: exakt gepruefter 40-stelliger Kandidatencommit'
+        description: 'Kernabnahme/Mock100: exakt angefragter 40-stelliger Kandidatencommit'
         type: string
         default: ''
       prerequisite_ci_run_id:
@@ -42,6 +42,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}${{ inputs.mode == 'mock100' && '-mock100' || '' }}
@@ -73,7 +74,7 @@ jobs:
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
     services:
       postgres:
-        image: postgres:17
+        image: ${{ inputs.mode != 'verarbeitungskern' && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: helmut
           POSTGRES_PASSWORD: helmut
@@ -93,13 +94,34 @@ jobs:
           # Basis-Commit im flachen Checkout.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: ${{ inputs.mode != 'verarbeitungskern' }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Prüfplan aus geänderten Dateien
         id: plan
+        env:
+          HELMUT_CI_MODE: ${{ inputs.mode }}
+          HELMUT_CI_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
+          case "${HELMUT_CI_MODE:-standard}" in
+            standard) ;;
+            verarbeitungskern)
+              test "$GITHUB_EVENT_NAME" = workflow_dispatch
+              test "$GITHUB_REPOSITORY" = ernisch/helmut-pilot
+              curl --fail --silent --show-error --max-time 20 \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/ernisch/helmut-pilot/pulls/1183 \
+                > "$RUNNER_TEMP/helmut-kern-pr.json"
+              node scripts/ci-pruefplan.js --verarbeitungskern-metadata "$RUNNER_TEMP/helmut-kern-pr.json" \
+                --expected-commit "$HELMUT_CI_EXPECTED_COMMIT" --github-output "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            *) echo 'Unbekannter manueller CI-Modus: gestoppt' >&2; exit 1 ;;
+          esac
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
             CHANGED="$(git diff --name-only "$BASE" "${{ github.event.pull_request.head.sha || github.sha }}")"
@@ -119,13 +141,29 @@ jobs:
         # ziehen als der Lockfile-Stand, den wir geprüft haben.
         run: npm ci
       - name: Syntax-Check aller JS-Dateien
-        if: steps.plan.outputs.syntax == 'true'
+        if: steps.plan.outputs.syntax == 'true' && steps.plan.outputs.verarbeitungskern != 'true'
         run: |
           set -e
           for f in server.js client.js sw.js api/index.js lambda/*.js lib/helmut/*.js lib/helmut/kalender/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js scripts/*.js; do
             node --check "$f"
           done
           echo "Syntax OK"
+      - name: Begrenzte Kernabnahme - neue CI-Auswahl und Negativfaelle
+        if: steps.plan.outputs.verarbeitungskern == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/lokal.js scripts/ci-verarbeitungskern-plan-test.js
+      - name: Wiederverwendete Kernnachweise sichtbar abgrenzen
+        if: steps.plan.outputs.verarbeitungskern == 'true'
+        run: |
+          {
+            echo '### Begrenzte Kernabnahme PR1183'
+            echo 'Anwendungscode, SQL, Guards und Abhaengigkeiten exakt wie im geprueften bce55393.'
+            echo 'Bisherige lokale Code-/SQL-Nachweise: WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT.'
+            echo 'Beleg: https://github.com/ernisch/helmut-pilot/blob/bce55393256d3ab17f84761452a386bf1f5d9f30/docs/betrieb/verarbeitungskern-100-20261113.md'
+            echo 'Hier ausgefuehrt: neue CI-Auswahl-/Negativpruefungen. Neuer Paket-Browserweg im Browser-Pflichtjob vorgesehen; Ergebnis dort.'
+            echo 'Kein Mock100/500, kein Mengenlauf, keine Production- oder Kapazitaetsfreigabe.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: SOURCE23 geschlossener Tuple-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         # Ziel ist genau die Testdatei des neuen geschlossenen Codec
@@ -137,6 +175,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
+        if: steps.plan.outputs.verarbeitungskern != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -514,13 +553,34 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: ${{ inputs.mode != 'verarbeitungskern' }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Prüfplan aus geänderten Dateien
         id: plan
+        env:
+          HELMUT_CI_MODE: ${{ inputs.mode }}
+          HELMUT_CI_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
+          case "${HELMUT_CI_MODE:-standard}" in
+            standard) ;;
+            verarbeitungskern)
+              test "$GITHUB_EVENT_NAME" = workflow_dispatch
+              test "$GITHUB_REPOSITORY" = ernisch/helmut-pilot
+              curl --fail --silent --show-error --max-time 20 \
+                -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/ernisch/helmut-pilot/pulls/1183 \
+                > "$RUNNER_TEMP/helmut-kern-pr.json"
+              node scripts/ci-pruefplan.js --verarbeitungskern-metadata "$RUNNER_TEMP/helmut-kern-pr.json" \
+                --expected-commit "$HELMUT_CI_EXPECTED_COMMIT" --github-output "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            *) echo 'Unbekannter manueller CI-Modus: gestoppt' >&2; exit 1 ;;
+          esac
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
             CHANGED="$(git diff --name-only "$BASE" "${{ github.event.pull_request.head.sha || github.sha }}")"
@@ -529,10 +589,10 @@ jobs:
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
       - name: Abhängigkeiten installieren (aus package-lock.json)
-        if: steps.plan.outputs.browser == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.verarbeitungskern == 'true'
         run: npm ci
       - name: Playwright + Chromium installieren
-        if: steps.plan.outputs.browser == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.verarbeitungskern == 'true'
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
@@ -575,6 +635,13 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js
+
+      - name: Gespeichertes Tagespaket - neuer Desktop-/Mobilweg
+        if: steps.plan.outputs.verarbeitungskern == 'true'
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/lokal.js scripts/browser-smoke-test.js --tagespaket
 
   synthetic-resource-diagnostic:
     name: Mock100 — einmalig, synthetisch und ohne Anbieteraufrufe

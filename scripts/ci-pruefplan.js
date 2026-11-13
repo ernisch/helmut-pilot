@@ -106,17 +106,27 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--files") out.files.push(...String(argv[++i] || "").split(/\r?\n|\s+/).filter(Boolean));
     else if (argv[i] === "--github-output") out.githubOutput = argv[++i] || null;
+    else if (argv[i] === "--verarbeitungskern-metadata") out.metadata = argv[++i] || null;
+    else if (argv[i] === "--expected-commit") out.expectedCommit = argv[++i] || null;
     else throw new Error("unknown-argument:" + argv[i]);
   }
   return out;
 }
 
+function validateRequestArgs(args) {
+  const requested = Object.hasOwn(args, "metadata") || Object.hasOwn(args, "expectedCommit");
+  if (requested && (!args.metadata || !args.expectedCommit || args.files.length))
+    throw Error("verarbeitungskern-request-unvollstaendig-oder-dateiliste-unzulaessig");
+  return requested;
+}
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const result = plan(args.files);
+  const result = validateRequestArgs(args)
+    ? require("./ci-verarbeitungskern-plan").fromCheckout({ expectedCommit: args.expectedCommit,
+      pr: JSON.parse(fs.readFileSync(args.metadata, "utf8")) }) : plan(args.files);
   console.log(JSON.stringify(result));
   if (args.githubOutput) {
-    for (const key of ["standard", "core", "area", "database", "browser", "syntax", "npm"]) {
+    for (const key of ["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern"]) {
       fs.appendFileSync(args.githubOutput, key + "=" + String(Boolean(result[key])) + "\n");
     }
     fs.appendFileSync(args.githubOutput, "mode=" + result.mode + "\n");
@@ -125,4 +135,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { FULL_FILES, BROWSER_DIRECT, plan, parseArgs };
+module.exports = { FULL_FILES, BROWSER_DIRECT, plan, parseArgs, validateRequestArgs };
