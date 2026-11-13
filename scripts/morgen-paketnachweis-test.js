@@ -84,6 +84,11 @@ async function run(profiles = [profile], options = {}) {
     validateProfile: p => ({ disabled: !T.isActiveMandate(p) }),
     buildV3Briefing: async p => { calls.push(p.id); now += options.advanceMs || 0;
       if (options.buildError) throw new Error("offline-build-error"); return clone(options.briefing || briefing); },
+    buildLageBriefing: async (p, opts) => {
+      assert.equal(opts.cacheOnly, true);
+      return B.lageAusgabe(saved.rows.get(`bf-${p.id}-lage-${day}`)?.payload)
+        || { available: false, paragraphs: [], vorgaenge: [] };
+    },
     cronFairness: { ...F, fairnessEnabled: () => options.fairness !== false,
       runTenantsFairly: args => F.runTenantsFairly({ ...args, now: () => now }) },
     readCronFairnessState: async () => ({ ok: !options.fairnessError, state: clone(saved.fairness) }),
@@ -99,7 +104,14 @@ async function run(profiles = [profile], options = {}) {
   return { response: clean(await script.runInContext(context)), saved, calls, now };
 }
 let passed = 0;
-async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
+const filter = process.argv.find(v => v.startsWith("--filter="))?.slice("--filter=".length);
+async function test(name, fn) {
+  // Bei einer ausdruecklichen Einzelfallauswahl keine historischen
+  // Kapazitaetsfaelle nebenbei starten; deren Nachweise bleiben gueltig.
+  if (filter && /\b(?:100|500)\b/.test(name)) return;
+  if (filter && !new RegExp(filter).test(name)) return;
+  await fn(); passed++; console.log("PASS " + name);
+}
 (async () => {
   await test("Morgenlauf speichert ein Paket und zaehlt fehlende Lage nicht als Vollversorgung", async () => {
     const r = await run();
@@ -204,7 +216,8 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     await run([profile], { saved });
     const row = saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);
     row.payload.lage.quellenVersion = E.VERSION - 1;
-    row.payload.inhaltHash = B.hash({ briefing: row.payload.briefing, lage: row.payload.lage });
+    row.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(row.payload);
+    row.payload.inhaltHash = B.inhaltHash(row.payload);
     const before = clone(row);
     const r = await run([profile], { saved, nowMs: startMs + 3600000 });
     assert.equal(r.response.versorgung.vollstaendigePakete, 0);

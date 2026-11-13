@@ -24,7 +24,12 @@ const scalable = require("../lib/helmut/scalable-pipeline");
 const ROOT = path.join(__dirname, "..");
 let pass = 0;
 let fail = 0;
+const checkArg = process.argv.find(a => a.startsWith("--gruppen="));
+const checkGruppen = checkArg ? new Set(checkArg.slice(10).split(",")) : null;
+if (checkGruppen && [...checkGruppen].some(g => !/^(?:[1-8]|6b)$/.test(g)))
+  throw Error("ungueltige-Gruppenauswahl");
 async function check(name, fn) {
+  if (checkGruppen && !checkGruppen.has(name.split(".")[0])) return;
   try { await fn(); pass += 1; console.log(`  PASS  ${name}`); }
   catch (error) { fail += 1; console.log(`  FAIL  ${name} — ${error && error.message}`); }
 }
@@ -34,7 +39,7 @@ const UUID = "123e4567-e89b-42d3-a456-426614174000";
 const UUID2 = "223e4567-e89b-42d3-a456-426614174000";
 const QUEUE = "https://sqs.eu-central-1.amazonaws.com/123456789012/helmut-auftraege-production";
 const SQS_ENV = {
-  HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+  HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_KLASSEN_GRENZEN: "on",
   HELMUT_JOB_TRANSPORT: "sqs", AWS_REGION: "eu-central-1", HELMUT_SQS_QUEUE_URL: QUEUE
 };
 
@@ -128,7 +133,7 @@ async function main() {
     assert.strictEqual(frei.erlaubt, false);
     assert.match(frei.grund, /production-gesperrt/);
     const t = dispatch.erstelleTransport({
-      HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+      HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_KLASSEN_GRENZEN: "on",
       HELMUT_JOB_TRANSPORT: "selbstweck", VERCEL_ENV: "production"
     }, {});
     assert.strictEqual(t.verfuegbar, false);

@@ -50,17 +50,21 @@ function ladeMutiert(relativerPfad, ersetzungen) {
 
 const UUID = "123e4567-e89b-42d3-a456-426614174000";
 const SQS_ENV = {
-  HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+  HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_KLASSEN_GRENZEN: "on",
   HELMUT_JOB_TRANSPORT: "sqs", AWS_REGION: "eu-central-1",
   HELMUT_SQS_QUEUE_URL: "https://sqs.eu-central-1.amazonaws.com/1/helmut-test"
 };
 
+const mutationsArg = process.argv.find(a => a.startsWith("--mutationen="));
+const mutationsAuswahl = mutationsArg ? new Set(mutationsArg.slice(13).split(",")) : null;
+if (mutationsAuswahl && [...mutationsAuswahl].some(m => !/^[1-7]$/.test(m)))
+  throw Error("ungueltige-Mutationsauswahl");
 async function main() {
   console.log("Helmut — Mutationsprobe verwalteter Queue-Verbraucher");
   console.log("ROT = Mutation erkannt (gut) · GRUEN = Loch im Testnetz (schlecht)\n");
 
   // ── M1: terminale Auftraege werden erneut bearbeitet ────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("1")) {
     const mutiert = ladeMutiert("lib/helmut/queue-verbraucher.js", [
       [`    if (grund.startsWith("bereits-")) {
       return { erledigt: true, gearbeitet: false, grund, dauerMs: (deps.now || Date.now)() - start };
@@ -71,14 +75,14 @@ async function main() {
     ]);
     const r = await mutiert.verarbeiteWecksignal({
       payload: { jobId: UUID, schemaVersion: 1 }, env: SQS_ENV,
-      deps: { claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "bereits-erledigt" }) } });
+      deps: { supabasePflicht: false, claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "bereits-erledigt" }) } });
     // Der Vertragstest verlangt: erledigt=true, gearbeitet=false (Nachricht wird geloescht).
     ergebnis("M1 Terminale Auftraege bei mehrfacher Zustellung", r.erledigt !== true,
       JSON.stringify(r));
   }
 
   // ── M2: irgendein Auftrag statt des signalisierten ──────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("2")) {
     const mutiert = ladeMutiert("lib/helmut/queue-verbraucher.js", [
       ["    jobId: payload.jobId, owner: besitzer, leaseMs: VERBRAUCHER_LEASE_MS",
        "    jobId: \"00000000-0000-4000-8000-000000000000\", owner: besitzer, leaseMs: VERBRAUCHER_LEASE_MS"]
@@ -86,27 +90,27 @@ async function main() {
     const gesehen = [];
     await mutiert.verarbeiteWecksignal({
       payload: { jobId: UUID, schemaVersion: 1 }, env: SQS_ENV,
-      deps: { claimById: async (o) => { gesehen.push(o.jobId); return { verfuegbar: true, uebernommen: false, grund: "unbekannt" }; } } });
+      deps: { supabasePflicht: false, claimById: async (o) => { gesehen.push(o.jobId); return { verfuegbar: true, uebernommen: false, grund: "unbekannt" }; } } });
     ergebnis("M2 Genau der signalisierte Auftrag wird beansprucht", gesehen[0] !== UUID,
       `beansprucht=${gesehen[0]}`);
   }
 
   // ── M3: Payloadpruefung entfaellt ───────────────────────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("3")) {
     const mutiert = ladeMutiert("lib/helmut/queue-verbraucher.js", [
       ["    jobDispatch.pruefeTransportPayload(payload);", "    /* Pruefung entfernt */"]
     ]);
     let beansprucht = false;
     const r = await mutiert.verarbeiteWecksignal({
       payload: { jobId: "kein-uuid", schemaVersion: 1, mandat: "geheim" }, env: SQS_ENV,
-      deps: { claimById: async () => { beansprucht = true; return { verfuegbar: true, uebernommen: false, grund: "unbekannt" }; } } });
+      deps: { supabasePflicht: false, claimById: async () => { beansprucht = true; return { verfuegbar: true, uebernommen: false, grund: "unbekannt" }; } } });
     // Ohne Pruefung wuerde ein regelwidriges Signal bis zur Beanspruchung durchlaufen.
     ergebnis("M3 Signalpruefung im Verbraucher", beansprucht === true || r.grund !== "payload-ungueltig",
       JSON.stringify(r));
   }
 
   // ── M4: unbekannter Auftrag kreist ewig statt in die Quarantaene ────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("4")) {
     const mutiert = ladeMutiert("lib/helmut/queue-verbraucher.js", [
       [`    if (grund === "unbekannt") {
       return { erledigt: false, quarantaene: true, gearbeitet: false, grund: "auftrag-unbekannt" };
@@ -117,12 +121,12 @@ async function main() {
     ]);
     const r = await mutiert.verarbeiteWecksignal({
       payload: { jobId: UUID, schemaVersion: 1 }, env: SQS_ENV,
-      deps: { claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "unbekannt" }) } });
+      deps: { supabasePflicht: false, claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "unbekannt" }) } });
     ergebnis("M4 Unbekannter Auftrag geht in die Quarantaene", r.quarantaene !== true, JSON.stringify(r));
   }
 
   // ── M5: partielle Fehlerantwort meldet nichts ───────────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("5")) {
     const mutiert = ladeMutiert("lib/helmut/lambda-verbraucher.js", [
       ["  return { batchItemFailures, bilanz };", "  return { batchItemFailures: [], bilanz };"]
     ]);
@@ -135,7 +139,7 @@ async function main() {
   }
 
   // ── M6: 429 gilt als Erfolg (Befund 1 kehrt zurueck) ────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("6")) {
     const mutiert = ladeMutiert("lib/helmut/job-dispatch.js", [
       [`        if (antwort && antwort.status === 429) {
           return { ok: false, unbestaetigt: true, grund: "weck-niemand-uebernommen" };
@@ -153,7 +157,7 @@ async function main() {
   }
 
   // ── M7: Ziel-Riegel laesst eine fremde Region durch ─────────────────────────────────────
-  {
+  if (!mutationsAuswahl || mutationsAuswahl.has("7")) {
     const mutiert = ladeMutiert("lib/helmut/job-dispatch.js", [
       [`  if (!SQS_ERLAUBTE_REGIONEN.includes(String(region || ""))) {
     return { ok: false, grund: \`sqs-region-unzulaessig:\${String(region || "").slice(0, 20)}\` };

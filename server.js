@@ -729,29 +729,15 @@ async function handleRequest(request, response) {
       const profile = await timed("profile", () => activeProfile(politicianId));
       // Nach der unveraenderten Autorisierung und Profilaufloesung sind diese
       // Leser unabhaengig. Alle Promises sofort beobachten, auch bei Teilfehlern.
-      const [briefing, lageBriefing, tasks, notes, latestUpdatedAt] = await Promise.all([
+      const [briefing, tasks, notes] = await Promise.all([
         timed("briefing", () => latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true })),
-        timed("lage", async () => {
-          // Nur Karten und bestaetigter Cachetext, niemals ein Modellstart.
-          try { return await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
-          catch (error) {
-            console.error("Lage-Karten fehlgeschlagen", error && error.message);
-            return { available: false, demo: false, reason: "error",
-              generatedAt: new Date().toISOString(), paragraphs: [], vorgaenge: [] };
-          }
-        }),
         timed("tasks", () => getTasks(profile.id)),
-        timed("notes", () => getUserNotes(profile.id)),
-        timed("freshness", () => getLatestCompleteKnowledgeObjectAt())
+        timed("notes", () => getUserNotes(profile.id))
       ]);
-      briefing.lageBriefing = lageBriefing;
       // Ausschliesslich feste Phasennamen und Millisekunden, keine Inhalte/IDs.
       // Gesamtzeit ab Profilabruf; Sitzungspruefung und Netztransfer liegen davor/danach.
       timings.push(`start;dur=${Date.now() - startAt}`);
       response.setHeader("Server-Timing", timings.join(", "));
-      if (briefing.lageBriefing && typeof briefing.lageBriefing === "object") {
-        briefing.lageBriefing.latestUpdatedAt = latestUpdatedAt || null;
-      }
       return {
         // Onboarding-Freigabe (Audit-Fix 2026-07): das Profil traegt seinen
         // Pflichtfeld-/Freigabestatus (additiv; wird beim Speichern ignoriert).
@@ -888,13 +874,12 @@ async function handleRequest(request, response) {
     });
   }
 
-  // Lage-Briefing (V3): KO-basiertes, gecachtes KI-Briefing + echte Vorgänge/Quellen.
-  // Reiner Read; erzeugt nur bei fehlendem/veraltetem Cache neu (?force=1 erzwingt).
+  // Derselbe gespeicherte Lage-Stand wie beim Appstart. GET erzeugt keine KI.
   if (url.pathname === "/api/lage/briefing") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const force = isForcedPilotRun(request, url) || hasAdminBypass(request, url);
-      return buildLageBriefing(profile, { politicianId, force });
+      const briefing = await latestBriefingPayload({ politicianId, profile, url });
+      return briefing.lageBriefing;
     });
   }
 
@@ -1206,9 +1191,14 @@ async function handleRequest(request, response) {
         const buildTimeout = Boolean(briefing && briefing.reason === "build-timeout");
         const speicherfehler = Boolean(briefing && ["store-error", "v3-store-disabled"].includes(briefing.reason));
         const morgenversorgung = require("./lib/helmut/morgenversorgung");
+        // Die vollstaendige Lageansicht wird einmal im Hintergrund gebunden.
+        // Sie darf hier nur vorhandene gepruefte Texte/Karten lesen, keine KI.
+        const lageAnsicht = !buildTimeout && !speicherfehler
+          ? await withTimeout(buildLageBriefing(profile, { politicianId: tenantId, cacheOnly: true }), 15000, "morgen-lage-ansicht")
+            .catch(() => null) : null;
         const paket = !buildTimeout && !speicherfehler
           ? await morgenversorgung.speicherePaket({ profile, userId: tenantId, briefing,
-            storage: storageModul, tag: berlinTag, now: new Date() })
+            lageAnsicht, storage: storageModul, tag: berlinTag, now: new Date() })
             .catch(() => ({ beleg: { tag: berlinTag, gespeichert: false, verifiziert: false,
               vollstaendig: false, fehler: "morgenpaket-nicht-bestaetigt" } }))
           : null;
@@ -3590,31 +3580,9 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
         vorgaengerId: row.payload.profilkontextUebergang?.vorgaengerId || null,
         pruefung: row.payload.pruefung } }, { previewMode, compact, frischeKontext: null });
   }
-  // Optionaler Slot-Override (?slot=morning|midday|evening|daily) fuer Tests/Admin/
-  // spaetere Cron-Nutzung. Ohne Parameter leitet buildV3Briefing den Slot aus der
-  // Serverzeit (Europe/Berlin) ab. Ungueltige Werte -> 'daily' (kein Crash).
-  const slot = url && url.searchParams ? url.searchParams.get("slot") : null;
-  // Read-only Auswahl-Diagnose NUR bei ?debugPrimary=1 (technische Felder, keine Secrets/
-  // Texte/Kosten/PII). Ohne den Parameter bleibt die Antwort unveraendert.
-  const debug = Boolean(url && url.searchParams && url.searchParams.get("debugPrimary") === "1");
-  // Read-only Radar-Relations-Diagnose NUR bei ?debugRadarRelations=1 (nur Titel/Quelle/
-  // Kategorie + technische Partei-Belege; keine Secrets/Kosten/Admin/Rohtexte). Ohne den
-  // Parameter bleibt die Antwort unveraendert (kein Debug-Objekt).
-  const debugRadar = Boolean(url && url.searchParams && url.searchParams.get("debugRadarRelations") === "1");
-  const commitSha = process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null;
-  const debugMeta = debug ? {
-    commit: commitSha,
-    version: commitSha,
-    apiOrigin: (url && (url.origin || (url.protocol && url.host ? `${url.protocol}//${url.host}` : null))) || null
-  } : null;
-  // Frischevertrag: Beleg + Fenster VOR dem Bau laden, damit der Contract-Adapter
-  // die Meldungen am selben Fenster einordnet, das die Antwort spaeter ausweist.
-  const frischeKontext = await ladeFrischeKontext(politicianId, new Date());
-  const briefing = await buildV3Briefing(profile, politicianId, {
-    slot, debug, debugMeta, debugRadar, commit: commitSha,
-    frischeFenster: frischeKontext ? frischeKontext.fenster : null
-  });
-  return prepareBriefingResponse(briefing, { previewMode, compact, frischeKontext });
+  const paket = await require("./lib/helmut/tagespaket-auslieferung").lese({
+    userId: politicianId, profile, storage: storageModul });
+  return prepareBriefingResponse(paket.briefing, { previewMode, compact, frischeKontext: paket.frischeKontext });
 }
 
 // opts.slot (optional): expliziter Slot-Override (Tests/Admin/spaetere Cron-Nutzung).
@@ -3689,6 +3657,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     publicationEligibility.assertSame(publicationPolicy);
     const policyInfo = publicationEligibility.publicInfo(publicationPolicy);
     if (policyInfo) briefing.publicationEligibilityPolicy = policyInfo;
+    briefing.tagespaketGrundlage = require("./lib/helmut/tagespaket-auslieferung").grundlage(briefing, kos);
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
       // Erst nach den bestehenden Quellen- und Anzeigefiltern zaehlen. Ein

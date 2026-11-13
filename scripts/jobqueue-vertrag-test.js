@@ -28,6 +28,15 @@ function check(name, ok, detail = "") {
 function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
 
 const AN = { HELMUT_SCALABLE_PIPELINE: "on" };
+// Die Queue-Attrappe bekommt einen ausdruecklichen isolierten Klassenadapter.
+// Produktionscode darf die verteilte Pflichtgrenze nicht fuer Tests abschalten.
+const arbeiteMitGrenze = optionen => SP.arbeite({ ...optionen, deps: {
+  klassen: { aktiv: true, belege: async () => ({ erlaubt: true, slot: "isolierter-slot" }), gebeFrei: async () => {} },
+  ...optionen.deps
+} });
+const auswahlArg = process.argv.find(a => a.startsWith("--abschnitte="));
+const auswahl = auswahlArg ? new Set(auswahlArg.slice(13).split(",")) : null;
+if (auswahl && [...auswahl].some(a => !/^(?:[1-9]|1[0-2])$/.test(a))) throw Error("ungueltige-Abschnittsauswahl");
 
 // Uhr, die der Test steuert.
 function uhr(startIso = "2026-08-08T00:00:00Z") {
@@ -53,6 +62,7 @@ async function main() {
   console.log("Helmut — Vertragstest Arbeitswarteschlange + Worker (OP-30)");
 
   // ─────────────────────────────────────────────────────────────────────────
+  if (!auswahl || auswahl.has("1")) {
   abschnitt("1 · Flaggrenze — der wichtigste Riegel");
   check("1.1 Ohne Flag ist der skalierbare Pfad AUS", SP.skalierbarerPfadAktiv({}) === false);
   check("1.2 Leerer Wert = AUS", SP.skalierbarerPfadAktiv({ HELMUT_SCALABLE_PIPELINE: "" }) === false);
@@ -75,12 +85,14 @@ async function main() {
   }
   {
     let geclaimt = false;
-    const ergebnis = await SP.arbeite({ env: {}, deps: { claim: async () => { geclaimt = true; return { verfuegbar: true, auftraege: [] }; } } });
+    const ergebnis = await arbeiteMitGrenze({ env: {}, deps: { claim: async () => { geclaimt = true; return { verfuegbar: true, auftraege: [] }; } } });
     check("1.8 Ohne Flag reserviert der Worker nichts und fragt die Warteschlange NICHT",
       ergebnis.uebersprungen === true && geclaimt === false);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("2")) {
   abschnitt("2 · Idempotenz");
   {
     const u = uhr();
@@ -102,6 +114,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("3")) {
   abschnitt("3 · Parallelitaet: zwei Worker greifen nie denselben Auftrag");
   {
     const u = uhr();
@@ -119,6 +133,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("4")) {
   abschnitt("4 · Lease, Absturz, Wiederaufnahme");
   {
     const u = uhr();
@@ -139,6 +155,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("5")) {
   abschnitt("5 · Abschluss, Doppelabschluss, Wiederholungsgrenze");
   {
     const u = uhr();
@@ -174,13 +192,15 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("6")) {
   abschnitt("6 · Worker: Ablauf, Zeitbudget, Fehlerklassen");
   {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     for (let i = 0; i < 5; i += 1) await q.enqueue(auftrag({ idempotencyKey: `W${i}` }));
     let ausgefuehrt = 0;
-    const bilanz = await SP.arbeite({
+    const bilanz = await arbeiteMitGrenze({
       env: AN, owner: "w-test", budgetMs: 60000, leaseMs: 60000, stapel: 3,
       deps: {
         now: u.jetzt, claim: q.claim, finish: q.finish, extendLease: q.extendLease,
@@ -197,7 +217,7 @@ async function main() {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     await q.enqueue(auftrag({ idempotencyKey: "U", jobType: "document_understanding", maxAttempts: 5 }));
-    const bilanz = await SP.arbeite({
+    const bilanz = await arbeiteMitGrenze({
       env: AN, owner: "w", budgetMs: 60000, leaseMs: 60000, stapel: 5,
       deps: { now: u.jetzt, claim: q.claim, finish: q.finish, extendLease: q.extendLease, handler: {} }
     });
@@ -211,7 +231,7 @@ async function main() {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     await q.enqueue(auftrag({ idempotencyKey: "T", maxAttempts: 5 }));
-    await SP.arbeite({
+    await arbeiteMitGrenze({
       env: AN, owner: "w", budgetMs: 60000, leaseMs: 60000, stapel: 5,
       deps: {
         now: u.jetzt, claim: q.claim, finish: q.finish, extendLease: q.extendLease,
@@ -230,7 +250,7 @@ async function main() {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     for (let i = 0; i < 20; i += 1) await q.enqueue(auftrag({ idempotencyKey: `B${i}` }));
-    const bilanz = await SP.arbeite({
+    const bilanz = await arbeiteMitGrenze({
       env: AN, owner: "w", budgetMs: 10000, leaseMs: 60000, stapel: 20,
       deps: {
         now: u.jetzt, claim: q.claim, finish: q.finish, extendLease: q.extendLease,
@@ -268,7 +288,7 @@ async function main() {
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     await q.enqueue(auftrag({ idempotencyKey: "H" }));
     const t0 = Date.now();
-    const bilanz = await SP.arbeite({
+    const bilanz = await arbeiteMitGrenze({
       env: AN, owner: "w", budgetMs: 8000, leaseMs: 60000, stapel: 1,
       deps: {
         now: () => Date.now(), claim: q.claim, finish: q.finish, extendLease: q.extendLease,
@@ -292,6 +312,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("7")) {
   abschnitt("7 · Fehlerbereinigung: keine Geheimnisse in der Ablage");
   {
     const proben = [
@@ -329,6 +351,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("8")) {
   abschnitt("8 · Betriebsmessung und Schwellen");
   {
     const u = uhr();
@@ -369,6 +393,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("9")) {
   abschnitt("9 · Gleichheit der Attrappe mit der ECHTEN Datenbank");
   {
     const host = process.env.HELMUT_TEST_PG_HOST || "";
@@ -525,6 +551,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("10")) {
   abschnitt("10 · Handler benutzen die Bestandsfunktionen (keine zweite Fachlogik)");
   {
     const quelltext = require("fs").readFileSync(path.join(ROOT, "lib/helmut/scalable-pipeline.js"), "utf8");
@@ -589,6 +617,8 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  }
+  if (!auswahl || auswahl.has("11")) {
   abschnitt("11 · Scheduler plant, arbeitet aber nicht");
   {
     const u = uhr();
@@ -648,6 +678,8 @@ async function main() {
   // ═══ 12 · Befunde des unabhaengigen Abschlussreviews 2026-08-08 ════════════
   // Regressionen zu Fehlern, die erst der Abschlussreview gefunden hat. Jede Pruefung
   // hier hat vor der Korrektur NACHWEISLICH die falsche Antwort gegeben.
+  }
+  if (!auswahl || auswahl.has("12")) {
   abschnitt("12 · Abschlussreview 2026-08-08: Kennungswahrheit, Stapelrest, ehrlicher Abschluss");
   {
     // ── 12.1–12.3 · Der Verstehensauftrag traegt die Kennung der ABLAGE ──────────────
@@ -714,7 +746,7 @@ async function main() {
         dueAt: new Date(u2.jetzt()).toISOString(), priority: 100, maxAttempts: 5 });
     }
     // Der erste Auftrag verbraucht das gesamte Zeitbudget; die drei uebrigen kommen nicht dran.
-    const restBilanz = await SP.arbeite({
+    const restBilanz = await arbeiteMitGrenze({
       env: AN, owner: "w-rest", budgetMs: 60000, leaseMs: 600000, stapel: 4,
       deps: {
         now: u2.jetzt, claim: q2.claim, finish: q2.finish, extendLease: q2.extendLease,
@@ -738,7 +770,7 @@ async function main() {
     await q3.enqueue({ jobType: "mandate_projection", idempotencyKey: "lease-1",
       freshnessWindow: "F1", tenantId: "m1", payload: { mandatsId: "m1" },
       dueAt: new Date(u3.jetzt()).toISOString(), priority: 100, maxAttempts: 5 });
-    await SP.arbeite({
+    await arbeiteMitGrenze({
       // Lease bewusst KLEIN: das Auftragsbudget ist dann 2 000 ms, der Nachweis kostet
       // zwei Sekunden statt zehn. Das Pflicht-Gate soll nicht an einer Wartezeit haengen.
       env: AN, owner: "w-lease", budgetMs: 600000, leaseMs: 4000, stapel: 1,
@@ -922,6 +954,7 @@ async function main() {
       JSON.stringify(echteProjektion));
   }
 
+  }
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }

@@ -17,7 +17,11 @@ const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_ARTIKELKONTEXT: "on",
   HELMUT_SUCHWEGAUSZUEGE_HOSTS: "www.dgb.de,www.radio-hannover.de", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
   HELMUT_SUPABASE_STORE_ID: "isolierter-rotationsstore", HELMUT_SUPABASE_TIMEOUT_MS: "1000" };
 const filter = "(understanding_status.is.null,understanding_status.not.in.(failed,failed-final,gate-geparkt))";
-async function test(name, fn) { await fn(); groups++; console.log("PASS " + name); }
+const nurTageskern = process.argv.includes("--tageskern");
+async function test(name, fn) {
+  if (nurTageskern && !/^(Tagesplanung|Folgefenster|Echter Planer|Unveraenderlicher Altplan)/.test(name)) return;
+  await fn(); groups++; console.log("PASS " + name);
+}
 (async () => {
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ, "aktiv");
   const server = http.createServer((req, res) => {
@@ -124,23 +128,23 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
         kompiliereQuellenbedarf: async () => { planned++; return { auftraege: [{ jobType: "source_fetch", idempotencyKey: "quelle-folgt-pending", freshnessWindow: "2026-11-10T00Z", payload: {} }], statistik: {}, fehlerhafteProfile: [] }; },
         planeMandatsarbeit: () => ({ auftraege: [], fenster: "2026-11-10T00Z" }) } };
     const supply = extra => V.lese({ mandat: profile.id, jetztMs: jetzt, env, deps: { request: S.supabaseRequest, ...extra } });
-    await test("Lesefehler erzeugt kein Manifest oder scheinbar behobene Briefingsperre", async () => {
-      mode = "failure";
+    await test("Tagesplanung bleibt trotz historischem Pending-Lesefehler verfuegbar", async () => {
+      const journal = require("../lib/helmut/quellen-planungsrest").erzeugePlanungsrest({ request: S.supabaseRequest, storeId: env.HELMUT_SUPABASE_STORE_ID });
+      const alt = await journal.sichereManifest("2026-11-09", { auftraege: [{ jobType: "document_understanding",
+        idempotencyKey: "historischer-rest", freshnessWindow: "2026-11-09T00Z", payload: {} }] });
+      mode = "failure"; const before = requests.length;
       const r = await P.setzePlanungFort({ jetztMs: jetzt, env, deps: dep, darfNeuPlanen: true });
-      A.equal(r.ok, false); A.equal(r.grund, "pending-bestand-nicht-lesbar"); A.equal(jobs.length, 0); A.equal(rows.size, 0);
-      A.equal((await supply()).zustand, "unbekannt"); mode = "normal";
+      A.equal(r.ok, true); A.equal(r.planungsrest.zustand, "fertig");
+      A.equal(jobs.length, 1); A.equal(jobs[0].jobType, "source_fetch");
+      A(requests.slice(before).every(x => !x.path.endsWith("knowledge_objects")), "Keine historische Suche im Tagesplan");
+      A.deepEqual(await journal.lesen("2026-11-09"), alt, "Offenes historisches Manifest bleibt unveraendert; heutiger Plan trotzdem fertig");
+      mode = "normal";
     });
-    await test("Echter Pendingadapter reicht die heutige Rotation bis Manifest, Quellenplanung und bestaetigtem Enqueue weiter", async () => {
-      const before = planned;
-      const r = await P.setzePlanungFort({ jetztMs: jetzt, env, deps: dep, darfNeuPlanen: true });
-      A.equal(r.ok, true); A.equal(planned, before + 1); A.equal(r.planungsrest.zustand, "fertig");
-      A(jobs.some(j => j.jobType === "source_fetch"));
-      const understanding = jobs.find(j => j.jobType === "document_understanding"); A(understanding); A.equal(understanding.payload.dokumentIds.length, 5);
-      A.equal(requests.filter(x => x.path.endsWith("knowledge_objects") && x.query.get("select") !== "count").at(-1).query.get("offset"), "5795");
-      const calls = requests.length, oldJobs = jobs.length;
+    await test("Folgefenster lesen weder Pendingrotation noch kompilieren sie Tagesquellen erneut", async () => {
+      const before = planned, calls = requests.length, oldJobs = jobs.length;
       const replay = await P.setzePlanungFort({ jetztMs: jetzt + 900000, env, deps: dep, darfNeuPlanen: true });
-      A.equal(replay.ok, true); A.equal(jobs.length, oldJobs); A.equal(planned, before + 1);
-      A(requests.slice(calls).every(x => !x.path.endsWith("knowledge_objects")), "Folgefenster plant nicht erneut");
+      A.equal(replay.ok, true); A.equal(jobs.length, oldJobs); A.equal(planned, before);
+      A(requests.slice(calls).every(x => !x.path.endsWith("knowledge_objects")));
     });
     await test("Fertiges Enqueue ist kein Lektuerebeweis: technische Briefingsperre bleibt bis bestaetigter Verarbeitung", async () => {
       const offen = await supply({ offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 1, fehlgeschlagen: 0 }) });
@@ -153,23 +157,22 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
       const ready = await supply({ offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 }) });
       A.equal(ready.zustand, "kein-bekannter-rueckstand");
     });
-    await test("Echter Planer und beide Standard-RPC-Adapter bestaetigen Pending vor Quellen ohne neue Idempotenz", async () => {
+    await test("Echter Planer und beide Standard-RPC-Adapter bestaetigen frische Quellen ohne historischen Vorschub", async () => {
       for (const dispatch of ["off", "shadow"]) {
         rows.clear(); queueRows.clear(); rpcBodies.length = 0; receipt = "normal";
         const actual = { ...dep, enqueue: undefined }, wirksam = { ...env, HELMUT_JOB_DISPATCH_MODE: dispatch };
         const r = await P.setzePlanungFort({ jetztMs: jetzt, env: wirksam, deps: actual, darfNeuPlanen: true });
-        A.equal(r.ok, true, JSON.stringify(r)); A.equal(r.planungsrest.cursor, 2);
-        A.equal(rpcBodies.length, 2); A.equal(queueRows.size, 2);
-        A.equal(rpcBodies[0].params.p_job_type, "document_understanding");
+        A.equal(r.ok, true, JSON.stringify(r)); A.equal(r.planungsrest.cursor, 1);
+        A.equal(rpcBodies.length, 1); A.equal(queueRows.size, 1);
+        A.equal(rpcBodies[0].params.p_job_type, "source_fetch");
         A.equal(rpcBodies[0].params.p_freshness_window, "2026-11-10T00Z");
-        A.equal(rpcBodies[0].params.p_tenant_id, null); A.equal(rpcBodies[0].params.p_payload.dokumentIds.length, 5);
         A(rpcBodies.every(b => b.path.endsWith(dispatch === "shadow" ? "helmut_enqueue_job_mit_outbox" : "helmut_enqueue_job")));
         const key = rpcBodies[0].params.p_idempotency_key;
-        A(/^document_understanding\|[a-f0-9]+$/.test(key), "Schluessel bleibt inhaltsgebunden statt tagesgebunden");
         const replay = await P.setzePlanungFort({ jetztMs: jetzt + 900000, env: wirksam, deps: actual, darfNeuPlanen: true });
-        A.equal(replay.ok, true); A.equal(rpcBodies.length, 2); A.equal(queueRows.size, 2);
-        for (const row of queueRows.values()) row.status = row.params.p_job_type === "document_understanding" ? "fehlgeschlagen" : "erledigt";
-        A.equal((await supply()).zustand, "offen", "Heutiger Terminalfehler darf nicht als fehlender Rueckstand verschwinden");
+        A.equal(replay.ok, true); A.equal(rpcBodies.length, 1); A.equal(queueRows.size, 1);
+        A.equal([...queueRows.values()][0].params.p_idempotency_key, key);
+        for (const row of queueRows.values()) row.status = "fehlgeschlagen";
+        A.equal((await supply()).zustand, "offen", "Heutiger Terminalfehler bleibt als unvollstaendige Versorgung sichtbar");
       }
     });
     await test("Unveraenderlicher Altplan heilt am Folgetag nur die RPC-Kopie; verlorene Quittung bestaetigt keinen Cursor", async () => {
@@ -183,11 +186,11 @@ async function test(name, fn) { await fn(); groups++; console.log("PASS " + name
         const actual = { ...dep, enqueue: undefined, quellenFuerProfil: () => { throw Error("Keine Neuplanung"); } };
         const wirksam = { ...env, HELMUT_JOB_DISPATCH_MODE: dispatch };
         receipt = "empty";
-        const unknown = await P.setzePlanungFort({ jetztMs: jetzt - 86400000, env: wirksam, deps: actual });
+        const unknown = await P.setzePlanungFort({ jetztMs: jetzt - 86400000, historisch: true, env: wirksam, deps: actual });
         A.equal(unknown.ok, false); A.equal((await journal.lesen(tag)).cursor, 0);
         A.equal(queueRows.size, 1, "Nur RPC-Antwort verloren; der Auftrag ist in der isolierten Ablage vorhanden");
         receipt = "normal";
-        const recovered = await P.setzePlanungFort({ jetztMs: jetzt, env: wirksam, deps: actual });
+        const recovered = await P.setzePlanungFort({ jetztMs: jetzt, historisch: true, env: wirksam, deps: actual });
         A.equal(recovered.grund, "planung-fehlt", "Der alte Plan ist fertig, fuer den Folgetag wurde kein neuer erfunden");
         const after = await journal.lesen(tag);
         A.equal(after.cursor, 1); A.equal(after.zustand, "fertig");

@@ -42,8 +42,14 @@ function nichtBewiesen(name, grund) { offen += 1; console.log(`  OFFEN ${name} �
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 function z(n) { return Number(n).toLocaleString("de-DE"); }
 
-const AN = { HELMUT_SCALABLE_PIPELINE: "on" };
-const AN_FAIR = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_LLM_FAIRNESS: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: "100" };
+const AN = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_VERSTEHEN_CAS: "on" };
+const AN_FAIR = { ...AN, HELMUT_LLM_FAIRNESS: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: "100" };
+const gezielt = process.argv.includes("--gezielt");
+const KLEINE_FAELLE = new Set([1, 2, 3, 4, 5, 6, 7, 9]);
+function auswahl(nr) {
+  if (!gezielt || KLEINE_FAELLE.has(nr)) return true;
+  console.log(`  SKIP Abschnitt ${nr}: ausserhalb der ausdruecklichen kleinen Auswahl`); return false;
+}
 const T0 = Date.parse("2026-08-08T00:00:00Z");
 const eigeneQuellen = (p) => [sched.personNewsSource(p), ...sched.mandateNewsSources(p)];
 
@@ -79,6 +85,9 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
   };
 
   w.attrappen = (u) => ({
+    env: AN,
+    // Nur Adapterattrappe; echte verteilte Sperren belegt diese Suite nicht.
+    klassen: { belege: async () => ({ erlaubt: true, slot: "synthetischer-slot" }), gebeFrei: async () => {} },
     now: u.jetzt,
     hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
     createGate: () => null,
@@ -130,9 +139,13 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
         });
         neuIds.push(zeile.id);
       }
-      return { ok: true, neuIds, vorhandene };
+      const bestaetigteIds = [...new Set(items.map(it => dedup.toRawDocumentRow(it)?.id).filter(Boolean))];
+      const quellenstaende = Object.fromEntries(bestaetigteIds.map(id => [id,
+        crypto.createHash("sha256").update(JSON.stringify(w.rohdokumente.get(id))).digest("hex")]));
+      return { ok: true, neuIds, vorhandene, bestaetigteIds, quellenstaende };
     },
     ladeRohdokumente: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
+    ladeRohdokumentStaende: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
 
     // Das V3-Verstehen: EIN Aufruf je NEUEM Vorgang. Ein bekannter Vorgang wird
     // kurzgeschlossen — genau der `existing`-Zweig aus understanding.js.
@@ -145,7 +158,7 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
         w.kiAufrufe += 1;                 // 1 KI-Aufruf je NEUEM Vorgang, GLOBAL
         verarbeitet += 1;
       }
-      return { processed: verarbeitet, deferred: 0 };
+      return { processed: verarbeitet, deferred: 0, counts: { saved: verarbeitet, duplicate: dokumente.length - verarbeitet } };
     },
 
     getActiveProfile: async (id) => w.profile.find((p) => p.id === id) || null,
@@ -153,6 +166,7 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
     decisions: async ({ profile }) => { w.entscheidungsAufrufe += 1; return { saved: 1, profil: profile.id }; },
 
     materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
+    lageNarrativ: async () => ({ available: false, paragraphs: [], vorgaenge: [] }),
 
     buildV3Briefing: async (profil, mandatsId) => {
       w.briefingAufrufe += 1;
@@ -178,7 +192,7 @@ async function main() {
 
   // ═══ 1 · Die Kette ist ueberhaupt geschlossen ═════════════════════════════
   abschnitt("1 · Ein Abruf erzeugt jetzt einen Verstehensauftrag (Phase 2.1)");
-  {
+  if (auswahl(1)) {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     const w = welt();
@@ -190,16 +204,16 @@ async function main() {
       { id: "j1", payload: { quelle }, freshnessWindow: "F1" }, deps);
 
     check("1.1 Der Abruf meldet gespeicherte Dokumente", ergebnis.gespeichert === 3, String(ergebnis.gespeichert));
-    check("1.2 Der Abruf reiht einen Verstehensauftrag ein", ergebnis.verstehensAuftraege === 1, String(ergebnis.verstehensAuftraege));
+    check("1.2 Der Abruf reiht je Artikel einen Verstehensauftrag ein", ergebnis.verstehensAuftraege === 3, String(ergebnis.verstehensAuftraege));
     const verstehen = q.alle().filter((x) => x.job_type === "document_understanding");
-    check("1.3 Der Verstehensauftrag steht in der Warteschlange", verstehen.length === 1);
+    check("1.3 Alle drei Einzelauftraege stehen in der Warteschlange", verstehen.length === 3);
     // KORREKTUR (Abschlussreview 2026-08-08): die Erwartung war `rd-[0-9a-f]{16}` — die
     // Kennung der frueheren Attrappe. `dedup.toRawDocumentRow` erzeugt den VOLLEN SHA-256
     // (64 Zeichen). Die Erwartung wurde also gegen die Attrappe geprueft, nicht gegen die
     // Ablage. Jetzt wird gegen die ECHTE Kennungsfunktion geprueft.
     check("1.4 Er traegt NUR Kennungen, keine Inhalte (Datensparsamkeit)",
       Array.isArray(verstehen[0].payload.dokumentIds)
-      && verstehen[0].payload.dokumentIds.length === 3
+      && verstehen.every(j => j.payload.dokumentIds.length === 1)
       && verstehen[0].payload.dokumentIds.every((i) => /^rd-[0-9a-f]{64}$/.test(i))
       && !JSON.stringify(verstehen[0].payload).includes("Titel"),
       JSON.stringify(verstehen[0].payload).slice(0, 120));
@@ -218,7 +232,7 @@ async function main() {
 
   // ═══ 2 · Derselbe Inhalt erzeugt keinen zweiten Auftrag ═══════════════════
   abschnitt("2 · Inhaltsfingerabdruck verhindert doppelte Verstehensauftraege (Phase 2.3)");
-  {
+  if (auswahl(2)) {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     const w = welt();
@@ -234,9 +248,9 @@ async function main() {
     await SP.HANDLER.source_fetch({ id: "j2", payload: { quelle }, freshnessWindow: "F2" }, deps);
     const nachZweitem = q.alle().filter((x) => x.job_type === "document_understanding").length;
 
-    check("2.1 Der erste Abruf legt genau einen Verstehensauftrag an", nachErstem === 1, String(nachErstem));
+    check("2.1 Der erste Abruf legt genau drei Einzelauftraege an", nachErstem === 3, String(nachErstem));
     check("2.2 Ein zweiter Abruf mit DENSELBEN Artikeln legt KEINEN weiteren an",
-      nachZweitem === 1, `${nachZweitem} Auftraege`);
+      nachZweitem === 3, `${nachZweitem} Auftraege`);
     check("2.3 Der Schluessel enthaelt KEIN Aktualitaetsfenster (sonst waere er zeitabhaengig)",
       !/\|F1$|\|F2$/.test(q.alle().find((x) => x.job_type === "document_understanding").idempotency_key),
       q.alle().find((x) => x.job_type === "document_understanding").idempotency_key);
@@ -246,12 +260,12 @@ async function main() {
       { url: "https://news.google.com/rss/search?q=a#artikel-99", title: "Neu", sourceId: "q1", _weg: "w", _nr: 99 }] }) };
     await SP.HANDLER.source_fetch({ id: "j3", payload: { quelle }, freshnessWindow: "F2" }, w2);
     check("2.4 NEUE Artikel erzeugen sehr wohl einen neuen Verstehensauftrag",
-      q.alle().filter((x) => x.job_type === "document_understanding").length === 2);
+      q.alle().filter((x) => x.job_type === "document_understanding").length === 4);
   }
 
   // ═══ 3 · Verstehen: Kennungen -> Zeilen -> hoechstens einmal ══════════════
   abschnitt("3 · Ein Dokument wird global hoechstens einmal verstanden (Phase 2.2 · 5.5)");
-  {
+  if (auswahl(3)) {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     const w = welt();
@@ -266,19 +280,21 @@ async function main() {
     const r2 = await SP.HANDLER.document_understanding(SP.normalisiereAuftrag(auftrag), deps);
     const nach2 = w.kiAufrufe;
 
-    check("3.1 Der Handler laedt die Zeilen ueber die Kennungen", r1.dokumenteGefunden === 3, String(r1.dokumenteGefunden));
-    check("3.2 Beim ersten Lauf entstehen KI-Aufrufe", nach1 === 3, String(nach1));
+    check("3.1 Der Einzelhandler laedt genau die gebundene Artikelversion", r1.dokumenteGefunden === 1, String(r1.dokumenteGefunden));
+    check("3.2 Beim ersten Lauf entsteht genau ein synthetischer KI-Aufruf", nach1 === 1, String(nach1));
     check("3.3 Ein WIEDERHOLTER Lauf erzeugt KEINEN einzigen weiteren KI-Aufruf",
       nach2 === nach1, `${nach1} -> ${nach2}`);
     check("3.4 Der zweite Lauf meldet ehrlich 0 verarbeitet", r2.verstanden === 0, String(r2.verstanden));
-    check("3.5 Verschwundene Dokumente sind ein ehrlicher Zustand, kein Erfolg mit Inhalt",
-      (await SP.HANDLER.document_understanding(
-        { id: "x", payload: { dokumentIds: ["rd-gibtsnicht"] } }, deps)).grund === "keine-dokumente-mehr-vorhanden");
+    let fehlt = false;
+    try { await SP.HANDLER.document_understanding({ id: "x", payload: {
+      dokumentIds: ["rd-" + "f".repeat(64)], quellenstaende: { ["rd-" + "f".repeat(64)]: "f".repeat(64) } } }, deps); }
+    catch (error) { fehlt = error.message === "artikelversion-nicht-verfuegbar"; }
+    check("3.5 Fehlende gebundene Artikelversion ist kein bestaetigter Erfolg", fehlt);
   }
 
   // ═══ 4 · Vorbedingungen ══════════════════════════════════════════════════
-  abschnitt("4 · Projektion und Briefing warten auf ihre Voraussetzungen (Phase 2.9)");
-  {
+  abschnitt("4 · Quellenfehler lassen bestaetigte Fakten und Briefing weiterarbeiten");
+  if (auswahl(4)) {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     const w = welt();
@@ -291,19 +307,18 @@ async function main() {
 
     await q.enqueue({ jobType: "source_fetch", idempotencyKey: "sf-1", freshnessWindow: "F1",
       payload: { quelle: { id: "q1", rssUrls: ["https://x/y"] } }, priority: 60, maxAttempts: 5 });
-    const projektion = { id: "p1", jobType: "mandate_projection", freshnessWindow: "F1", payload: { mandatsId: mandat } };
+    const projektion = { id: "p1", jobType: "mandate_projection", tenantId: mandat, freshnessWindow: "F1", payload: { mandatsId: mandat } };
 
     const r1 = await SP.HANDLER.mandate_projection(projektion, deps);
-    check("4.1 Bei offenem Abruf wird die Projektion ZURUECKGESTELLT, nicht gerechnet",
-      r1.zurueckgestellt === true && r1.ok === false, JSON.stringify(r1).slice(0, 90));
-    check("4.2 Der Grund benennt die offene Vorbedingung", /vorbedingung-offen/.test(r1.grund), r1.grund);
-    check("4.3 Es wurde KEIN Matching ausgeloest", w.matchingAufrufe === 0, String(w.matchingAufrufe));
+    check("4.1 Offener Einzelabruf blockiert die Faktenprojektion nicht", r1.ok === true);
+    check("4.2 Die Projektion meldet keinen erfundenen Vorbedingungsfehler", !r1.zurueckgestellt);
+    check("4.3 Matching nutzt den vorhandenen bestaetigten Stand", w.matchingAufrufe === 1, String(w.matchingAufrufe));
 
     // Abruf abschliessen -> Vorbedingung erfuellt.
     const c = await q.claim({ owner: "w1", limit: 5, leaseMs: 60000 });
     await q.finish({ id: c.auftraege[0].id, owner: "w1", ok: true });
     const r2 = await SP.HANDLER.mandate_projection(projektion, deps);
-    check("4.4 Danach laeuft die Projektion durch", r2.ok === true && w.matchingAufrufe === 1);
+    check("4.4 Danach laeuft die Projektion weiterhin durch", r2.ok === true && w.matchingAufrufe === 2);
 
     // ENDGUELTIG gescheiterte Vorbedingung darf NICHT ewig blockieren.
     await q.enqueue({ jobType: "source_fetch", idempotencyKey: "sf-2", freshnessWindow: "F1",
@@ -314,21 +329,21 @@ async function main() {
     check("4.5 Ein endgueltig gescheiterter Abruf zaehlt NICHT als offen",
       stand.offen === 0 && stand.fehlgeschlagen === 1, JSON.stringify(stand));
     const r3 = await SP.HANDLER.briefing_materialization(
-      { id: "b1", jobType: "briefing_materialization", freshnessWindow: "F1", payload: { mandatsId: mandat } }, deps);
+      { id: "b1", jobType: "briefing_materialization", tenantId: mandat, freshnessWindow: "F1", payload: { mandatsId: mandat } }, deps);
     check("4.6 Das Briefing wartet NICHT auf einen Abruf, der nie gelingt", r3.ok === true);
   }
 
   // ═══ 5 · Zurueckstellen ist kein Fehlversuch ═════════════════════════════
   abschnitt("5 · Warten verbraucht keine Versuche (Phase 2.11 · 3.12)");
-  {
+  if (auswahl(5)) {
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     const w = welt();
     w.profile = erzeugeMandate(1);
     const mandat = w.profile[0].id;
-    await q.enqueue({ jobType: "source_fetch", idempotencyKey: "blocker", freshnessWindow: "F1",
-      payload: { quelle: { id: "q1", rssUrls: ["https://x/y"] } }, priority: 60, maxAttempts: 5 });
-    await q.enqueue({ jobType: "mandate_projection", idempotencyKey: "proj", freshnessWindow: "F1",
+    await q.enqueue({ jobType: "mandate_projection", idempotencyKey: "blocker", freshnessWindow: "F1", tenantId: mandat,
+      payload: { mandatsId: mandat }, priority: 60, maxAttempts: 5 });
+    await q.enqueue({ jobType: "briefing_materialization", idempotencyKey: "proj", freshnessWindow: "F1",
       payload: { mandatsId: mandat }, tenantId: mandat, priority: 200, maxAttempts: 3 });
 
     const deps = {
@@ -338,15 +353,15 @@ async function main() {
     // Fuenf Runden, in denen die Vorbedingung nie erfuellt wird.
     let bilanz = null;
     for (let i = 0; i < 5; i += 1) {
-      // NUR Projektionen greifen: der blockierende Abruf bleibt absichtlich unangetastet
+      // NUR Briefings greifen: die vorgelagerte Mandatsprojektion bleibt unangetastet
       // `wartend` stehen. Sonst waere die Vorbedingung nach der ersten Runde weg und der
       // Test wuerde etwas anderes messen, als er behauptet.
       bilanz = await SP.arbeite({ env: AN, owner: `w${i}`, budgetMs: 60000, leaseMs: 30000, stapel: 10,
-        types: ["mandate_projection"], deps });
+        types: ["briefing_materialization"], deps });
       u.vor(200000);
     }
     const proj = q.alle().find((x) => x.idempotency_key === "proj");
-    check("5.1 Die Projektion wurde in JEDER Runde zurueckgestellt", bilanz.zurueckgestellt >= 1,
+    check("5.1 Das Briefing wartet in JEDER Runde auf seine Mandatsprojektion", bilanz.zurueckgestellt >= 1,
       `letzte Runde: ${bilanz.zurueckgestellt} zurueckgestellt`);
     check("5.1b Sie steht immer noch als wartend in der Warteschlange",
       q.alle().find((x) => x.idempotency_key === "proj").status === "wartend");
@@ -360,7 +375,7 @@ async function main() {
 
   // ═══ 6 · Budget: Wiederholung kostet nichts ══════════════════════════════
   abschnitt("6 · Wiederholung erzeugt keine doppelte Kostenbuchung (Phase 3.3 · 5.8)");
-  {
+  if (auswahl(6)) {
     const buchungen = [];
     const reservierungen = new Map();
     const speicher = {
@@ -413,7 +428,7 @@ async function main() {
 
   // ═══ 7 · Budget erschoepft -> ehrlich zurueckgestellt ════════════════════
   abschnitt("7 · Budgetmangel erzeugt KEIN erfolgreiches Briefing (Phase 3.12/3.13)");
-  {
+  if (auswahl(7)) {
     const speicher = {
       reserviere: async () => ({ verfuegbar: true, erlaubt: false, grund: "globales-notfalllimit-erreicht" }),
       melde: async () => ({ verfuegbar: true, uebernommen: true }),
@@ -438,7 +453,7 @@ async function main() {
 
   // ═══ 8 · Vollstaendiger Durchlauf mit 1000 Profilen ══════════════════════
   abschnitt("8 · Vollstaendiger Durchlauf mit 1000 Profilen (Phase 5)");
-  {
+  if (auswahl(8)) {
     const ANZAHL = 1000;
     const u = uhr();
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
@@ -541,7 +556,7 @@ async function main() {
 
   // ═══ 9 · Flag aus ════════════════════════════════════════════════════════
   abschnitt("9 · Flag aus: das bestehende Verhalten bleibt unveraendert (Phase 2.13 · 5.18)");
-  {
+  if (auswahl(9)) {
     const r = await SP.arbeite({ env: {}, deps: {} });
     check("9.1 Ohne Flag arbeitet der Worker nicht", r.uebersprungen === true && r.grund === "flag-aus");
     const p = await SP.planeArbeit({ env: {}, deps: {} });

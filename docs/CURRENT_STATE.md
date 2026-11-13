@@ -1,42 +1,42 @@
 # CURRENT STATE — Helmut
 
-**13.11., Lage/Radar live:** PR1178, Production `f18298ad` READY, Pflicht-CI grün.
-Pilot lesend bestätigt: Sammelwiederholung entfernt, alle 24 Artikel erhalten,
-1 Fachhinweis mit Lageverweis und Quellenstand 08.11.
-[Nachweise, Grenzen, Rückweg](betrieb/lage-radar-zusatznutzen-20261113.md).
+**13.11.2026: Verarbeitungskern fuer den ersten zahlenden Kunden und danach
+100 aktive Kunden gezielt umgebaut; lokale Codeabnahme nach Korrekturen, nicht ausgerollt.**
+Branch `codex/verarbeitungskern-100-20261113`, Basis `fe94f3eb`.
+Einzelne Artikelversionen, Tagesvorrang statt Altrueckstand, bestaetigte
+Lagephasen, verteilte Grenzen und gespeicherte App-Tagespakete umgesetzt.
+[Architekturentscheidung, konkrete Nachweise, Dimensionierung und Grenzen](betrieb/verarbeitungskern-100-20261113.md).
+Keine neue Infrastruktur, keine Production-Daten-/Profil-/Budget-/Cronaenderung,
+keine Aktivierung, kein Merge/Deployment. Neue Migration nur vorbereitet.
+PR1183 nach Betreiber-Go unabhaengig geprueft: fuenf Integrationsfehler korrigiert,
+16 gezielte neue/geaenderte Pruefgruppen/Faelle bestanden. Begrenzte Pflicht-CI
+[43483196284](https://github.com/ernisch/helmut-pilot/actions/runs/43483196284)
+auf `f7f3d6eb` gruen: 15 neue Auswahlgruppen, 29 Desktop-/Mobilpruefungen.
+Rolloutvorflug: Live-Direktclaim unterscheidet sich nur in zehn Kommentaren;
+seinen exakten Hash in der vorbereiteten Driftwache ergaenzt. Neuer CI-Nachtrag
+prueft nur sieben neue Policygruppen und drei neue lokale SQL-Faelle; Browser-
+und alte Fachbelege streng gebunden wiederverwendet. Aktuelles Kopf-/Laufergebnis:
+[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
+Kein erneuter Mock100, kein neuer Lastnachweis; versehentlich ausgefuehrter
+rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
+Konkreter Einprofilplan im Architekturbericht: SQL vor Code; normaler Mergecommit
+mit `[skip ci]` vermeidet einmalig die breite main-CI, kein neuer PASS am Merge.
+Aktuelle Vercelkonfiguration: Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`,
+Kommunikation `gesperrt`; alte Betriebsnotiz zu Pipeline `off` ist ueberholt.
+**Naechster Schritt nach gruener Nachtrags-CI:** gesonderte konkrete Freigabe
+fuer den dokumentierten Einprofil-Rollout einholen. Bis dahin kein Merge/Deployment.
 
-**Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
+**Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
+gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
+[PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
+SQL dennoch bereits aktiv; Migrationsregister rein lesend bestaetigt:
+`20261113094853_job_metrics_ohne_materialisierung`. Nicht erneut anwenden.
+[DB-Speicher/OOM und bestehende Belege](betrieb/db-speicherspitzen-20261113.md).
+Ausreichende RAM-Reserve und 100-Kunden-Zeit-/Kostenrahmen bleiben unbelegt.
 
-**13.11.:** [DB-Speicher](betrieb/db-speicherspitzen-20261113.md): OOM bestaetigt; Schutz lokal geprueft, nicht live. Bezahlte Arbeit STOP.
-
-**11.11., Production:** PR1118–1124 live; main/Production `4dee3255`, READY, Hauptdomain/Runtime bestätigt. Release-Frische `ready=false`; vollständige reguläre Verarbeitung und echte Kundensitzung bleiben zu belegen.
-
-**UX (08.11.):** [PR1108: Tagesgrund, Radar ohne Knopf](ui/mobile-ux-20261108/README.md); kein Merge/Deploy, ChatGPT-Abnahme offen. [Briefing PR1102 live](ui/briefing-ohne-refresh-20261107/rollout.md).
-
-**Briefing PR1117 live:** main/Production `f13a430a`, READY; [Belege](betrieb/briefing-tagesorientierung-20261109.md). PR1115 aufc37d85f8 live; Pendingreparatur in Vorbereitung.
-
-**Historie 11.11., Quellen/Radar:** [Adminstart/Automatik live](betrieb/admin-quellenstart-rollout-20261111.md).
-[Damals 0 sichtbare Radarsignale, Nachschub ausgeblieben; Diagnose und Kontingentbelege](betrieb/radar-ausschlussdiagnose-20261111.md).
-
-## Büro: Kosten-/Antwortzeitfix live, echte Einzelprobe erfolgreich (11.11.2026)
-
-**11.11., Büro live:** [PR1135, Nachweise und Rückweg](ui/buero-formatwahl-20261111/README.md).
-
-**Büro (11.11.):** [Übersicht PR1145](ui/buero-themenuebersicht-20261111/README.md); [Quellentextfix PR1153](ui/buero-quellentext-20261111/README.md) auf `1b031b58` live/READY. Appstart erhält Quellenkurztexte. CI189/189+367/367+Browser grün, keine KI-Probe.
-
-[PR1129](https://github.com/ernisch/helmut-pilot/pull/1129) auf `ca9a3fc6` live/READY; Buero wartet60s statt12s, kein Auto-Retry. Pflicht-CI43001755133 gruen:14/14 Schnellkern,135/135 Bereich und Browser/Mobil. Nach Nutzer-„Ja“ genau1echte Probe11:40UTC: HTTP200 nach15,023s,844Zeichen,kein Fallback,1bestaetigte Buchung0,002823USD. Die alte12s-Frist haette diese erfolgreiche Antwort verworfen. Unveraenderter Client zeigt die Originalantwort im isolierten Desktop-/Mobilreplay nach13s bytegleich,37/37Pruefungen,Cache/Teilenaktion bestaetigt,0externeAnfragen. Native Bilanz11:43UTC:64Buchungen,heute0,029144USD/1USD,gesamt1,214451USD/30USD;Vertrag/Altreserven erhalten. Erfolgreich fuer diese Einzelprobe; normale Kundensitzung/natives Teilen nicht geprueft. [Beleg, Grenzen und Rueckweg](betrieb/buero-kostensperre-20261111.md).
-
-## Kompaktes Profil live (11.11.2026)
-
-[Profil/Belege](ui/profil-kompakt-20261111/README.md): PR1144 und FolgePR1151 live. „Bitte vermeiden“ aus UI/Formular entfernt, Altwerte erhalten. Production953c1dfe READY; Hauptdomain bestätigt, Client/CSS bytegleich. CI43099987478:189/189Standard,367/367Fach,48/48Z22 und Browser grün; gemeinsam60Profil-/76Bürochecks bestanden. GitHub-Ausfall/Fehlversuche historisch belegt. Keine echten Profiländerungen/KI-Kosten. Nächster Schritt: Profil neu öffnen. [Audit](ui/profil-wirkungscheck-20261111/README.md).
-
-**Historie 07.11.:** Lageauswahl PR1100 auf `d9651861` live/READY, Pflicht-CI42409807375 grün. Fachliche Aufnahme vor Limit, Quellen-/Profilbindung; synthetische Gegenproben und Windenergiefall bestanden. Authentifizierte Production-Bedienabnahme offen. [Vollständige Belege, Grenzen und Rückweg](betrieb/lage-profilbezug-20261107.md); keine neue Daten-/Modellfreigabe.
-
-## UX Mergeabschluss (07.11.2026)
-
-Nach Betreiber GO nacheinander bei jeweils beiden gruenen Pflichtchecks gemergt: Mobil PR1091 (`c3f5f2a0`), Desktop PR1092 (`eec7d804`), Navigation/Zeiten/Radar PR1093 (`2f9ff56d`), inaktive Quellenvorbereitung PR1094 (`1057d000`). Integrierte Quellen CI42352831258 aufefb26134 bestanden; Laufbelege bleiben in den PRs erhalten.
-Production `dpl_LzrnS2fnHtPYkq71B1SD4EhHU9rF` READY auf1057d000; Hauptseite und Releasecheck HTTP200 mit ok/ready/storage true. Client/CSS bytegleich zum geprueften Git Stand, Version1057d000. Keine error/fatal Eintraege im abgefragten Deploymentfenster. Authentifizierte gemeinsame Production Bedienabnahme noch offen; die Browserabnahme ist ein CI Beleg.
-Voriger Status unveraendert im [Archiv](archive/project_state/2026_11_07_CURRENT_STATE_vor_ux_abnahme.md). Rueckweg: vorheriges Deployment oder gezielter Revert, keine Datenmutation. Buero bleibt wie beauftragt zuletzt und unveraendert.
+[Unveraenderter vorheriger Status mit Lage/Radar-, Buero-, Profil- und UX-Belegen](https://github.com/ernisch/helmut-pilot/blob/fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f/docs/CURRENT_STATE.md).
+Die folgenden datierten Abschnitte sind erhaltener vorheriger Betriebsstand;
+daraus entstehen keine neuen Laufrechte.
 
 ## Quellen: aktueller Stand und fruehere Belege
 

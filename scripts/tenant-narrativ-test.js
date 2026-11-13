@@ -41,6 +41,9 @@ const AUS = {};
 const NUR_PIPELINE = { HELMUT_SCALABLE_PIPELINE: "on" };
 const NUR_NARRATIV = { HELMUT_NARRATIV_QUEUE: "on" };
 const BEIDE = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_NARRATIV_QUEUE: "on" };
+const klassen = () => ({ aktiv: true,
+  belege: async () => ({ erlaubt: true, slot: "isolierter-tenant-slot" }), gebeFrei: async () => {} });
+const vorgaengerFertig = async () => ({ verfuegbar: true, offen: 0, wartend: 0, laufend: 0 });
 const T0 = Date.parse("2026-08-08T00:00:00Z");
 
 function uhr(startMs = T0) {
@@ -53,10 +56,14 @@ const profil = (id, extra = {}) => ({
   focusTopics: ["T"], topicPriorities: { T: 1 }, state: "Bayern", constituency: "WK", ...extra
 });
 
+const abschnitteArg = process.argv.find(arg => arg.startsWith("--abschnitte="));
+const abschnitte = abschnitteArg ? new Set(abschnitteArg.slice(13).split(",")) : null;
+if (abschnitte && [...abschnitte].some(a => !/^[1-8]$/.test(a))) throw Error("ungueltige-Abschnittsauswahl");
 async function main() {
   console.log("Helmut — Vertragssuite tenant_narrative (fuenfter Auftragstyp, E1)");
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  if (!abschnitte || abschnitte.has("1")) {
   abschnitt("1 · Flaggrenzen — default AUS, fail closed, beide Flags noetig");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -80,6 +87,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("2")) {
   abschnitt("2 · Planung — Auftragsvertrag, Phasenfenster, Merge-Neutralitaet");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -130,6 +139,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("3")) {
   abschnitt("3 · Scheduler-Integration und Idempotenz (doppelter Scheduler)");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -176,6 +187,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("4")) {
   abschnitt("4 · Handler — alle Ergebnispfade, ehrlich abgebildet");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -183,11 +196,11 @@ async function main() {
     check("4.0 Der fuenfte Auftragstyp hat einen Handler", typeof H === "function");
 
     const basisAuftrag = {
-      id: "j-n1", jobType: "tenant_narrative", payload: { mandatsId: "m-a" },
+      id: "j-n1", jobType: "tenant_narrative", tenantId: "m-a", payload: { mandatsId: "m-a" },
       freshnessWindow: "2026-08-08T00Z", createdAt: new Date(T0).toISOString()
     };
     const basisDeps = (lageErgebnis, extra = {}) => ({
-      env: BEIDE,
+      env: BEIDE, klassen: klassen(), offeneVorbedingungen: vorgaengerFertig,
       now: () => T0 + 6 * 3600 * 1000,
       getActiveProfile: async (id) => profil(id),
       istDeaktiviert: () => false,
@@ -224,27 +237,30 @@ async function main() {
     // 4.4 Offene Vorbedingung -> zurueckgestellt, kein Aufruf.
     aufgerufen = 0;
     const wartet = await H(basisAuftrag, basisDeps(null, {
-      offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 2, wartend: 2, laufend: 0 }),
+      offeneVorbedingungen: async arg => {
+        check("4.5 Moderne Vorbedingung ist ausschliesslich die eigene Projektion", JSON.stringify(arg.typen) === JSON.stringify(["mandate_projection"]) && arg.mandat === "m-a");
+        return { verfuegbar: true, offen: 2, wartend: 2, laufend: 0 };
+      },
       lageNarrativ: async () => { aufgerufen += 1; return { available: true }; }
     }));
-    check("4.4 Offene Vorbedingung (Abruf/Verstehen): zurueckgestellt, KEIN Modellpfad",
+    check("4.4 Offene eigene Projektion: zurueckgestellt, KEIN Modellpfad",
       wartet.ok === false && wartet.zurueckgestellt === true
       && /vorbedingung-offen/.test(wartet.grund) && aufgerufen === 0);
-    check("4.5 Die Vorbedingungstypen des Narrativs sind Abruf und Verstehen — NICHT die Projektion",
+    check("4.5a Historischer Typvertrag bleibt fuer den bisherigen Pfad erhalten",
       JSON.stringify(SP.VORBEDINGUNGEN.tenant_narrative) === JSON.stringify(["source_fetch", "document_understanding"]));
 
-    // 4.5b KEIN unbegrenztes Pendeln: ist die Vorbedingungs-Wartefrist (ab ENTSTEHUNG,
-    // nicht ab der verschiebbaren Faelligkeit) abgelaufen, laeuft das Narrativ mit dem,
-    // was da ist — eine dauerhaft blockierte Vorbedingung haelt es nicht ewig fest.
+    // 4.5b Die alte Quellen-Wartefrist darf eine eigene offene Projektion nicht
+    // in einen Erfolg umdeuten. Moderne Vorgaenger bleiben pruefpflichtig;
+    // ihr dauerhaft unbekannter Ausgang endet begrenzt als sichtbarer Fehler.
     aufgerufen = 0;
     const erzwungen = await H(
       { ...basisAuftrag, createdAt: new Date(T0 - 7 * 3600 * 1000).toISOString() },
       basisDeps({ available: true, fromCache: false, paragraphs: [{ text: "A" }] }, {
         offeneVorbedingungen: async () => { aufgerufen += 1; return { verfuegbar: true, offen: 99, wartend: 99, laufend: 0 }; }
       }));
-    check("4.5b Nach Ablauf der Wartefrist laeuft das Narrativ trotz offener Vorbedingung (kein Pendeln)",
-      erzwungen.ok === true && erzwungen.veroeffentlicht === true && aufgerufen === 0,
-      `Vorbedingungsabfrage wurde ${aufgerufen}x gestellt (Frist laengst abgelaufen)`);
+    check("4.5b Nach sechs Stunden bleibt die eigene offene Projektion ehrlich offen",
+      erzwungen.ok === false && erzwungen.zurueckgestellt === true && aufgerufen === 1,
+      `Eigene Projektion bleibt geprueft: ${aufgerufen} Abfrage`);
 
     // 4.6 Erfolg -> veroeffentlicht.
     const ok = await H(basisAuftrag, basisDeps({
@@ -313,6 +329,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("5")) {
   abschnitt("5 · Budget-Fairness — der Verbraucher, der O1 bisher fehlte");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -326,11 +344,11 @@ async function main() {
       melde: async (o) => { buchungen.push({ melde: o.ok, ungenutzt: o.ungenutzt, note: o.note }); }
     };
     const auftrag = {
-      id: "j-b1", jobType: "tenant_narrative", payload: { mandatsId: "m-a" },
+      id: "j-b1", jobType: "tenant_narrative", tenantId: "m-a", payload: { mandatsId: "m-a" },
       freshnessWindow: "2026-08-08T00Z", createdAt: new Date(T0).toISOString()
     };
     const deps = (lageErgebnis, b = budget) => ({
-      env: BEIDE, now: () => T0 + 3600 * 1000,
+      env: BEIDE, klassen: klassen(), offeneVorbedingungen: vorgaengerFertig, now: () => T0 + 3600 * 1000,
       getActiveProfile: async (id) => profil(id), istDeaktiviert: () => false,
       lageNarrativ: async () => lageErgebnis, budget: b
     });
@@ -387,6 +405,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("6")) {
   abschnitt("6 · Worker-Integration — Typen, Nebenlaeufigkeit, Umgebung");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -399,7 +419,7 @@ async function main() {
     // Typvorgabe kann nur VERKLEINERN.
     const nurNarrativ = await WORKER.durchlauf({
       env: BEIDE, typen: ["tenant_narrative"],
-      deps: { claim: async () => ({ verfuegbar: true, auftraege: [] }), metrics: async () => ({ verfuegbar: true, kennzahlen: {} }) }
+      deps: { klassen: klassen(), claim: async () => ({ verfuegbar: true, auftraege: [] }), metrics: async () => ({ verfuegbar: true, kennzahlen: {} }) }
     });
     check("6.4 Eine Typvorgabe [tenant_narrative] startet den Worker nur fuer diesen Typ",
       nurNarrativ.gestartet === true && JSON.stringify(nurNarrativ.typen) === JSON.stringify(["tenant_narrative"]));
@@ -426,7 +446,7 @@ async function main() {
     const werkDeps = {
       now: u.jetzt, claim: q.claim, finish: q.finish, extendLease: q.extendLease,
       zurueckstellen: q.zurueckstellen,
-      env: BEIDE,
+      env: BEIDE, klassen: klassen(), offeneVorbedingungen: vorgaengerFertig,
       getActiveProfile: async (id) => profil(id), istDeaktiviert: () => false,
       lageNarrativ: async (p) => { verarbeitet.push(p.id); return { available: true, fromCache: false, paragraphs: [{}] }; }
     };
@@ -450,7 +470,7 @@ async function main() {
     const bilanz = await SP.arbeite({
       env: NUR_PIPELINE, owner: "w3", budgetMs: 60000, leaseMs: 60000, stapel: 2,
       deps: {
-        now: u.jetzt, claim: q2.claim, finish: q2.finish, extendLease: q2.extendLease,
+        klassen: klassen(), now: u.jetzt, claim: q2.claim, finish: q2.finish, extendLease: q2.extendLease,
         zurueckstellen: q2.zurueckstellen,
         lageNarrativ: async () => { modellPfad += 1; return { available: true }; }
       }
@@ -460,11 +480,15 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("7")) {
   abschnitt("7 · Atomare Veroeffentlichung ueber den ECHTEN Lage-Pfad");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
     // Der Handler ruft die ECHTE `lage.buildLageBriefing` auf; ersetzt sind Ablage und
-    // Modellgrenze (dasselbe Muster wie scripts/lage-cacheonly-test.js).
+    // Modellgrenze (dasselbe Muster wie scripts/lage-cacheonly-test.js). Die Prozessflags
+    // bleiben aus: hier wird der erhaltene Cachevertrag geprueft. Den modernen
+    // kostenpflichtigen Phasenvertrag prueft lage-verarbeitungsbeleg-test.js separat.
     const KO = {
       id: "ko-vg-1", vorgang_id: "vg-1", status: "update", understanding_status: "complete",
       headline: "Rentenpaket 2026", was_ist_passiert: "Kabinett hat beschlossen.",
@@ -512,11 +536,11 @@ async function main() {
     try {
       const H = SP.HANDLER.tenant_narrative;
       const auftrag = {
-        id: "j-echt", jobType: "tenant_narrative", payload: { mandatsId: "m-echt" },
+        id: "j-echt", jobType: "tenant_narrative", tenantId: "m-echt", payload: { mandatsId: "m-echt" },
         freshnessWindow: "2026-08-08T00Z", createdAt: new Date().toISOString()
       };
       const deps = {
-        env: BEIDE, getActiveProfile: async (id) => profil(id, {
+        env: BEIDE, klassen: klassen(), offeneVorbedingungen: vorgaengerFertig, getActiveProfile: async (id) => profil(id, {
           committee: "Arbeit und Soziales", focusTopics: ["Rente"] }), istDeaktiviert: () => false,
         lageNarrativ: (p, meta) => lage.buildLageBriefing(p, meta)
       };
@@ -584,6 +608,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("8")) {
   abschnitt("8 · Kein Doppelpfad — Cron-Route und Standardverdrahtung");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -632,6 +658,7 @@ async function main() {
       && standard.istDeaktiviert({ id: "x" }) === false);
   }
 
+  }
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }

@@ -75,11 +75,15 @@ function reihenfolgeNachFaelligkeit(auftraege, jobType) {
     .map((a) => a.tenantId);
 }
 
+const abschnitteArg = process.argv.find(arg => arg.startsWith("--abschnitte="));
+const abschnitte = abschnitteArg ? new Set(abschnitteArg.slice(13).split(",")) : null;
+if (abschnitte && [...abschnitte].some(a => !/^(?:O[1-5]|6|7)$/.test(a))) throw Error("ungueltige-Abschnittsauswahl");
 async function main() {
   console.log("Helmut — OP-30 Aktivierungsreife: Vertragsnachweis O1-O5");
   console.log("  offline · ohne Netz · ohne KI · alle Flags im Test ausdruecklich gesetzt\n");
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  if (!abschnitte || abschnitte.has("O1")) {
   abschnitt("O1 · Faire Rotation und Mandantenanteil sind im ECHTEN Pfad verdrahtet");
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
@@ -241,6 +245,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("O2")) {
   abschnitt("O2 · Der Workerbetrieb ist verdrahtet — nicht mehr nur von Tests geladen");
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
@@ -275,7 +281,7 @@ async function main() {
   {
     const gesehen = [];
     const q = erzeugeSpeicherWarteschlange({ now: () => T0 });
-    await WORKER.durchlauf({
+    const durchlauf = await WORKER.durchlauf({
       env: { ...AN, HELMUT_LLM_FAIRNESS: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: "500" },
       grenzen: { parallel: 1, budgetMs: 20000, leaseMs: 60000, stapel: 5 },
       tagesplan: {
@@ -283,6 +289,7 @@ async function main() {
         global: FAIR.globalerTopf({ deckel: 500, mandatsBedarf: 1 })
       },
       deps: {
+        klassen: { aktiv: true, belege: async () => ({ erlaubt: true, slot: "isolierter-o2-slot" }), gebeFrei: async () => {} },
         now: () => T0, claim: q.claim, finish: q.finish, extendLease: q.extendLease,
         budgetSpeicher: {
           reserviere: async (o) => { gesehen.push(o); return { verfuegbar: true, erlaubt: true }; },
@@ -292,13 +299,15 @@ async function main() {
     });
     // Die Warteschlange ist leer — es geht hier ausschliesslich darum, dass der Weg existiert.
     check("2.3 `durchlauf` nimmt einen Tagesplan entgegen und laeuft damit",
-      true, "Weg vorhanden");
+      durchlauf.gestartet === true && durchlauf.bilanzen.every(b => b.uebersprungen === false), "Worker mit Klassenadapter gestartet");
     const bilanzOhneFlag = await WORKER.durchlauf({ env: {}, deps: {} });
     check("2.3b Ohne Flag startet der Workerbetrieb NICHTS",
       bilanzOhneFlag.gestartet === false && bilanzOhneFlag.grund === "flag-aus", JSON.stringify(bilanzOhneFlag));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("O3")) {
   abschnitt("O3 · Die Vorbedingungspruefung sieht ALLE enthaltenen Fenster");
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
@@ -358,6 +367,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("O4")) {
   abschnitt("O4 · Budgetbedingtes Zurueckstellen ist begrenzt");
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
@@ -415,6 +426,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("O5")) {
   abschnitt("O5 · Dauerhaft gescheiterte Auftraege kommen begrenzt zurueck");
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
@@ -498,6 +511,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("6")) {
   abschnitt("6 · Merge-Neutralitaet: nichts davon wirkt bei ausgeschaltetem Flag");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   {
@@ -545,6 +560,8 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("7")) {
   abschnitt("7 · Was diese Suite ausdruecklich NICHT beweist");
   // ═══════════════════════════════════════════════════════════════════════════════════════
   offenerPunkt("Production-Verhalten des Warteschlangenpfads",
@@ -556,6 +573,7 @@ async function main() {
   offenerPunkt("Wirksamkeit der Migration 20260809",
     "sie ist NICHT angewendet; der Datenbanknachweis liegt in scripts/jobqueue-datenbank-test.js");
 
+  }
   console.log(`\n${"═".repeat(78)}`);
   console.log(`ERGEBNIS  PASS ${pass}  FAIL ${fail}  OFFEN ${offen}  (Pruefungen ${pass + fail})`);
   console.log("═".repeat(78));

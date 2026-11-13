@@ -42,6 +42,10 @@ const PG = {
 let pass = 0;
 let fail = 0;
 let offen = 0;
+let pgAngelegt = false;
+const abschnitteArg = process.argv.find(arg => arg.startsWith("--abschnitte="));
+const abschnitte = abschnitteArg ? new Set(abschnitteArg.slice(13).split(",")) : null;
+if (abschnitte && [...abschnitte].some(a => !/^[ABC]$/.test(a))) throw Error("ungueltige-Abschnittsauswahl");
 function check(name, ok, detail = "") {
   if (ok) { pass += 1; console.log(`  PASS  ${name}${detail ? ` — ${detail}` : ""}`); }
   else { fail += 1; console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
@@ -100,7 +104,7 @@ process.on("exit", () => {
     const f = path.join(dataDir, n);
     try { if (inhalt === null) { if (fs.existsSync(f)) fs.rmSync(f); } else fs.writeFileSync(f, inhalt); } catch (_) { /* ignore */ }
   }
-  try { if (PG.host) psql(`drop database if exists ${PG.db}`, { db: "postgres" }); } catch (_) { /* ignore */ }
+  try { if (pgAngelegt) psql(`drop database if exists ${PG.db}`, { db: "postgres" }); } catch (_) { /* ignore */ }
 });
 
 const handler = require(path.join(ROOT, "server.js"));
@@ -125,6 +129,7 @@ async function main() {
   console.log("Helmut — Keine doppelte Morgenlage: Konkurrenz und Idempotenz (OP-30)");
 
   // ══════════════════════════════════════════════════════════════════════════════════════════
+  if (!abschnitte || abschnitte.has("A")) {
   abschnitt("A · An ECHTER PostgreSQL: die Reservierung ist atomar");
   if (!PG.host) {
     nichtBewiesen("A Atomare Reservierung, Wiederaufnahme, Teilmigration",
@@ -133,6 +138,7 @@ async function main() {
   } else {
     psql(`drop database if exists ${PG.db}`, { db: "postgres" });
     psql(`create database ${PG.db}`, { db: "postgres" });
+    pgAngelegt = true;
     psql(null, { datei: M("20260808_scalable_job_queue.sql") });
     psql(null, { datei: M("20260808_jobqueue_abhaengigkeiten.sql") });
 
@@ -213,6 +219,8 @@ async function main() {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("B")) {
   abschnitt("B · An der ECHTEN Route: die drei Morgenslots");
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -261,6 +269,7 @@ async function main() {
       payload: { mandatsId: "dop" }, dueAt: new Date(uhr() - 1000).toISOString(), priority: 240, tenantId: "dop" });
 
     const deps = {
+      klassen: { aktiv: true, belege: async () => ({ erlaubt: true, slot: "isolierter-morgenslot-slot" }), gebeFrei: async () => {} },
       now: uhr, env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_NARRATIV_QUEUE: "on", HELMUT_SOURCE_MODE: "off" },
       claim: q.claim, finish: q.finish, extendLease: q.extendLease, enqueue: q.enqueue,
       zurueckstellen: q.zurueckstellen,
@@ -312,11 +321,14 @@ async function main() {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════════════════
+  }
+  if (!abschnitte || abschnitte.has("C")) {
   abschnitt("C · Der Vertrag, den KEINE dieser Pruefungen ersetzt");
   nichtBewiesen("Doppelverarbeitung in Production",
     "beide Zusagen (atomare Reservierung, fachliche Idempotenz) sind hier lokal bewiesen. "
     + "Ob Production sich so verhaelt, zeigt erst der stufenweise Nachweis nach der Aktivierung.");
 
+  }
   console.log(`\n${"═".repeat(88)}`);
   console.log(`PASS ${pass}  FAIL ${fail}  OFFEN ${offen}  (gesamt ${pass + fail + offen})`);
   process.exit(fail === 0 ? 0 : 1);

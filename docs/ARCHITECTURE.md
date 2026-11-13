@@ -1,6 +1,8 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-15 (Korrekturlauf zum CAS-Vertrag: EIN atomarer Schreibweg `helmut_verstehen_speichere` prueft Besitzer, Reservierung, Fencing-Wert, Zustand und Lease gemeinsam und schreibt Ergebnis + Abschluss in einer Transaktion; nach dem Modellstart fuehrt kein automatischer Weg zurueck nach `offen`); davor 2026-08-14/6 (§7f: **atomarer Verstehensvertrag (CAS)** — eine Zeile je Vorgang mit Besitzer, Lease und monotonem, per Trigger ERZWUNGENEM Fencing-Wert; loest den Karten-Store der Update-Vormerkungen ab und macht Verstehensparallelitaet ueberhaupt erst sicher moeglich; Default AUS, Migration `20260814180000` NICHT angewendet, kanonisch [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)); davor 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-11-13 (gezielter Verarbeitungskern fuer 100, Entwicklungsstand; siehe Abschnitt unten).
+
+**Unveraenderter vorheriger Architekturstand:** 2026-08-15 (Korrekturlauf zum CAS-Vertrag: EIN atomarer Schreibweg `helmut_verstehen_speichere` prueft Besitzer, Reservierung, Fencing-Wert, Zustand und Lease gemeinsam und schreibt Ergebnis + Abschluss in einer Transaktion; nach dem Modellstart fuehrt kein automatischer Weg zurueck nach `offen`); davor 2026-08-14/6 (§7f: **atomarer Verstehensvertrag (CAS)** — eine Zeile je Vorgang mit Besitzer, Lease und monotonem, per Trigger ERZWUNGENEM Fencing-Wert; loest den Karten-Store der Update-Vormerkungen ab und macht Verstehensparallelitaet ueberhaupt erst sicher moeglich; Default AUS, Migration `20260814180000` NICHT angewendet, kanonisch [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)); davor 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -23,6 +25,25 @@ Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
 > Status → [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
 ---
+
+## Gezielter Verarbeitungskern fuer 100 aktive Kunden (13.11.2026)
+
+Entwicklungsstand: Quellenplan → einzelne unveraenderliche Artikelversionen →
+gepruefte Sachstaende → individuelle gespeicherte Tagespakete → App.
+Bestehende Vercel-/Supabase-Infrastruktur und Fachpruefer bleiben erhalten.
+`scalable-pipeline.js` orchestriert einzelne Jobs und mandatsgebundene Reihenfolge;
+`storage.js` bindet Artikelarchive und relationale Tagesclaims. Eine skalare
+Wiederbeobachtung markiert erneut relevante Artikel, ohne ihren Ursprung oder
+Verarbeitungsfortschritt umzuschreiben. `lage-verarbeitungsbeleg.js` sichert
+bezahlte Phasen in kleinen bestehenden Briefingzeilen;
+`modell-arbeitsgrenze.js` begrenzt den gesamten normalen Modellzugang verteilt.
+`briefing-speicher.js` speichert das gebundene Ergebnis einschliesslich Lage/Radar;
+`tagespaket-auslieferung.js` liefert dieses im normalen Appstart, Briefing und
+Lage-GET ohne fachlichen Neubau oder Modell aus. Quellen-/Profil-/Tenantpruefungen
+bleiben verbindlich. Historische ausdrueckliche Leser bleiben getrennt erreichbar.
+
+Keine neue Infrastruktur und kein Production-Rollout durch diese Dokumentation.
+[Entscheidung, Umsetzung, gezielte Tests und offene Dimensionierung](betrieb/verarbeitungskern-100-20261113.md).
 
 ## 1 · Zentrale Komponenten
 

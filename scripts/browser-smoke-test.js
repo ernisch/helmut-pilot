@@ -30,6 +30,7 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const root = path.join(__dirname, "..");
+const tagespaketOnly = process.argv.includes("--tagespaket");
 
 function loadPlaywright() {
   const candidates = [
@@ -49,16 +50,190 @@ function check(name, cond, detail = "") {
   else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
 }
 
+// Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
+// Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
+// Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
+async function tagespaketSmoke(playwright) {
+  const assert = require("node:assert/strict");
+  process.env.HELMUT_AUTH_MODE = "accounts";
+  process.env.HELMUT_STORAGE_BACKEND = "local";
+  process.env.HELMUT_SOURCE_MODE = "off";
+  const B = require("../lib/helmut/briefing-speicher");
+  const D = require("../lib/helmut/tagespaket-auslieferung");
+  const L = require("../lib/helmut/briefing-lauf");
+  const S = require("../lib/helmut/storage");
+  const accounts = require("../lib/helmut/accounts");
+  const ai = require("../lib/helmut/ai");
+  const originals = [S, accounts, ai, D].map(module => [module, { ...module }]);
+  const forbidden = [];
+  const fail = name => () => { forbidden.push(name); throw Error("Im Tagespaket-Smoke verboten: " + name); };
+  // Vor dem Laden weiterer Fachmodule sperren, damit auch destrukturierte
+  // Speicher-/Modellimporte nur die gesperrten Funktionen erhalten koennen.
+  for (const [name, value] of Object.entries(S)) {
+    if (typeof value === "function" && !["assertTenant", "v3StoreReady"].includes(name)) S[name] = fail("storage." + name);
+  }
+  for (const name of Object.keys(ai)) {
+    if (/^(generate|request|enrich|assess|extractKnowledgeObjectTags|readSynthetik500.*Completion)/.test(name)
+      && typeof ai[name] === "function") ai[name] = fail("ai." + name);
+  }
+  const fixture = require("./fixtures/profilhash-integration");
+  const { day, now } = fixture;
+  const profile = { ...fixture.profile, onboardedAt: now.toISOString() };
+  const text = fixture.fixture().text, rows = new Map([[text.id, structuredClone(text)]]);
+  const briefing = structuredClone(fixture.briefing);
+  const lageAnsicht = B.lageAusgabe(text.payload);
+  assert.equal(lageAnsicht.fromCache, true);
+  assert.equal(lageAnsicht.pendingNarrative, false);
+  assert.deepEqual(lageAnsicht.quellenBindung, {
+    koSetHash: text.payload.koSetHash, quellenHash: text.payload.quellenHash });
+  briefing.items = briefing.items.map((item, i) => ({ ...item,
+    title: lageAnsicht.vorgaenge[i].displayTitle, sources: lageAnsicht.vorgaenge[i].sources }));
+  briefing.currentHelmutState.status = "fresh";
+  briefing.currentRadarState = { status: "fresh", articles: [{ vorgangId: "vg-synth-1",
+    title: "Gespeicherter synthetischer Radarhinweis" }] };
+  briefing.tagespaketGrundlage = [1, 2].map(i => ({ id: `ko-synth-${i}`, vorgang_id: `vg-synth-${i}` }));
+  let packageReads = 0;
+  const storage = { assertTenant: S.assertTenant,
+    getRenderedBriefingV3: async (id, slot, tag) => {
+      assert.equal(id, profile.id); assert.equal(tag, day); packageReads++;
+      return structuredClone(rows.get(`bf-${id}-${slot}-${tag}`) || null);
+    },
+    insertRenderedBriefingV3: async row => {
+      assert(!rows.has(row.id)); rows.set(row.id, structuredClone(row)); return { saved: true };
+    }
+  };
+  await B.materialisiere({ profile, userId: profile.id, now, briefing, lageAnsicht, storage });
+  const row = rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);
+  assert(row, "Synthetisches Tagespaket muss vor dem Browserstart gespeichert sein");
+  assert(require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig(row.payload.lage),
+    "Karten allein ersetzen keinen gespeicherten geprueften Narrativtext");
+  assert.deepEqual(row.payload.lage, text.payload);
+  // Der bestehende Quellenzeitpunkt kann ohne neuen Tagesanlass einen ehrlichen
+  // Teilstand ergeben. Fehlender Lage-/Quellenbeleg ist hier niemals zulaessig.
+  const expectedErrors = briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
+  assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
+  const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: now,
+    status: L.STATUS_ERFOLG, ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row),
+    fensterStart: day + "T00:00:00Z" });
+  rows.set(L.laufId(profile.id, day), { id: L.laufId(profile.id, day), user_id: profile.id,
+    slot: L.SLOT_ERFOLG, generated_at: now.toISOString(), payload: receipt });
+  const before = JSON.stringify([...rows]);
+  // Nur die expliziten schmalen Leser duerfen die gespeicherte Testfixture lesen.
+  // Jede andere Speicheroperation und jeder Modellaufruf scheitert sichtbar.
+  S.getProfile = async id => { assert.equal(id, profile.id); return structuredClone(profile); };
+  S.getTasks = S.getUserNotes = async id => { assert.equal(id, profile.id); return []; };
+  S.getRenderedBriefingV3 = storage.getRenderedBriefingV3;
+  // Synthetischer Sitzungsanbieter; die HTTP-Autorisierung selbst bleibt echt.
+  accounts.resolveSession = async token => token === "synthetic" ? { user: {
+    id: "synthetic-browser-user", role: "abgeordneter", politicianId: profile.id } } : null;
+  accounts.extendSession = async () => null;
+  accounts.recordUserActivity = async () => {};
+  const read = D.lese;
+  D.lese = args => read({ ...args, now }); // Vorhandene Fixture-Uhr, kein Umstempeln.
+  let server, browser;
+  try {
+    const handler = require(path.join(root, "server.js"));
+    server = http.createServer(handler);
+    await new Promise((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    browser = await playwright.chromium.launch({
+      executablePath: process.env.HELMUT_BROWSER_EXECUTABLE_PATH || undefined,
+      headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+    });
+    for (const [label, viewport, isMobile] of [
+      ["Desktop", { width: 1280, height: 800 }, false], ["Mobil", { width: 390, height: 844 }, true]
+    ]) {
+      const context = await browser.newContext({ viewport, isMobile, hasTouch: isMobile,
+        serviceWorkers: "block", bypassCSP: true });
+      context.setDefaultTimeout(10000);
+      try {
+        await context.addCookies([{ name: "helmut_session", value: "synthetic", url: baseUrl, httpOnly: true, sameSite: "Lax" }]);
+        await context.addInitScript(() => sessionStorage.setItem("helmut:install-dismissed", "1"));
+        const unexpected = [], pageErrors = [], apiErrors = [], methods = [];
+        await context.route("**/*", async route => {
+          const request = route.request(), url = new URL(request.url());
+          if (url.origin !== baseUrl) { unexpected.push(request.url()); return route.abort(); }
+          if (url.pathname.startsWith("/api/")) methods.push(request.method());
+          if (request.method() !== "GET") { unexpected.push(request.method() + " " + url.pathname); return route.abort(); }
+          // Unbeteiligter Parlamentsfeed gehoert nicht zum Tagespaket-Liefervertrag.
+          if (url.pathname === "/api/parliament") return route.fulfill({ contentType: "application/json", body: '{"items":[]}' });
+          if (url.pathname.startsWith("/api/")
+            && !["/api/auth/session", "/api/security/csrf", "/api/app/start"].includes(url.pathname)) {
+            unexpected.push(url.pathname); return route.abort();
+          }
+          return route.continue();
+        });
+        const page = await context.newPage();
+        page.on("pageerror", error => pageErrors.push(error.message));
+        page.on("response", response => {
+          if (new URL(response.url()).pathname.startsWith("/api/") && response.status() >= 400) apiErrors.push(response.status() + " " + response.url());
+        });
+        const readsBefore = packageReads;
+        const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/app/start");
+        await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+        const response = await responsePromise, start = await response.json();
+        check(`${label}: echter autorisierter Appstart liefert gespeichertes Tagespaket`, response.status() === 200
+          && start.profile.id === profile.id && start.briefing.gespeicherterNachweis.inhaltHash === row.payload.inhaltHash
+          && start.briefing.gespeicherterNachweis.profilHash === row.payload.profilHash
+          && start.briefing.paketStatus.tag === day && start.briefing.paketStatus.quittungGebunden === true
+          && JSON.stringify(start.briefing.paketStatus.quellenStand) === JSON.stringify(row.payload.quellenStand));
+        assert.deepEqual(start.briefing.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+        check(`${label}: gepruefter Narrativtext mit ehrlichem Paketstatus ausgeliefert`,
+          start.briefing.lageBriefing.pendingNarrative === false
+          && JSON.stringify(start.briefing.paketStatus.fehler) === JSON.stringify(expectedErrors)
+          && start.briefing.paketStatus.zustand === (expectedErrors.length ? "teilweise" : "gespeichert"));
+        await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+        check(`${label}: Client hat exakt diesen Paketstand angenommen`, await page.evaluate(expected =>
+          profile.id === expected.tenant && briefing.gespeicherterNachweis.inhaltHash === expected.hash,
+        { tenant: profile.id, hash: row.payload.inhaltHash }));
+        const nav = isMobile ? ".mobile-dock" : ".nav-list";
+        // Historische View-IDs: briefing = Lage, helmut = Briefing.
+        for (const view of ["radar", "helmut", "office", "briefing"]) {
+          await page.locator(`${nav} [data-view="${view}"]`).click();
+          await page.locator(`.app-frame.view-${view}`).waitFor({ state: "visible" });
+          check(`${label}: ${view} aus gespeichertem Paket erreichbar`, await page.locator(`${nav} [data-view="${view}"].active`).count() === 1);
+        }
+        const cards = page.locator("[data-ui-lage-select]");
+        check(`${label}: beide gespeicherten Lagekarten bleiben sichtbar`, await cards.count() === 2
+          && (await cards.allTextContents()).every((title, i) => title.includes(lageAnsicht.vorgaenge[i].displayTitle)));
+        await cards.first().click();
+        check(`${label}: gespeicherter belegter Text erscheint im Lage-Detail`,
+          (await page.locator(".ui-lage-detail .vsheet-lede").innerText()).includes(text.payload.paragraphs[0].text));
+        check(`${label}: Originalquelle der gespeicherten Karte bleibt erhalten`, await page.locator(
+          '.ui-lage-detail .ui-source-access a[href="https://example.invalid/dokument/1"]').count() === 1);
+        check(`${label}: Start und Navigation brauchen nur Paket und Quittung`, packageReads - readsBefore === 2);
+        check(`${label}: keine JS-/API-Fehler, externen Abrufe oder Schreibauftraege`, pageErrors.length === 0
+          && apiErrors.length === 0 && unexpected.length === 0 && methods.every(method => method === "GET"),
+        [...pageErrors, ...apiErrors, ...unexpected].slice(0, 3).join(" | "));
+        const csrf = await (await context.request.get(baseUrl + "/api/security/csrf")).json();
+        const foreign = await context.request.get(baseUrl + "/api/app/start?politicianId=foreign",
+          { headers: { "x-csrf-token": csrf.token } });
+        check(`${label}: manipulierte Mandatsauswahl bleibt an eigene Sitzung gebunden`, foreign.status() === 200
+          && (await foreign.json()).profile.id === profile.id);
+        const anonymous = await browser.newContext();
+        try { check(`${label}: ohne Sitzung kein Tagespaket`, (await anonymous.request.get(baseUrl + "/api/app/start")).status() === 401); }
+        finally { await anonymous.close(); }
+      } finally { await context.close(); }
+    }
+    check("Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
+      && JSON.stringify([...rows]) === before, forbidden.join(", "));
+  } finally {
+    if (browser) await browser.close();
+    if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+    for (const [module, original] of originals) Object.assign(module, original);
+  }
+}
+
 (async () => {
   const playwright = loadPlaywright();
   if (!playwright) {
     // Fail-closed-Regel siehe Kopfkommentar: in CI (bzw. mit
     // HELMUT_REQUIRE_BROWSER=1) darf fehlendes Playwright NICHT still grün sein.
-    const requireBrowser = process.env.HELMUT_REQUIRE_BROWSER === "1"
+    const requireBrowser = tagespaketOnly || process.env.HELMUT_REQUIRE_BROWSER === "1"
       || (process.env.CI === "true" && process.env.HELMUT_OFFLINE_TEST !== "1");
     if (requireBrowser) {
       console.error("FAIL  Playwright/Chromium fehlt, aber der Browser-Smoke ist hier verpflichtend");
-      console.error("      (CI=true bzw. HELMUT_REQUIRE_BROWSER=1). Ein SKIP wäre fail-open:");
+      console.error("      (CI=true, HELMUT_REQUIRE_BROWSER=1 oder --tagespaket). Ein SKIP wäre fail-open:");
       console.error("      das Merge-Gate würde grün, ohne dass die App je in einem Browser lief.");
       console.error("      Fix: npm i --no-save playwright && npx playwright install --with-deps chromium");
       process.exit(1);
@@ -66,6 +241,12 @@ function check(name, cond, detail = "") {
     console.log("SKIP  Playwright nicht installiert — Browser-Smoke übersprungen (nur lokal/offline-suite zulässig).");
     console.log("      In CI: npx playwright install chromium && node scripts/browser-smoke-test.js");
     process.exit(0);
+  }
+
+  if (tagespaketOnly) {
+    await tagespaketSmoke(playwright);
+    console.log(`\n${passed} PASS, ${failed} FAIL (nur Tagespaket, Desktop/Mobil)`);
+    process.exit(failed ? 1 : 0);
   }
 
   // Lokaler Pilot-Modus ohne externe Dienste; Store-Dateien werden gesichert.

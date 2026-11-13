@@ -54,6 +54,7 @@ const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260808_scalable_j
 
 const WORKER = 4;   // exakt die Production-Konstellation der Stufe 1
 const STAPEL = 25;
+const gezielt = process.argv.includes("--gezielt");
 
 let pass = 0;
 let fail = 0;
@@ -152,6 +153,9 @@ function baueWorkerDeps({ sitzungen, ausgefuehrt, spiegelTreiber = null }) {
     return wsProSitzung[Number.isFinite(nr) ? nr % wsProSitzung.length : 0];
   };
   return {
+    // Diese historische Queue-/Blob-Suite modelliert den Klassenadapter nur.
+    // Der neue echte verteilte Klassennachweis liegt in der Kernsuite.
+    klassen: { belege: async () => ({ erlaubt: true, slot: "synthetischer-slot" }), gebeFrei: async () => {} },
     claim: (o) => nachOwner(o.owner).claim(o),
     finish: (o) => nachOwner(o.owner).finish(o),
     extendLease: (o) => nachOwner(o.owner).extendLease(o),
@@ -168,19 +172,20 @@ function baueWorkerDeps({ sitzungen, ausgefuehrt, spiegelTreiber = null }) {
     // Persistenz-Attrappe mit ECHTER Neu-Erkennung (in-Memory-Ablage) — die REST-Fassung
     // ist in warteschlange-blob-entkopplung-test.js §3 gegen die PostgREST-Attrappe bewiesen.
     persistRohdokumente: (() => {
-      const ablage = new Set();
+      const ablage = new Map();
       return async (items) => {
-        const neuIds = [];
+        const neuIds = [], bestaetigteIds = [], quellenstaende = {};
         for (const it of items) {
           const zeile = dedup.toRawDocumentRow(it);
-          if (!zeile || !zeile.id || ablage.has(zeile.id)) continue;
-          ablage.add(zeile.id);
-          neuIds.push(zeile.id);
+          if (!zeile || !zeile.id) continue;
+          if (!ablage.has(zeile.id)) { ablage.set(zeile.id, zeile); neuIds.push(zeile.id); }
+          bestaetigteIds.push(zeile.id);
+          quellenstaende[zeile.id] = require("../lib/helmut/roh-quellenstaende").standHash(ablage.get(zeile.id));
         }
-        return { ok: true, neuIds, vorhandene: items.length - neuIds.length };
+        return { ok: true, neuIds, vorhandene: items.length - neuIds.length, bestaetigteIds, quellenstaende };
       };
     })(),
-    enqueue: async () => ({ verfuegbar: true, neu: true }),
+    enqueue: async job => ({ verfuegbar: true, id: job.idempotencyKey, neu: true }),
     // 0-Doppelarbeit-Zaehlung: jede Handler-Ausfuehrung wird je Auftrag gezaehlt. Der echte
     // Handler laeuft trotzdem — der Zaehler haengt am Idempotenzschluessel des Auftrags.
     offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 0, wartend: 0, laufend: 0 }),
@@ -193,6 +198,24 @@ function baueWorkerDeps({ sitzungen, ausgefuehrt, spiegelTreiber = null }) {
 }
 
 async function main() {
+  if (gezielt) {
+    // Ausdrueckliche sichere Auswahl: ausschliesslich zwei Artikel im Speicher.
+    // Keine Erreichbarkeitsprobe, PostgreSQL-Sitzung, Blobfixture oder Laststufe.
+    const SP = require("../lib/helmut/scalable-pipeline"), jobs = new Map();
+    const deps = baueWorkerDeps({ sitzungen: [] });
+    deps.env = { HELMUT_SCALABLE_PIPELINE: "on" }; deps.now = Date.now;
+    deps.enqueue = async job => { const neu = !jobs.has(job.idempotencyKey); jobs.set(job.idempotencyKey,job);
+      return { verfuegbar: true, id: job.idempotencyKey, neu }; };
+    const input = { id: "synthetischer-einzelfall", payload: { quelle: { id: "q-einzelfall" } }, freshnessWindow: "2026-11-13T00Z" };
+    const erster = await SP.HANDLER.source_fetch(input,deps);
+    check("fixture.1 Zwei Artikel erhalten zwei bestaetigte Einzeljobs", erster.ok && jobs.size === 2
+      && [...jobs.values()].every(j => j.payload.dokumentIds.length === 1));
+    const wiederholung = await SP.HANDLER.source_fetch(input,deps);
+    check("fixture.2 Wiederholung nutzt dieselben Versionen und Auftraege", wiederholung.ok && jobs.size === 2
+      && wiederholung.gespeichert === 0 && wiederholung.verstehenNeu === 0);
+    console.log(`PASS ${pass} FAIL ${fail}; SKIP historische DB-/Kapazitaetsabschnitte 0–4`);
+    process.exit(fail ? 1 : 0);
+  }
   console.log("Helmut — Parallelitaetstest des blob-entkoppelten Warteschlangenpfads (OP-30)");
   console.log(`  echte lokale PostgreSQL · worker=${WORKER} stapel=${STAPEL} · Blob-Fixture >= 1,29 MB\n`);
 
