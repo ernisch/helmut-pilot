@@ -10,6 +10,19 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
 **Weiterer echter Lieferblocker,22:52–22:56 UTC:**
+Der zweite Adminlauf endete22:59:38 UTC:151Ziel,16erledigt,6Fehler,
+121zurueckgestellt,8wiederholt. Bisherige Grenzen unveraendert.
+Nach Berliner Mitternacht auf weiterem ausdruecklichen Testauftrag genau einmal
+Lagecron und Morgenpaket fuer14.11. ausgefuehrt. Lage nicht auslieferbar:
+bestaetigte Qualitaetsantwort `profilbezug-fehlt` bei Absatz0. Kein Urteil gelockert.
+Paket14.11. um23:08:08.792 UTC gespeichert/verifiziert,58Eintraege/8Karten,
+ohne bestaetigten Lagetext; offen/kein Tagesanlass/fehlender Lagequellenbeleg.
+Kein heutiger vollstaendiger Briefingnachweis. Beide neuen Modellphasen abgerechnet,
+0,014532USD, Tagesbindung danach0,461751USD. Keine weitere Modellwiederholung.
+Die bestaetigten Entwurfs-/Pruefantworten bleiben unveraendert; separater
+rein lesender Qualitaetscheck laeuft. Quellen13.11. und Berliner Pakettag14.11.
+sind ausdruecklich verschieden; kein Umstempeln des13.11.-Pakets.
+
 Heutige Abrufe145 und Understanding74 warten. Projektion seit04:15 und
 Paketbau seit04:30 ebenfalls faellig, aber attempts0/wiedervorlagen0.
 Vier von acht Tagesfenstern waren verbraucht,1200/2400Sekunden, also kein
