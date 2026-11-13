@@ -30,7 +30,8 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const root = path.join(__dirname, "..");
-const tagespaketOnly = process.argv.includes("--tagespaket");
+const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
+const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb;
 
 function loadPlaywright() {
   const candidates = [
@@ -53,7 +54,7 @@ function check(name, cond, detail = "") {
 // Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
 // Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
 // Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
-async function tagespaketSmoke(playwright) {
+async function tagespaketSmoke(playwright, { jsonb = false } = {}) {
   const assert = require("node:assert/strict");
   process.env.HELMUT_AUTH_MODE = "accounts";
   process.env.HELMUT_STORAGE_BACKEND = "local";
@@ -64,6 +65,8 @@ async function tagespaketSmoke(playwright) {
   const S = require("../lib/helmut/storage");
   const accounts = require("../lib/helmut/accounts");
   const ai = require("../lib/helmut/ai");
+  const P = require("../lib/helmut/publication-eligibility");
+  const previousPolicy = process.env[P.ENV];
   const originals = [S, accounts, ai, D].map(module => [module, { ...module }]);
   const forbidden = [];
   const fail = name => () => { forbidden.push(name); throw Error("Im Tagespaket-Smoke verboten: " + name); };
@@ -92,7 +95,23 @@ async function tagespaketSmoke(playwright) {
   briefing.currentRadarState = { status: "fresh", articles: [{ vorgangId: "vg-synth-1",
     title: "Gespeicherter synthetischer Radarhinweis" }] };
   briefing.tagespaketGrundlage = [1, 2].map(i => ({ id: `ko-synth-${i}`, vorgang_id: `vg-synth-${i}` }));
+  if (jsonb) {
+    process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{
+      publicationUrl: "https://example.invalid/held-publication", reason: "unresolved-event-relation",
+      review: { id: "synthetic-browser-jsonb", receiptSHA256: "a".repeat(64),
+        koSHA256: "b".repeat(64), sourceSHA256: "c".repeat(64) }
+    }] });
+    briefing.currentHelmutState = { status: "empty", emptyState: { kind: "quiet",
+      headline: "Kein belegter Tagesanlass fuer ein Briefing",
+      detail: "Die belegten Themen bleiben in der Lage. Daraus folgt keine Entwarnung." } };
+    briefing.currentRadarState = { status: "fresh", anzeige: { status: "fresh", dynamics: [{
+      vorgangId: "vg-synth-1", title: "Gespeicherte synthetische Dynamik",
+      sourceUrl: "https://example.invalid/dokument/1", lastUpdatedAt: day + "T05:00:00Z"
+    }] } };
+    briefing.publicationEligibilityPolicy = P.publicInfo();
+  }
   let packageReads = 0;
+  let identityReads = 0;
   const storage = { assertTenant: S.assertTenant,
     getRenderedBriefingV3: async (id, slot, tag) => {
       assert.equal(id, profile.id); assert.equal(tag, day); packageReads++;
@@ -102,15 +121,43 @@ async function tagespaketSmoke(playwright) {
       assert(!rows.has(row.id)); rows.set(row.id, structuredClone(row)); return { saved: true };
     }
   };
+  if (jsonb) {
+    // Echter schmaler Identitaetsleser und echte Sperrpruefung, nur dessen
+    // Datenquelle besteht aus zwei vorhandenen synthetischen Artikelidentitaeten.
+    const identities = [1, 2].map(i => ({ knowledge_object_id: `ko-synth-${i}`,
+      raw_document_id: `rd-synth-${i}`, raw_documents: { id: `rd-synth-${i}`,
+        url: `https://example.invalid/dokument/${i}`, canonical_url: null } }));
+    storage.getPublicationSourceIdentities = deps => originals[0][1].getPublicationSourceIdentities(deps, {
+      request: async requestPath => {
+        const url = new URL(requestPath, "https://local.invalid");
+        assert.equal(url.pathname, "/rest/v1/ko_document_links");
+        assert.equal(url.searchParams.get("select"), "knowledge_object_id,raw_document_id,raw_documents(id,url,canonical_url)");
+        const filter = url.searchParams.get("knowledge_object_id");
+        const ids = JSON.parse("[" + filter.slice(4, -1) + "]");
+        assert.deepEqual(ids, ["ko-synth-1", "ko-synth-2"]);
+        const offset = Number(url.searchParams.get("offset"));
+        assert([0, 2].includes(offset)); identityReads++;
+        return structuredClone(identities.slice(offset, offset + Number(url.searchParams.get("limit"))));
+      }
+    });
+  }
   await B.materialisiere({ profile, userId: profile.id, now, briefing, lageAnsicht, storage });
   const row = rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);
   assert(row, "Synthetisches Tagespaket muss vor dem Browserstart gespeichert sein");
   assert(require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig(row.payload.lage),
     "Karten allein ersetzen keinen gespeicherten geprueften Narrativtext");
   assert.deepEqual(row.payload.lage, text.payload);
+  if (jsonb) {
+    const info = row.payload.briefing.publicationEligibilityPolicy;
+    const fromJsonb = { hash: info.hash, version: info.version, heldPublications: info.heldPublications };
+    assert.notEqual(JSON.stringify(fromJsonb), JSON.stringify(info), "JSONB-Gegenfall braucht geaenderte Schluesselreihenfolge");
+    row.payload.briefing.publicationEligibilityPolicy = structuredClone(fromJsonb);
+    row.payload.quellenStand.publicationPolicy = structuredClone(fromJsonb);
+    assert.equal(B.inhaltHash(row.payload), row.payload.inhaltHash, "Objektreihenfolge aendert keine Inhaltsbindung");
+  }
   // Der bestehende Quellenzeitpunkt kann ohne neuen Tagesanlass einen ehrlichen
   // Teilstand ergeben. Fehlender Lage-/Quellenbeleg ist hier niemals zulaessig.
-  const expectedErrors = briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
+  const expectedErrors = jsonb || briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
   assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
   const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: now,
     status: L.STATUS_ERFOLG, ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row),
@@ -123,6 +170,7 @@ async function tagespaketSmoke(playwright) {
   S.getProfile = async id => { assert.equal(id, profile.id); return structuredClone(profile); };
   S.getTasks = S.getUserNotes = async id => { assert.equal(id, profile.id); return []; };
   S.getRenderedBriefingV3 = storage.getRenderedBriefingV3;
+  if (jsonb) S.getPublicationSourceIdentities = storage.getPublicationSourceIdentities;
   // Synthetischer Sitzungsanbieter; die HTTP-Autorisierung selbst bleibt echt.
   accounts.resolveSession = async token => token === "synthetic" ? { user: {
     id: "synthetic-browser-user", role: "abgeordneter", politicianId: profile.id } } : null;
@@ -169,9 +217,54 @@ async function tagespaketSmoke(playwright) {
           if (new URL(response.url()).pathname.startsWith("/api/") && response.status() >= 400) apiErrors.push(response.status() + " " + response.url());
         });
         const readsBefore = packageReads;
+        const identityReadsBefore = identityReads;
         const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/app/start");
         await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
         const response = await responsePromise, start = await response.json();
+        if (jsonb) {
+          const b = start.briefing;
+          check(`${label}: JSONB-Paket mit aktiver Sperre kommt durch echte Sitzungs-/HTTP-Autorisierung`,
+            response.status() === 200 && start.profile?.id === profile.id && b?.available === true
+            && b.paketStatus?.zustand === "gespeichert" && b.paketStatus.vollstaendig === true
+            && b.paketStatus.quittungGebunden === true && b.paketStatus.tag === day
+            && b.gespeicherterNachweis?.inhaltHash === row.payload.inhaltHash
+            && b.gespeicherterNachweis?.profilHash === row.payload.profilHash);
+          assert.deepEqual(b.publicationEligibilityPolicy, P.publicInfo());
+          assert.deepEqual(b.paketStatus.quellenStand, row.payload.quellenStand);
+          assert.deepEqual(b.paketStatus.fehler, []);
+          assert.deepEqual(b.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+          check(`${label}: SPA nimmt gespeicherte Ruhelage mit identischer Profil- und Quellenbindung an`,
+            await page.evaluate(expected => profile.id === expected.tenant
+              && briefing.gespeicherterNachweis.inhaltHash === expected.hash
+              && briefing.currentHelmutState.status === "empty"
+              && briefing.currentHelmutState.emptyState.kind === "quiet"
+              && !briefing.currentHelmutState.tagesAnlass,
+            { tenant: profile.id, hash: row.payload.inhaltHash }));
+          const nav = isMobile ? ".mobile-dock" : ".nav-list";
+          await page.locator(`${nav} [data-view="helmut"]`).click();
+          const quiet = page.locator('.hstand-state-card[data-empty-kind="quiet"]');
+          check(`${label}: Briefing zeigt ehrliche gespeicherte Ruhelage mit weiterlaufenden Lagekarten`,
+            await quiet.count() === 1 && (await quiet.innerText()).includes("Das ist keine Entwarnung.")
+            && (await quiet.innerText()).includes("2 Themen weiter"));
+          await page.locator(`${nav} [data-view="radar"]`).click();
+          const radar = page.locator('.radar2-card--dynamic[href="https://example.invalid/dokument/1"]');
+          check(`${label}: gespeicherte Radar-Dynamik mit oeffnender Originalquelle bleibt sichtbar`,
+            await radar.count() === 1 && (await radar.innerText()).includes("Gespeicherte synthetische Dynamik"));
+          await page.locator(`${nav} [data-view="briefing"]`).click();
+          const cards = page.locator("[data-ui-lage-select]");
+          assert.equal(await cards.count(), 2);
+          await cards.first().click();
+          check(`${label}: gespeicherte gepruefte Lage bleibt nach JSONB-Auslieferung vollstaendig erreichbar`,
+            (await page.locator(".ui-lage-detail .vsheet-lede").innerText()).includes(text.payload.paragraphs[0].text)
+            && await page.locator('.ui-lage-detail .ui-source-access a[href="https://example.invalid/dokument/1"]').count() === 1);
+          check(`${label}: aktive Sperre liest nur Paket, Quittung und zwei gebundene Artikelidentitaeten`,
+            packageReads - readsBefore === 2 && identityReads - identityReadsBefore === 2);
+          check(`${label}: JSONB-Auslieferung braucht keine Modelle, Korpusabrufe oder Schreibauftraege`,
+            pageErrors.length === 0 && apiErrors.length === 0 && unexpected.length === 0
+            && methods.every(method => method === "GET"), [...pageErrors, ...apiErrors, ...unexpected].slice(0, 3).join(" | "));
+          continue; // Die historischen Tagespaketfaelle gehoeren nicht zu diesem neuen Gegenfall.
+        }
         check(`${label}: echter autorisierter Appstart liefert gespeichertes Tagespaket`, response.status() === 200
           && start.profile.id === profile.id && start.briefing.gespeicherterNachweis.inhaltHash === row.payload.inhaltHash
           && start.briefing.gespeicherterNachweis.profilHash === row.payload.profilHash
@@ -215,12 +308,16 @@ async function tagespaketSmoke(playwright) {
         finally { await anonymous.close(); }
       } finally { await context.close(); }
     }
-    check("Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
+    check(jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
       && JSON.stringify([...rows]) === before, forbidden.join(", "));
   } finally {
     if (browser) await browser.close();
     if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
     for (const [module, original] of originals) Object.assign(module, original);
+    if (jsonb) {
+      if (previousPolicy === undefined) delete process.env[P.ENV];
+      else process.env[P.ENV] = previousPolicy;
+    }
   }
 }
 
@@ -244,8 +341,8 @@ async function tagespaketSmoke(playwright) {
   }
 
   if (tagespaketOnly) {
-    await tagespaketSmoke(playwright);
-    console.log(`\n${passed} PASS, ${failed} FAIL (nur Tagespaket, Desktop/Mobil)`);
+    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb });
+    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 
