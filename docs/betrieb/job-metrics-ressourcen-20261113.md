@@ -52,7 +52,8 @@ wieder her. Keine Anwendung auf Production; Auth, Mandanten- und Kostenlogik unv
 Andere Aggregat-/DISTINCT-Sortierungen koennen bei grossen Bestandsmengen weiter
 Temp-IO erzeugen. Keine Produktionsgeschwindigkeit oder Ausfallbehebung bewiesen.
 Unabhaengiges Codex-Review auf494ad4fa: kein SQL-/Rueckweg-Befund; gefundene
-Assertion-Testluecke korrigiert und per Negativprobe belegt. Enges Nachreview offen.
+Assertion-Testluecke korrigiert und per Negativprobe belegt. Nachreview auf2737fb3c
+abgeschlossen: keine blockierenden Befunde. SQL und Teststand bleiben unveraendert.
 PR bleibt Entwurf. `[skip ci]` haelt die Pruefung wie beauftragt lokal;
 keine gruene Pflicht-CI behauptet. Der eigene bestehende Branch mit deaktiviertem
 Vercel-Deployment wird weiterverwendet; keine Deploymentkonfiguration geaendert.
