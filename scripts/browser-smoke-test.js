@@ -111,6 +111,7 @@ function check(name, cond, detail = "") {
   // Container-taugliche Flags: ohne --no-sandbox/--disable-dev-shm-usage stürzt
   // Chromium in CI-/Sandbox-Umgebungen ab ("Target crashed").
   const browser = await playwright.chromium.launch({
+    executablePath: process.env.HELMUT_BROWSER_EXECUTABLE_PATH || undefined,
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
   });
@@ -326,6 +327,37 @@ function check(name, cond, detail = "") {
           radarText.includes("nennt Ihren Namen")
             && radarText.includes("Eine Bewertung des Tons oder der Resonanz liegt nicht vor.")
             && !radarText.includes("Alle relevanten Artikel"));
+
+        const radarLage = page.locator('#radar2-root [data-lage-verweis]');
+        check(`${label}: Radar verweist auf den vorhandenen Lagevorgang`, await radarLage.count() === 1);
+        await radarLage.click();
+        check(`${label}: Radar-Verweis oeffnet den richtigen Sachstand`,
+          await page.locator('.ui-lage-detail').innerText().then(text => text.includes("Die belegten Fakten gehoeren in die Lage.")));
+
+        // Unterschiedliche Quellenhinweise desselben urspruenglichen KOs
+        // muessen separat waehlbar bleiben; keine alte Sammelprosa/Officeaktion.
+        const split = require('../lib/helmut/lage-quellenteilung').teile([
+          { vorgangId: 'vg-sammel-test', displayTitle: 'Sammelprosa nicht erneut anzeigen',
+            displaySummary: 'Doppelte Sachverhalte nicht erneut anzeigen',
+            sources: [{ name: 'Testquelle', title: 'Bereits einzeln erklaert', url: 'https://example.org/geteilt' },
+              { name: 'Testquelle', title: 'Eigene Meldung A', url: 'https://example.org/eigen-a' },
+              { name: 'Testquelle', title: 'Eigene Meldung B', url: 'https://example.org/eigen-b' }] },
+          { vorgangId: 'vg-fokus-test', displayTitle: 'Bereits einzeln erklaert',
+            sources: [{ name: 'Testquelle', title: 'Bereits einzeln erklaert', url: 'https://example.org/geteilt' }] }
+        ]);
+        await page.evaluate((cards) => {
+          briefing.lageBriefing.vorgaenge = cards; uiLageDetailOpen = false; uiLageSelectedId = ''; currentView = 'briefing'; render();
+        }, split);
+        check(`${label}: Drei getrennte Karten ohne doppelte Sammelprosa`,
+          await page.locator('[data-ui-lage-select]').count() === 3
+          && !(await page.locator('#uiPage').innerText()).includes('Sammelprosa nicht erneut anzeigen'));
+        await page.locator('[data-ui-lage-select]').nth(1).click();
+        check(`${label}: Zweiter Quellenhinweis oeffnet seinen eigenen Artikel`,
+          (await page.locator('.ui-lage-detail').innerText()).includes('Eigene Meldung B')
+            && await page.locator('.ui-lage-detail [data-lage-office]').count() === 0
+            && await page.locator('.ui-lage-detail .ui-source-access a[href="https://example.org/eigen-b"]').count() === 1);
+        // Folgende bestehende Pruefungen verwenden wieder dieselbe Fachfixture.
+        await page.evaluate((fixtureData) => { clearLageHistory(); briefing = fixtureData; }, data);
 
         // Der Verweis darf keine fachliche Luecke verstecken: abweichende
         // Begruendung bleibt sichtbar; ohne passenden Lagevorgang kein Blindlink.

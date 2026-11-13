@@ -4725,7 +4725,7 @@ function restoreLageHistory(state) {
     if (!VIEW_PERSIST_SAFE.has(entry.view) || (entry.view === "admin" && userRole() !== "admin")) return false;
     currentView = entry.view; uiLageDetailOpen = false;
   } else if (entry.kind === "list" || entry.kind === "detail") {
-    const found = lageVisibleVorgaenge(lageData()).some(v => String(v.vorgangId || v.id || "") === entry.id);
+    const found = lageVisibleVorgaenge(lageData()).some(v => lageAnzeigeId(v) === entry.id);
     currentView = "briefing"; uiLageDetailOpen = entry.kind === "detail" && found;
     uiLageSelectedId = found ? entry.id : "";
     if (entry.kind === "detail" && !found) writeLageHistory({ kind: "list", scrollTop });
@@ -5008,16 +5008,21 @@ function renderView() {
 // ein mitten im Satz abgeschnittener Titel).
 // ─────────────────────────────────────────────────────────────────────────
 
+function lageAnzeigeId(v) {
+  return String(v?.anzeigeId || v?.vorgangId || v?.id || "");
+}
+
 function lageData() {
   return (briefing && briefing.lageBriefing) || null;
 }
 
 function lageVorgangZumBriefing(item) {
   if (!item || !item.id) return null;
-  return lageVisibleVorgaenge(lageData()).find(v => String(v.vorgangId || v.id) === String(item.id)) || null;
+  return lageVisibleVorgaenge(lageData()).find(v => !v.quellenhinweis && String(v.vorgangId || v.id) === String(item.id)) || null;
 }
 
 function lageBriefingVerweis(v) {
+  if (v.quellenhinweis) return "";
   const state = briefing && briefing.currentHelmutState;
   if (!state || !state.primaryItem || state.status === "error" || state.errorState
       || String(state.primaryItem.id) !== String(v.vorgangId || v.id)) return "";
@@ -5026,7 +5031,7 @@ function lageBriefingVerweis(v) {
 
 function briefingLageVerweis(item) {
   const v = lageVorgangZumBriefing(item);
-  return v ? `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(v.vorgangId || v.id)}">Einordnung und Quellen in der Lage öffnen</button>` : "";
+  return v ? `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(lageAnzeigeId(v))}">Einordnung und Quellen in der Lage öffnen</button>` : "";
 }
 
 function lageDateLabel() {
@@ -5335,7 +5340,7 @@ function renderVorgangCard(v) {
   // Antippbar: öffnet die Detailansicht als Bottom Sheet (kein Seitenwechsel).
   // role/tabindex/aria machen die Karte für Tastatur & Screenreader bedienbar;
   // der eigentliche Tap-vs-Swipe-Handler sitzt in bindLageCarousel.
-  const openId = escapeAttribute(v.vorgangId || v.id || "");
+  const openId = escapeAttribute(lageAnzeigeId(v));
   return `
     <article class="lage2-card" data-lage-open="${openId}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${escapeAttribute("Details öffnen: " + (title || "Vorgang"))}">
       <div class="lage2-card-head">
@@ -5516,8 +5521,8 @@ function renderLageView() {
   if (!items.length) {
     return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
   }
-  const selected = items.find(v => String(v.vorgangId || v.id) === uiLageSelectedId) || items[0];
-  const selectedId = String(selected.vorgangId || selected.id || "");
+  const selected = items.find(v => lageAnzeigeId(v) === uiLageSelectedId) || items[0];
+  const selectedId = lageAnzeigeId(selected);
   const historyEntry = lageHistoryEntry();
   const backLabel = historyEntry?.kind === "detail" && historyEntry.origin !== "briefing" ? "Zurück" : "Zurück zur Lage";
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
@@ -5532,7 +5537,7 @@ function renderLageView() {
         <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${stand ? `<span data-lage-stand>${escapeHtml(stand)}</span>` : `${items.length} Vorgänge`}${checked && freshness ? `<br><span data-lage-source-recency>${escapeHtml(freshness)}</span>` : ""}</span></div>
         <div class="ui-vorgang-list">
           ${items.map((v, index) => {
-            const id = String(v.vorgangId || v.id || "");
+            const id = lageAnzeigeId(v);
             const title = lageField(v.displayTitle) || lageField(v.title) || "Vorgang";
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
@@ -5643,7 +5648,7 @@ let vsheetGhostGuard = null;  // löst den Ghost-Click-Fänger (siehe openVorgan
 function vsheetFindVorgang(id) {
   const data = lageData();
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  return list.find((v) => String(v.vorgangId || v.id || "") === String(id)) || null;
+  return list.find((v) => lageAnzeigeId(v) === String(id)) || null;
 }
 
 // Respektiert die Systemeinstellung „Bewegung reduzieren" (keine Slide-Animation).
@@ -5838,7 +5843,8 @@ function vsheetRelevanzHtml(v) {
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
 // Bereits geladene, vorgangsgebundene Absätze sind Einordnung, keine Originalzitate.
 function lageParagraphContextHtml(v) {
-  const id = String(v.vorgangId || v.id || "");
+  if (v.quellenhinweis) return "";
+  const id = lageAnzeigeId(v);
   const paragraphs = (Array.isArray(lageData()?.paragraphs) ? lageData().paragraphs : [])
     .filter(p => Array.isArray(p.vorgangIds) && p.vorgangIds.includes(id) && lageField(p.text));
   if (!paragraphs.length) return "";
@@ -5882,7 +5888,7 @@ function vsheetContentHtml(v) {
       <span class="lage2-vtag">${escapeHtml(category)}</span>
       <h2 id="vsheet-title" class="vsheet-title${displayTitle ? "" : " vsheet-title-fallback"}">${escapeHtml(title)}</h2>
       <div class="vsheet-metaline">
-        <span class="vsheet-meta-type">Politischer Vorgang</span>
+        <span class="vsheet-meta-type">${v.quellenhinweis ? "Quellenhinweis" : "Politischer Vorgang"}</span>
         ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${Number.isFinite(Date.parse(v.createdAt || "")) ? "Angelegt" : "Vorgangsstand"}: ${escapeHtml(dateLabel)}</span>` : ""}
         ${firstSourceName ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(firstSourceName)}</span>` : ""}
       </div>
@@ -6783,7 +6789,7 @@ function renderHstandItems(state) {
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
     const lv = lageVorgangZumBriefing(i);
-    const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lv.vorgangId || lv.id)}" role="button" tabindex="0"` : "";
+    const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lageAnzeigeId(lv))}" role="button" tabindex="0"` : "";
     return `
       <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap} data-topic-title="${escapeAttribute(title)}">
         <div class="hstand-rel-head">
@@ -7692,6 +7698,7 @@ function officeCreationReady(decision) {
 }
 
 function lageOfficeDecision(vorgang) {
+  if (vorgang?.quellenhinweis) return null;
   const id = String(vorgang?.vorgangId || vorgang?.id || "");
   const koId = decisionEntityId(vorgang, "knowledgeObjectId", "knowledge_object_id");
   return officeDecisions().find(d => decisionEntityId(d, "vorgangId", "vorgang_id") === id
@@ -8301,6 +8308,23 @@ function renderRadarAboutYou(state) {
   `;
 }
 
+function zeigeLageVorgang(id) {
+  rememberLageHistory(id);
+  uiLageSelectedId = id;
+  uiLageDetailOpen = true;
+  currentView = "briefing";
+  navOpen = false;
+  updatesOpen = false;
+  render();
+  app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+}
+
+function radarLageVerweis(item) {
+  const matches = lageVisibleVorgaenge(lageData()).filter(v => String(v.vorgangId || v.id) === String(item.vorgangId || ""));
+  const card = matches.find(v => !v.quellenhinweis);
+  return card ? `<button type="button" class="radar2-more-link" data-lage-verweis data-radar-lage="${escapeAttribute(lageAnzeigeId(card))}">Sachstand in der Lage öffnen</button>` : "";
+}
+
 function renderRadarMentionCard(m) {
   const href = radarItemHref(m);
   const time = radarTime(m.publishedAt);
@@ -8321,7 +8345,7 @@ function renderRadarMentionCard(m) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarCardWrap(href, inner, "mention"), m, href);
+  return withSourceNotice(radarCardWrap(href, inner, "mention"), m, href) + radarLageVerweis(m);
 }
 
 // --- Dein Umfeld (Partei / Wahlkreis / Ausschüsse) --------------------------
@@ -8366,7 +8390,7 @@ function renderRadarEnvRow(e) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarRowWrap(href, inner), e, href);
+  return withSourceNotice(radarRowWrap(href, inner), e, href) + radarLageVerweis(e);
 }
 
 // --- Neue Dynamiken ---------------------------------------------------------
@@ -8399,7 +8423,7 @@ function renderRadarDynamicCard(d) {
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarCardWrap(href, inner, "dynamic"), d, href);
+  return withSourceNotice(radarCardWrap(href, inner, "dynamic"), d, href) + radarLageVerweis(d);
 }
 
 // --- Alle relevanten Artikel + Filter ---------------------------------------
@@ -8466,7 +8490,7 @@ function radarPrimaryRelationLabel(types) {
 function radarAdditionalContext(item) {
   const labels = [...new Set((item.relationTypes || []).map(t => RADAR_RELATION_LABELS[t]).filter(Boolean))];
   const signals = [...new Set(item.zusatzSignale || [])].filter(s => s && s !== item.evidence);
-  const text = [...(labels.length > 1 ? [labels.join(" · ")] : []), ...signals];
+  const text = [...(labels.length > 1 || (item.relationTypes || []).includes("subject") ? [labels.join(" · ")] : []), ...signals];
   return text.map(s => `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(s)}</p>`).join("");
 }
 
@@ -8641,6 +8665,9 @@ function rerenderRadar() {
 function bindRadarActions() {
   const root = document.getElementById("radar2-root");
   if (!root) return;
+  root.querySelectorAll("[data-radar-lage]").forEach(button => {
+    button.addEventListener("click", () => zeigeLageVorgang(button.dataset.radarLage));
+  });
   root.querySelectorAll("[data-radar-segment]").forEach((btn) => {
     // Segmentwechsel startet wieder kompakt (kuratierte Auswahl, kein langer Rest).
     btn.addEventListener("click", () => { radarSegment = btn.dataset.radarSegment; radarEnvExpanded = false; rerenderRadar(); });
@@ -8692,7 +8719,8 @@ const RADAR_FILTERS = [
   { key: "official", label: "Offizielle Quellen" }
 ];
 
-const RADAR_RELATION_LABELS = { mention: "Über Sie", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
+const RADAR_RELATION_LABELS = {
+  subject: "Ihr Fachthema", mention: "Über Sie", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
 
 function publisherDomain(item) {
   const text = `${item.sourceName || ""} ${item.title || ""}`.toLowerCase();
@@ -10342,14 +10370,7 @@ function bindActions() {
       const inner = event && event.target && event.target.closest ? event.target.closest("a, button") : null;
       if (button.tagName !== "BUTTON" && inner && inner !== button) return;
       if (button.hasAttribute("data-lage-verweis")) {
-        rememberLageHistory(button.dataset.vorgang);
-        uiLageSelectedId = button.dataset.vorgang;
-        uiLageDetailOpen = true;
-        currentView = "briefing";
-        navOpen = false;
-        updatesOpen = false;
-        render();
-        app.querySelector(".ui-page")?.scrollTo({ top: 0 });
+        zeigeLageVorgang(button.dataset.vorgang);
         return;
       }
       selectedVorgangId = button.dataset.vorgang;
