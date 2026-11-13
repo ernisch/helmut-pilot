@@ -1,0 +1,118 @@
+{
+  "postgres": "17.6",
+  "architecture": "x86_64",
+  "production_executions": 0,
+  "fixture_jobs": 192,
+  "work_mem": "64kB",
+  "groups_passed": 35,
+  "groups_failed": 0,
+  "full_field_comparisons": 72,
+  "field_count": 17,
+  "function_plan": {
+    "alt": {
+      "Alias": "helmut_job_metrics",
+      "Node Type": "Function Scan",
+      "Plan Rows": 1000,
+      "Plan Width": 328,
+      "Total Cost": 10.25,
+      "Actual Rows": 1,
+      "Actual Loops": 1,
+      "Startup Cost": 0.25,
+      "Async Capable": false,
+      "Function Name": "helmut_job_metrics",
+      "Parallel Aware": false,
+      "Local Hit Blocks": 0,
+      "Temp Read Blocks": 64,
+      "Actual Total Time": 1.274,
+      "Local Read Blocks": 0,
+      "Shared Hit Blocks": 6,
+      "Shared Read Blocks": 0,
+      "Actual Startup Time": 1.274,
+      "Temp Written Blocks": 4,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0
+    },
+    "neu": {
+      "Alias": "helmut_job_metrics",
+      "Node Type": "Function Scan",
+      "Plan Rows": 1000,
+      "Plan Width": 328,
+      "Total Cost": 10.25,
+      "Actual Rows": 1,
+      "Actual Loops": 1,
+      "Startup Cost": 0.25,
+      "Async Capable": false,
+      "Function Name": "helmut_job_metrics",
+      "Parallel Aware": false,
+      "Local Hit Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Actual Total Time": 0.743,
+      "Local Read Blocks": 0,
+      "Shared Hit Blocks": 18,
+      "Shared Read Blocks": 0,
+      "Actual Startup Time": 0.742,
+      "Temp Written Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0
+    },
+    "jobs": 192,
+    "work_mem": "64kB"
+  },
+  "body_plan_nodes": {
+    "old": {
+      "basis_cte_scans": 17,
+      "table_scans": 1
+    },
+    "new": {
+      "basis_cte_scans": 0,
+      "table_scans": 3
+    }
+  },
+  "additional_small_probe": {
+    "old-3500kB": {
+      "body_ms": 1.084,
+      "body_temp_read": 0,
+      "body_temp_written": 0,
+      "cte_basis_scans": 17,
+      "function_ms": 7.291,
+      "function_temp_read": 0,
+      "function_temp_written": 0
+    },
+    "old-64kB": {
+      "body_ms": 1.427,
+      "body_temp_read": 80,
+      "body_temp_written": 5,
+      "cte_basis_scans": 17,
+      "function_ms": 3.724,
+      "function_temp_read": 80,
+      "function_temp_written": 5
+    },
+    "new-3500kB": {
+      "body_ms": 0.676,
+      "body_temp_read": 0,
+      "body_temp_written": 0,
+      "cte_basis_scans": 0,
+      "function_ms": 3.019,
+      "function_temp_read": 0,
+      "function_temp_written": 0
+    },
+    "new-64kB": {
+      "body_ms": 0.599,
+      "body_temp_read": 0,
+      "body_temp_written": 0,
+      "cte_basis_scans": 0,
+      "function_ms": 2.623,
+      "function_temp_read": 0,
+      "function_temp_written": 0
+    }
+  },
+  "limitations": [
+    "Only small isolated local fixtures; not a production-scale or restart-cause proof.",
+    "Single timing samples; no guaranteed runtime percentage.",
+    "Other aggregate/COUNT DISTINCT sorts may spill on larger inputs."
+  ]
+}

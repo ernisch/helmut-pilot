@@ -35,6 +35,8 @@ const BASIS = M("20260808_scalable_job_queue.sql");
 const BASIS_ROLLBACK = M("20260808_scalable_job_queue_rollback.sql");
 const ALTER = M("20260812_jobqueue_altersmessung.sql");
 const ALTER_ROLLBACK = M("20260812_jobqueue_altersmessung_rollback.sql");
+const METRIKEN = M("20261113080937_job_metrics_ohne_materialisierung.sql");
+const METRIKEN_ROLLBACK = M("rollback_20261113080937_job_metrics_ohne_materialisierung.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",
@@ -88,6 +90,107 @@ const PRODUKTIONSFALL = `
 function messwerte(spalten) {
   const sql = `select ${spalten} from public.helmut_job_metrics(1440);`;
   return psql(sql).split("|").map((s) => s.trim());
+}
+
+// Kleine Gegenproben fuer die bestehende 17-Spalten-Funktion, keine Lastserie.
+// Beide Fassungen sehen je Fall dieselben synthetischen Daten und dasselbe now().
+function pruefeMetrikenMaterialisierung() {
+  const fs = require("fs");
+  const koerper = datei => fs.readFileSync(datei, "utf8")
+    .replace(/^begin;\s*$/m, "").replace(/^commit;\s*$/m, "");
+  const neu = koerper(METRIKEN), rueckweg = koerper(METRIKEN_ROLLBACK);
+  const katalog = `(select to_jsonb(p) - 'prosrc' from pg_proc p
+    where p.oid='public.helmut_job_metrics(integer)'::regprocedure)`;
+  const daten = `(select md5(coalesce(string_agg(to_jsonb(j)::text, '|' order by id), ''))
+    from public.helmut_jobs j)`;
+  const abfrage = `select p, to_jsonb(m) as ergebnis from
+    (values (null::integer), (-2147483648), (0), (1), (60), (1440), (2147483647)) v(p)
+    cross join lateral public.helmut_job_metrics(p) m
+    union all select 42, to_jsonb(m) from public.helmut_job_metrics() m`;
+  const zeile = (key, status, extra = "") => `insert into public.helmut_jobs
+    (job_type,idempotency_key,freshness_window,status,tenant_id,lease_owner,lease_expires_at,
+     due_at,first_due_at,created_at,finished_at,first_claimed_at,attempts,max_attempts)
+    values ('source_fetch','${key}','synthetic','${status}','synthetic-a','local',now(),
+      now()-interval '24 hours',now()-interval '24 hours',now()-interval '24 hours',
+      null,null,0,5); ${extra}`;
+  const breiterBestand = `insert into public.helmut_jobs
+    (job_type,idempotency_key,freshness_window,status,tenant_id,payload)
+    select 'source_fetch','synthetic-metrics-'||i,'synthetic','wartend','synthetic-'||i%3,
+      jsonb_build_object('diagnostic', (select string_agg(md5(i::text||'-'||j::text),'')
+        from generate_series(1,560) j)) from generate_series(1,192) i; analyze public.helmut_jobs;`;
+  const plan = tabelle => `create temp table ${tabelle}(plan jsonb);
+    do $plan$ declare p jsonb; begin
+      execute 'explain (analyze, buffers, format json) select * from public.helmut_job_metrics(1440)' into p;
+      insert into ${tabelle} values (p);
+    end $plan$;`;
+  const faelle = [
+    ["leer und NULL-Durchsatz", ""],
+    ["alle Status, Typen, Wiederholungen und gleiche Mandate",
+      zeile("wartend", "wartend") + zeile("laufend", "laeuft")
+      + zeile("fertig", "erledigt", `update public.helmut_jobs set
+        job_type='document_understanding',finished_at=now(),
+        first_claimed_at=now()-interval '1.23456 seconds' where idempotency_key='fertig';`)
+      + zeile("fehler", "fehlgeschlagen", `update public.helmut_jobs set attempts=5,
+        job_type='briefing_materialization' where idempotency_key='fehler';
+        update public.helmut_jobs set job_type='mandate_projection',tenant_id='synthetic-b'
+        where idempotency_key='laufend';`)],
+    ["exakte Fenstergrenze und NULL-Dauern", zeile("alt", "erledigt", `update public.helmut_jobs
+      set finished_at=now()-interval '1 minute';`) + zeile("ohne-ende", "erledigt")],
+    ["zukuenftige Faelligkeit und negative fachliche Alter", zeile("zukunft", "wartend", `update public.helmut_jobs
+      set due_at=now()+interval '1 hour',first_due_at=now()+interval '1 day',created_at=now();`)],
+    ["Wartezeit versus historisches Quelldatum", zeile("frisch", "wartend", `update public.helmut_jobs
+      set first_due_at=now()-interval '10 days',created_at=now();`)],
+    ["globale Arbeit ohne Mandat", zeile("global", "wartend", `update public.helmut_jobs set tenant_id=null;`)],
+    ["aktive, exakte und abgelaufene Leases", zeile("aktiv", "laeuft", `update public.helmut_jobs
+      set lease_expires_at=now()+interval '1 second';`) + zeile("exakt", "laeuft")
+      + zeile("abgelaufen", "laeuft", `update public.helmut_jobs set lease_expires_at=now()-interval '1 second'
+        where idempotency_key='abgelaufen';`)],
+    ["Rundung und Abschluss ausserhalb des Fensters", zeile("rundung", "erledigt", `update public.helmut_jobs
+      set finished_at=now()-interval '2 days',first_claimed_at=now()-interval '2 days 0.0006 seconds';`)],
+    ["192 breite synthetische Jobs / Temp-IO-Gegenprobe", breiterBestand]
+  ];
+  psql(null, { datei: ALTER });
+  psql("grant execute on function public.helmut_job_metrics(integer) to service_role;");
+  for (const [name, fixture] of faelle) {
+    const ressourcen = fixture === breiterBestand;
+    const ausgabe = psql(`begin; set local work_mem='64kB'; delete from public.helmut_jobs; ${fixture}
+      create temp table meta as select ${katalog} as katalog, ${daten} as daten,
+        pg_get_functiondef('public.helmut_job_metrics(integer)'::regprocedure) as definition,
+        obj_description('public.helmut_job_metrics(integer)'::regprocedure) as kommentar;
+      create temp table vorher as ${abfrage};
+      ${ressourcen ? plan("alter_plan") : ""}
+      ${neu}
+      create temp table nachher as ${abfrage};
+      ${ressourcen ? plan("neuer_plan") + `
+        do $ressourcen$ begin
+          assert (select (plan->0->'Plan'->>'Temp Read Blocks')::integer from alter_plan)>0,
+            'alte Fassung muss Temp-IO tatsaechlich reproduzieren';
+          assert (select (plan->0->'Plan'->>'Temp Read Blocks')::integer from neuer_plan)=0
+            and (select (plan->0->'Plan'->>'Temp Written Blocks')::integer from neuer_plan)=0,
+            'neue Fassung lagert die kleine Gegenprobe weiter aus';
+        end $ressourcen$;
+        select jsonb_build_object('work_mem','64kB','jobs',192,
+          'alt', (select plan->0->'Plan' from alter_plan),
+          'neu', (select plan->0->'Plan' from neuer_plan));` : ""}
+      do $test$ begin
+        assert not exists (select * from vorher except all select * from nachher)
+          and not exists (select * from nachher except all select * from vorher), '17 Feldwerte abweichend';
+        assert ${katalog} = (select katalog from meta), 'Signatur/OID/Rechte/Attribute abweichend';
+        assert ${daten} = (select daten from meta), 'Jobdaten veraendert';
+        assert obj_description('public.helmut_job_metrics(integer)'::regprocedure)
+          is not distinct from (select kommentar from meta), 'Kommentar veraendert';
+      end $test$;
+      ${neu}
+      ${rueckweg}
+      ${rueckweg}
+      do $test$ begin
+        assert pg_get_functiondef('public.helmut_job_metrics(integer)'::regprocedure)
+          = (select definition from meta), 'Rueckweg nicht identisch';
+        assert ${katalog} = (select katalog from meta), 'Rueckweg veraendert Metadaten';
+      end $test$; rollback;`);
+    if (ressourcen) console.log("  Planbeleg " + ausgabe);
+    check("6 · 17 Felder / 8 Parameter / Metadaten / Daten / Rueckweg: " + name, true);
+  }
 }
 
 function main() {
@@ -249,6 +352,9 @@ function main() {
     nachRollbackSpalten);
   psql(null, { datei: ALTER_ROLLBACK });
   check("5.7 Auch der Rollback ist wiederholbar", true);
+
+  abschnitt("6 · Ressourcenkorrektur: identische 17 Felder, Rechte und Rueckweg");
+  pruefeMetrikenMaterialisierung();
 
   // Aufraeumen: Basiszustand wiederherstellen, damit ein zweiter Lauf sauber startet.
   psql(null, { datei: BASIS_ROLLBACK });
