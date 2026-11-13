@@ -9,6 +9,40 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Ausgefuehrter Einprofil-Rollout und aktueller Stand (13.11.2026)
 
+**Nachtrag nach weiterem ausdruecklichem Test-Go, 20:49–20:50 UTC:**
+Manueller Production-Einprofiltest jetzt ausgefuehrt, ausschliesslich `cem-ince`.
+Vorflug bestaetigte genau ein aktives Profil, null laufende Leases, unveraenderte
+Runtime597d7876 und gesperrte Kommunikation/Kohortenquellen. Bestehendes Kostenbuch
+konsistent; Tagesbindung0,301504 USD, verfuegbarer Rest0,698496 USD. Keine Erhoehung.
+Einmal `/api/cron/lage-briefing`, danach einmal `/api/cron/morning-briefing`;
+jeweils HTTP200, ohne Wiederholungen oder erzwungenes Leeren bestaetigter Caches.
+
+Lage neu erzeugt (`fromCache=false`), zwei belegte Absaetze/neun Vorgangskarten.
+Tagespaket um20:50:34 UTC mit voller Lageansicht gespeichert, Morgenquittung
+um20:50:35 UTC. Persistierte Primarschluessel nachgelesen; Inhaltshash, Mandat/Tag,
+Quellenbeleg, identischer Lagequelltext und Paket-/Quittungsbindung mit bestehender
+Produktlogik bestaetigt. Zwei Modellaufrufe vollstaendig abgerechnet; zusaetzlich
+**0,015513 USD** im Kostenbuch, Tagesbindung danach0,317017 USD, gesamt2,538017 USD.
+Keine neuen offenen Reserven; acht bestehende offene Reserven unangetastet.
+Der KI-freie Paketbau verursachte keine weiteren Modellaufrufe. Push explizit
+gesperrt (`testfenster-sperrt-alle-aussenkanaele`), keine ausgehenden Mails.
+
+**Kein fachlicher Gesamt-PASS:** Beide Handler melden den Quellenzustand ehrlich
+offen; Morgenlauf `ok=false`, `morgenversorgung-unvollstaendig`, obwohl Paket und
+Quittung gespeichert/verifiziert sind. Paketfehler bleiben
+`quellenversorgung-unvollstaendig` und `briefing-ohne-tagesanlass`.
+Heutiger Plan ist fertig eingereiht (Cursor157/157). Enger relationaler Zaehler
+fuer2026-11-13T00Z:152 wartende source_fetch,1 document_understanding,
+1 mandate_projection,1 briefing_materialization, keine laufenden/fehlgeschlagenen
+Jobs in diesem Fenster;1 Abruf erledigt. Dies belegt offene Vorarbeiten, noch
+nicht deren Ursache oder Faelligkeit. Keine historischen Jobs oder Quellenmassen
+im Test abgearbeitet, keine Flags/Limits/Profile veraendert. Ein echter
+authentifizierter Kundenklicktest bleibt offen.
+
+**Genau naechster Schritt nach dem Live-Test:** Ursache der offenen heutigen
+Quellenvorarbeiten klaeren. Der nachstehende Rolloutbefund ist der vorherige Stand;
+die damals fehlende volle Lageansicht ist durch diesen Test inzwischen gespeichert.
+
 [PR1183](https://github.com/ernisch/helmut-pilot/pull/1183) ist nach ausdruecklichem
 Betreiber-Ja normal gemergt. Mergecommit `597d7876d3f1ce963174fe749ffb28bd98f15065`
 hat die Parents `fe94f3eb` und exakt den freigegebenen Kopf `4f764317`;

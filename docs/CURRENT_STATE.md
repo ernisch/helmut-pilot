@@ -9,8 +9,8 @@ Lagephasen, verteilte Grenzen und gespeicherte App-Tagespakete umgesetzt.
 [Architekturentscheidung, konkrete Nachweise, Dimensionierung und Grenzen](betrieb/verarbeitungskern-100-20261113.md).
 Neue SQL angewendet, Registerversion `20261113193319_frische_tagesarbeit`
 (Quelldatei `20261113165614`, nicht erneut anwenden). Indizes, ACL und leerer
-Tagesstand-RPC verifiziert. Keine fachlichen Datenkorrekturen, Aktivierung,
-Profil-/Budget-/Cron-/Env-Aenderung oder manuellen Modellaufrufe.
+Tagesstand-RPC verifiziert. Keine Aktivierung oder Profil-/Budget-/Cron-/Env-Aenderung.
+Nach weiterem explizitem Go manueller Einprofiltest: einmal Lage, einmal Paketbau.
 [CI43491668407](https://github.com/ernisch/helmut-pilot/actions/runs/43491668407):
 7 neue Policygruppen und 3 echte SQL-Faelle gruen; vorhandene 29 Browserpruefungen
 streng gebunden wiederverwendet. GitHub wertet native manuelle Jobchecks nicht
@@ -22,11 +22,13 @@ rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
 Vercel `dpl_AZEUX1v4DgPbdDPGBSmcE1HDTzQC` READY; regulaerer Alias/Runtimecommit
 bestaetigt, Appstart anonym401. `[skip ci]` verhinderte breite main-CI.
 Nur `cem-ince`, Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`, Kommunikation
-`gesperrt`, bestehend 1 USD/UTC-Tag und 30 USD insgesamt. Heutiger PaketinhaltHash
-und Quittung stimmen; Quellenversorgung unvollstaendig/kein Tagesanlass,
-volle gespeicherte Lageansicht fehlt. Keine authentifizierte Kundenbedienabnahme.
-**Naechster Schritt:** naechsten regulaeren Morgenlauf fuer `cem-ince`
-am 14.11. ab 06:15 Berlin samt Paketvollstaendigkeit beobachten.
+`gesperrt`, bestehend 1 USD/UTC-Tag und 30 USD insgesamt. Manueller Live-Test:
+neue Lage mit 2 belegten Absaetzen/9 Karten samt voller Lageansicht und gebundener
+Quittung gespeichert. Zwei abgerechnete Modellaufrufe, verbucht 0,015513 USD;
+acht alte offene Reserven erhalten. Tagespaket weiter teilweise: Quellenversorgung
+offen/kein Tagesanlass. Heutiges Fenster: 152 Abrufe, 1 Verstehen, 1 Projektion
+und 1 Queue-Paketauftrag warten; noch kein fachlicher Gesamt-PASS oder Kundenklicktest.
+**Naechster Schritt:** Ursache der offenen heutigen Quellenvorarbeiten klaeren.
 
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
