@@ -63,3 +63,17 @@ Commit, READY-Zustand und anonyme Zugriffssperren rein lesend geprüft.
 
 Rückweg: gezielter Revert dieses PR oder Rückkehr zum vorherigen Deployment;
 keine Datenrücknahme nötig.
+
+## Bestätigter Rollout
+
+PR1177 wurde auf `7dcf3480f1708610b8bf82a278c46214ef915d51` gemergt. Beide
+Pflichtchecks auf Kopf `3a3c9d8c` grün, [CI43390735182](https://github.com/ernisch/helmut-pilot/actions/runs/43390735182).
+Production `dpl_7e6BdkQuSwjgNsC3XarcBjVLbadG` READY, Hauptadresse mit diesem Commit
+bestätigt. Anonyme Nachkontrolle: Startseite HTTP200, Verwaltung und Admin-Kontoroute
+HTTP401. `/api/health` ist ebenfalls geschützt (HTTP401), kein öffentlicher
+Healthnachweis behauptet. Keine authentifizierte Production-Bedienprüfung.
+
+Die Textpflege danach vereinheitlicht zusätzlich die beiden älteren Hinweise für
+einen teilweise abgeschlossenen oder unbekannten Quellenlauf auf „Prüfen Sie …“.
+Sie verändert keine Laufsteuerung und keinen Kontozustand. Der aktuelle gemeinsame
+Rolloutstand mit Folgebeleg bleibt im oben verlinkten PR1177 dokumentiert.
