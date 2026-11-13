@@ -1,5 +1,12 @@
 # CURRENT STATE — Helmut
 
+**13.11., Lage/Radar live:** [PR1178](https://github.com/ernisch/helmut-pilot/pull/1178),
+Production `f18298ad` READY. Wiederholende Sammelkarte quellenweise aufgeteilt;
+alle 24 Originalartikel des freigegebenen Pilotfalls erhalten. Fachlich belegte
+Radarentwicklung mit Lageverweis; keine kopierte Zusammenfassung. Live-GET 09:49 Uhr (Berlin):
+11 Lageeinträge (3 Quellenhinweise), 1 Radarhinweis mit echtem Quellenstand 08.11.
+CI 189/189 + 372/372 + Browser grün. [Wirkung, Grenzen, Rückweg](betrieb/lage-radar-zusatznutzen-20261113.md).
+
 **Stand: 13.11.2026.** [PR1105](betrieb/validierungsdiagnose-20261108.md); [Regeln](../AGENTS.md).
 
 **12.11.:** [Briefingreparatur](betrieb/briefing-versorgung-reparatur-20261112.md): Schreibfix aktiv; 4.DB-Abbruch, bezahlte Arbeit STOP. Budgetleser live: PR1175.
