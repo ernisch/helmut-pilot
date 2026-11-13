@@ -49,7 +49,7 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
  async function mutate(work){if(busy||disposed)throw new AdminMutationError(409);if(!writesAllowed)throw new AdminMutationError(409,false,{message:'Diese Vorschau erlaubt keine Änderungen an echten Kunden.'});busy=true;try{return await work();}finally{busy=false;}}
  async function load(){
   writesAllowed=false;reader.clear();const instant=now();
-  const values=await Promise.allSettled([...['customers','overview','ergebnisse','sources'].map(key=>reader.read(key)),request('/api/admin/stats/process-runs?limit=5&process=warteschlange-crawl')]);
+  const values=await Promise.allSettled(['customers','overview','ergebnisse','sources','sourceRuns'].map(key=>reader.read(key)));
   for(const v of values)if(v.status==='rejected'&&[401,403].includes(v.reason?.status))throw v.reason;
   if(values[0].status!=='fulfilled'||!Array.isArray(values[0].value?.kunden)||values[0].value.customerScope!=='regular')throw new AdminMutationError();
   const customers=values[0].value.kunden;

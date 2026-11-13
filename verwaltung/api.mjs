@@ -6,6 +6,7 @@ const ENDPOINTS = Object.freeze({
   customers: "/api/admin/customers",
   sources: "/api/admin/sources-status",
   runs: "/api/admin/stats/process-runs?limit=20",
+  sourceRuns: "/api/admin/stats/process-runs?limit=5&process=warteschlange-crawl",
   ergebnisse: "/api/admin/ergebnisse?proSeite=500"
 });
 
@@ -22,7 +23,32 @@ export class AdminReadError extends Error {
 export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 12000, customerScope = 'all' } = {}) {
   const cache = new Map();
   const pending = new Set();
+  const queue = [];
+  let active = 0;
   let disposed = false;
+  // Dieselben Verwaltungsstarts koennen verschiedene Serverinstanzen erreichen.
+  // Deshalb bereits hier nur zwei Leseantworten zugleich, einschliesslich Body.
+  // Die Frist laeuft auch beim Warten; clear/dispose entfernen alte Wartende.
+  function drain() {
+    while (active < 2 && queue.length) queue.shift().start();
+  }
+  function acquire(signal) {
+    return new Promise((resolve, reject) => {
+      const entry = { start() {
+        signal.removeEventListener("abort", cancel);
+        active++;
+        resolve(() => { active--; drain(); });
+      } };
+      function cancel() {
+        const index = queue.indexOf(entry);
+        if (index !== -1) queue.splice(index, 1);
+        reject(new AdminReadError());
+      }
+      if (signal.aborted) { reject(new AdminReadError()); return; }
+      signal.addEventListener("abort", cancel, { once: true });
+      queue.push(entry); drain();
+    });
+  }
   return {
     read(key, id = null) {
       if (disposed) return Promise.reject(new AdminReadError());
@@ -38,21 +64,36 @@ export function createAdminReader({ fetcher = globalThis.fetch, timeoutMs = 1200
       pending.add(controller);
       const promise = (async () => {
         const timer = setTimeout(() => controller.abort(), timeoutMs);
+        let rejectAbort;
+        const aborted = new Promise((_, reject) => { rejectAbort = () => reject(new AdminReadError()); });
+        controller.signal.addEventListener("abort", rejectAbort, { once: true });
+        const work = (async () => {
+          const release = await acquire(controller.signal);
+          try {
+            controller.signal.throwIfAborted();
+            const response = await fetcher(url, {
+              method: "GET", credentials: "same-origin", mode: "same-origin",
+              cache: "no-store", redirect: "error", signal: controller.signal,
+              headers: { Accept: "application/json" }
+            });
+            if (!response.ok) throw new AdminReadError(response.status);
+            const data = await response.json();
+            if (!data || typeof data !== "object" || Array.isArray(data)) throw new AdminReadError();
+            return data;
+          } finally {
+            // Ein abgebrochener Aufrufer beweist keinen Fetch-Abschluss. Auch
+            // bei ignoriertem Abort erst nach wirklichem Abschluss freigeben.
+            release();
+          }
+        })();
         try {
-          const response = await fetcher(url, {
-            method: "GET", credentials: "same-origin", mode: "same-origin",
-            cache: "no-store", redirect: "error", signal: controller.signal,
-            headers: { Accept: "application/json" }
-          });
-          if (!response.ok) throw new AdminReadError(response.status);
-          const data = await response.json();
-          if (!data || typeof data !== "object" || Array.isArray(data)) throw new AdminReadError();
-          return data;
+          return await Promise.race([work, aborted]);
         } catch (error) {
           if (error instanceof AdminReadError) throw error;
           throw new AdminReadError();
         } finally {
           clearTimeout(timer);
+          controller.signal.removeEventListener("abort", rejectAbort);
           pending.delete(controller);
         }
       })();

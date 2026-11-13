@@ -121,6 +121,88 @@ async function main() {
     reader.clear(); await reader.read("overview"); assert.equal(requests.length, 2);
     reader.dispose(); await assert.rejects(reader.read("overview")); assert.equal(requests.length, 2);
   });
+  await asyncCheck("Sechs verschiedene Verwaltungsleser laufen FIFO mit maximal zwei offenen Antworten", async () => {
+    const keys = ["overview", "budget", "customers", "sources", "runs", "ergebnisse"];
+    const calls = [], bodies = [];
+    let active = 0, peak = 0;
+    const bounded = createAdminReader({ fetcher: async url => {
+      calls.push(url); active++; peak = Math.max(peak, active);
+      return { ok: true, json: () => new Promise(resolve => {
+        bodies.push(() => { active--; resolve({ url }); });
+      }) };
+    } });
+    const reads = keys.map(key => bounded.read(key));
+    assert.equal(bounded.read(keys[0]), reads[0], "identische URL teilt weiterhin dieselbe Promise");
+    const all = Promise.all(reads);
+    await new Promise(resolve => setImmediate(resolve));
+    const started = calls.length;
+    while (bodies.length) { bodies.shift()(); await new Promise(resolve => setImmediate(resolve)); }
+    const results = await all;
+    bounded.dispose();
+    assert.equal(started, 2); assert.equal(peak, 2);
+    assert.deepEqual(results.map(value => value.url), calls, "alle Ergebnisse und die FIFO-Reihenfolge bleiben erhalten");
+  });
+  await asyncCheck("Wartende verbrauchen dieselbe Frist und starten nach Timeout keinen Abruf", async () => {
+    const finish = [], calls = [];
+    const bounded = createAdminReader({ timeoutMs: 10, fetcher: url => {
+      calls.push(url);
+      return new Promise(resolve => finish.push(() => resolve({ ok: true, json: async () => ({ url }) })));
+    } });
+    const reads = ["overview", "budget", "customers"].map(key => bounded.read(key));
+    const results = await Promise.allSettled(reads);
+    assert.equal(results.filter(result => result.status === "rejected").length, 3);
+    assert.equal(calls.length, 2, "Timeout gibt keinen noch laufenden Fetch frei");
+    while (finish.length) { finish.shift()(); await new Promise(resolve => setImmediate(resolve)); }
+    assert.equal(calls.length, 2, "der abgelaufene dritte Leser wird auch spaeter nicht gestartet");
+    const next = bounded.read("sources");
+    await new Promise(resolve => setImmediate(resolve));
+    finish.shift()(); assert.equal((await next).url, "/api/admin/sources-status");
+    bounded.dispose();
+  });
+  for (const action of ["clear", "dispose"]) {
+    await asyncCheck(`${action} entfernt wartende Leser auch bei ignoriertem Abort`, async () => {
+      const finish = [], calls = [];
+      const bounded = createAdminReader({ fetcher: url => {
+        calls.push(url);
+        return new Promise(resolve => finish.push(() => resolve({ ok: true, json: async () => ({ url }) })));
+      } });
+      const results = Promise.allSettled(["overview", "budget", "customers", "sources"].map(key => bounded.read(key)));
+      await new Promise(resolve => setImmediate(resolve));
+      bounded[action]();
+      assert.equal((await results).filter(result => result.status === "rejected").length, 4);
+      assert.equal(calls.length, 2);
+      const after = bounded.read("runs");
+      // dispose muss sofort scheitern; clear liest erst nach echtem Abschluss neu.
+      const checked = action === "dispose" ? assert.rejects(after) : after;
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(calls.length, 2);
+      while (finish.length) { finish.shift()(); await new Promise(resolve => setImmediate(resolve)); }
+      await checked;
+      assert.equal(calls.length, action === "dispose" ? 2 : 3);
+      assert.ok(!calls.includes("/api/admin/customers") && !calls.includes("/api/admin/sources-status"));
+      bounded.dispose();
+    });
+  }
+  await asyncCheck("Einfache Verwaltung verwendet fuer alle fuenf Startleser dieselbe Grenze", async () => {
+    const { createSimpleApi } = await imported("einfach/api.mjs");
+    const calls = [], bodies = [];
+    let active = 0, peak = 0;
+    const api = createSimpleApi({ fetcher: async (url, options) => {
+      assert.equal(options.method, "GET"); calls.push(url); active++; peak = Math.max(peak, active);
+      const payload = url === "/api/admin/customers?scope=regular" ? { kunden: [], customerScope: "regular" }
+        : url === "/api/admin/overview" ? { mandates: [] } : {};
+      return { ok: true, json: () => new Promise(resolve => bodies.push(() => { active--; resolve(payload); })) };
+    } });
+    const loading = api.load();
+    await new Promise(resolve => setImmediate(resolve));
+    const started = calls.length;
+    while (bodies.length) { bodies.shift()(); await new Promise(resolve => setImmediate(resolve)); }
+    const result = await loading;
+    api.dispose();
+    assert.equal(started, 2); assert.equal(peak, 2); assert.deepEqual(result.customers, []);
+    assert.equal(calls.length, 5);
+    assert.equal(calls[4], "/api/admin/stats/process-runs?limit=5&process=warteschlange-crawl");
+  });
   if (args[0] === "--contracts-only") {
     fixture.dispose();
     console.log(`\n${checks}/${checks} gezielte Anzeige-/API-Vertraege bestanden.`);
