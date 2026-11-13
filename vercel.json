@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/mandatsarbeit-vorrang-20261113": false,
       "codex/dip-einzelartikel-20261113": false,
       "codex/einprofil-lieferfaehigkeit-20261113": false,
       "codex/verarbeitungskern-100-20261113": false,

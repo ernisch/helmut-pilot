@@ -32,7 +32,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Naechster Schritt:** naechsten regulaeren Quellen-/Morgenlauf samt Paketstand pruefen. DIP-Fix:8Artikel-/6CI-Faelle gruen, ausgerollt; kein weiterer manueller Quellenlauf oder Modelltest.
+**Naechster Schritt:** belegte Verdrängung der Mandatsarbeit beheben: Quellenprioritaet80/100 vor200/250, beideAusgabejobs trotzFaelligkeit attempts0. Vier Tagesfenster waren22:52UTC nochfrei; weitereAdminfortsetzung22:55gestartet.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,

@@ -9,6 +9,25 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Weiterer echter Lieferblocker,22:52–22:56 UTC:**
+Heutige Abrufe145 und Understanding74 warten. Projektion seit04:15 und
+Paketbau seit04:30 ebenfalls faellig, aber attempts0/wiedervorlagen0.
+Vier von acht Tagesfenstern waren verbraucht,1200/2400Sekunden, also kein
+ausgeschoepftes Arbeitskontingent. Weiterer Betreiberlauf22:55:52 UTC gestartet.
+Die aktuelle SQL vergibt strikt nach priority,due_at,created_at,id:
+Understanding80/Quellen100 verdrängen Projektion200/Paket250 im endlichen
+seriellen Workerfenster. Moderne Projektion wartet fachlich ausdruecklich nicht
+mehr auf saemtliche Quellen; die Claimreihenfolge verhindert dennoch ihren Start.
+Drei schmale Live-GETs bestaetigen die Prioritaeten und den nie erfolgten Claim.
+
+Isolierter Folgefix in Vorbereitung: kurze sequentielle Mandats-Teilphase ueber
+vorhandene typedClaims im selben reservierten Quellenfenster, maximal45Sekunden
+und20Prozent des vorhandenen Workerbudgets. Mindestens80Prozent bleiben fuer
+Quellen reserviert; anschliessend nur tatsaechlicher Zeitrest. Gleicher verteilten
+worker-drain-Slot,parallel1/stapel1, gleiche Handler-/Planrest-/Kostenwaechter,
+ein Blobspiegelwrite, addierte Bilanz. Keine Migration, neuen Dienste, Cron- oder
+Budgeterhoehung. Dies erzeugt keinen kuenstlichen Vollversorgungsstatus.
+
 **DIP-Isolation nach konkretem Merge-Go ausgerollt:**
 [PR1185](https://github.com/ernisch/helmut-pilot/pull/1185), freigegebener Kopf
 `737ac9b68158a947845bb676e390e2724bb4a1e8`, normale Merge-SHA
