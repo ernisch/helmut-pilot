@@ -123,6 +123,114 @@ async function check(name, run) {
       assert.equal(calls.length, 1, "der Cache spart weiterhin den Datenbankabruf");
     });
 
+    await check("Sechs gleichzeitige Leser teilen einen Abruf und erhalten eigene Kopien", async () => {
+      const key = "p-shared-read"; const id = rowId(key);
+      rows.set(id, { userNotes: [{ id: "notiz", nested: { text: "gespeichert" } }] });
+      let finish;
+      const held = new Promise((resolve) => { finish = resolve; });
+      readHooks.set(id, () => held);
+      const reading = Promise.all(Array.from({ length: 6 }, () => storage.readStore(key)));
+      await new Promise((resolve) => setImmediate(resolve));
+      const simultaneous = calls.length;
+      finish();
+      const results = await reading;
+      assert.equal(simultaneous, 1, "ein kalter Cache darf keine sechs Blob-Abfragen starten");
+      results[0].userNotes[0].nested.text = "nur lokal";
+      assert.equal(results[1].userNotes[0].nested.text, "gespeichert");
+      assert.equal((await storage.readStore(key)).userNotes[0].nested.text, "gespeichert");
+      // Auch geteilte Leser behalten ihre unveraenderlichen CAS-Lesemarken.
+      await storage.writeStore(results[0], key);
+      await assert.rejects(storage.writeStore(results[1], key), { code: "STORE_WRITE_CONFLICT" });
+    });
+
+    await check("Frisches Lesen teilt keinen schon laufenden alten Abruf", async () => {
+      const key = "p-shared-fresh"; const id = rowId(key);
+      rows.set(id, { userNotes: [{ id: "alt" }] });
+      let finish;
+      const held = new Promise((resolve) => { finish = resolve; });
+      readHooks.set(id, () => held);
+      const old = storage.readStore(key);
+      await new Promise((resolve) => setImmediate(resolve));
+      rows.set(id, { userNotes: [{ id: "neu" }] });
+      readHooks.delete(id);
+      const fresh = await storage.readStore(key, { fresh: true });
+      finish();
+      const previous = await old;
+      assert.equal(previous.userNotes[0].id, "alt");
+      assert.equal(fresh.userNotes[0].id, "neu");
+      assert.equal(calls.length, 2);
+    });
+
+    await check("Geteilte Lesefehler bleiben Fehler und sperren keinen spaeteren Abruf", async () => {
+      const key = "p-shared-error"; const id = rowId(key);
+      responses.set(id, { message: "ungueltiger Bestand" });
+      const results = await Promise.allSettled(Array.from({ length: 6 }, () => storage.readStore(key)));
+      assert.equal(results.filter((result) => result.status === "rejected").length, 6);
+      const failedReads = calls.length;
+      responses.delete(id);
+      rows.set(id, { userNotes: [{ id: "wieder lesbar" }] });
+      assert.equal((await storage.readStore(key)).userNotes[0].id, "wieder lesbar");
+      assert.equal(failedReads, 1);
+      assert.equal(calls.length, 2);
+    });
+
+    await check("Verschiedene Speicher werden auch ohne Cache nie zusammengefasst", async () => {
+      const oldTtl = process.env.HELMUT_STORE_CACHE_MS;
+      process.env.HELMUT_STORE_CACHE_MS = "0";
+      delete require.cache[require.resolve("../lib/helmut/storage")];
+      const other = require("../lib/helmut/storage");
+      process.env.HELMUT_STORE_CACHE_MS = oldTtl;
+      const keys = ["main", "p-shared-b"];
+      for (const key of keys) rows.set(rowId(key), { userNotes: [{ id: key }] });
+      const results = await Promise.all(keys.flatMap((key) => [other.readStore(key), other.readStore(key)]));
+      assert.deepEqual(results.map((store) => store.userNotes[0].id), [keys[0], keys[0], keys[1], keys[1]]);
+      assert.equal(calls.length, 2);
+      await other.readStore(keys[0]);
+      assert.equal(calls.length, 3, "Cache=0 liest nach Abschluss wieder aus der Datenbank");
+    });
+
+    await check("Gleichzeitige Leser teilen auch einen transienten Wiederholungsversuch", async () => {
+      const key = "p-shared-retry"; const id = rowId(key);
+      rows.set(id, { userNotes: [{ id: "erhalten" }] });
+      let attempts = 0;
+      readHooks.set(id, () => {
+        if (++attempts === 1) throw new Error("Supabase storage failed (503): synthetic retry");
+      });
+      const results = await Promise.all(Array.from({ length: 6 }, () => storage.readStore(key)));
+      assert.ok(results.every((store) => store.userNotes[0].id === "erhalten"));
+      assert.equal(attempts, 2);
+    });
+
+    await check("Ein Write trennt laufende Lesegenerationen; alter Abschluss entfernt keine neue", async () => {
+      process.env.HELMUT_STORE_CACHE_MS = "0";
+      delete require.cache[require.resolve("../lib/helmut/storage")];
+      const other = require("../lib/helmut/storage");
+      process.env.HELMUT_STORE_CACHE_MS = "10000";
+      const key = "p-read-generation"; const id = rowId(key);
+      rows.set(id, { userNotes: [{ id: "alt" }] });
+      const writeBase = await other.readStore(key);
+      let finishOld; let finishNew; let reads = 0;
+      const oldHeld = new Promise((resolve) => { finishOld = resolve; });
+      const newHeld = new Promise((resolve) => { finishNew = resolve; });
+      readHooks.set(id, () => ++reads === 1 ? oldHeld : newHeld);
+      const old = other.readStore(key);
+      await new Promise((resolve) => setImmediate(resolve));
+      await other.writeStore({ ...writeBase, userNotes: [{ id: "neu" }] }, key);
+      const next = other.readStore(key);
+      await new Promise((resolve) => setImmediate(resolve));
+      finishOld();
+      const stale = await old;
+      const joined = other.readStore(key);
+      await new Promise((resolve) => setImmediate(resolve));
+      const readCount = reads;
+      finishNew();
+      const results = await Promise.all([next, joined]);
+      assert.equal(stale.userNotes[0].id, "alt");
+      assert.ok(results.every((store) => store.userNotes[0].id === "neu"));
+      assert.equal(readCount, 2);
+      await assert.rejects(other.writeStore(stale, key), { code: "STORE_WRITE_CONFLICT" });
+    });
+
     await check("Gescheiterter Schreibvorgang wird nicht als gespeicherter Cache sichtbar", async () => {
       const key = "p-cache-failure";
       const id = rowId(key);

@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/db-speicherspitzen-20261113": false,
       "codex/auth-schreiblast-vorbereiten-20261112": false,
       "codex/auth-leselast-reduzieren-20261112": false,
       "codex/briefing-versorgung-reparatur-20261112": false,
