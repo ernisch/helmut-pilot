@@ -38,6 +38,29 @@ async function main() {
   // Netzwerk ist Container-Eigenschaft und wird vor jeder Datenanlage kontrolliert.
   const network = execFileSync("docker", ["--host=unix:///var/run/docker.sock", "inspect", "--format", "{{.HostConfig.NetworkMode}}", container], { encoding: "utf8" }).trim();
   assert.equal(network, "none");
+  if(process.argv.includes("--kompatibilitaet")){
+    // Frischer lokaler Container, nur diese drei neuen Uebergangsfaelle.
+    execFileSync("docker",["--host=unix:///var/run/docker.sock","exec",container,"psql","-X","-U","postgres","-v","ON_ERROR_STOP=1","-c","CREATE DATABASE helmut_test_core"],{stdio:"pipe"});
+    sql("create role anon; create role authenticated; create role service_role bypassrls;");
+    sql(file("20260808_scalable_job_queue.sql"));
+    sql(functionSql("helmut_claim_job_by_id",file("20260814090000_queue_verbraucher.sql")));
+    sql(file(migration));sql(job("altclient"));
+    sql("update public.helmut_jobs set payload='{\"dokumentIds\":[\"synthetisch\"]}'::jsonb;");
+    const claim=JSON.parse(sql("select row_to_json(c) from public.helmut_claim_job_by_id((select id from public.helmut_jobs),'alter-client',60000)c;"));
+    check("alter Direktclaim liefert weiterhin exakt die gespeicherte Payload",()=>assert.deepEqual(claim.payload,JSON.parse(sql("select payload::text from public.helmut_jobs;"))));
+    check("alter Fortschritts-CAS bleibt waehrend Umstellung moeglich",()=>{
+      const before=JSON.stringify(claim.payload).replace(/'/g,"''");
+      assert.equal(sql(`with geaendert as(update public.helmut_jobs set payload=payload||'{"fortschritt":true}'::jsonb where lease_owner='alter-client' and status='laeuft' and payload='${before}'::jsonb returning id)select count(*) from geaendert;`),"1");
+    });
+    reset();sql(job("neuclient"));
+    const next=JSON.parse(sql("select row_to_json(c) from public.helmut_claim_tagesauftrag((select id from public.helmut_jobs),'neuer-client',60000)c;"));
+    check("nur neuer Einsprung ergaenzt Fenster/Alter ohne gespeicherte Payloadmutation",()=>{
+      assert.equal(next.uebernommen,true);assert.equal(next.payload.__helmutJobFenster,sql("select freshness_window from public.helmut_jobs;"));
+      assert.ok(Number.isFinite(Date.parse(next.payload.__helmutJobEntstanden)));assert.ok(Number.isFinite(Date.parse(next.payload.__helmutJobFaellig)));
+      assert.equal(sql("select payload::text from public.helmut_jobs;"),"{}");
+    });
+    sql(file(rollback));console.log("3/3 neue SQL-Uebergangsfaelle bestanden.");return;
+  }
   if(process.argv.includes("--drift")){
     const original=functionSql("helmut_claim_jobs",file("20260808_scalable_job_queue.sql"));
     sql(original.replace("return query","-- abweichender Teststand\n  return query"));

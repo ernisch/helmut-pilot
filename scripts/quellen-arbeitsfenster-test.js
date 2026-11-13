@@ -14,7 +14,8 @@ const ENV = Object.freeze({
   HELMUT_QUELLEN_FENSTER_TAG: "8", HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16"
 });
 let pass = 0;
-async function check(name, fn) { await fn(); pass++; console.log(`PASS ${name}`); }
+const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
+async function check(name, fn) { if (only && !name.includes(only)) return; await fn(); pass++; console.log(`PASS ${name}`); }
 function welt() {
   let zeit = Date.parse("2026-11-09T03:00:00Z");
   let leaseBis = 0;
@@ -94,7 +95,9 @@ async function main() {
     }
   });
   await check("echte Workerbereitschaft liest erst unter Lease; kritischer Rueckstand bleibt bearbeitbar", async () => {
-    const w = welt(), original = pipeline.betriebsstatus; let erlaubt = false, reads = 0;
+    const w = welt(), original = pipeline.betriebsstatus, storage = require("../lib/helmut/storage");
+    const originalKern = storage.jobQueueTageskernBereit; let erlaubt = false, reads = 0;
+    storage.jobQueueTageskernBereit = async () => ({ verfuegbar: true });
     delete w.deps.bereitschaft;
     pipeline.betriebsstatus = async o => {
       reads++; assert.equal(o.env, ENV); assert.equal(w.rpcs.length, 0); assert.equal(w.frei(), 0);
@@ -106,7 +109,7 @@ async function main() {
       erlaubt = true;
       pipeline.betriebsstatus = async o => { assert.equal(o.env, ENV); reads++; return { verfuegbar: true, zustand: "kritisch" }; };
       assert.equal((await lauf(w)).ok, true); assert.equal(reads, 2); assert.equal(w.rpcs.length, 3);
-    } finally { pipeline.betriebsstatus = original; }
+    } finally { pipeline.betriebsstatus = original; storage.jobQueueTageskernBereit = originalKern; }
   });
   await check("zu langer Lease-/Vorflugstart oder abgelaufene Zustellkulanz verbraucht keine Quote", async () => {
     for (const phase of ["lease", "vorflug", "kulanz"]) {

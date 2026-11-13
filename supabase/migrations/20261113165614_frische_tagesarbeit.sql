@@ -11,7 +11,7 @@ declare v_sig text; v_alt text; v_neu text; v_hash text; v_definer boolean;
 begin
   for v_sig,v_alt,v_neu in select * from (values
     ('public.helmut_claim_jobs(text,integer,bigint,text[])','c4c9a5270951de7717b990f6e37ed023','e01fcd12c6d0f8849f72ce6dfb73e421'),
-    ('public.helmut_claim_job_by_id(uuid,text,bigint)','76982a28ea50df628a3547de293e13a1','88c193da5d23f51d35706957949b6199'),
+    ('public.helmut_claim_job_by_id(uuid,text,bigint)','76982a28ea50df628a3547de293e13a1','2cf079d5331f47b04dbef8fe09eac5d7'),
     ('public.helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)','eae95f83c3216c217e6b434c8f3c19be','c2e01bf1edc204a03b66c96cb28eaec6')) f(sig,alt,neu) loop
     select md5(prosrc),prosecdef into v_hash,v_definer from pg_proc where oid=to_regprocedure(v_sig);
     if v_hash is null or v_hash not in (v_alt,v_neu) or v_definer then
@@ -228,7 +228,7 @@ begin
    returning * into v_zeile;
 
   return query select true, 'uebernommen'::text, v_zeile.id, v_zeile.job_type, v_zeile.tenant_id,
-                      v_zeile.payload || jsonb_build_object('__helmutJobFenster', coalesce(v_zeile.last_seen_window,v_zeile.freshness_window), '__helmutJobEntstanden', v_zeile.created_at, '__helmutJobFaellig', v_zeile.first_due_at), v_zeile.attempts, v_zeile.max_attempts, v_zeile.lease_expires_at;
+                      v_zeile.payload, v_zeile.attempts, v_zeile.max_attempts, v_zeile.lease_expires_at;
 end;
 $$;
 -- Eigene Einspruenge verhindern ein stilles Arbeiten mit der alten Claim-Logik,
@@ -238,8 +238,25 @@ returns setof public.helmut_jobs language sql security invoker set search_path =
 as $$ select * from public.helmut_claim_jobs(p_owner,p_limit,p_lease_ms,p_types); $$;
 create or replace function public.helmut_claim_tagesauftrag(p_job_id uuid,p_owner text,p_lease_ms bigint default 300000)
 returns table(uebernommen boolean,grund text,id uuid,job_type text,tenant_id text,payload jsonb,attempts integer,max_attempts integer,lease_expires_at timestamptz)
-language sql security invoker set search_path = public, pg_temp
-as $$ select * from public.helmut_claim_job_by_id(p_job_id,p_owner,p_lease_ms); $$;
+language plpgsql security invoker set search_path = public, pg_temp
+as $$
+declare
+  v_claim record;
+  v_job public.helmut_jobs%rowtype;
+begin
+  -- Alte Verbraucher behalten die exakt gespeicherte Payload. Nur dieser neue
+  -- Einsprung transportiert Metadaten, die sein Adapter vor Fortschritts-CAS trennt.
+  select * into v_claim from public.helmut_claim_job_by_id(p_job_id,p_owner,p_lease_ms);
+  if v_claim.uebernommen then
+    select * into strict v_job from public.helmut_jobs j where j.id = v_claim.id;
+    v_claim.payload := v_claim.payload || jsonb_build_object(
+      '__helmutJobFenster', coalesce(v_job.last_seen_window,v_job.freshness_window),
+      '__helmutJobEntstanden', v_job.created_at, '__helmutJobFaellig', v_job.first_due_at);
+  end if;
+  return query select v_claim.uebernommen,v_claim.grund,v_claim.id,v_claim.job_type,
+    v_claim.tenant_id,v_claim.payload,v_claim.attempts,v_claim.max_attempts,v_claim.lease_expires_at;
+end;
+$$;
 revoke all on function public.helmut_claim_tagesarbeit(text,integer,bigint,text[]) from public,anon,authenticated;
 revoke all on function public.helmut_claim_tagesauftrag(uuid,text,bigint) from public,anon,authenticated;
 grant execute on function public.helmut_claim_tagesarbeit(text,integer,bigint,text[]) to service_role;
