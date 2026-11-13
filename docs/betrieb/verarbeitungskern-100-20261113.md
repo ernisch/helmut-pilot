@@ -10,6 +10,28 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
 **Weiterer echter Lieferblocker,22:52–22:56 UTC:**
+**Inzwischen ausgerollt und wirklich beansprucht:** PR1186 nach konkreter Freigabe
+normal auf32311c78fb17843631f6851ec7103b5f9759ff68 gemergt, Parentscc283e0b/97901263,
+Dateibaum identisch zum geprueften Kopf. CI43526156655 beide Pflichtchecks gruen:
+neun neue Workergruppen/sechs neue Profilgruppen und geaenderte Syntax, keine
+alten Tests. Regulaeres Deploymentdpl_8gAYArheEw81mYsUP1WoQSJg9M8q READY,
+Hauptalias/Runtime32311c78, anonym401, Kommunikationssperre bestaetigt.
+Live-Adminlauf23:34:59UTC auf32311c78: Projektion23:35:03.4356 und Materialisierung
+23:35:14.5211 erstmals je1Versuch erledigt. Aktuelle Quellenarbeit bleibt offen;
+erfolgreicher Claim/Abschluss beweist keine Vollversorgung oder Textqualitaet.
+
+**Separater Qualitaetsbefund und enger Gegenfall:** originales bestaetigtes
+Review14.11. lehnt Absatz0 ausschliesslich mit profilbezug=false ab; andere Flags
+sowie Absatz1 und Paarvergleich positiv. Kein Mapping-/Parserfehler. Mit echtem
+KO-Lektuere-/Abschnittsbeleg besteht wortgleicher Absatz1 plus zugehoeriges
+positives Einzelurteil (nur Index1→0) denselben strikten Q.pruefe-/Sachdetailscheck,
+Originalphasen-/Profilhashes gueltig und unveraendert. Kein Modell/DBwrite.
+Normaler Speichervertrag verlangt2–4Absaetze; diese Grenze wird nicht abgesenkt.
+Eigener hashgebundener, insert-only Teilstand im bestehenden Speicher in Arbeit:
+negative Urteile erhalten, alle Bindungen und positive Paar-/Einzelpruefung Pflicht,
+keine anderen Fehlerausnahmen, Paket bleibt teilweise, App zeigt klaren Hinweis.
+Private Originalentwuerfe/Reviews duerfen nicht in App-DTOs gelangen.
+
 Der zweite Adminlauf endete22:59:38 UTC:151Ziel,16erledigt,6Fehler,
 121zurueckgestellt,8wiederholt. Bisherige Grenzen unveraendert.
 Nach Berliner Mitternacht auf weiterem ausdruecklichen Testauftrag genau einmal
