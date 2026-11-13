@@ -1,31 +1,38 @@
 # CURRENT STATE — Helmut
 
-**13.11.2026: Verarbeitungskern fuer den ersten zahlenden Kunden und danach
-100 aktive Kunden gezielt umgebaut; lokale Codeabnahme nach Korrekturen, nicht ausgerollt.**
-Branch `codex/verarbeitungskern-100-20261113`, Basis `fe94f3eb`.
-Einzelne Artikelversionen, Tagesvorrang statt Altrueckstand, bestaetigte
-Lagephasen, verteilte Grenzen und gespeicherte App-Tagespakete umgesetzt.
-[Architekturentscheidung, konkrete Nachweise, Dimensionierung und Grenzen](betrieb/verarbeitungskern-100-20261113.md).
-Keine neue Infrastruktur, keine Production-Daten-/Profil-/Budget-/Cronaenderung,
-keine Aktivierung, kein Merge/Deployment. Neue Migration nur vorbereitet.
-PR1183 nach Betreiber-Go unabhaengig geprueft: fuenf Integrationsfehler korrigiert,
-16 gezielte neue/geaenderte Pruefgruppen/Faelle bestanden. Begrenzte Pflicht-CI
-[43483196284](https://github.com/ernisch/helmut-pilot/actions/runs/43483196284)
-auf `f7f3d6eb` gruen: 15 neue Auswahlgruppen, 29 Desktop-/Mobilpruefungen.
-Rolloutvorflug: Live-Direktclaim unterscheidet sich nur in zehn Kommentaren;
-seinen exakten Hash in der vorbereiteten Driftwache ergaenzt. Neuer CI-Nachtrag
-prueft nur sieben neue Policygruppen und drei neue lokale SQL-Faelle; Browser-
-und alte Fachbelege streng gebunden wiederverwendet. Aktuelles Kopf-/Laufergebnis:
-[PR1183](https://github.com/ernisch/helmut-pilot/pull/1183).
-Kein erneuter Mock100, kein neuer Lastnachweis; versehentlich ausgefuehrter
-rein lokaler 500er Altfall ist im Bericht offengelegt und kein Freigabebeleg.
-Konkreter Einprofilplan im Architekturbericht: SQL vor Code; normaler Mergecommit
-mit `[skip ci]` vermeidet einmalig die breite main-CI, kein neuer PASS am Merge.
-Aktuelle Vercelkonfiguration: Pipeline `on`, Narrativqueue `off`, Dispatch `shadow`,
-Kommunikation `gesperrt`; alte Betriebsnotiz zu Pipeline `off` ist ueberholt.
-**Naechster Schritt nach gruener Nachtrags-CI:** gesonderte konkrete Freigabe
-fuer den dokumentierten Einprofil-Rollout einholen. Bis dahin kein Merge/Deployment.
+**13.11.2026: Kernumbau PR1183 ausgerollt; echte Lieferblocker im Reparaturbranch behoben,
+PR1184 integriert; gezielte CI und Production-Wirkungsnachweis noch offen.**
+Production/main `597d7876`, [PR1183](https://github.com/ernisch/helmut-pilot/pull/1183) nach Einprofilfreigabe gemergt.
+Vercel `dpl_AZEUX1v4DgPbdDPGBSmcE1HDTzQC`
+READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
+[Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
+Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
+Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
+bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 
+Manueller Einprofiltest nach explizitem Go20:49–20:50 UTC: einmal Lage, einmal Paketbau,
+beide200. Neue Lage mit2 belegten Absaetzen/9 Karten, volle Lageansicht und gebundene
+Quittung gespeichert; zwei Modellaufrufe0,015513 USD. Tagesbindung0,317017 USD,
+gesamt2,538017 USD, acht alte offene Reserven erhalten. Tagespaket teilweise:
+Quellenversorgung offen/kein Tagesanlass. Kein fachlicher Gesamt-PASS.
+
+[PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
+JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
+Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
+Gegenprobe mit echten Profil-/Policy-/Quellenwerten: korrigierter Leser liefert65
+Eintraege, volle Lage und Quittung, unveraenderte Snapshots. Radar gespeichert, eine
+Dynamik08.11., ehrlich stale; sechs Kandidaten/22 Quellen reproduzieren exakt diese fachlich passende Auswahl.
+Quellenfortsetzung: alle155 wartenden Jobs heute faellig, erst3/8 Fenster und900/2400s
+verbraucht. Abgeschlossene Einzeljobfehler sperren uebrige Tagesarbeit nicht mehr;
+unklarer Ausgang/Leaseverlust bleibt gesperrt. Historische Reste loesen keine Slots aus.
+Explizite Ruhelage gilt bei sonst vollstaendigen Belegen als vollstaendig; Luecken nicht.
+Neue lokale Gruppen/Faelle24/24: Quellen7, Auslieferung7, JSONB7, Verwaltung3. Unabhaengige Reviews ohne Restbefund; alte Nachweise erhalten.
+
+Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 gruen;
+29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
+CI43511072972:11 neue Plangruppen/13 Browserchecks bestanden; letzte Plangruppe plus2 UI-Zeitpunkte rot, gezielt korrigiert.
+Keine Runtimeaenderung hierfuer. Admin-Quellenstart uebernimmt Betreiber in eigener Sitzung; keine Zugangsdaten weitergegeben.
+**Naechster Schritt:** nur die drei korrigierten Faelle samt bisher fehlender Syntax am aktuellen PR-Kopf pruefen.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
