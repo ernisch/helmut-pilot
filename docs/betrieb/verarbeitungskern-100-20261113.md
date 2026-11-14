@@ -58,6 +58,16 @@ Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entferne
 (Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
 Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
 Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+**1196 CI-Nachtrag11:18UTC:** CI43589058224 hat6/6NEUEPlanfaelle und6JS-Syntax
+bestanden. Browsercheck bricht VOR erstemPASS an fehlendemgespeicherterNachweis ab.
+BeideAgenten+Root belegen reinenHarnessfehler: neueFixturehat3Identitaeten, nativer
+Reader fordert korrekt nach3Rows offset3; alte Harnessassertion erlaubt nur0/2.
+Exakt1Testzeile erlaubt NURimneuenRadarfall0/identities.length, alteModi bytegleich.
+Runtime/Nativetest unveraendert; keine Wiederholung6Fach/6Plan/6Syntaxerfolge.
+Neuer CI-Nachtrag prueft nur geaendertenOfflinejobanker und3geaenderteJS-Syntax;
+alle5Browserchecks nach0erErstfehler noch erstmalig auszufuehren. KeinProductionfehler
+oder neuerProduktstand daraus behauptet, keine Modelle/Quellen/Writes.
+
 **PR1196 Radar-Artikelbindung,14.11.11:14UTC: lokalgeprueft, CI/Rollout offen.**
 Die Parteikarte kombinierte altenKO-Titel der Linken mit neuemSPD/Grünen-Artikel.
 Producer und normaler gespeicherter Appreader binden nichtpersoenliche sichtbare Titel
