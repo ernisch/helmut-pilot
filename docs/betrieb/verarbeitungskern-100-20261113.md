@@ -31,6 +31,23 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+**PR1193 konkrete UI-Reparatur, erste gezielte Abnahme offen:**
+Radarbackend e8b51613 (Root2dda1b5e) von Root+Delivery abgenommen: nur neutrale
+Dynamikformulierung,2neue Bestandsgruppen,2angepasste alte Erwartungen ohne
+Wiederholung der18Altgruppen. UI-Freeze client.js/styles.css/browser-smoke-test.js:
+direkt sichtbare wortgleiche gespeicherte Lageabsaetze mit ihren eigenen Quellen,
+aktive Profil-/Belegschranke, mobile Titel3Zeilen bei vollstaendigem Detailtitel,
+neutrale Radarzahl auch fuer gespeicherte Altpakete. Root+FreshReadreviews fanden
+einen Null-Dynamik-Fallback; anschliessender enger Nachtrag behandelt auch0oeffnende
+Dynamiken bei sichtbarem Umfeldbestand. Root+FreshDeltareview ohne Restbefund.
+UI-Autorcommit3b2cc0bb, Produktblobs46f878dc/9b6d1cbf/f1980da3; unveraendert
+uebernommen. Alle benoetigten Code-/Test-/CI-Strukturreviews abgeschlossen.
+Pruefplan bindet PR1193/Base097d14/Branch und neun NonCI-Dateien plus drei CI-Dateien.
+Nur2neue Radargruppen/6neue Profilgruppen/Syntax und5neue Browserchecks (Desktop/
+Mobil+NoWrites) vorgesehen; bisher keine Tests gestartet. Keine Modelle/DBaenderung.
+Heutige Radar-Umfeldquelle hat Score36/„Ignorieren“/nur Parteimatch; allein heutige
+Publikation begruendet keinen Briefing-Tagesanlass. Quellen-/Tagesanlassgates bleiben.
+
 **Echte Kundenscreenshots14.11.08:09UTC: UI-Abnahme noch nicht bestanden.**
 Der SnapshotleserPASS08:05 belegt Daten/DTO, keinen sichtbaren Text im Browser.
 Tatsaechliche zwei Lageabsaetze sind nur in geschlossenen Details der Karten2/4;

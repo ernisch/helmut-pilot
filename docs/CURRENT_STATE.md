@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 **14.11.2026,08:10UTC: echte Kundenscreenshots zeigen Darstellungsfehler.
-2gepruefteLageabsaetze geliefert, aber in Details versteckt; UI-Reparatur in Arbeit.**
+2gepruefteLageabsaetze geliefert, UI-ReparaturPR1193 und erste neue Browserabnahme offen.**
 Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
 Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
 Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
@@ -45,7 +45,6 @@ Ausreichende RAM-Reserve und 100-Kunden-Zeit-/Kostenrahmen bleiben unbelegt.
 [Unveraenderter vorheriger Status mit Lage/Radar-, Buero-, Profil- und UX-Belegen](https://github.com/ernisch/helmut-pilot/blob/fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f/docs/CURRENT_STATE.md).
 Die folgenden datierten Abschnitte sind erhaltener vorheriger Betriebsstand;
 daraus entstehen keine neuen Laufrechte.
-
 ## Quellen: aktueller Stand und fruehere Belege
 
 **11.11., Einreihung live / Kontingentvorflug vorbereitet:** PR1124 erhält Planmanifest/Hash/Inhaltsschlüssel/Artikeldatum; Runtime bestätigt `4dee3255`. Historische Manifeste und Schutzkonfiguration beim Rollout unverändert, keine aktive Verarbeitung oder Sperre. Der neue enge Vorflug prüft nach exklusiver Lease die vorhandene Workerbereitschaft und dieselbe 60s-/Slotgrenze vor der ersten Quotenreservierung. Planung/Enqueue/Claim bleiben dahinter. Teilreservierung, unbekannte Schreibantwort und Abbruch bleiben konservativ verbraucht; kein historischer Reset. Gezielte Gruppen: Arbeitsfenster21, echte lokale Route9 bestanden. Lesebereitschaft garantiert keine späteren RPC-Schreibaufrufe; der separate Pflichtfeldfehler wurde durch PR1124 behoben. Keine neuen Termine, Limits, Migration oder Productionänderung. Diagnosebelege bleiben privat. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den neuen Reparaturkopf.
