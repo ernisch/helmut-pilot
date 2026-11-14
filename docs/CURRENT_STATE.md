@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
-**14.11.2026,13:24UTC: PR1197 normal gemergt/Production READY; echter Adminstart angefragt.**
+**14.11.2026,14:49UTC: echtes aktualisiertes Tagespaket gespeichert+ausgeliefert; Tagesprioritaet weiteroffen.**
 main/Production529d47f8(PR1197), Runtime/Schutzbindung13:22:26UTCbestaetigt.
-Briefing2/Lage2/Radar2+Partei1 weiterhinvorlaeufig; kein Tagesprioritaetsnachweis.
+77Vorgaenge/Briefing2/Lage2/Radar2+Partei1 realgespeichert+normalgelesen; weiterhinvorlaeufig.
 [Architektur und Primaerbelege](betrieb/verarbeitungskern-100-20261113.md).
 Neu belegt: regulärer Understandingvertrag erzeugt/uebernimmt keineFachtags;
 Matcher erwartetFachtags/belegteAusschuesse.4gezielteLiveKOs besitzen alleFacharraysleer.
@@ -14,13 +14,24 @@ PR1197Kopfedae1493:25neueGruppen+2OriginalePASS,CI43596599597beidePflichtchecksg
 Einmal9/2700/32:konkretesBetreiberGOerteilt; Merge529d47f8/Tree26d35517exaktwiegeprueft.
 Gitdeployment dpl_5DePBp7LkBbPmAXDMzW38kmCURyH Git/Production/fra1 READY13:21:22UTC.
 LesenderProduktreaderHTTP200: altesPaketd41c1c16/alleTexte/Quittung unveraendert.
-EchterAdminstartangefragt,ANTWORTAUSSTEHEND; keinStartdurchSecret/keinModell/keinVollPASS.
-KeinExtraLauf/Reset/Bestandsreanalyse/Modell/Produktoperation,keinealteGO-Wiederverwendung.
-Budget0,581580USDTag/3,305057USDgesamt,254Calls/84heute/8alteReserven/0heuteoffen.
+Adminlauf e86cbb54–883a–4e9b–a91f–072df072446a 14:33:47.102–14:37:33.629UTC:
+partial,5processed/167deferred/5failed;1Source+4neueKOsbestaetigt,0Leasesdanach.
+Alle4neuenFachtagsabgewiesen:fachthemen-originalpassage-fehlt; genaueUnterursacheUNKNOWN,
+Originalantwortwirdnichtarchiviert. KeinenfehlerhaftenEingangzumNeustartfreigegeben.
+Genau1freigegebenerZusatzlaufverbraucht;keinRootDuplikat/Reset/Bestandsreanalyse.
+NeuebezahlteUnderstandingcalls4einmal,keinealteGO-Wiederverwendung.
+Lage14:42:59fromCache/5Karten/2Absaetze;1Morgenabschluss14:44:05UTCtechnischbestaetigt.
+Paketb2cb2abd77Items/14:44:00.627UTC+Quittung,17neueAuslieferbedingungenalletrue.
+NormalerStoredHTTP200,Profil/Quellen/Policy/Berlintag/Quittunggebunden,privateReviewsfehlen.
+BeideAbsatzobjekte+Lagebindungwortgleich;keinCustomerAuthBrowserPASS/keinFachvollPASS.
+Budget0,620841USDTag/3,344318USDgesamt,258Calls/88heute/8alteReserven/0heuteoffen.
 Limits1USD/UTC-Tag/30gesamt,keineKunden/Dienste/Env/Cron/Migration/Datenkorrekturen.
 Bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten,nichtwiederholt.
-Paketd41c1c16/76Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
+NeuesPaketb2cb2abd/77Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
 EinzelngepruefteTexte sindkeinBelegfuerTageswichtigkeit; keinVoll-/100KundenPASS.
+EngeramtlicherAusweichpfadgeprueft:4exakteQuellenohnesachgebiet/sachgebiete/policy_field;
+kein0KI-Adapterfixbelegt. Typ/Urheber/RessortbelegenkeineFachprioritaet.
+Zusatzlauf+1Lage+1MorgenabschlusssindVERBRAUCHT;10/10Mergefreigabenverbraucht.
 MobilesMockup bereit,nurEntwurf;keineProduktdesignaenderungbeauftragtoderumgesetzt.
 Root+2CodexReviewsabgenommen;10/10Nachtmergesverbraucht,25PruefgruppenNICHTwiederholen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
