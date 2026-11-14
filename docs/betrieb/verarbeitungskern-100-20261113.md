@@ -7,6 +7,25 @@ Einprofilfreigabe auf Production `597d7876`; gespeicherter heutiger Paketstand
 teilweise. Neuer regulaerer Tageslauf und Kundenbedienabnahme offen.
 Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
+**PR1197 Betreiber-GO und Merge14.11.2026,13:22UTC:** Zur konkreten Frage
+hat der Betreiber mit „Go“ den geprueften Kopfedae1493, normalen Merge/Gitrollout
+und genau1zusaetzlichen echtenAdminquellenlauf heute freigegeben: maximal9Fenster/
+2700Sekunden/32Originalabrufe, unveraendert1USDTag/30gesamt. Nurbeineuenbestaetigten
+Eingaben hoechstens1normaleLageoperation+1Paketabschluss. KeineverbrauchteGOwiederverwendet.
+NormalerMerge529d47f8a73ceb4179b8ceb6d4ff758a4856468b, Parents58e21bf5/edae1493,
+Tree26d355178c64ab9e091f2dbd3ca21aaa63bfdf83exaktwiegeprueft; Pflichtchecksweitergruen.
+Gitdeploymentdpl_5DePBp7LkBbPmAXDMzW38kmCURyH Git/Production/fra1 READY13:21:22.283UTC,
+Hauptalias/runtime529d47f8/Profilexklusiv/Kommunikations-/Kohortenschutz13:22:26bestaetigt.
+NormalerProduktleserHTTP200: Paketd41c1c16/Items/Lage/Vorlaeufig/Radar/Quittungwortgleich
+zu1196,keineSchreib-/Modellwirkung. Requestcle1::fra1::c44hs-1794662543892-fb3fa6ae8ab1.
+EchterAdminstartbeimBetreiberangefragt;Antwortausstehend,keinSourcebetriebgestartet.
+NachtzaehlerJETZT10/10(PR1188–1197),keineweiterenMergesausdieserFreigabe.
+VorMergeKostenprimaer0,581580USDTag/3,305057gesamt/254Calls/84heute/
+8alteReserven/0heuteoffen, nurCEM/0Leases. Quoten8/2400/16 unveraendert,
+Sonderkeyfehlt. KeineModell-/Produktoperation; echteAdminsession+CSRFfuerStartnoetig.
+NachREADYlesendePaket-/Schutzkontrolle,dannBetreiberueberbereitenStartknopfinformieren.
+Kein neuerFachvollPASS;bestehende25Gruppen+2Originalfixpositive nichtwiederholt.
+
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
 **Nachtauftrag14.11.2026,00:33UTC:** Betreiber erlaubt vollautonome Behebung und
