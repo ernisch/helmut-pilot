@@ -30,7 +30,35 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:7/10Merges (PR1188/1189/1190/1191/1192/1193/1194),3weitere nur beiGruen verbleiben.
+**PR1194 normal gemergt und ausgerollt,14.11.10:18–10:28UTC:**
+Kopf46a173bf79749141ace5c14a79cbaccfdae1c8b9, Evidenceb632c6fb,
+Mergee148640fb195b9a713f613e868965e5990ee9c9a mit Parents4a49/46a173,
+Tree597e7ad9f3362977ea8ad11dcf870321c2ad84a3 exakt wie abgenommen.
+CI43584269849 beide Pflichtchecks gruen:6neuePlangruppen/13JS-Syntax/
+5neueDesktop-/Mobilbrowserchecks;21lokaleGruppen unveraendert uebernommen.
+Browserlog bestaetigt5PASS/0FAIL, keine alten Fach-/Browser-/Mengenlaeufe.
+Root+unabhaengige Runtime-/Delta-/CI-/Vollbaumreviews ohne offenen Befund.
+Normaler Merge mit[skip actions], Gitdeployment dpl_6TVccKEXiw5NWbfjxj8kzQMXp9LA
+Production/fra1 READY10:18:34.608UTC; Hauptalias und Runtimee148 bestaetigt.
+Liveclient blobfe041e01f883dda858645c9b5d21bbc31060704e, HTML?v=e148640f,
+anonymer Appstart401, exklusiveProfile/Supabase/Kommunikations-/Kohortensperrenaktiv.
+Geschuetzter normaler Production-Appreader10:20:45HTTP200 mit exakt2vorlaeufigen
+geprueftenAbsaetzen/Quellen13Nov16:08+12Nov00:00, Tag/Profil/Quittung gebunden.
+Originales Paket812d3b81 unveraendert, keine privaten Ergaenzungs-/Reviewdaten.
+Kein authentifizierter Kundenbrowser-PASS und kein voller Tagesanlass behauptet.
+Nachtzaehler7/10. Kosten10:15 unveraendert0,581580USDTag/3,305057gesamt/8alteReserven.
+Nachkontrolle: ein widerlegter Mix liegt weiterhin im alten gespeicherten Radar
+(Pflegetitel mit Suchthilfequelle), unter den dort3Dynamiken. Aktive identitaetsstrenge
+rein lesende Operatorvorschau mit explizitemheutigenTag baut10:26 echte76Items/2Radar;
+beide vorhandenen Lageabsatztexte und Bindung6836008f/79642b47 bleiben exakt.
+Keine Quellen-/Modell-/Paketoperation. Vor dem normalen0KI-Morgenabschluss wird
+noch ein belegter Verlustpfad abgesichert: ein cacheOnly-Timeout/null oder ungebundener
+Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entfernen
+(Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
+Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
+Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+
 **Briefingsprint14.11.09:35UTC: zwei Ursachen reproduziert, noch kein neuer Rollout.**
 Nachtrag09:57UTC: beide Ursachenfixes unabhaengig abgenommen und14/14neue
 lokale Gruppen ueber scripts/lokal.js bestanden (Checkpoint7, Gattungen7).
