@@ -1,9 +1,9 @@
 # CURRENT STATE — Helmut
-**14.11.2026,08:51UTC: PR1193 gemergt/gruen, Production-Rollout bislang fehlend.
-5neueBrowserchecks bestanden; gepruefter Ersatzrollout separat angefragt, nicht ausgefuehrt.**
-main `4a49cbef`, [PR1193](https://github.com/ernisch/helmut-pilot/pull/1193), Kopf `b87f20ac`; Production noch `097d14e2`.
-Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
-Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
+**14.11.2026,08:58UTC: PR1193 auf Production; einmaliger Ersatzrollout freigegeben/erfolgt.
+5Browserchecks gruen; Live-JS/CSS bytegleich, neueAssetversion und Zugangsschutz bestaetigt.**
+main `4a49cbef`, [PR1193](https://github.com/ernisch/helmut-pilot/pull/1193), Kopf `b87f20ac`; Production `4a49cbef`.
+Vercel `dpl_DNSeek1KJwM8Wq1UCU6VhyEtHe3r` Git-Ersatzrollout/Production READY08:56:55UTC;
+Alias/Runtime4a49/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
@@ -11,7 +11,7 @@ bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1190:9Artikel-/6CI-Gruppen43561501437 bestanden; strenger Versionsreader bleibt.
 Realer Leser08:05:79Items/5Karten/2Absaetze/Quittung. Keine UI-Vollabnahme.
 PR1193 behebt versteckte Lageabsaetze/mobilen Riesentitel/Radarneuigkeit,5Browserfaelle gruen;
-Production zeigt noch alten UI-Code; Quellenstand14 stammt korrekt aus Umfeldquelle.
+Production liefert neueUI; Quellenstand14 stammt korrekt aus Umfeldquelle.
 Briefinggap bleibt fachlich richtig; vorhandene79 sind keine neuen Tagesprioritaeten.
 Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.

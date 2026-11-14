@@ -31,6 +31,28 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
+**PR1193 Ersatzrollout nach konkreter Freigabe erfolgt,14.11.08:56–08:58UTC:**
+Betreiber gab ausdruecklich „Einmaligen Ersatzrollout von PR1193 freigeben“.
+Direkter Vorflug: weiterhin0Deployments fuer4a49, GitHubPRmerged/exakterKopf b87.
+Genau der gepruefte API-Vorschlag ce742f3b via vorhandener Git-Verbindung mit
+ref4a49 undwithLatestCommitfalse einmal ausgefuehrt, keine weiteren Optionen.
+Vercel dpl_DNSeek1KJwM8Wq1UCU6VhyEtHe3r Production/fra1 READY08:56:55.712UTC,
+Merge4a49cbefa84950128116599dd667b181f79909be, normaler Hauptalias gebunden.
+Hauptalias-GETs: geschuetzter Runtimebeleg200/exakterSHA/Production/Supabasebereit/
+exklusiveProfile/Kommunikations-/Kohortensperren=true; anonymer Appstart401.
+Oeffentliche Live-Dateien byteidentisch zum geprueftenKopf/Mergebaum:
+client.js Gitblob46f878dc64ee4cc9ce351f84b5c4b9d1c4556fdc,
+styles.css9b6d1cbf68c56623c800142bc053cbd99e5d19fe. LiveHTML referenziert
+beide mit?v=4a49cbef, somit Versionswechsel auch fuer installierte App.
+Unabhaengiger lokaler Artefakt-/Gitobjektabgleich durch Fresh ohne Befund,
+keine Wiederholung der Browser-/Backendtests und keine weiteren Netzlaeufe dort.
+Kein authentifizierter Production-UI-PASS behauptet. Quellenversorgung/fehlender
+Briefing-Tagesanlass bleiben ehrlich; keine alten79Items zuPrioritaeten promotet.
+Keine Quellen-/Modell-/SQLlaeufe, Budget-/Cron-/Env-/Kunden-/Zugangsänderung.
+Das konkrete einmalige Ersatzrolloutrecht ist verbraucht. Nachtzaehler bleibt6/10.
+Die Ursache des ausbleibenden automatischen Gitrollouts bleibt unbelegt;
+Ersatzrollout behebt die Auslieferung dieses Commits, keine Gitautomatikheilung behaupten.
+
 **PR1193 normal gemergt08:43UTC, reguläres Deployment08:51noch fehlend:**
 Gepruefter Kopf b87f20ac623da5dc5beba680731b47cfb0073729, Evidenceabb5dc3f,
 Merge4a49cbefa84950128116599dd667b181f79909be, Parents097d14/b87f20,
