@@ -30,7 +30,103 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:0Merges; jeweils nach tatsaechlichem Rollout nachtragen.
+Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+**Kontrolle 14.11., 04:07 UTC und gezielter Folgefix:** main/Runtime weiterhin
+5a734cc3; nur CEM aktiv, Kommunikations-/Kohortensperre bestaetigt.
+Fuenfter Quellenlauf 04:00:46–04:04:33 UTC: 2 erledigt, 2 endgueltige Fehler,
+50 zurueckgestellt, 29 Wiederholungen; keine aktive Prozesszeile danach.
+Heute 47 Quellenabrufe/53 U erledigt, 106 Abrufe/76 U offen, 5 U fehlgeschlagen.
+14 abgerechnete Aufrufe dieses Fensters sind 14 verschiedenen Artikeljobs mit
+14 verschiedenen Dokumentkennungen zugeordnet; kein Doppelaufruf daraus belegt.
+Ein bestaetigter erster Abschnitt bleibt in KO-Version3 samt Bundle-/Quellenhash
+und Lektuerebeleg gespeichert; Jobcursor1 passt dazu. Andere alte KO-Sperren
+bleiben unaufgeloest. Keine bezahlte Wiederaufnahme oder Datenkorrektur.
+Kostenbindung 0,447599 USD heute/3,171076 USD gesamt, acht alte offene Reserven.
+Paket 03:37 unveraendert. Projektion04:15/Materialisierung04:30 noch nicht faellig.
+Unabhaengiger Codebefund: U-Prioritaet80 steht auch innerhalb derselben Tagesgruppe
+vor Quellenabruf100; der Worker reserviert bisher nur einen Mandatsanteil.
+Implementierter Folgefix auf codex/quellenabruf-arbeitsanteil-20261114: begrenzte Phase
+fuer heutige Quellenabrufe im bestehenden Slot, danach gemischte echte Restzeit.
+Historische Abrufe bekommen dadurch keinen neuen Vorrang; gleiche Sperren,
+Kosten-/Zeitgrenzen und Typbeschraenkungen. Nur Worker und neue enge Regression;
+keine Migration, Cron-/Env-/Budgetaenderung oder zusaetzliche Verarbeitung.
+PR1189: maximal90s und ein Drittel des bestehenden Workerbudgets fuer Abrufe,
+danach echte Restzeit. Originalclaim traegt die UTC-Frische; Historie/Zukunft
+wird ohne Abruf bestaetigt zurueckgestellt, unbekannte Bindung sperrt Folgearbeit.
+Noch laufende Handler nach Promise.race sperren naechsten Claim und Folgemix.
+Alle Phasenbilanzen muessen bestaetigt sein; ein Blob-Spiegelwrite pro Slot bleibt.
+Root und unabhaengiges Runtime-/Testreview ohne Befund, Workercommit331ab8c8.
+Acht neue Fachgruppen und sechs neue Profilgruppen plus Syntax werden einmalig
+in enger CI ausgefuehrt. Browser, App, Auth, Lage, Radar, Paketleser und Abhaengigkeiten
+sind unveraendert; erfolgreiche Browserbelege43531055622/43537245306 bleiben erhalten.
+CI noch offen; bisher weiter nur 1/10 Nachtmerges. Kein weiterer Liveaufruf.
+**Echter erster Tagesbetrieb14.11.,03:00–03:22UTC:** main weiter5a734cc3.
+Plan14 fertig eingereiht156/156. Regulaerer Lauf
+`cron-crawl-20261114030012-15m2h`03:00:12–03:03:57UTC:128Ziel/56erledigt/
+4endgueltigeFehler/61zurueckgestellt/7wiederholt, statuspartial. Danach33heutige
+Abrufjobs und6heutigeUnderstandingjobs erledigt. Kein heutigerU-Artikel mit
+Rohpublikation ausserhalb14d-Horizont; sechs erledigte haben11.–12.11.-Datum.
+Die vier Einzelfehler stoppten keine Fortsetzung: zweiter regulaerer Lauf
+`cron-crawl-20261114031512-lsdgd`03:15:12–03:18:58UTC:102Ziel/19erledigt/
+1endgueltigerFehler/82zurueckgestellt, statuspartial. ZweiFenster/600Sekunden
+reserviert.03:22:54UTC kumulativ42heutigeAbrufjobs+16heutigeU erledigt,
+111Abrufe/28U offen,3heutigeUfehlgeschlagen. Projektion04:15 und Paket04:30
+noch nicht faellig; Lage05:00/regulaeresMorgenpaket05:15stehen aus.
+Kostenbuch03:22:54UTC:0,137613USDTag/2,861090USDgesamt,8alteoffeneReserven
+unveraendert. Paket00:07/hash63694c77 unveraendert. Kein manueller Quellenlauf,
+keine neue Wiederverarbeitung, Tests oder Modellaufrufe zur Diagnose.
+
+**Zwischenlauf14.11.,03:35–03:50UTC:** Drittes regulaeres Quellenfenster
+03:30:12–03:34:02UTC erledigt16Auftraege ohne Einzelfehler,81zurueckgestellt.
+Danach einmal bestehende Lage- und Morgenpaketroute fuer CEM im laufenden
+Einprofilauftrag auf neuen Eingaben gestartet, beide200. Neuer Paketstand
+03:37:17.783UTC:72Eintraege/5Lagekarten/1bestaetigterAbsatz, Hash
+495c41d1c460b9a37f9587464a5bb61f3e41bf6cca2950a321546668eac4787b.
+Teilbeleg98fbdb20d82549fe78fceffbea902ec9bd69f43b4a5134c5c7b91e942fa6f822
+bindet Eingabe74c899d6aebc22d95959b1c8320107e475b9639d14120d49a5458aa7fcb2fc48.
+Zwei neue Modellaufrufe0,012273USD; danach0,251616USDTag/2,975093USDgesamt,
+acht alte offene Reserven unveraendert. Keine blinde Wiederholung.
+Normaler Paketleser03:50UTC auf exakten privaten Production-Snapshots ueber
+scripts/lokal.js bestanden:72Eintraege/5Karten/1Absatz/2Radarentwicklungen;
+Profil/Quellen/Policy/Berlintag/Quittung passen, private Reviewdaten fehlen im DTO,
+Snapshots unveraendert. Kein authentifizierter HTTP-/Browsernachweis.
+Radar letzter Quellenbeleg nun12.11.13:01:58UTC, weiterhin korrektstale.
+Paket bleibt teilweise:Quellenversorgung offen,keinTagesanlass,LageTeilstand.
+Neuer Entwurf verwendet erneut ein sachlich unpassendes Profilfeld fuer eine
+Quelle; unabhaengiger Review haelt nur diesen Absatz zurueck. Zwei unabhaengige
+rein lokale Gegenpruefungen der privaten Originalbindung: Stichwortoptionen
+schliessen Tarifbindung aus, empfehlen aber erneut den zuvor abgelehnten
+Ausschussbezug allein wegen Gewerkschaftsnennung. Kein belegter sicherer Fix;
+keine Runtime-/Promptaenderung und keine neue Bezahlung gleicher Eingaben.
+Andere eigenstaendige Fachthemen vorhanden, zweiter volltragfaehiger Absatz
+damit weder bewiesen noch ausgeschlossen. Review und Teilstand bleiben erhalten.
+Viertes regulaeres Quellenfenster03:45:12–03:48:58UTC
+cron-crawl-20261114034512-v1k4b:77Ziel/23erledigt/0Fehler/51zurueckgestellt,
+statussuccess, weiter5a734cc3. Kostenbuch03:54UTC:0,355701USDTag/
+3,079178USDgesamt/8alteoffeneReserven. Paket03:37 unveraendert.
+
+Zwei heutige Eingangsdiagnosen sind isolierte DIP-Dokumente292420/292370,
+je ein Versuch, Grunddip-quellfelder-nicht-bestaetigt, kein Modellversand.
+Originalantwort/Feldcodes fehlen; keineRawzeilen gespeichert. Die oeffentlichen
+Dokumentseiten liefern nur SPA-Huellen. ZweckgebundenerDIP-Zugang imWorkspace
+und gezielterVercel-Metadatenlesung nicht verfuegbar. Kein Parserfehler aus
+Hypothesen abgeleitet, keineSecret-/Authumgehung. Diagnose bleibtUNKNOWN;
+belegter Hashrueckbezug bei spaeterer Originalsichtung moeglich. Ein weiterer
+heutiger U-Endfehler istartikel-pruefung-fehlgeschlagen:skipped-failed; der
+bestaetigt fehlgeschlagene Bestand wird ohne ausdruecklicheWiederaufnahme nicht
+erneut bezahlt. Enger unabhaengiger Identitaetsabgleich abgeschlossen: Artikel,
+Auftrag und KO entstanden heute03:00:50–03:01:09UTC; KO hat genau diesen einen
+Dokumentlink, keine neuen Nachbarn an einem alten Fehlercluster. DerselbeStand
+32202cc6 ist archiviert. CASfencing1/versuche1/ki_aufrufe1, letzteAenderung
+03:01:09.847UTC, Zustandunbekannt/Grundvalidierung-fehlgeschlagen. Spaetere
+Jobversuche03:15 endeten ohne zweiten Modellstart. Keine Historienblockade
+belegt und keine Wiederaufnahme, Reset- oder Codeaenderung vorgenommen.
+Rein lesende Fruehkontrolle14.11.02:48UTC: main/Runtime weiter5a734cc3,
+kein neuer Quellenlauf/Plan14 vor03UTC; Paket/hash63694c77 und Kostenbindung
+0USDTag/2,723477USDgesamt/8offeneReserven unveraendert, nurCEMaktiv.
+Die ChatGPT-condition_watch-Ausfuehrung erfolgte vor dem geplanten03:07-Termin;
+eigene Nachtaufgabe deshalb auf exact_schedule fuer03:07–07:07UTC gestellt.
+Nur ChatGPT-Ausfuehrungszeit korrigiert, keine Produktcron-/Env-/Budgetaenderung.
 Implementierung PR1188 vor CI unabhaengig gegengeprueft: drei Quelldateien und
 zwei Radar-/Browserdateien ohne offenen Befund. Exakte Versionsbindung liest nur
 die ausgewaehlten bestaetigten Artikelstaende sequentiell nach; kein Korpusread.
@@ -50,6 +146,27 @@ und waehlt exakt6noch offeneFachgruppen; erste3Fachgruppen werden nicht wiederho
 Unabhaengig gegengeprueft, Produkt-/Browsercode unveraendert. Nachtrags-CI soll nur
 6offeneFachgruppen,2geaenderteCI-Schrittanker und fehlendeSyntax ausfuehren;
 4unveraenderteProfilgruppen und7Browserchecks werden sichtbar wiederverwendet.
+Nachtrags-CI43537801132 am `a58c0de9d5bd14bdecc0771fb8546b845230b431`:
+beide Pflichtchecks gruen;6offeneFachgruppen+2geaenderteSchrittanker+Syntax bestanden,
+keineBrowserinstallation/-wiederholung. Damit alle9Fachgruppen und7Browserchecks
+ueber beide Laeufe bestaetigt,4Profilgruppen unveraendert und2Anker neu abgenommen.
+Root und beide unabhaengigen Fach-/CI-Reviews ohne offenen Befund.
+
+**Erster Nachtmerge ausgerollt:** PR1188 normal auf
+`5a734cc38549c0e6f922bf7471d44042ed3b5deb`, Parentsc97fbbd0/a58c0de9;
+Dateibaum `b7fe873e9e3371d2d7b4ee20b20a26e3d791e288` exakt wie gepruefter Kopf.
+Vercel `dpl_D79CzZSN6FcY4BMNV6hmvm4P8QHg` regulaerGit/Production/fra1 READY,
+Hauptalias und Runtime5a734cc3 bestaetigt, anonym401. Ausgelieferteclient.js
+bytegleich zum geprueften Original, SHA256
+`f9d55ded81c94405c9661880872692878bbc3f1158ddff83f2146aca82f0254b`,
+neueRadarkundentexte vorhanden. Kommunikations-/Kohortenquellensperre aktiv.
+VorMerge0laufendeProzesse/aktiveLeases. GenauCEMaktiv; Tagesbindung14.11.UTC0USD,
+gesamt2,723477USD/8alteoffeneReserven unveraendert. Kein neuerQuellen-/Modelllauf,
+keine Datenkorrektur/Migration/Env-/Budget-/Cron-/Kunden-/Mailaenderung.
+Bestehendes Paket00:07:20.357UTC/hash63694c77 unveraendert57Eintraege/1Absatz;
+Quellen offen/keinTagesanlass/LageTeilstand bleiben ehrlich teilweise. Noch keine
+Livebeanspruchung des neuen Tages-Enqueuepfads vor regulaerem03UTC-Start;
+die begrenzte Nachtfortsetzung beobachtet diesen und spaeter05:15UTC dasPaket.
 
 **Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
 normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,

@@ -75,7 +75,7 @@ jobs:
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
     services:
       postgres:
-        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && 'postgres:17' || '' }}
+        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1189 && github.event.pull_request.base.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb' && github.event.pull_request.head.ref == 'codex/quellenabruf-arbeitsanteil-20261114') && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: helmut
           POSTGRES_PASSWORD: helmut
@@ -119,7 +119,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/gepruefte-lage-teilstaende-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1187 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/tagesfrische-und-radarklarheit-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1188 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1188 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabruf-arbeitsanteil-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1189 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -146,6 +148,15 @@ jobs:
           fi
           printf 'Geänderte Dateien:\n%s\n' "$CHANGED"
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Abrufanteil - neue Fairness und Profilbindung
+        if: steps.plan.outputs.quellenabrufanteil == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          set -e
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --abrufanteil-only
+          node scripts/lokal.js scripts/quellenabruf-arbeitsanteil-test.js
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
       - name: Tagesfrische - neue Archivgrenzen und Profilbindung
         if: steps.plan.outputs.tagesfrische == 'true'
         env:
@@ -268,7 +279,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -670,7 +681,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/gepruefte-lage-teilstaende-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1187 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/tagesfrische-und-radarklarheit-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1188 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1188 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabruf-arbeitsanteil-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1189 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -696,6 +709,17 @@ jobs:
             CHANGED=""
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Abrufanteil - Browser bewusst nicht erneut ausfuehren
+        if: steps.plan.outputs.quellenabrufanteil == 'true'
+        run: |
+          {
+            echo '### Begrenzter Abrufanteil: Browser bewusst NICHT ERNEUT AUSGEFUEHRT'
+            echo 'Exakter vollstaendiger Basis-/Kopf-/Belegbaum: nur Worker, neue Fachregression, Dokumentation, Branchsperre und drei begrenzte CI-Dateien geaendert.'
+            echo 'App, Authentifizierung, Paketleser, Lage, Radar und Abhaengigkeiten gegen main5a734cc3 unveraendert.'
+            echo 'Teilstand-Browserbeleg erhalten: https://github.com/ernisch/helmut-pilot/actions/runs/43531055622'
+            echo 'Radar-Browserbeleg erhalten: https://github.com/ernisch/helmut-pilot/actions/runs/43537245306/job/132269105907'
+            echo 'Kein Chromium installiert oder gestartet; kein neuer Browser-PASS behauptet. Keine Modelle, Datenbank- oder Mengentests.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Mandat - Browser bewusst nicht erneut ausfuehren
         if: steps.plan.outputs.mandatsarbeitvorrang == 'true'
         run: |
