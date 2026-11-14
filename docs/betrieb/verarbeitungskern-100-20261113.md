@@ -30,7 +30,7 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:7/10Merges (PR1188/1189/1190/1191/1192/1193/1194),3weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:8/10Merges (PR1188/1189/1190/1191/1192/1193/1194/1195),2weitere nur beiGruen verbleiben.
 **PR1194 normal gemergt und ausgerollt,14.11.10:18–10:28UTC:**
 Kopf46a173bf79749141ace5c14a79cbaccfdae1c8b9, Evidenceb632c6fb,
 Mergee148640fb195b9a713f613e868965e5990ee9c9a mit Parents4a49/46a173,
@@ -58,6 +58,67 @@ Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entferne
 (Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
 Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
 Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+**1196 CI-Nachtrag11:18UTC:** CI43589058224 hat6/6NEUEPlanfaelle und6JS-Syntax
+bestanden. Browsercheck bricht VOR erstemPASS an fehlendemgespeicherterNachweis ab.
+BeideAgenten+Root belegen reinenHarnessfehler: neueFixturehat3Identitaeten, nativer
+Reader fordert korrekt nach3Rows offset3; alte Harnessassertion erlaubt nur0/2.
+Exakt1Testzeile erlaubt NURimneuenRadarfall0/identities.length, alteModi bytegleich.
+Runtime/Nativetest unveraendert; keine Wiederholung6Fach/6Plan/6Syntaxerfolge.
+Neuer CI-Nachtrag prueft nur geaendertenOfflinejobanker und3geaenderteJS-Syntax;
+alle5Browserchecks nach0erErstfehler noch erstmalig auszufuehren. KeinProductionfehler
+oder neuerProduktstand daraus behauptet, keine Modelle/Quellen/Writes.
+
+**PR1196 Radar-Artikelbindung,14.11.11:14UTC: lokalgeprueft, CI/Rollout offen.**
+Die Parteikarte kombinierte altenKO-Titel der Linken mit neuemSPD/Grünen-Artikel.
+Producer und normaler gespeicherter Appreader binden nichtpersoenliche sichtbare Titel
+nun nur an denselbenVorgang+kanonischeArtikeladresse+exaktefinitePublikationszeit,
+uebereinstimmendenTitel und verfuegbareDokumentkennungen. Fehlende/widerspruechliche
+Belege verbergen dieKarte; niemals ersterTreffer, Zeitpromotion oder neueDokumentID.
+PersoenlicherNamensnachweis bleibt unveraendert. DerReader verwendet ausschliesslich
+bereitsgespeicherte items.sources/primarySource desselbenVorgangs und aendert nur
+geklonte anzeige; RawRadar/Paket/Quellenhash/Briefing-/Lagetexte/Quittung bleiben exakt.
+Falls Karten entfallen, korrigiert sich nur die sichtbare Belegbilanz konservativ.
+Root+Fresh unabhaengige Runtime-/Native-/Browserdiffreviews bestanden,4Dateien gefroren.
+6/6NEUE nativeGruppen einmal lokal ueber scripts/lokal.js bestanden: eigenerArtikeltitel
+bei wechselndenAkteuren, Quellenreihenfolge, fehlende/ambige/andersdatierte/fremdeBelege,
+echter gespeicherterReader+2erhalteneDynamiken+beideBriefingtexte+Receipt, ehrlicheBilanz
+beiAblehnung sowie Mandat/Profil/Tag/Policy/Personensperren. KeineAlttests/Modelle/DB.
+ReineHelperprobe auf echtem aktuellem d41-PublicDTO bestaetigt Erhalt beiderDynamiken
+undParteikarte; alle3Titel entsprechen exakt eigenerArtikelquelle undDatum.
+Neuer1196Pruefplan bindet Base87505694/Branch/7NichtCIblobs plus3CI-Dateien;
+6lokaleFachgruppen gebundenwiederverwenden, nur6NEUEPlanfaelle/geaenderteSyntax und
+5NEUEechteHTTP-SPA-Artikelkartenchecks Desktop/Mobil/NoWrites ausfuehren.
+Historische27Fach/12Plan/5Browsererfolge bleiben erhalten, nichtwiederholen.
+Keine weitere Morgenmaterialisierung/Quellenarbeit/Modelle vorgesehen; reineAnzeige.
+Nacht unveraendert8/10,2weiteregruen frei; Productionweiter87505694.
+
+**PR1195 normal gemergt und Produktabschluss,14.11.10:43–10:53UTC:**
+Merge87505694ae9318d660f2052e634613d720729c03, Kopf2e6846002023781f41f64f21832312445013995c,
+Evidence67922cc2, Tree2ea49c771c88f6c79e21756127d00148c9ef05ea exakt. CI43586409603
+beide Pflichtchecks gruen:6neuePlangruppen+4Syntax,6lokaleNativegruppen wiederverwendet;
+allefrueheren21Fach/6Plan/5Browsererfolge1194 erhalten. Root+2unabhaengigeReviews.
+NormalGitdeploymentdpl_8GpRgQ8nEex5RHS65A8LZghDjMS4 Production/fra1 READY10:43:19.616UTC;
+Hauptalias/Runtime8750/Profil-/Kommunikations-/Kohortensperren bestaetigt. Nacht8/10.
+VorflugnurCEM/0aktuelleProzesse/0Leases,0,581580USDTag/3,305057gesamt/8alteReserven.
+GENAU1begruendeter normaler0KI-Morgenabschluss auf CP-/Identitaetskorrektur ausgefuehrt,
+keine Extraquelle oder Modell-/Reset-/SQLkorrekturoperation. Kein Verbrauch alter Recoveryrechte.
+Neues Paket10:45:36.302UTC/hashd41c1c162fbc3b3cf127b75d84517556c066a38b796047ef556ac1ebc7aa04f1:
+76Items/2Lageabsaetze/2Radar, Quittung10:45:39.622 passgenau. Quellenfensterstartkorrekt
+12Nov08:26:31.371. Geschuetzter normalerProduction-Appreader10:45HTTP200 bestaetigtMarker2,
+beideTexte WORTGLEICH, QuellenID/URL/Titel/Name/Publikationszeit+Quellenbindung gleich,
+keine privaten Review-/Ergaenzungsdaten. Der widerlegte Pflege-/Suchthilfemix ist ganz entfernt.
+Budget und Aufrufzaehler SQL vorher/nachher identisch:254Calls/84heute/8alte/0heuteoffen,
+0,581580/3,305057USD, nurCEM/0laufend. AlterPakethash812d3b81 exakt alsvorherigerStand
+realSQLbestaetigt. Push gesperrt. Unabhaengiger dateibasierter Budget-/Receipt-/Archivreview
+konsistent; kein neuer Netzdurchlauf/Modell. Gesamtstand bewusstpartial/completefalse,
+Quellenversorgungoffen und keine belegteTagesprioritaet; kein Kundenbrowser-/100PASS.
+Letzter unabhängiger Radarcheck: Partei-Karte benutzt altenKO-Titel zur Linken-Abstimmung,
+verlinkt aber neuereSPD/Grünen-Abstimmungsquelle14Nov. DieKorrekturdaten stehenbereits
+imselbenPaket.items.sources. Kein neuerMix, sondern ArtikelTitel-/Datumskopplungsfehler.
+Enger Producer+Reader-Anzeigefix in Vorbereitung, ohneNeuberechnung/DB/Modelle/weitere
+Morgenmaterialisierung. Titel nur aus eindeutig gleichemVorgang+ArtikelURL+Publikationszeit;
+Quittung/Originalhash/Briefing/Lage und persoenlicheNamenspruefung bleiben unberuehrt.
+
 **PR1195 Volltextschutz,14.11.10:37UTC:** kleinster dauerhafter Guard im bestehenden
 Paketspeicher (12Produktzeilen). Vorhandener E-Volltext darf nur durch einen neuen
 strengen Volltext mit exakt bestaetigter Ansicht ersetzt werden. Fehlender Cache,
