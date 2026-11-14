@@ -31,6 +31,12 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+Rein lesende Fruehkontrolle14.11.02:48UTC: main/Runtime weiter5a734cc3,
+kein neuer Quellenlauf/Plan14 vor03UTC; Paket/hash63694c77 und Kostenbindung
+0USDTag/2,723477USDgesamt/8offeneReserven unveraendert, nurCEMaktiv.
+Die ChatGPT-condition_watch-Ausfuehrung erfolgte vor dem geplanten03:07-Termin;
+eigene Nachtaufgabe deshalb auf exact_schedule fuer03:07–07:07UTC gestellt.
+Nur ChatGPT-Ausfuehrungszeit korrigiert, keine Produktcron-/Env-/Budgetaenderung.
 Implementierung PR1188 vor CI unabhaengig gegengeprueft: drei Quelldateien und
 zwei Radar-/Browserdateien ohne offenen Befund. Exakte Versionsbindung liest nur
 die ausgewaehlten bestaetigten Artikelstaende sequentiell nach; kein Korpusread.
