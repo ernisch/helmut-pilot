@@ -8,7 +8,9 @@ const args = process.argv.slice(2), nachtrag = args.length === 1 && args[0] === 
 const dipOnly = args.length === 1 && args[0] === "--dip-only";
 const mandatOnly = args.length === 1 && args[0] === "--mandat-only";
 const teilstandOnly = args.length === 1 && args[0] === "--teilstand-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const frischeOnly = args.length === 1 && args[0] === "--frische-only";
+const frischeNachtrag = args.length === 1 && args[0] === "--frische-nachtrag-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -32,6 +34,8 @@ function test(name, fn) {
   if (dipOnly && !name.startsWith("DIP:")) return;
   if (mandatOnly && !name.startsWith("Mandat:")) return;
   if (teilstandOnly && !name.startsWith("Teilstand:")) return;
+  if (frischeOnly && !name.startsWith("Frische:")) return;
+  if (frischeNachtrag && !/^Frische: (?:Offlinejob|Browserjob)/.test(name)) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -284,5 +288,61 @@ test("Teilstand: Browserjob startet nur neuen gespeicherten Teilstand auf Deskto
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Frische: nur das fuenfte feste Profil aktiviert neue Fach und Browsergegenfaelle", () => {
+  const p = C.validate(fixture(C.TAGESFRISCHE));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "tagesfrische");
+  A.equal(p.source.pr, C.TAGESFRISCHE.PR); A.equal(p.source.base, C.TAGESFRISCHE.BASE);
+  A.equal(C.TAGESFRISCHE.RUNTIME_FILES.length, 3); A.equal(C.TAGESFRISCHE.REGRESSION_FILES.length, 1);
+});
+test("Frische: falsche Profile Metadaten Ereignisse und Checkoutkoepfe bleiben gesperrt", () => {
+  for (const change of [f => { f.pr.base.sha = C.MANDAT.BASE; }, f => { f.prNumber = C.MANDAT.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.DIP.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "anderer-branch"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "anderer-branch"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.TAGESFRISCHE);
+});
+test("Frische: jeder feste Blob ist erforderlich und fremde Runtime hat keine Ausnahme", () => {
+  for (const file of Object.keys(C.TAGESFRISCHE.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.TAGESFRISCHE);
+    denied(f => { f.headTree.delete(file); }, C.TAGESFRISCHE);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.TAGESFRISCHE);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.TAGESFRISCHE);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.TAGESFRISCHE);
+  for (const file of ["lib/helmut/lage-textqualitaet.js", "lib/helmut/ai.js", "lib/helmut/lage-quellenbeleg.js",
+    "lib/helmut/lage-verarbeitungsbeleg.js", "lib/helmut/unerwartet.js"])
+    denied(f => { f.headTree.set(file, row("1")); }, C.TAGESFRISCHE);
+});
+test("Frische: fehlender Belegbaum und ungueltige CI bleiben gesperrt", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.TAGESFRISCHE);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.TAGESFRISCHE);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.TAGESFRISCHE);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.TAGESFRISCHE);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.TAGESFRISCHE);
+  }
+});
+test("Frische: Offlinejob startet nur neue Profilgegenfaelle Fachregression und Syntax", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.TAGESFRISCHE))), [
+    "Prüfplan aus geänderten Dateien", "Tagesfrische - neue Archivgrenzen und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --frische-nachtrag-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.TAGESFRISCHE.REGRESSION_FILES[0] + " --nur-offene"));
+  A.match(workflow, /ci-lieferreparatur-plan\.js --syntax/);
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8'/);
+});
+test("Frische: Browserjob bewahrt den bestaetigten unveraenderten Radar-Klarheitsbeleg", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.TAGESFRISCHE))), [
+    "Prüfplan aus geänderten Dateien", "Radar - bestaetigten Browserbeleg wiederverwenden"
+  ]);
+  A.match(workflow, /43537245306\/job\/132269105907/);
+  A.match(workflow, /kein neuer Browser-PASS behauptet/);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);

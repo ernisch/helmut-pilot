@@ -9,6 +9,74 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Nachtauftrag14.11.2026,00:33UTC:** Betreiber erlaubt vollautonome Behebung und
+biszu10weitere gruene auftragsbezogene Merges samt regulaerem Deployment. Budget,
+Mandantenziel, Schutzregeln und Verbot von Massentests/Production-Datenkorrekturen
+bleiben unveraendert. Ziel bleibt echtes Briefing/Radar, kein erfundener Vollstatus.
+Enge lesende Diagnose: im13-Fenster166wartende Understandingjobs,100Artikel vor06.11.,
+aeltestePublikation11.06.2006,32vom13.11.; allepriority80vorAbruf100. Von27erledigten
+achtvom13.11. und einer12.06.2026. Sourcehandler persistiert neben Kandidaten auch
+alle geladenen Fundstellen und reiht danach alle bestaetigtenIDs als Tagesarbeit ein.
+Geplanter enger Fix: Archiv erhalten, kostenpflichtige Tagesarbeit aus exakt
+gebundenen Kandidaten im bestehenden Relevanzhorizont; alte Fundstellen nichtneu
+heutePromoten. Bestehende U-/Archivauftraege bleiben unveraendert; die vorhandene
+SQL bearbeitet heutige Arbeit unabhaengig von historischen Prioritaeten zuerst.
+Radar zeigt belegtes08.11.-Signal korrektstale, kein neuer fachlicher Filterfehler
+belegt. Nur unklare Kundentexte korrigieren; Frische-/Bezug-/Fristpruefungen bleiben.
+Fehlender Tagesplan14 vor erstem03UTC-Fenster und fehlender neuer Tagesanlass sind
+derzeit ehrliche Luecken, kein nachgewiesener UTC/Berlinfehler.
+Fuer die erforderliche Nachtfortsetzung ist eine begrenzte ChatGPT-Aufgabe angelegt,
+kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
+stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
+regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
+Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
+Zaehler seit Nachtfreigabe:0Merges; jeweils nach tatsaechlichem Rollout nachtragen.
+Implementierung PR1188 vor CI unabhaengig gegengeprueft: drei Quelldateien und
+zwei Radar-/Browserdateien ohne offenen Befund. Exakte Versionsbindung liest nur
+die ausgewaehlten bestaetigten Artikelstaende sequentiell nach; kein Korpusread.
+Gleiche URL beweist keine gleiche Artikelversion. Langer Originaltext und der
+bestehende enge Herausgeberaliasvertrag bleiben erhalten. Unbekannter Ausgang
+bleibt Fehler, bereits eingereihte gute Nachbarn bleiben erhalten. Bestehende
+Understandingauftraege/Modelle/Archivpfade und14d-Relevanzhorizont unveraendert;
+Relevanz ist ausdruecklich kein neuer Tagesanlass. Geplant:9neueFachgruppen,
+6neueProfilgruppen,7neueRadar-Browserchecks Desktop/Mobil und geaenderte Syntax.
+Keine erfolgreichen Vorbelege wiederholen; Tests noch offen.
+Erst-CI43537245306 am43282d1b:6neueProfilgruppen und erste3Fachgruppen bestanden;
+4.Fachgruppe scheitert vor Produktausfuehrung an nichtkanonisierter synthetischer
+Bundestag-URL beim Standhash. Unveraenderte strikte Produktpruefung wird nicht gelockert.
+Browserjob132269105907 erfolgreich:7neueRadarchecks Desktop/Mobil. Dieser Offline-
+Erstfehler bleibt erhalten. Ein-Datei-Nachtrag kanonisiert ausschliesslich dieFixture
+und waehlt exakt6noch offeneFachgruppen; erste3Fachgruppen werden nicht wiederholt.
+Unabhaengig gegengeprueft, Produkt-/Browsercode unveraendert. Nachtrags-CI soll nur
+6offeneFachgruppen,2geaenderteCI-Schrittanker und fehlendeSyntax ausfuehren;
+4unveraenderteProfilgruppen und7Browserchecks werden sichtbar wiederverwendet.
+
+**Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
+normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
+Dateibaum996f86e61c5ba06eba731e85cf21b31d2c8d9ad5 exakt gleich zum freigegebenen Kopf.
+CI43531055622 beide Pflichtchecks gruen:9neueFachgruppen,6neueProfilgruppen,
+7neueBrowserchecks Desktop/Mobil und geaenderte Syntax; alte Tests/DB/Masse aus.
+Vercel `dpl_J1tPgsHubG4GnVBDYesaK843w3kk` regulaer Git/Production/fra1 READY,
+Hauptalias und Runtimec97fbbd0, anonym401, Kommunikationssperre bestaetigt.
+Vor Merge keine neueren laufenden Prozesse/aktiven Jobleases. Keine Migration,
+zusätzlichen Profile, Budget-/Cron-/Env-Aenderungen oder neue Quellenarbeit.
+
+Bestehender Einprofilauftrag: genau einmal Lagecron00:06:40UTC, danach Paketlauf
+00:07:11UTC, beide200. Bestaetigter Entwurf/Review wiederverwendet; Teilstand
+00:06:49.308UTC gespeichert, Originalindex1 positiv/Originalindex0 weiter abgelehnt,
+Hash `da90e6e1903965a2083b36090ec825f913b1c6a1f3067609e8ca800b00b7ec1a`.
+Paket14.11. um00:07:20.357UTC gespeichert/verifiziert:57Eintraege/8Karten/1Absatz,
+Hash `63694c776dbe475d4271cf4b2ea5c5509b74077b677f782805afd1c0b5c0873d`.
+Quittung gebunden und ausgehende Kanaele gesperrt. Rein lokaler neuer Gegencheck
+00:09:44UTC mit exakt diesen privaten Production-Snapshots und dem normalen Leser:
+availabletrue, gueltiger Teilstand, Profil-/Policy-/Quellenschutz passend,
+59Manifestvorgaenge/59Abhaengigkeiten, keine Bindungsluecken, keine privaten Reviews
+im DTO, Snapshots unveraendert. Keine authentifizierte Production-Browserabnahme.
+Null neue Modellaufrufe; Tagesbindung14.11.UTC0USD, gesamt unveraendert2,723477USD,
+acht alte offene Reserven erhalten. Ehrlich teilweise: Quellen offen/kein Tagesanlass/
+lage-teilstand, Radar eine Dynamik08.11. weiterhinstale. Kein Vollversorgungs-PASS.
+Naechster Schritt: regulaeren Quellen-/Morgenlauf und den gespeicherten Stand pruefen.
+
 **Weiterer echter Lieferblocker,22:52–22:56 UTC:**
 **Inzwischen ausgerollt und wirklich beansprucht:** PR1186 nach konkreter Freigabe
 normal auf32311c78fb17843631f6851ec7103b5f9759ff68 gemergt, Parentscc283e0b/97901263,
