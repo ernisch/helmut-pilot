@@ -6603,7 +6603,8 @@ function renderHstandHeader(state) {
   // Slot-Name eines Tages, den es nicht gibt.
   const vertrag = state && state.frischeVertrag;
   const vertragOffen = Boolean(vertrag && vertrag.aktuell === false);
-  const st = vertragOffen
+  const vorlaeufig = briefingTeilstandAbsaetze(state).length > 0;
+  const st = vorlaeufig ? { label: "Vorläufiger Stand", tone: "warn" } : vertragOffen
     ? HSTAND_STATUS_LABEL.nicht_aktuell
     : hstandCurrentQuiet(state)
       ? { label: "Aktuell", tone: "ok" }
@@ -6616,7 +6617,8 @@ function renderHstandHeader(state) {
   const created = hstandWhen(vertrag?.lauf?.erzeugtAm);
   const timeLabel = [
     state.primaryItem ? (when ? `Quellenstand: ${when}` : "Quellenstand nicht belegt") : "",
-    created ? `Briefing erstellt: ${created}` : "Erstellungszeit des Briefings nicht belegt"
+    vorlaeufig ? `Tagespaket vorbereitet: ${hstandWhen(briefing.vorlaeufigerBriefingstand.paketErzeugtAm)}`
+      : created ? `Briefing erstellt: ${created}` : "Erstellungszeit des Briefings nicht belegt"
   ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
@@ -6921,6 +6923,48 @@ function hstandCurrentQuiet(state) {
     && briefing?.available !== false && !briefingDisruption());
 }
 
+function briefingTeilstandAbsaetze(state) {
+  const marker = briefing?.vorlaeufigerBriefingstand, paket = briefing?.paketStatus,
+    proof = briefing?.gespeicherterNachweis, data = briefing?.lageBriefing;
+  if (!marker || marker.version !== 1 || marker.zustand !== "vorlaeufig"
+    || marker.quellenversorgung !== "offen" || marker.tagesprioritaet !== "offen"
+    || briefing.available !== true || state?.status !== "empty" || state.emptyState?.kind !== "gap"
+    || state.primaryItem || state.primaryVorgangId || state.errorState || state.staleState
+    || !profile?.id || profile.id !== activePoliticianId || state.profileId !== profile.id
+    || (state.tenantId != null && state.tenantId !== profile.id)
+    || state.versorgung?.zustand !== "offen" || paket?.zustand !== "teilweise" || paket.vollstaendig !== false
+    || paket.quittungGebunden !== true || paket.tag !== marker.tag || proof?.auswahl !== "aktuell"
+    || proof.erzeugtAm !== marker.paketErzeugtAm || !Number.isFinite(Date.parse(marker.paketErzeugtAm))
+    || data?.teilstand || data?.qualitaet?.teilstand || !Array.isArray(marker.absaetze)
+    || !marker.absaetze.length || marker.absaetze.length !== data?.paragraphs?.length) return [];
+  const berlinDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" });
+  if (marker.tag !== berlinDay.format(new Date()) || marker.tag !== berlinDay.format(new Date(marker.paketErzeugtAm))
+    || Date.parse(marker.paketErzeugtAm) > Date.now()) return [];
+  const checked = lageGepruefteAbsaetze(data), result = [];
+  for (const [i, ref] of marker.absaetze.entries()) {
+    if (!ref || typeof ref !== "object" || Array.isArray(ref)
+      || !Array.isArray(ref.vorgangIds) || !Array.isArray(ref.quellenIds)) return [];
+    const p = data.paragraphs[i];
+    if (ref.index !== i || !checked.includes(p) || JSON.stringify(ref.vorgangIds) !== JSON.stringify(p.vorgangIds)
+      || JSON.stringify(ref.quellenIds) !== JSON.stringify(p.sources.map(q => q.quelleId))
+      || p.sources.some(q => !Number.isFinite(Date.parse(q.publishedAt)))) return [];
+    result.push(p);
+  }
+  return result;
+}
+
+function renderBriefingTeilstand(state) {
+  const paragraphs = briefingTeilstandAbsaetze(state);
+  if (!paragraphs.length) return "";
+  return `<section class="ui-lage-einordnung" data-ui-briefing-teilstand aria-label="Vorläufiger Briefingstand">
+    <h2>Vorläufiger Briefingstand</h2>
+    <p class="ui-evidence-note">Die Quellenversorgung ist noch unvollständig. Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.</p>
+    <p class="ui-evidence-note">Bereits geprüfte, gespeicherte Einordnungen. Die Originalquellen und ihr Veröffentlichungsdatum stehen jeweils dabei.</p>
+    ${paragraphs.map(p => `<article><p data-ui-briefing-absatz>${escapeHtml(p.text)}</p>
+      <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
+  </section>`;
+}
+
 function renderHstandStateCard(state, kind) {
   let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
@@ -6948,6 +6992,7 @@ function renderHstandStateCard(state, kind) {
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
+      ${!isError ? renderBriefingTeilstand(state) : ""}
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}${quiet ? " hstand-state-card--quiet" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(uiSieText(quiet ? "Keine neue Tagespriorität" : title))}</p>
