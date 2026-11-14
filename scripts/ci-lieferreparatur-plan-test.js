@@ -15,13 +15,14 @@ const konfliktOnly = args.length === 1 && args[0] === "--versionskonflikt-only";
 const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
 const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
 const kundenOnly = args.length === 1 && args[0] === "--kundenansichten-only";
+const autonomOnly = args.length === 1 && args[0] === "--artikelautonom-only";
 const fachthemenOnly = args.length === 1 && args[0] === "--fachthemen-only";
 const radarartikelOnly = args.length === 1 && args[0] === "--radarartikel-only";
 const radarartikelNachtrag = args.length === 1 && args[0] === "--radarartikel-nachtrag-only";
 const volltextOnly = args.length === 1 && args[0] === "--volltextschutz-only";
 const fensterOnly = args.length === 1 && args[0] === "--briefingfenster-only";
 const kundenRunnerOnly = args.length === 1 && args[0] === "--kundenansichten-runner-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly || radarartikelOnly || radarartikelNachtrag || fachthemenOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+A.ok(args.length === 0 || autonomOnly || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly || radarartikelOnly || radarartikelNachtrag || fachthemenOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -51,6 +52,7 @@ function test(name, fn) {
   if (konfliktOnly && !name.startsWith("Versionskonflikt:")) return;
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
   if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
+  if (autonomOnly && !name.startsWith("Artikelautonom:")) return;
   if (fachthemenOnly && !name.startsWith("Fachthemen:")) return;
   if (radarartikelOnly && !name.startsWith("Radarartikel:")) return;
   if (radarartikelNachtrag && !name.startsWith("Radarartikel: Offlinejob")) return;
@@ -847,5 +849,49 @@ test("Fachthemen: Browserjob erhaelt alte Belege ohne neue Ausfuehrung oder grue
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(workflow.slice(0,workflow.indexOf("  synthetic-resource-diagnostic:"))),false);
 });
 
+test("Artikelautonom: exakte Klassifikation und Originalartikelbindung begrenzen Runtime und neue Tests",()=>{
+  const p=C.validate(fixture(C.ARTIKELAUTONOM));for(const key of C.OUTPUTS)A.equal(p[key],key==="artikelautonom");
+  A.equal(p.source.pr,1198);A.equal(C.ARTIKELAUTONOM.RUNTIME_FILES.length,5);A.equal(C.ARTIKELAUTONOM.REGRESSION_FILES.length,3);
+  A.match(p.reused.status,/Neue lokale Artikel-Abseits- und Fachbeleg-Isolierungsgruppen/);
+});
+test("Artikelautonom: falsche Ereignisse Branchmetadaten Forks Basen und Koepfe stoppen",()=>{
+  for(const change of [f=>{f.pr.base.sha=C.RADARARTIKEL.BASE;},f=>{f.prNumber++;},f=>{f.pr.number++;},
+    f=>{f.headRef="fremd";},f=>{f.pr.head.ref="fremd";},f=>{f.pr.base.ref="fremd";},
+    f=>{f.pr.base.repo.full_name="fremd/repo";},f=>{f.pr.head.repo.full_name="fremd/repo";},
+    f=>{f.pr.state="closed";},f=>{delete f.pr.draft;},f=>{f.ref="refs/heads/main";},
+    f=>{f.event="push";},f=>{f.event="workflow_dispatch";},f=>{f.event="pull_request_target";},
+    f=>{f.repository="fremd/repo";},f=>{f.checkedOutHead=oid("1");}])denied(change,C.ARTIKELAUTONOM);
+});
+test("Artikelautonom: gebundene Belegblobs und alle fremden Produktdateien bleiben strikt",()=>{
+  for(const file of Object.keys(C.ARTIKELAUTONOM.BLOBS))for(const change of [
+    f=>{f.headTree.get(file).oid=oid("1");},f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="100755";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.ARTIKELAUTONOM);
+  for(const file of ["server.js","package-lock.json","scripts/lokal.js","supabase/migrations/unveraenderte-basis.sql"])
+    denied(f=>{f.headTree.get(file).oid=oid("1");},C.ARTIKELAUTONOM);
+  for(const file of ["client.js","styles.css","lib/helmut/ai.js","lib/helmut/storage.js","lib/helmut/matching.js"])
+    denied(f=>{f.headTree.set(file,row("1"));},C.ARTIKELAUTONOM);
+});
+test("Artikelautonom: fehlende Evidence und abweichende CI Dateien stoppen geschlossen",()=>{
+  denied(f=>{f.evidenceTree=new Map();},C.ARTIKELAUTONOM);
+  denied(f=>{f.evidenceTree.get("scripts/lokal.js").oid=oid("1");},C.ARTIKELAUTONOM);
+  for(const file of C.CI_FILES)for(const change of [f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="120000";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.ARTIKELAUTONOM);
+});
+test("Artikelautonom: Offlinejob fuehrt nur neue Planfaelle und geaenderte Syntax aus",()=>{
+  A.deepEqual(active("offline-suite","browser-smoke",C.validate(fixture(C.ARTIKELAUTONOM))),[
+    "Prüfplan aus geänderten Dateien","Artikelautonom - neue Profilbindung und geaenderte Syntax"]);
+  const section=workflow.slice(workflow.indexOf("      - name: Artikelautonom - neue Profilbindung"),workflow.indexOf("      - name: Fachthemen - neue Profilbindung"));
+  A.match(section,/ci-lieferreparatur-plan-test\.js --artikelautonom-only/);A.match(section,/ci-lieferreparatur-plan\.js --syntax/);
+  A.match(section,/WIEDERVERWENDET/);A.equal(section.includes("node scripts/lokal.js scripts/understanding-fachthemen-test.js"),false);
+  A.match(workflow,/github\.event\.pull_request\.base\.sha == '529d47f8a73ceb4179b8ceb6d4ff758a4856468b'/);
+});
+test("Artikelautonom: Browserjob erhaelt alte Belege ohne neue Ausfuehrung oder gruenen Fachstatus",()=>{
+  A.deepEqual(active("browser-smoke","synthetic-resource-diagnostic",C.validate(fixture(C.ARTIKELAUTONOM))),[
+    "Prüfplan aus geänderten Dateien","Artikelautonom - vorhandene Browserbelege unveraendert erhalten"]);
+  const section=workflow.slice(workflow.indexOf("      - name: Artikelautonom - vorhandene Browserbelege"),workflow.indexOf("      - name: Abhängigkeiten installieren",workflow.indexOf("      - name: Artikelautonom - vorhandene Browserbelege")));
+  A.match(section,/kein neuer Chromiumlauf/);A.match(section,/unveraendert/);
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(workflow.slice(0,workflow.indexOf("  synthetic-resource-diagnostic:"))),false);
+});
+
 A.ok(count > 0);
-console.log(`${count}/${count} ${fachthemenOnly ? "neue Fachthemen-Profilgegenfaelle" : radarartikelNachtrag ? "geaenderte Radarartikel-Nachtragsgruppe" : radarartikelOnly ? "neue Radarartikel-Profilgegenfaelle" : volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${autonomOnly ? "neue Artikelautonom-Profilgegenfaelle" : fachthemenOnly ? "neue Fachthemen-Profilgegenfaelle" : radarartikelNachtrag ? "geaenderte Radarartikel-Nachtragsgruppe" : radarartikelOnly ? "neue Radarartikel-Profilgegenfaelle" : volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
