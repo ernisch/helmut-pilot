@@ -41,6 +41,15 @@ Understandingauftraege/Modelle/Archivpfade und14d-Relevanzhorizont unveraendert;
 Relevanz ist ausdruecklich kein neuer Tagesanlass. Geplant:9neueFachgruppen,
 6neueProfilgruppen,7neueRadar-Browserchecks Desktop/Mobil und geaenderte Syntax.
 Keine erfolgreichen Vorbelege wiederholen; Tests noch offen.
+Erst-CI43537245306 am43282d1b:6neueProfilgruppen und erste3Fachgruppen bestanden;
+4.Fachgruppe scheitert vor Produktausfuehrung an nichtkanonisierter synthetischer
+Bundestag-URL beim Standhash. Unveraenderte strikte Produktpruefung wird nicht gelockert.
+Browserjob132269105907 erfolgreich:7neueRadarchecks Desktop/Mobil. Dieser Offline-
+Erstfehler bleibt erhalten. Ein-Datei-Nachtrag kanonisiert ausschliesslich dieFixture
+und waehlt exakt6noch offeneFachgruppen; erste3Fachgruppen werden nicht wiederholt.
+Unabhaengig gegengeprueft, Produkt-/Browsercode unveraendert. Nachtrags-CI soll nur
+6offeneFachgruppen,2geaenderteCI-Schrittanker und fehlendeSyntax ausfuehren;
+4unveraenderteProfilgruppen und7Browserchecks werden sichtbar wiederverwendet.
 
 **Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
 normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
