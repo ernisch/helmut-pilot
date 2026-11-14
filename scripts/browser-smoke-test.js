@@ -32,10 +32,12 @@ const fs = require("fs");
 const root = path.join(__dirname, "..");
 const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
 const tagespaketTeilstand = process.argv.includes("--tagespaket-teilstand");
+const radarFrischeklarheit = process.argv.includes("--radar-frischeklarheit");
 const tagespaketRuhelageOnly = process.argv.includes("--nur-ruhelage");
 if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage braucht --tagespaket-jsonb");
 if (tagespaketTeilstand && (tagespaketJsonb || tagespaketRuhelageOnly)) throw Error("Teilstand ist ein eigener gezielter Tagespaketfall");
-const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand;
+if (radarFrischeklarheit && (process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || tagespaketRuhelageOnly)) throw Error("Radar-Frischeklarheit ist ein eigener gezielter Tagespaketfall");
+const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || radarFrischeklarheit;
 
 function loadPlaywright() {
   const candidates = [
@@ -58,7 +60,7 @@ function check(name, cond, detail = "") {
 // Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
 // Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
 // Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
-async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false, teilstand = false } = {}) {
+async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false, teilstand = false, radarFrische = false } = {}) {
   const assert = require("node:assert/strict");
   process.env.HELMUT_AUTH_MODE = "accounts";
   process.env.HELMUT_STORAGE_BACKEND = "local";
@@ -100,6 +102,17 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   briefing.currentRadarState = { status: "fresh", articles: [{ vorgangId: "vg-synth-1",
     title: "Gespeicherter synthetischer Radarhinweis" }] };
   briefing.tagespaketGrundlage = [1, 2].map(i => ({ id: `ko-synth-${i}`, vorgang_id: `vg-synth-${i}` }));
+  if (radarFrische) {
+    // Vorhandene erfundene Quelle: ein neuerer Rohstand ist kein Beleg fuer
+    // einen neueren sichtbaren Radarhinweis. Keine neue Fachselektion im Test.
+    const sichtbarAm = "2026-09-08T05:00:00Z";
+    briefing.currentRadarState = { status: "fresh", generatedAt: now.toISOString(),
+      lastUpdated: day + "T05:00:00Z", quality: { sourcesLoaded: true },
+      anzeige: { status: "stale", lastUpdated: sichtbarAm, dynamics: [{
+        vorgangId: "vg-synth-1", title: "Gespeicherte synthetische Dynamik",
+        sourceUrl: "https://example.invalid/dokument/1", lastUpdatedAt: sichtbarAm
+      }] } };
+  }
   if (jsonb || teilstand) {
     process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{
       publicationUrl: "https://example.invalid/held-publication", reason: "unresolved-event-relation",
@@ -274,6 +287,58 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/app/start");
         await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
         const response = await responsePromise, start = await response.json();
+        if (radarFrische) {
+          assert.equal(response.status(), 200);
+          assert.equal(start.profile?.id, profile.id);
+          assert.equal(start.briefing?.gespeicherterNachweis?.inhaltHash, row.payload.inhaltHash);
+          await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+          await page.locator(`${isMobile ? ".mobile-dock" : ".nav-list"} [data-view="radar"]`).click();
+          const root = page.locator("#radar2-root");
+          await root.waitFor({ state: "visible" });
+          const radarText = await root.innerText();
+          const statusText = await root.locator(".radar2-status").innerText();
+          const sourceDate = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin",
+            day: "numeric", month: "short", year: "numeric" }).format(new Date("2026-09-08T05:00:00Z"));
+          check(`${label}: Radar unterscheidet sichtbaren Quellenstand von neuerem Rohstand und Quellenpruefung`,
+            statusText === "Letzter angezeigter Quellenstand: " + sourceDate
+            && radarText.includes("In diesem gespeicherten Radar liegt kein neuerer belegter Hinweis vor.")
+            && radarText.includes("Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.")
+            && radarText.includes("Beobachtete Entwicklungen")
+            && !radarText.includes("Veralteter Radarstand") && !radarText.includes("Neue Dynamiken")
+            && !radarText.includes("Eine aktuelle Quellenprüfung ist nicht bestätigt.")
+            && await root.locator('.radar2-card--dynamic[href="https://example.invalid/dokument/1"]').count() === 1,
+            radarText);
+          // Nur neue Darstellungsgrenzen in der echten geladenen SPA: kein
+          // Ersatzpaket, keine API-/Quellen-/Modellarbeit und kein Altfalllauf.
+          await page.evaluate(() => {
+            briefing.currentRadarState = { status: "stale", quality: { sourcesLoaded: true },
+              emptyState: { kind: "stale" } };
+            rerenderRadar();
+          });
+          const emptyText = await root.innerText();
+          check(`${label}: leerer aelterer Radarstand behauptet weder Trefferlosigkeit noch fehlgeschlagene Quellenpruefung`,
+            emptyText.includes("Keine belegten Hinweise in diesem älteren Stand")
+            && emptyText.includes("Die leere Ansicht belegt keine Trefferlosigkeit.")
+            && !emptyText.includes("Eine aktuelle Quellenprüfung ist nicht bestätigt.")
+            && await root.locator('[data-empty-kind="stale"]').count() === 1,
+            emptyText);
+          await page.evaluate(() => {
+            briefing.currentRadarState = { status: "stale", available: true,
+              quality: { reason: "keine-vorgaenge", sourcesLoaded: false } };
+            rerenderRadar();
+          });
+          const gapText = await root.innerText();
+          check(`${label}: echte Datengrundlagenluecke bleibt vor blossem Quellenalter sichtbar`,
+            gapText.includes("Noch keine Datengrundlage")
+            && gapText.includes("Die Datenbasis liefert keine ausgewerteten Vorgänge.")
+            && !gapText.includes("Keine belegten Hinweise in diesem älteren Stand")
+            && await root.locator('[data-empty-kind="datenluecke"]').count() === 1,
+            gapText);
+          assert.equal(packageReads - readsBefore, 2);
+          assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
+          assert(methods.every(method => method === "GET"));
+          continue; // Ausschliesslich die neuen Radar-Klarheitsgrenzen.
+        }
         if (teilstand) {
           const b = start.briefing, positive = teilFixture.draft.paragraphs[1].text;
           const negative = teilFixture.draft.paragraphs[0].text;
@@ -406,7 +471,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       // Schutzwachen bleiben aktiv; daraus wird kein wiederholter 13. PASS.
       assert.deepEqual(forbidden, []); assert.equal(JSON.stringify([...rows]), before);
     } else {
-      check(teilstand ? "Teilstand-Auslieferung ohne Korpus Modell oder Speicherveraenderung"
+      check(radarFrische ? "Radar-Frischeklarheit ohne Korpus Modell oder Speicherveraenderung"
+        : teilstand ? "Teilstand-Auslieferung ohne Korpus Modell oder Speicherveraenderung"
         : jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
         && JSON.stringify([...rows]) === before, forbidden.join(", "));
     }
@@ -441,8 +507,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
 
   if (tagespaketOnly) {
-    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand });
-    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
+    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand, radarFrische: radarFrischeklarheit });
+    console.log(`\n${passed} PASS, ${failed} FAIL (${radarFrischeklarheit ? "nur neue Radar-Frischeklarheit" : tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 

@@ -8251,7 +8251,7 @@ function renderRadarHeader(state) {
   const fresh = Boolean(sourceDate && radarIsToday(new Date(updated)) && !disruption && !stale);
   // lastUpdated belegt das Publikationsdatum einer angezeigten Quelle,
   // generatedAt nur die Erstellung dieser Ansicht, keine Quellenpruefung.
-  const label = sourceDate ? `${stale ? "Veralteter Radarstand · " : ""}Neueste angezeigte Quelle: ${sourceDate}`
+  const label = sourceDate ? `${stale ? "Letzter angezeigter Quellenstand" : "Neueste angezeigte Quelle"}: ${sourceDate}`
     : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
   const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
     ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
@@ -8264,7 +8264,7 @@ function renderRadarHeader(state) {
         ${renderUiPageHeader("Radar", "Belegte Hinweise aus Ihrem politischen Umfeld.")}
       </div>
       ${disruptionNote}
-      ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">Veralteter Radarstand: Eine aktuelle Quellenprüfung ist nicht bestätigt.</p>' : ""}
+      ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">In diesem gespeicherten Radar liegt kein neuerer belegter Hinweis vor. Vorhandene Hinweise bleiben sichtbar.</p>' : ""}
       <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -8404,7 +8404,7 @@ function renderRadarDynamics(state) {
     : radarEmptyHint(radarSectionEmptyText(state, "Dynamikhinweise"));
   return `
     <section class="radar2-section">
-      ${radarSectionHead("activity", "Neue Dynamiken", "dynamics", expanded, all.length > 3)}
+      ${radarSectionHead("activity", "Beobachtete Entwicklungen", "dynamics", expanded, all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
   `;
@@ -8535,7 +8535,7 @@ function radarDisruption(state) {
 // Ein leerer Abschnitt ist kein Nachweis einer vollständigen Quellenprüfung.
 function radarSectionEmptyText(state, subject) {
   const limitation = radarDisruption(state) ? "Die Datenbasis ist derzeit eingeschränkt."
-    : state?.status === "stale" || state?.emptyState?.kind === "stale" ? "Der Radarstand ist veraltet."
+    : state?.status === "stale" || state?.emptyState?.kind === "stale" ? "Die Aussage gilt nur für diesen gespeicherten Radarstand."
     : state?.quality?.sourcesLoaded === true ? "Die Aussage gilt nur für die vorhandenen Daten."
     : "Eine geladene Quellengrundlage ist nicht bestätigt.";
   return `In dieser Ansicht werden keine belegten ${subject} angezeigt. ${limitation}`;
@@ -8549,12 +8549,12 @@ function renderRadarEmpty(state) {
   const explicitGap = es && (es.kind === "gap" || es.kind === "stale");
   const stale = state?.status === "stale" || es?.kind === "stale";
   const title = disruption ? disruption.title
-    : stale ? "Radarstand veraltet"
+    : stale ? "Keine belegten Hinweise in diesem älteren Stand"
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
   const note = disruption ? disruption.sub
-    : stale ? [lageField(es?.detail), "Eine aktuelle Quellenprüfung ist nicht bestätigt. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
+    : stale ? [lageField(es?.detail), "Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
