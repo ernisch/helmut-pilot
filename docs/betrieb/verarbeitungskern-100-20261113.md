@@ -1,5 +1,38 @@
 # Verarbeitungskern fuer die ersten 100 aktiven Kunden
 
+## Neuer einmaliger Echtlauf nach Betreiberauftrag21:18UTC
+
+14.11.2026. Der Betreiber beauftragt nach dem konkreten Vorschlag eines echten
+CEM-Laufs mit echten KI-Antworten, Originalquellenpruefung, vollstaendigem Text,
+Speicherbindung und App-Auslieferung: "Dann mach das bitte beweise das auch noch
+sodass wir endlich fertig werden." Diese Freigabe gilt fuer genau ein weiteres
+heutiges Quellenfenster; insgesamt hoechstens10Fenster/3000Sekunden am UTC14.11.,
+Originalgesamtcap32 unveraendert. Alte9/2700 und Einmalschluessel bleiben stehen.
+Neuer Once-Key `quellenarbeit|briefing-echtnachweis-v1`, maximal1, exakt14.11.
+Keine Rueckgabe/Reset/Kompensation bei Teilreservierung oder unklarem Ausgang.
+Echte Adminsitzung+CSRF, verteilte Lease und bestehende Quellen-/Kostenwachen
+bleiben erforderlich. Keine neue harte Mandantenlogik im geteilten Quellenkern.
+
+Nur nach neuen bestaetigten Eingaben hoechstens ein normaler Lageabschluss und
+ein Morgenpaketabschluss innerhalb unveraendert1USD/UTC-Tag und30USDgesamt,
+acht alte Reserven erhalten. Ausschliesslich bestehender CEM. Keine Migration,
+Production-Datenkorrektur, Cron-/Env-/Flag-/Kunden-/Gestaltungs-/Mailaenderung.
+Berliner Ausgabetag stets echt ermitteln: ab23UTC bereits15.11.Berlin, obwohl
+UTC-Kosten-/Quotentag14.11.bleibt. Keine Umdatierung oder bezahlte Blindwiederholung.
+
+Primaervorflug21:21:29UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt,
+8alteoffeneReserven/0heuteoffen,nurCEMaktiv/0Leases. Quoten9Fenster/2700Sekunden/
+23Originale/alterZusatzkey1, neuerKey fehlt. Productionmaina70efd1c(PR1199).
+Branch `codex/briefing-echtlauf-20261114`. Noch kein neuer Quellen-/Modelllauf.
+Nur neue betroffene Grenzen pruefen; Offlinekette e5f4f488 und alte Erfolge nicht
+wiederholen. Abnahme braucht neue reale U-Ergebnisse samt Kostenbeleg, belegte
+Mandatsprioritaet, streng geprueften vollstaendigen Lage-/Briefingtext, Paket mit
+Profilhash/Quellenstand/realemBerlintag/Quittung und normalen gespeicherten Leser.
+HTTP200/CacheAltbestand/Simulation sind kein Vollnachweis. Readerfeld
+`fachlicheVollabnahme` ist konstruktiv false und kein technischer Erfolgsindikator.
+Quellenluecken bleiben ehrlich teilweise, technischeCron- und Kundensitzungs-
+nachweise unterscheiden. Kein100Kunden-/RAM-Versprechen. Historische Notizen folgen.
+
 ## PR1199: begrenzte Wiedergewinnung und ehrlicher Fachstatus
 
 14.11.2026, 18:10 UTC. [PR1199](https://github.com/ernisch/helmut-pilot/pull/1199)

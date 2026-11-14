@@ -1,4 +1,22 @@
 # CURRENT STATE — Helmut
+**14.11.2026,21:22UTC: neuer begrenzter Echtlauf ausdruecklich beauftragt.**
+Betreiber nach konkretem Vorschlag: "Dann mach das bitte beweise das auch noch
+sodass wir endlich fertig werden." Genau ein weiteres heutiges Quellenfenster,
+insgesamt maximal10Fenster/3000Sekunden, Originalgesamtcap32 bleibt unveraendert.
+Neuer taggebundener Once-Key briefing-echtnachweis-v1; alte9/2700/Key1 bleiben
+verbraucht, keinReset/UNKNOWN-Retry. Echte Adminsitzung+CSRF weiterpflichtig.
+Nur nach neuen bestaetigten Eingaben max1normaleLage+1Morgenabschluss; Geldvertrag
+unveraendert1USDUTC/30USDgesamt, nurCEM,8alteReserven erhalten. Keine Migration,
+Productionkorrektur, Cron-/Env-/Flag-/Kunden-/Gestaltungsaenderung.
+Vorflug21:21:29UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt/8alteoffene,
+0heuteoffen,nurCEMaktiv/0Leases. Quoten9Fenster/2700s/23Originale/alterKey1,
+neuerKeyfehlt. Noch kein neuer Quellen-/Modell-/Produktlauf gestartet.
+Isolierter Branchcodex/briefing-echtlauf-20261114 abmain/Productiona70efd1c.
+RootCI/Docs, separaterAgentnurFenstergate+neuerTest, unabhaengigerReview;
+max3inklRoot. Vorherige Offlinekette e5f4f488 und alle alten Erfolge erhalten.
+Production1199 ist seit18:15READY, Ausgabe b2cb2abd/77Items/2Teiltexte/Lage/Radar
+quittungsgebunden bestaetigt; die folgenden Vorrolloutnotizen sind historisch.
+
 **14.11.2026, 18:10 UTC: PR1199 lokal integriert; 20 neue Gruppen belegt, Pflicht-CI noch offen.**
 Branch `codex/artikel-wiedergewinnung-20261114`, Basis/main/Production weiter
 `4d70c990` (PR1198). Neun Runtimepfade, zwei neue Regressionen; keine Appgestaltung,
