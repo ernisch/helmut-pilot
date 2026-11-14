@@ -13,6 +13,8 @@ for(const [key,value] of Object.entries(S))if(typeof value==="function"&&key!=="
 for(const [key,value] of Object.entries(AI))if(typeof value==="function"&&/^(generate|request|enrich|assess)/.test(key))AI[key]=fail("ai."+key);
 process.env[P.ENV]=JSON.stringify({version:1,holds:[{publicationUrl:"https://example.invalid/held",reason:"unresolved-event-relation",
   review:{id:"synthetischer-teilstand",receiptSHA256:"a".repeat(64),koSHA256:"b".repeat(64),sourceSHA256:"c".repeat(64)}}]});
+const hadFixturePolicy=Object.hasOwn(F.briefing,"publicationEligibilityPolicy"),fixturePolicy=F.briefing.publicationEligibilityPolicy;
+F.briefing.publicationEligibilityPolicy=P.publicInfo();
 async function fixture(){
   const text=F.fixture().text,rows=new Map([[text.id,clone(text)]]),reads=[],requests=[];
   const briefing=clone(F.briefing);
@@ -130,4 +132,5 @@ main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of originals)Object.assign(m,old);
   if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
   if(oldBlock===undefined)delete process.env.HELMUT_SOURCE_BLOCKLIST;else process.env.HELMUT_SOURCE_BLOCKLIST=oldBlock;
+  if(hadFixturePolicy)F.briefing.publicationEligibilityPolicy=fixturePolicy;else delete F.briefing.publicationEligibilityPolicy;
 });
