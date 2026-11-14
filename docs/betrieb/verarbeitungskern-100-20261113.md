@@ -9,6 +9,22 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Nachtauftrag14.11.2026,00:33UTC:** Betreiber erlaubt vollautonome Behebung und
+biszu10weitere gruene auftragsbezogene Merges samt regulaerem Deployment. Budget,
+Mandantenziel, Schutzregeln und Verbot von Massentests/Production-Datenkorrekturen
+bleiben unveraendert. Ziel bleibt echtes Briefing/Radar, kein erfundener Vollstatus.
+Enge lesende Diagnose: im13-Fenster166wartende Understandingjobs,100Artikel vor06.11.,
+aeltestePublikation11.06.2006,32vom13.11.; allepriority80vorAbruf100. Von27erledigten
+achtvom13.11. und einer12.06.2026. Sourcehandler persistiert neben Kandidaten auch
+alle geladenen Fundstellen und reiht danach alle bestaetigtenIDs als Tagesarbeit ein.
+Geplanter enger Fix: Archiv erhalten, kostenpflichtige Tagesarbeit aus exakt
+gebundenen Kandidaten im bestehenden Relevanzhorizont; alte Fundstellen nichtneu
+heutePromoten. Bereits bestehende Archivjobs vor Modellversand ehrlich behandeln.
+Radar zeigt belegtes08.11.-Signal korrektstale, kein neuer fachlicher Filterfehler
+belegt. Nur unklare Kundentexte korrigieren; Frische-/Bezug-/Fristpruefungen bleiben.
+Fehlender Tagesplan14 vor erstem03UTC-Fenster und fehlender neuer Tagesanlass sind
+derzeit ehrliche Luecken, kein nachgewiesener UTC/Berlinfehler.
+
 **Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
 normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
 Dateibaum996f86e61c5ba06eba731e85cf21b31d2c8d9ad5 exakt gleich zum freigegebenen Kopf.

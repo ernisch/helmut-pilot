@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/tagesfrische-und-radarklarheit-20261114": false,
       "codex/gepruefte-lage-teilstaende-20261114": false,
       "codex/mandatsarbeit-vorrang-20261113": false,
       "codex/dip-einzelartikel-20261113": false,
