@@ -114,9 +114,26 @@ const ABRUFANTEIL = Object.freeze({
     "vercel.json": "490f91f09d66d4fc002d4c606aee12f1053036f3"
   })
 });
+// Siebtes festes Profil: bestaetigte Metadatenkonflikte als einzelne Fehlerartikel.
+const VERSIONSKONFLIKT = Object.freeze({
+  PR: 1190, BASE: "441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616",
+  BRANCH: "codex/artikel-versionskonflikte-20261114",
+  LOCAL_EVIDENCE_COMMIT: "5cf693f233d96965c0c4d52c260cefc2315d1175",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze(["lib/helmut/storage.js", "lib/helmut/scalable-pipeline.js"]),
+  REGRESSION_FILES: Object.freeze(["scripts/artikel-versionskonflikt-test.js"]),
+  BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "a49c1eda6b3906a189a127f18c54d800bb004807",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "8be1ea413dd9f99d18da1863ab8fc778ae81668d",
+    "lib/helmut/storage.js": "c094169837b66a807d95aedff5c8871d55ba0e65",
+    "lib/helmut/scalable-pipeline.js": "7b9d75b46a9235742c66645ec3cb06aeeb6f3096",
+    "scripts/artikel-versionskonflikt-test.js": "27584e7141efc01770dc3a0101cef93040ef9cb1",
+    "vercel.json": "7333a34ba8e230354d12b84b2ab9a2033ace7415"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === ABRUFANTEIL.PR || headRef === ABRUFANTEIL.BRANCH ? ABRUFANTEIL
+const profileFor = ({ prNumber, headRef }) => prNumber === VERSIONSKONFLIKT.PR || headRef === VERSIONSKONFLIKT.BRANCH ? VERSIONSKONFLIKT
+  : prNumber === ABRUFANTEIL.PR || headRef === ABRUFANTEIL.BRANCH ? ABRUFANTEIL
   : prNumber === TAGESFRISCHE.PR || headRef === TAGESFRISCHE.BRANCH ? TAGESFRISCHE
   : prNumber === TEILSTAND.PR || headRef === TEILSTAND.BRANCH ? TEILSTAND
   : prNumber === MANDAT.PR || headRef === MANDAT.BRANCH ? MANDAT
@@ -125,21 +142,21 @@ const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
-    && REGRESSION_FILES.length === (frische || teilstand || dip || mandat || abruf ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
+    && REGRESSION_FILES.length === (konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -164,10 +181,11 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: abruf ? "Exakter begrenzter Abrufanteil ohne weiteren Slot oder Datenbank-/Readeraenderung"
+    reason: konflikt ? "Exakte Artikelkonfliktisolation ohne Freigabe inkompatibler Quellenversionen"
+      : abruf ? "Exakter begrenzter Abrufanteil ohne weiteren Slot oder Datenbank-/Readeraenderung"
       : frische ? "Exakte datumsgebundene Artikelarbeit und verstaendlicher gespeicherter Radarstand"
       : teilstand ? "Exakter gepruefter Lage-Teilstand ohne Lockerung des Originalqualitaetsvertrags"
       : mandat ? "Exakte begrenzte Mandatsphase ohne Reader- oder Datenbankaenderung"
@@ -175,7 +193,7 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: abruf ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, Paketleser, Lage, Radar und Abhaengigkeiten unveraendert",
+    reused: abruf || konflikt ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, Paketleser, Lage, Radar und Abhaengigkeiten unveraendert",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43531055622",
         "https://github.com/ernisch/helmut-pilot/actions/runs/43537245306/job/132269105907"] }
       : frische ? { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT: vier unveraenderte Profilgruppen, drei Fachgruppen und sieben Radar-Browserchecks",
@@ -190,7 +208,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: abruf ? ["Nur neue Abrufanteil-Profilgegenfaelle", "Neue begrenzte Worker-Fairnessregression",
+    execute: konflikt ? ["Nur neue Versionskonflikt-Profilgegenfaelle", "Neue native Artikelkonfliktregression",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
+      : abruf ? ["Nur neue Abrufanteil-Profilgegenfaelle", "Neue begrenzte Worker-Fairnessregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
       : frische ? ["Zwei geaenderte Frische-Schrittanker", "Sechs bisher offene Artikel-Tagesrelevanzgruppen",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
@@ -246,7 +266,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

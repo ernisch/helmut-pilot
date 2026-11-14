@@ -30,7 +30,74 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:2/10Merges (PR1188/1189),8weitere nur beiGruen verbleiben.
+**Belegter Artikelversionskonflikt, 04:56 UTC:** Neuer441-Worker fasst die drei
+Restquellen im Abrufanteil bereits04:45:38–04:45:45 an. Einzelne bestaetigte Fehler
+halten den gemischten Rest nicht auf. Zwei Quellen melden weiter insgesamt vier
+nicht zuordenbare Artikelversionen (Bundestag1/Bundesregierung3), EUR-Lex liefert
+eine ungueltige RSS-Antwort. Keine Qualitaetslockerung oder erneute Produktabrufe.
+Einmalige lesende Diagnose der drei betroffenen amtlichen RSS-Dateien und
+43 indexgebundene Canonical-Metadaten: alle43Rows vorhanden, genau4Metadatenkonflikte.
+Nur deren vier Archiv-Keybereiche gelesen: acht Alt-/Neu-Versionen, alle Hashes
+gueltig; je eine entspricht dem aktuellen Feed und eine den alten Canonical-Daten.
+Native Versionsleser lehnen den Wechsel korrekt ab. Ganze Quellen wiederholen
+dadurch trotz brauchbarer Nachbarn bis fuenfmal; kein fehlender Schreibbeleg.
+Geplanter kleiner Folgefix: ausschliesslich nachgewiesenen vorhandenen inkompatiblen
+Archivstand als idempotenten Artikel-Diagnosejob isolieren. Alte Nebenvarianten
+bei vorhandener guter aktueller Version ignorieren; fehlende Canonical-/Hash-/
+Lesebestaetigung bleibt unbekannt und sperrt Sourceabschluss. Keine Metadaten-
+Umschreibung alter KO-Belege, Readerablehnung unveraendert, keine Jobresets.
+Fehlerartikel bleiben in Qualitaets-/Versorgungsstatus sichtbar. Folgefix PR1190
+implementiert und unabhaengig ohne Blocker gelesen: Workercommit a269f204,
+genau nativer Versionsleser/Sourcehandler plus neun neue Interaktionsgruppen.
+Privater WeakMap-Befund bindet vorhandene Canonical und validen Archivhash;
+manipulierte/serialisierte Fehlermarker und ungueltige Canonical-Daten bleiben
+UNKNOWN. Gute Variante derselben ID gewinnt, zusaetzlicher unbekannter Zustand
+bleibt Sourcefehler. Idempotente Diagnosen pro ID+Stand/max1 enden vor Modellen;
+strenger Quellenguard unveraendert. Effektives originales Claimfenster bleibt
+gebunden, kein Date.now-Ersatz. Neun neue Fach-/sechs neue CI-Gruppen und Syntax
+noch offen; keine alten Gruppen wiederholen. Bisher weiter2/10Nachtmerges.
+**Regulaerer Morgenabschluss05:15 bestaetigt:** Lauf05:15:30–05:15:43UTC bleibt
+partial, ein Mandat wegen fachlichem Teilstand zurueckgestellt. Paket05:15:40.939UTC
+mit79Eintraegen/5Karten/1geprueftemAbsatz, Hash
+cf18de1cf08e2cbd57dab789bf79ef672b0d9bb5a8851e9603b3d26fa7b64747.
+Quittung05:15:43.292UTC bindet aktuelles Paket/Profil/Berlintag/Briefinghash.
+Normaler Leser auf neuen exakten privaten Livesnapshots05:18UTC ueber
+scripts/lokal.js bestanden: Profil/Quellen/Policy/Tag/Quittung passen, Absatz
+unveraendert und gueltiger Teilbeleg, keine privaten Reviews im DTO, Snapshots
+unveraendert. Radar jetzt3 gespeicherte belegte Entwicklungen, Anzeige fresh;
+damit alte2/stale-Angabe abgeloest. Kein authentifizierter Production-HTTP-/Browsernachweis.
+Fehler bleiben Quellenversorgung offen/kein Tagesanlass/LageTeilstand;
+keine Vollabnahme. Vorzeitige Quittungserwartung04:30 bleibt als gescheiterter
+Zwischennachweis erhalten. Regulaere Lage05:00:23–05:00:30UTC partial/1verarbeitet/
+0Fehler; kein neuer voller Lagecache. Erster441-Quellenlauf04:45:23–04:49:09UTC:
+13erledigt/2endgueltigeFehler/211deferred, Restquellen wurden im Abrufanteil erreicht.
+Kosten05:01:0,567350USDTag/3,290827USDgesamt,8alteoffeneReserven/0neueoffene.
+**PR1189 normal ausgerollt, 04:30–04:40 UTC:** Merge
+441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616, Parents5a734cc3/26efed8b,
+Tree5a1e501bf7b350f5beba71b0147b4d0f044d7ea5 exakt wie gepruefter Kopf.
+CI43556801462: 8/8 neue Workergruppen, 6/6 neue Profilgruppen und geaenderte
+JS-Syntax bestanden; beide Pflichtchecks gruen, Browserbelege nur wiederverwendet.
+Root/Runtime-/CI-/Vollbaumreviews ohne Befund, Evidencec1512499.
+Regulaeres Gitdeploymentdpl_CDE4tn7LvZDQyGwBtiMGeMYQ5drd READY/fra1 um04:30:45UTC;
+Hauptalias/Runtime441ed0af, exklusive relationale Profile und Sperren bestaetigt,
+anonym401. Vor Merge keine laufenden Prozesse/Leases, nur CEM aktiv.
+Nachtzaehler jetzt **2/10**, acht weitere nur bei Gruen. Keine Budget-/Datenaenderung.
+Noch auf5a gestarteter Lauf04:30:23–04:34:08UTC:105erledigt/0Fehler/193deferred.
+Neuer Abrufanteil kann erst im regulaeren04:45-Fenster real beansprucht werden.
+Mandatsprojektion04:15:29 und Paketmaterialisierung04:30:37 erledigt. Neues Paket
+04:30:35.531UTC/hashb409f318ac833384dca20bdcd7a33226a78f0b9e2308f6a07b1d634015c4a26d:
+78Eintraege, bestaetigter Lageabsatz erhalten. Aktuelle Leserprobe besteht bis
+Absatz-/Teilstandpruefung, scheitert dann an erwarteter gebundener Quittung:
+quittungGebunden=false, denn Morgenlagequittung weiterhin03:37 fuer altes Paket.
+Kein neuer Leser-PASS/keine Vollabnahme behauptet; regulaerer Morgenabschluss steht aus.
+Kostenbuch04:40:0,552729USDTag/3,276206USDgesamt, acht alte offene Reserven.
+Neue reine Offline-Groessenmessung: aktuelles Paketpayload3.366.851UTF8-Bytes,
+davon2.760.132Bytes rekursive vorherigerStand-Historie (rund82%). Ohne Historie
+606.700Bytes. Archiv unveraendert; kein Slim-RPC vorhanden. Mehrfache JSONB-Feld-
+Extraktion spart Netzbytes, kann aber TOAST-/DB-RAMarbeit erhoehen; deshalb ohne
+belegten DB-Ressourcenvorteil nicht eingebaut. Konkretes offenes100-Kunden-Risiko,
+kein Kapazitaets-/RAMversprechen. Keine Test-, Modell- oder Migrationswiederholung.
 **Kontrolle 14.11., 04:07 UTC und gezielter Folgefix:** main/Runtime weiterhin
 5a734cc3; nur CEM aktiv, Kommunikations-/Kohortensperre bestaetigt.
 Fuenfter Quellenlauf 04:00:46–04:04:33 UTC: 2 erledigt, 2 endgueltige Fehler,

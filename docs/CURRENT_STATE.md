@@ -1,20 +1,20 @@
 # CURRENT STATE — Helmut
 
-**14.11.2026UTC/Berlin: PR1188 live;03:37 neues Paket72Eintraege/5Karten/1Absatz.
-Leser liefert gebunden aus; Quellen offen. [PR1189](https://github.com/ernisch/helmut-pilot/pull/1189): Abrufanteil in Pruefung.**
-Production/main `5a734cc3`, [PR1188](https://github.com/ernisch/helmut-pilot/pull/1188), gepruefter Kopf `a58c0de9`.
-Vercel `dpl_D79CzZSN6FcY4BMNV6hmvm4P8QHg`
+**14.11.2026UTC/Berlin: PR1189 live. Paket05:15:79Eintraege/5Karten/1Lageabsatz.
+Leser/Profil/Quelle/Tag/Quittung bestaetigt; Lage bleibt Teilstand. PR1190 in Pruefung.**
+Production/main `441ed0af`, [PR1189](https://github.com/ernisch/helmut-pilot/pull/1189), gepruefter Kopf `26efed8b`.
+Vercel `dpl_CDE4tn7LvZDQyGwBtiMGeMYQ5drd`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 
-Zwischenlauf03:35–03:37UTC im bestehenden Einprofilauftrag: Lage/Paket je einmal200.
-Paket03:37:17.783UTC/hash495c41d1:72Eintraege/5Karten/1gepruefter Lageabsatz,
-Radar2Entwicklungen, letzter Beleg12.11. Leser auf exakten privaten Livesnapshots:
-Profil/Quellen/Policy/Tag/Quittung gebunden; keine privaten Reviewdaten im DTO.
-Zwei Modellaufrufe0,012273USD;Tag0,251616USD/gesamt2,975093USD/8alteReserven.
+PR1189: acht neue Workergruppen/sechs neue CI-Gruppen/Syntax bestanden in43556801462.
+Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Nur begrenzter Abrufanteil;
+keine weiteren Slots, Budgets, Cron oder Datenkorrekturen. Runtime/Alias441/anonym401.
+Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
+Kosten05:01:0,567350USDTag/3,290827USDgesamt/8alteReserven; 04:45-Worker13done/2Fehler.
 
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
@@ -32,7 +32,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**1/10Merges verbraucht,9frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**2/10Merges verbraucht,8frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
