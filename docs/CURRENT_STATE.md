@@ -1,4 +1,23 @@
 # CURRENT STATE — Helmut
+**14.11.2026, 18:16 UTC: PR1199 normal gemergt und auf Production lesend bestaetigt.**
+Merge `a70efd1c8521770d1c119a65db620814ea08283e`, gepruefter Kopf `dad7f0ce`,
+Evidence `ef1fea03`, identischer Tree `cc007bc3`. Beide Pflichtchecks in
+[CI43625286019](https://github.com/ernisch/helmut-pilot/actions/runs/43625286019)
+gruen: nur sechs neue Plangruppen und 13 betroffene Syntaxpruefungen; die 20 neuen
+lokalen Gruppen und alle alten Erfolge erhalten. Zwei unabhaengige Vollbaumreviews
+ohne Befund. Keine neue Browserausfuehrung oder Mengenpruefung.
+Regulaeres Gitdeployment `dpl_APS4RanDcTRt1nqDPeTuSFgwpTCT` Production/fra1 READY
+18:15:04.819 UTC. Runtime, exklusiver Profilbetrieb und Kommunikationsschutz sind
+18:15:42.678 UTC bestaetigt. Normaler gespeicherter App-Leser HTTP200: Paket
+`b2cb2abd`, alle 77 Items, zwei vorlaeufige Briefingtexte, Lage, Radar und passende
+Quittung wortgleich erhalten. Kein neuer Quellen-, Modell- oder Reparaturlauf.
+Vorflug 18:13:42 UTC: 0,620841 USD Tag / 3,344318 gesamt, 258 Calls / 88 heute,
+acht alte offene Reserven / keine heutige, nur CEM aktiv / keine laufende Lease.
+Neue Betreiberfreigabe bisher zwei normale Merges (1198/1199), kein neues 10erlimit.
+Weiter offen: neue Producerwirkung, Tagesprioritaet und regulaere Morgenlieferung.
+Naechster Schritt: regulaere Fenster am 15.11. mit der bestehenden autonomen
+Nachkontrolle ab 03:07 UTC beobachten; keine heutige Zusatzquote oder Wiederholung.
+
 **14.11.2026, 18:10 UTC: PR1199 lokal integriert; 20 neue Gruppen belegt, Pflicht-CI noch offen.**
 Branch `codex/artikel-wiedergewinnung-20261114`, Basis/main/Production weiter
 `4d70c990` (PR1198). Neun Runtimepfade, zwei neue Regressionen; keine Appgestaltung,

@@ -2,6 +2,31 @@
 
 ## PR1199: begrenzte Wiedergewinnung und ehrlicher Fachstatus
 
+**Rolloutbeleg 14.11.2026, 18:16 UTC:** normal gemergt auf
+`a70efd1c8521770d1c119a65db620814ea08283e`. Gepruefter Kopf
+`dad7f0ce5ca22e6b9e4795f77249ea2e6b792933`, Evidence
+`ef1fea0308e9513b7f69b3e0b5698c22e5e7d4fc`, identischer Merge-/Kopftree
+`cc007bc3dd86a2e2a73c3b1a169eaa1f2fbcef4e`, Parents `4d70c990` / `dad7f0ce`.
+Beide Pflichtchecks in [CI43625286019](https://github.com/ernisch/helmut-pilot/actions/runs/43625286019)
+erfolgreich: [Offlinejob132539631051](https://github.com/ernisch/helmut-pilot/actions/runs/43625286019/job/132539631051)
+belegt genau sechs neue Plan-Gruppen und 13 betroffene Syntaxdateien;
+[Browserjob132539630711](https://github.com/ernisch/helmut-pilot/actions/runs/43625286019/job/132539630711)
+erhaelt bestehende Belege ohne Chromiumlauf. Mock100 ausgelassen. Zwei unabhaengige
+vollstaendige Runtime-/Test-/CI-/Vollbaumreviews ohne offenen Befund.
+Regulaeres Gitdeployment `dpl_APS4RanDcTRt1nqDPeTuSFgwpTCT`, Production/fra1 READY
+18:15:04.819 UTC. Lesende Runtime-/Alias-/Profil-/Kommunikationskontrolle sowie
+normaler Stored-App-GET um 18:15:42.678 UTC bestanden: Paket `b2cb2abd`, alle
+77 Items, beide vorlaeufigen Briefingtexte, Lagebindung, Radar und Quittung
+wortgleich erhalten. Request `cle1::fra1::cqfct-1794680140336-d0b66a8cf950`.
+Privater Nachweis `/tmp/helmut-1199-rollout-result.json`; keine neue fachliche
+Tagesprioritaet, Producerwirkung oder Customer-Auth-Browserabnahme behauptet.
+Vorflug 18:13:42 UTC: 0,620841 USD Tag / 3,344318 gesamt, 258 Calls / 88 heute,
+acht alte offene Reserven / keine heutige, nur CEM / keine aktive Lease. Kein
+Quellen-, Modell- oder Geschaeftsprozess gestartet. Heutige Zusatzrechte bleiben
+verbraucht; naechste autonome Beobachtung gilt den regulaeren 15.11.-Fenstern.
+Neue Betreiberfreigabe: bisher zwei normale Merges (1198/1199), kein altes Limit
+neu gezaehlt. Die folgende Entwicklungsnotiz bleibt historischer Vorrolloutstand.
+
 14.11.2026, 18:10 UTC. [PR1199](https://github.com/ernisch/helmut-pilot/pull/1199)
 ist lokal integriert, Basis `4d70c990`. Pflicht-CI, Merge und Rollout stehen noch aus.
 Neun Runtimepfade und zwei neue Regressionen; keine Migration oder Aenderung an
