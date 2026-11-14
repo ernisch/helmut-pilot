@@ -9,6 +9,32 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
+**Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
+normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
+Dateibaum996f86e61c5ba06eba731e85cf21b31d2c8d9ad5 exakt gleich zum freigegebenen Kopf.
+CI43531055622 beide Pflichtchecks gruen:9neueFachgruppen,6neueProfilgruppen,
+7neueBrowserchecks Desktop/Mobil und geaenderte Syntax; alte Tests/DB/Masse aus.
+Vercel `dpl_J1tPgsHubG4GnVBDYesaK843w3kk` regulaer Git/Production/fra1 READY,
+Hauptalias und Runtimec97fbbd0, anonym401, Kommunikationssperre bestaetigt.
+Vor Merge keine neueren laufenden Prozesse/aktiven Jobleases. Keine Migration,
+zusätzlichen Profile, Budget-/Cron-/Env-Aenderungen oder neue Quellenarbeit.
+
+Bestehender Einprofilauftrag: genau einmal Lagecron00:06:40UTC, danach Paketlauf
+00:07:11UTC, beide200. Bestaetigter Entwurf/Review wiederverwendet; Teilstand
+00:06:49.308UTC gespeichert, Originalindex1 positiv/Originalindex0 weiter abgelehnt,
+Hash `da90e6e1903965a2083b36090ec825f913b1c6a1f3067609e8ca800b00b7ec1a`.
+Paket14.11. um00:07:20.357UTC gespeichert/verifiziert:57Eintraege/8Karten/1Absatz,
+Hash `63694c776dbe475d4271cf4b2ea5c5509b74077b677f782805afd1c0b5c0873d`.
+Quittung gebunden und ausgehende Kanaele gesperrt. Rein lokaler neuer Gegencheck
+00:09:44UTC mit exakt diesen privaten Production-Snapshots und dem normalen Leser:
+availabletrue, gueltiger Teilstand, Profil-/Policy-/Quellenschutz passend,
+59Manifestvorgaenge/59Abhaengigkeiten, keine Bindungsluecken, keine privaten Reviews
+im DTO, Snapshots unveraendert. Keine authentifizierte Production-Browserabnahme.
+Null neue Modellaufrufe; Tagesbindung14.11.UTC0USD, gesamt unveraendert2,723477USD,
+acht alte offene Reserven erhalten. Ehrlich teilweise: Quellen offen/kein Tagesanlass/
+lage-teilstand, Radar eine Dynamik08.11. weiterhinstale. Kein Vollversorgungs-PASS.
+Naechster Schritt: regulaeren Quellen-/Morgenlauf und den gespeicherten Stand pruefen.
+
 **Weiterer echter Lieferblocker,22:52–22:56 UTC:**
 **Inzwischen ausgerollt und wirklich beansprucht:** PR1186 nach konkreter Freigabe
 normal auf32311c78fb17843631f6851ec7103b5f9759ff68 gemergt, Parentscc283e0b/97901263,

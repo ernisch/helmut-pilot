@@ -1,9 +1,9 @@
 # CURRENT STATE — Helmut
 
-**13.11.2026UTC/14.11.Berlin: Mandatsphase PR1186 ausgerollt und live bestaetigt;
-Lagetext fuer14.11. wegen Profilbezug abgelehnt; [Teilstand-PR1187](https://github.com/ernisch/helmut-pilot/pull/1187) unabhaengig geprueft, Tests/Rollout noch offen.**
-Production/main `32311c78`, [PR1186](https://github.com/ernisch/helmut-pilot/pull/1186), gepruefter Kopf `97901263`.
-Vercel `dpl_8gAYArheEw81mYsUP1WoQSJg9M8q`
+**14.11.2026UTC/Berlin: PR1187 ausgerollt; positiver Lage-Teilstand live gespeichert
+und am echten Paket geprueft.57Eintraege/8Karten/1Absatz; Quellen offen/Radarstale.**
+Production/main `c97fbbd0`, [PR1187](https://github.com/ernisch/helmut-pilot/pull/1187), gepruefter Kopf `2cdd5eef`.
+Vercel `dpl_J1tPgsHubG4GnVBDYesaK843w3kk`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
