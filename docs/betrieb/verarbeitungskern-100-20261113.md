@@ -31,6 +31,26 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+**Kontrolle 14.11., 04:07 UTC und gezielter Folgefix:** main/Runtime weiterhin
+5a734cc3; nur CEM aktiv, Kommunikations-/Kohortensperre bestaetigt.
+Fuenfter Quellenlauf 04:00:46–04:04:33 UTC: 2 erledigt, 2 endgueltige Fehler,
+50 zurueckgestellt, 29 Wiederholungen; keine aktive Prozesszeile danach.
+Heute 47 Quellenabrufe/53 U erledigt, 106 Abrufe/76 U offen, 5 U fehlgeschlagen.
+14 abgerechnete Aufrufe dieses Fensters sind 14 verschiedenen Artikeljobs mit
+14 verschiedenen Dokumentkennungen zugeordnet; kein Doppelaufruf daraus belegt.
+Ein bestaetigter erster Abschnitt bleibt in KO-Version3 samt Bundle-/Quellenhash
+und Lektuerebeleg gespeichert; Jobcursor1 passt dazu. Andere alte KO-Sperren
+bleiben unaufgeloest. Keine bezahlte Wiederaufnahme oder Datenkorrektur.
+Kostenbindung 0,447599 USD heute/3,171076 USD gesamt, acht alte offene Reserven.
+Paket 03:37 unveraendert. Projektion04:15/Materialisierung04:30 noch nicht faellig.
+Unabhaengiger Codebefund: U-Prioritaet80 steht auch innerhalb derselben Tagesgruppe
+vor Quellenabruf100; der Worker reserviert bisher nur einen Mandatsanteil.
+Geplanter Folgefix auf codex/quellenabruf-arbeitsanteil-20261114: begrenzte Phase
+fuer heutige Quellenabrufe im bestehenden Slot, danach gemischte echte Restzeit.
+Historische Abrufe bekommen dadurch keinen neuen Vorrang; gleiche Sperren,
+Kosten-/Zeitgrenzen und Typbeschraenkungen. Nur Worker und neue enge Regression;
+keine Migration, Cron-/Env-/Budgetaenderung oder zusaetzliche Verarbeitung.
+Implementierung und neue gezielte CI offen; bisher weiter nur 1/10 Nachtmerges.
 **Echter erster Tagesbetrieb14.11.,03:00–03:22UTC:** main weiter5a734cc3.
 Plan14 fertig eingereiht156/156. Regulaerer Lauf
 `cron-crawl-20261114030012-15m2h`03:00:12–03:03:57UTC:128Ziel/56erledigt/

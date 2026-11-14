@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
 **14.11.2026UTC/Berlin: PR1188 live;03:37 neues Paket72Eintraege/5Karten/1Absatz.
-Gespeicherter Leser liefert es gebunden aus; weiter Teilstand/Quellen offen.**
+Leser liefert gebunden aus; Quellen offen. Begrenzter Abrufanteil in Umsetzung.**
 Production/main `5a734cc3`, [PR1188](https://github.com/ernisch/helmut-pilot/pull/1188), gepruefter Kopf `a58c0de9`.
 Vercel `dpl_D79CzZSN6FcY4BMNV6hmvm4P8QHg`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
