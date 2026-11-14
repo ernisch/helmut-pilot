@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
-**14.11.2026,10:53UTC: Briefing mit2geprueftenAbschnitten und Radar2 auf Production.
-Letzte Radar-Artikelueberschrift wird an ihre eigene Quelle gebunden.**
+**14.11.2026,11:14UTC: Briefing mit2geprueftenAbschnitten und Radar2 auf Production.
+Letzter Radar-Artikelbindungsfix lokal6/6geprueft, PR1196-Pflicht-CI folgt.**
 main/Production `87505694`, [PR1195](https://github.com/ernisch/helmut-pilot/pull/1195), Kopf `2e684600`.
 Vercel `dpl_8GpRgQ8nEex5RHS65A8LZghDjMS4` regulaerGit/Production/fra1 READY10:43:19UTC.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
@@ -13,8 +13,9 @@ Neues Paketd41c1c16/76Items/2Lageabsätze/2Radar,Quittung gebunden,Texte wortgle
 Original812d3b81 realarchiviert;254Calls/84heute/8alteReserven/0heuteoffen unveraendert.
 EchteProductionHTTP-Auslieferung10:45 bestätigt;kein Kundenlogin-Browser-/VollbriefingPASS.
 Quellenversorgung/Tagesprioritaet bleiben offen,Teilstand ehrlich,100Kunden weiterunbelegt.
-Restbefund: Parteikarte nimmt altenKO-Titel zur Linken-Abstimmung,aber neuereSPD/Grünen-
-Quelle/Datum. KorrekteArtikelmetadaten liegenimselbenPaket,engeReader-/Producerkorrekturfolgt.
+PR1196: Titel striktan Vorgang/Artikeladresse/exaktePubzeit; fehlend/widerspruechlich=>ausblenden.
+6neueNativegruppen+unabhaengigeReviews bestanden; beideechtenDynamiken+Partei bleiben.
+Nur sichtbareKopie, Paket/Quittung/Texte unveraendert;5NEUEBrowserchecks noch offen.
 Keine neuen Modelle/Quellen-/SQLschreiblaeufe;keine weitere Materialisierung vorgesehen.
 Kosten10:47:0,581580USDTag/3,305057USDgesamt;0laufendeProzesse/Leases,nurCEM.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:

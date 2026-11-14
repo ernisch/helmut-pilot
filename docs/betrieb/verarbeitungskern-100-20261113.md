@@ -58,6 +58,30 @@ Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entferne
 (Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
 Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
 Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+**PR1196 Radar-Artikelbindung,14.11.11:14UTC: lokalgeprueft, CI/Rollout offen.**
+Die Parteikarte kombinierte altenKO-Titel der Linken mit neuemSPD/Grünen-Artikel.
+Producer und normaler gespeicherter Appreader binden nichtpersoenliche sichtbare Titel
+nun nur an denselbenVorgang+kanonischeArtikeladresse+exaktefinitePublikationszeit,
+uebereinstimmendenTitel und verfuegbareDokumentkennungen. Fehlende/widerspruechliche
+Belege verbergen dieKarte; niemals ersterTreffer, Zeitpromotion oder neueDokumentID.
+PersoenlicherNamensnachweis bleibt unveraendert. DerReader verwendet ausschliesslich
+bereitsgespeicherte items.sources/primarySource desselbenVorgangs und aendert nur
+geklonte anzeige; RawRadar/Paket/Quellenhash/Briefing-/Lagetexte/Quittung bleiben exakt.
+Falls Karten entfallen, korrigiert sich nur die sichtbare Belegbilanz konservativ.
+Root+Fresh unabhaengige Runtime-/Native-/Browserdiffreviews bestanden,4Dateien gefroren.
+6/6NEUE nativeGruppen einmal lokal ueber scripts/lokal.js bestanden: eigenerArtikeltitel
+bei wechselndenAkteuren, Quellenreihenfolge, fehlende/ambige/andersdatierte/fremdeBelege,
+echter gespeicherterReader+2erhalteneDynamiken+beideBriefingtexte+Receipt, ehrlicheBilanz
+beiAblehnung sowie Mandat/Profil/Tag/Policy/Personensperren. KeineAlttests/Modelle/DB.
+ReineHelperprobe auf echtem aktuellem d41-PublicDTO bestaetigt Erhalt beiderDynamiken
+undParteikarte; alle3Titel entsprechen exakt eigenerArtikelquelle undDatum.
+Neuer1196Pruefplan bindet Base87505694/Branch/7NichtCIblobs plus3CI-Dateien;
+6lokaleFachgruppen gebundenwiederverwenden, nur6NEUEPlanfaelle/geaenderteSyntax und
+5NEUEechteHTTP-SPA-Artikelkartenchecks Desktop/Mobil/NoWrites ausfuehren.
+Historische27Fach/12Plan/5Browsererfolge bleiben erhalten, nichtwiederholen.
+Keine weitere Morgenmaterialisierung/Quellenarbeit/Modelle vorgesehen; reineAnzeige.
+Nacht unveraendert8/10,2weiteregruen frei; Productionweiter87505694.
+
 **PR1195 normal gemergt und Produktabschluss,14.11.10:43–10:53UTC:**
 Merge87505694ae9318d660f2052e634613d720729c03, Kopf2e6846002023781f41f64f21832312445013995c,
 Evidence67922cc2, Tree2ea49c771c88f6c79e21756127d00148c9ef05ea exakt. CI43586409603
