@@ -2,6 +2,27 @@
 
 ## Neuer einmaliger Echtlauf nach Betreiberauftrag21:18UTC
 
+**Lokaler Belegstand21:30UTC, PR1200:** Runtimeblob
+`60e81c308ebfa3d90f3150b8986f6399146ba2b0`, neuer Testblob
+`2a383f208db76590c6be5e046b7ff30e5eb31377`, Quellcommit
+`b758469587f8b3265bae7753aec39caaaa21a5d8`. Genau acht NEUE Gruppen im Erstlauf
+ueber `node scripts/lokal.js scripts/quellen-echtlauf-einmal-test.js` bestanden.
+Vollausgabe `/tmp/helmut-1200-echtlauf-native.log`, SHA256
+`643d24a0e2e30c1b9747dbe16d3259479331858af8a3b7e05fad754b31887267`.
+Fallgruppen: bestaetigter9/2700Vorstand; globaleEinmaligkeit/Replay; Admin/Tag/
+Untergrenze21:20/Normalgrenzen; UNKNOWNderaltenAbsage; kaputter/teilweiserVorstand;
+verloreneKey/Fenster/Sekundenantworten; gemeinsamer32Originalcontext; Vorbereitungs-
+fristundUTCwechsel. Echter Fensterkern mit injiziertem lokalen atomaren Transport,
+kein Modell/Netz/DB/Production. Alte erfolgreiche Tests nicht wiederholt.
+Root und unabhaengiger Runtime-/Testreview ohne offenen Befund. Fuenf exakte
+heutige Zaehlerfelder werden erst im neuen Ausnahmefall indexierbar gelesen;
+fehlend/dupliziert/teilweise/UNKNOWN sperrt vor dem neuen Einmalkontingent.
+Untergrenze21:20UTC verhindert rueckwirkende Erweiterung alter12UTC-Vertraege.
+Alte8er/9erFenster, Geldvertrag und Auth bleiben erhalten. Drei CI-Dateien bilden
+nur den neuen PR1200-Kopf ab: geplant sechs neue Planfaelle und vier Syntaxdateien;
+PENDING ist vor echter Evidencebindung absichtlich geschlossen. Keine Browser-,
+Mengen-, Datenbank- oder Alttestwiederholung, kein neuer Production-Fachnachweis.
+
 14.11.2026. Der Betreiber beauftragt nach dem konkreten Vorschlag eines echten
 CEM-Laufs mit echten KI-Antworten, Originalquellenpruefung, vollstaendigem Text,
 Speicherbindung und App-Auslieferung: "Dann mach das bitte beweise das auch noch

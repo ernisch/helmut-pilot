@@ -1,4 +1,16 @@
 # CURRENT STATE — Helmut
+**14.11.2026,21:30UTC: PR1200 lokal fertig, acht NEUE Gruppen bestanden; Pflicht-CI offen.**
+Runtime60e81c30/Test2a383f20 in Quellcommitb7584695, beide unabhaengig und von Root
+ohne offenen Befund gelesen. Einziger Erstlauf8/8gruen; keine alten Tests/Syntax.
+Neue Ausnahme erst ab21:20UTC, striktUTC14Nov, nach bekannt verbrauchtem altenKey
+UND schmal bestaetigtem9Fenster/2700s/AltKey1/Original<=32/NeuKey0-Vorstand.
+Readfehler/Teilstand/UNKNOWN/Replay/Fristwechsel sperren. NeuerKeymax1,
+globale10/3000/32; alter12UTC-Vertrag bleibt unveraendert, keine neueMandatslogik.
+Scope1Runtime/1neueRegression/2Docs/3CI=7Pfade, final5NichtCIblobsinklvercel.
+Nur6neueCI-Plangruppen+4betroffeneSyntax vorgesehen; alteNachweise erhalten.
+Keine neue Productionoperation oder KI-Antwort bewiesen. Echter Adminstart wartet
+auf exaktgrueneCI/Review/Merge/READY; fehlendeAdmincredentials nicht ersetzen.
+
 **14.11.2026,21:22UTC: neuer begrenzter Echtlauf ausdruecklich beauftragt.**
 Betreiber nach konkretem Vorschlag: "Dann mach das bitte beweise das auch noch
 sodass wir endlich fertig werden." Genau ein weiteres heutiges Quellenfenster,
