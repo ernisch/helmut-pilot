@@ -213,9 +213,24 @@ const BRIEFINGFENSTER = Object.freeze({
     "vercel.json": "8e1c4f53cf8684986bf03c1a351ae89e12a50c2e"
   })
 });
+// Zwoelftes festes Profil: bestaetigten Volltext vor fehlendem Ersatz schuetzen.
+const VOLLTEXTSCHUTZ = Object.freeze({
+  PR: 1195, BASE: "e148640fb195b9a713f613e868965e5990ee9c9a",
+  BRANCH: "codex/briefing-bestand-erhalten-20261114",
+  LOCAL_EVIDENCE_COMMIT: "67922cc202718ec5c8f7e6b57b438dafe14c10a8",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze(["lib/helmut/briefing-speicher.js"]),
+  REGRESSION_FILES: Object.freeze(["scripts/briefing-volltext-erhalt-test.js"]), BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "250f47d2199a999db997eb12ee0ffbbe2203dfa4",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "d4b23e8a97362ff445da35cd48406b9d9a440b7d",
+    "lib/helmut/briefing-speicher.js": "2fdd7dc95ac3bdc2fe22cf97c0aacbf7f1767d37",
+    "scripts/briefing-volltext-erhalt-test.js": "e6e9c49a22ea2f84cf16343152caf1b7a2327a53",
+    "vercel.json": "16472635c6a9c361014cd1d851316022fb25e7dd"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === BRIEFINGFENSTER.PR || headRef === BRIEFINGFENSTER.BRANCH ? BRIEFINGFENSTER
+const profileFor = ({ prNumber, headRef }) => prNumber === VOLLTEXTSCHUTZ.PR || headRef === VOLLTEXTSCHUTZ.BRANCH ? VOLLTEXTSCHUTZ
+  : prNumber === BRIEFINGFENSTER.PR || headRef === BRIEFINGFENSTER.BRANCH ? BRIEFINGFENSTER
   : prNumber === KUNDENANSICHTEN.PR || headRef === KUNDENANSICHTEN.BRANCH ? KUNDENANSICHTEN
   : prNumber === LAGEKOSTEN.PR || headRef === LAGEKOSTEN.BRANCH ? LAGEKOSTEN
   : prNumber === LAGEERGAENZUNG.PR || headRef === LAGEERGAENZUNG.BRANCH ? LAGEERGAENZUNG
@@ -229,21 +244,21 @@ const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten", "briefingfenster"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten", "briefingfenster", "briefingvolltext"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN, fenster = profile === BRIEFINGFENSTER;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN, fenster = profile === BRIEFINGFENSTER, volltext = profile === VOLLTEXTSCHUTZ;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (fenster ? 7 : kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
-    && REGRESSION_FILES.length === (fenster ? 4 : kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden || fenster ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (volltext ? 1 : fenster ? 7 : kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
+    && REGRESSION_FILES.length === (volltext ? 1 : fenster ? 4 : kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden || fenster || volltext ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -268,10 +283,11 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = fenster ? "briefingfenster" : kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = volltext ? "briefingvolltext" : fenster ? "briefingfenster" : kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: fenster ? "Exakter Briefingcheckpoint, strikte Ereignisidentitaet und sichtbarer ehrlich gebundener Briefingteilstand"
+    reason: volltext ? "Exakter Abbruch vor Paketwrite bei drohendem Verlust bestaetigten Volltexts"
+      : fenster ? "Exakter Briefingcheckpoint, strikte Ereignisidentitaet und sichtbarer ehrlich gebundener Briefingteilstand"
       : kunden ? "Exakte Kundenansichten: sichtbare Lageeinordnung, kompakte mobile Titel und ehrlicher Radarbestand"
       : kosten ? "Exakter nativer Kostenvertragsanschluss ohne Phasen- oder Budgetlockerung"
       : ergaenzung ? "Exakte einmalige Lage-Ergaenzung mit unveraenderter Gesamtpruefung und Phasensicherheit"
@@ -284,7 +300,10 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: fenster ? { status: "Lokale neue Checkpoint-/Gattungs-/Ausliefergruppen am exakt gebundenen Evidencebaum bestanden; nicht erneut ausgefuehrt. Nur neue Briefingteilstand-Browserfaelle werden ausgefuehrt; alte Nachweise bleiben erhalten",
+    reused: volltext ? { status: "Neue lokale Volltextschutzgruppen hashgebunden wiederverwendet; 21 Fach-/6 Plan-/5 Browsererfolge1194 nicht erneut ausgefuehrt. Appreader/UI/Auth unveraendert",
+      commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}`,
+      urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43584269849"] }
+      : fenster ? { status: "Lokale neue Checkpoint-/Gattungs-/Ausliefergruppen am exakt gebundenen Evidencebaum bestanden; nicht erneut ausgefuehrt. Nur neue Briefingteilstand-Browserfaelle werden ausgefuehrt; alte Nachweise bleiben erhalten",
       commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` }
       : kunden ? { status: "Neue Browserfaelle werden ausgefuehrt; alte nicht betroffene Fach-/Browser-/Mengenbelege erhalten",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43565666630"] }
@@ -306,7 +325,8 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: fenster ? ["Nur neue Briefingfenster-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien", "Neue Briefingteilstand-Ansichten Desktop und Mobil"]
+    execute: volltext ? ["Nur neue Volltextschutz-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien"]
+      : fenster ? ["Nur neue Briefingfenster-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien", "Neue Briefingteilstand-Ansichten Desktop und Mobil"]
       : kunden ? ["Sechs neue Pruefplan-Gegenfaelle", "Zwei neue Radar-Bestandsinteraktionen",
       "Neue Kundenansichten in echtem Chromium Desktop und Mobil", "Syntax geaenderter JavaScriptdateien"]
       : kosten ? ["Nur neue Kostenvertrags-Profilgegenfaelle", "Zwei neue native Kosten-/Lageinteraktionen",
@@ -371,7 +391,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, BRIEFINGFENSTER, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, BRIEFINGFENSTER, VOLLTEXTSCHUTZ, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
