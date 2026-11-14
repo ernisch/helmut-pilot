@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**14.11.2026,12:46UTC: neuer Sprint zur belegten Tagespriorisierung, Design unveraendert.**
+**14.11.2026,12:52UTC: neuer Sprint zur belegten Tagespriorisierung, Design unveraendert.**
 main/Production58e21bf5(PR1196), Briefing2/Lage2/Radar2+Partei1 weiterhinvorlaeufig.
 [Architektur und Primaerbelege](betrieb/verarbeitungskern-100-20261113.md).
 Neu belegt: regulärer Understandingvertrag erzeugt/uebernimmt keineFachtags;
@@ -9,7 +9,8 @@ Quellen-GAP ist kein pauschalesPrioritaetsverbot; gueltigeKandidaten bleibenzula
 Live11:44:78Udone/19failed/105wartend,Source150done/2failed/1wartend,0Leases,nurCEM.
 105Uattempts0:38ohneArtikelziel/67DirectohneText;2echteLayoutfehlerreproduziert.
 Tageskontingenteprimaerbestaetigt8/8Fenster,2400/2400s UND16/16Originalabrufeverbraucht.
-Einmalentwurf9/2700/32:8neueGruppenPASS;EXTRA-GOvorMergeNOCHNICHTerteilt.
+PR1197Kopfedae1493:25neueGruppen+2OriginalePASS,CI43596599597beidePflichtchecksgruen.
+Einmal9/2700/32:konkretesEXTRA-GOgefragt/ANTWORTAUSSTEHEND,keinMerge/Aktivierung.
 KeinExtraLauf/Reset/Bestandsreanalyse/Modell/Produktoperation,keinealteGO-Wiederverwendung.
 Budget0,581580USDTag/3,305057USDgesamt,254Calls/84heute/8alteReserven/0heuteoffen.
 Limits1USD/UTC-Tag/30gesamt,keineKunden/Dienste/Env/Cron/Migration/Datenkorrekturen.
@@ -17,7 +18,7 @@ Bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten,nichtwiederholt.
 Paketd41c1c16/76Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
 EinzelngepruefteTexte sindkeinBelegfuerTageswichtigkeit; keinVoll-/100KundenPASS.
 MobilesMockup bereit,nurEntwurf;keineProduktdesignaenderungbeauftragtoderumgesetzt.
-Root+2bestehendeCodexAgenten,getrennteZustaendigkeiten;1gruenerNachtmergeverbleibt.
+Root+2CodexReviewsabgenommen;1Nachtmergeverbleibt,25PruefgruppenNICHTwiederholen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende

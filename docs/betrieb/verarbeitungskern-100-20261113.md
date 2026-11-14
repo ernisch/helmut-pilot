@@ -31,6 +31,24 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:9/10Merges (PR1188/1189/1190/1191/1192/1193/1194/1195/1196),1weiterer nur beiGruen verbleibt.
+**1197 freigabefertig14.11.12:52UTC, Betreiberantwort ausstehend:**
+Kopfedae1493d9ce585cd4cc3f9e5006b51ccb76cfef, Evidence0d55fe3302eed91730eba25e354f738f34badcc6,
+Tree26d355178c64ab9e091f2dbd3ca21aaa63bfdf83. Root+2AgentenfinaleRuntime-/Test-/
+CI-/Vollbaumreviews ohneBefund,18Pfade/15NonCIblobs+3CI,alleManifestwerteexakt.
+[CI43596599597](https://github.com/ernisch/helmut-pilot/actions/runs/43596599597)
+beidePflichtchecksgruenamKopf:6NEUEPlanfaelle+14geänderteJS-Syntax,25lokaleGruppen
+hashgebundenuebernommen. Browserbewusstnichtgelaufen,keinneuerBrowserPASS.
+FrischerPrimaervorflug vorFreigabefrage:254Calls/84heute/0,581580USDTag/3,305057USDgesamt,
+8alteoffeneReserven/0heuteoffen,nurCEM/0Leases;Quoten8Fenster/2400s/16Originale,
+Sonderkeynochnichtvorhanden. KeinProduktlauf/Modellaufruf/Reservereset.
+KonkreteFrageviarequest_user_input_asyncgestellt:genaudieserPRnormalmergen/ausrollen,
+einmal14Novmax300s+16Extraoriginale(gesamt9/2700/32),KIlimits1USDTag/30gesamtgleich;
+nurbeineuenbestätigtenEingabeneineLageoperationundeinMorgenabschluss.
+EchteAdminsession+CSRFbleibtnotwendig,BetreiberdrücktbestehendenKnopferstnachREADY.
+ANTWORTAUSSTEHEND:PRbleibtDRAFT,keinMerge/Deployment/QuellenfensteroderEinmalaktivierung.
+LesendeRolloutprobeprivatvorbereitet,nichtausgeführt. BeiGOzuerstaktuellenGit/Quota/
+Budget-/Profil-/Leasezustandlesen,keinegrünenTestsoderOriginaldiagnosenwiederholen.
+
 **PR1197 Reparaturvorbereitung14.11.12:46UTC, nochkeinMerge/GO/Produktlauf:**
 [Fachthemen und Originalartikel](https://github.com/ernisch/helmut-pilot/pull/1197)
 vereint die beiden belegten Ursachen und einen gesondert freizugebenden Einmalentwurf.
