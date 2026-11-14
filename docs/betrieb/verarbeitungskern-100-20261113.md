@@ -31,6 +31,17 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:4/10Merges (PR1188/1189/1190/1191),6weitere nur beiGruen verbleiben.
+**PR1192 Kleinstfix implementiert, neue enge Abnahme offen:** Autor5f576f53,
+exakt ai.js (zwei Overrides entfernt) und bestehender Lage-Ergaenzungstest mit
+strengem --kostenvertrag-only. Genau zwei neue Faelle: nativer Azurevertrag mit
+unveraenderter echter pruefeAnfrage/Reserve/Sendung/Abrechnung, beide Phasen und
+private V-Bindung; unzulaessiges Testfeld vor Buch/Transport abgewiesen und alter
+Start weiter UNKNOWN. Root plus unabhaengige Code-/Test-/CI-Strukturreviews ohne
+Befund. Sechs neue Profilgruppen/zwei neue Vertragsfaelle/Syntax noch offen;
+zehn alte Interaktionsgruppen und Browser-/Mengenbelege nicht wiederholen.
+Kosten-/Phasenmodule unveraendert. Historischer Start bleibt gesperrt; Produktfix
+allein ermoeglicht keinen bezahlten Retry fuer dieselbe vorhandene Eingabe.
+
 **PR1191 ausgerollt, neuer Kostenvertragsfehler bestaetigt (06:07UTC):** Normaler
 Merge21816be73c5a7a759b35e907b9030a37d5c9b294, Parents0339f19e/6b9c1718,
 Tree2fb0f72aa9e1ded08f32e268a58051d54ccd0706 exakt wie gepruefter Kopf.

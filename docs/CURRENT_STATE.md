@@ -16,8 +16,8 @@ Kosten05:34:0,567350USDTag/3,290827USDgesamt/8alteReserven; Paket/Quittung unver
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
 Realer Lagepfad06:05:44–53: nur bestaetigter Teilstand, neue Startphase ohne Entwurf.
 Zwei neue costInputVersionHash-Overrides verletzen nativen Kostenvertrag vor Reserve;
-keine neuen Calls/Kosten. Fehler im bisherigen Review uebersehen. Kleinstfix in Arbeit.
-Start bleibt mangels dauerhaftem Nichtversandbeleg gesperrt; kein Reset/Neukey/Retry.
+keine neuen Calls/Kosten. Reviewluecke. PR1192:2Overrides entfernt, neue2Vertragsfaelle.
+Start bleibt gesperrt; kein Reset/Neukey/Retry. Unabh. Reviews ohne Befund, CI offen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende

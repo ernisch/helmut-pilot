@@ -9,6 +9,9 @@ const S = require("../lib/helmut/storage"), AI = require("../lib/helmut/ai"), L 
   C = require("../lib/helmut/lage-verarbeitungsbeleg"), B = require("../lib/helmut/briefing-speicher"),
   E = require("../lib/helmut/lage-quellenbeleg"), Q = require("../lib/helmut/lage-textqualitaet");
 const base = require("./fixtures/profilhash-integration"), env = { ...process.env }, NativeDate = Date;
+const args = process.argv.slice(2), kostenvertragOnly = args.length === 1 && args[0] === "--kostenvertrag-only";
+A(args.length === 0 || kostenvertragOnly, "Unbekannte Auswahl darf keine Pruefgruppen auslassen");
+const K = require("../lib/helmut/betriebskosten-budget"), nativeReserve = K.reserviere;
 const originalStorage = { ...S }, generate = AI.generateLageBriefing, request = https.request;
 const providerControl = require("../lib/helmut/anbieter-steuerung"), steuerung = providerControl.steuerungAktiv;
 const now = base.now, day = base.day, clone = structuredClone;
@@ -128,9 +131,38 @@ async function welt({ anzahl = 3 } = {}) {
   f.phase = async () => C.begin({ userId: f.profile.id, tag: day, eingabe: f.data().eingabe, now }, S);
   return f;
 }
+function kostenwelt(f) {
+  const contract = { version: 1, profileId: f.profile.id, startsAt: day + "T00:00:00.000Z",
+    dailyLimitUsd: 1, totalLimitUsd: 30,
+    route: { provider: "azure", responsesUrl: "https://offline.openai.azure.com/openai/v1/responses", model: "gpt-5-mini" } };
+  Object.assign(process.env, { [K.ENV]: JSON.stringify(contract), AZURE_OPENAI_KEY: "NUR_LOKALE_AZURE_ATTRAPPE",
+    AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini" });
+  let auth = { llmUsage: [] }, mutations = 0;
+  S.listFullProfiles = async () => [{ ...f.profile, active: true }];
+  S.readAuthStore = async () => clone(auth);
+  S.mutateAuthStore = async change => { const next = clone(auth), result = await change(next); auth = next; mutations++; return result; };
+  S.recordLlmUsage = async info => {
+    const row = S.buildLlmUsageRecord(info); await S.mutateAuthStore(a => { a.llmUsage.push(row); });
+    return { ...row, _ablage: { blob: true } };
+  };
+  const metas = [], tickets = [], transport = https.request;
+  // Durchsichtige Beobachtung, keine Attrappe: die unveraenderte native
+  // Reservierung samt privater pruefeAnfrage und echtem Kostenbuch entscheidet.
+  K.reserviere = (input, deps) => { metas.push(clone(input.meta)); return nativeReserve(input, deps); };
+  https.request = (...input) => {
+    const pending = Object.values(auth[K.KEY]?.calls || {}).filter(call => call.status === "reserviert");
+    A.equal(pending.length, 1, "Genau eine native Vollreserve muss vor dem Sender bestaetigt sein");
+    tickets.push(pending[0].id); return transport(...input);
+  };
+  return { contract, metas, tickets, buch: () => clone(auth), mutations: () => mutations,
+    restore: () => { K.reserviere = nativeReserve; } };
+}
 async function main() {
   let count = 0;
-  const test = async (name, fn) => { await fn(); count++; console.log("PASS " + name); };
+  const test = async (name, fn) => {
+    if (kostenvertragOnly !== name.startsWith("Kostenvertrag:")) return;
+    await fn(); count++; console.log("PASS " + name);
+  };
   await test("Ergaenzungsvertrag bindet Originalnegativbeleg Tenant Profil Tag und feste Regel ohne erneute Teilfreigabe", async () => {
     const f = await welt(), data = f.data();
     A.deepEqual(f.data().eingabe, data.eingabe); A.equal(data.eingabe.originalBelegHash, f.part.payload.inhaltHash);
@@ -247,11 +279,41 @@ async function main() {
       A.equal(f.requests.length, ["store", "spaeterer-lesefehler", "bestaetigt-fehlend", "quelle-gesperrt"].includes(art) ? 2 : 0);
     }
   });
-  A.equal(count, 10); console.log(`${count}/${count} neue Lage-Ergaenzungsgruppen bestanden; keine echten Modelle Datenbank oder alten Tests.`);
+  await test("Kostenvertrag: nativer Azurevertrag reserviert sendet und rechnet beide Ergaenzungsphasen mit leerem Testfeld ab", async () => {
+    const f = await welt(); f.transport(); const k = kostenwelt(f), inputHash = f.data().eingabeHash;
+    try {
+      A.equal((await f.run()).paragraphs.length, 2);
+      A.deepEqual(f.requests.map(r => r.phase), ["entwurf", "pruefung"]); A.equal(f.reservations, 2);
+      A.equal(k.metas.length, 2); A(k.metas.every(m => m.costInputVersionHash === null && m.costAdmission === null));
+      A.equal(new Set(k.tickets).size, 2);
+      const auth = k.buch(), book = auth[K.KEY], calls = Object.values(book.calls);
+      A.equal(calls.length, 2); A(calls.every(c => c.status === "abgerechnet" && c.model === k.contract.route.model));
+      A.equal(book.bound, 2 * K.kosten(20, 10)); A.equal(auth.llmUsage.length, 2);
+      K.pruefeBuch(book, K.vertrag(process.env));
+      A.equal(f.rows.get(f.cacheId).payload.ergaenzungsBeleg.ergaenzungsEingabeHash, inputHash);
+      A([...f.rows.values()].filter(r => r.payload.eingabeHash === inputHash).length === 4);
+    } finally { k.restore(); }
+  });
+  await test("Kostenvertrag: unzulaessiges Testfeld wird vor Buchreserve und Sender gesperrt und historischer Start bleibt UNKNOWN", async () => {
+    const f = await welt(); f.transport(); const k = kostenwelt(f), phase = await f.phase();
+    try {
+      const before = JSON.stringify([...f.rows]);
+      await A.rejects(generate(f.quellen, f.profile, { politicianId: f.profile.id, lageErgaenzung: f.ctx(),
+        costInputVersionHash: f.data().eingabeHash, onDraft: phase.onDraft,
+        onReview: phase.onReview, beforeReview: phase.beforeReview }), { reason: "betriebskosten-testauftrag-gesperrt" });
+      A.equal(k.metas[0].costInputVersionHash, f.data().eingabeHash);
+      A.equal(k.mutations(), 0); A.equal(f.reservations, 0); A.equal(f.requests.length, 0);
+      A.equal(k.buch()[K.KEY], undefined); A.equal((await f.run()).paragraphs.length, 1);
+      A.equal(JSON.stringify([...f.rows]), before); A.equal(f.requests.length, 0);
+    } finally { k.restore(); }
+  });
+  A.equal(count, kostenvertragOnly ? 2 : 10);
+  console.log(`${count}/${count} ${kostenvertragOnly ? "neue native Kostenvertragsgegenfaelle" : "Lage-Ergaenzungsgruppen"} bestanden; keine echten Modelle Datenbank oder alten Testwiederholungen.`);
 }
 main().catch(error => { console.error(error.stack || error); process.exitCode = 1; }).finally(() => {
   Object.assign(S, originalStorage); AI.generateLageBriefing = generate; https.request = request;
   providerControl.steuerungAktiv = steuerung; global.Date = NativeDate;
+  K.reserviere = nativeReserve;
   for (const key of Object.keys(process.env)) if (!Object.hasOwn(env, key)) delete process.env[key];
   Object.assign(process.env, env);
 });
