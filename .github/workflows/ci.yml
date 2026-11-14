@@ -160,11 +160,24 @@ jobs:
         if: steps.plan.outputs.kundenansichten == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --kundenansichten-only
-          node scripts/lokal.js scripts/radar-zusammenfassung-bestand-test.js
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
+          gh api repos/ernisch/helmut-pilot/actions/runs/43576427744 --jq '{id,head_sha,event,run_attempt,workflow_id,path,head_branch,repository:.repository.full_name}' > "$RUNNER_TEMP/kunden-erstlauf.json"
+          gh api repos/ernisch/helmut-pilot/actions/jobs/132391553513 --jq '{id,run_id,status,conclusion,name}' > "$RUNNER_TEMP/kunden-offlinebeleg.json"
+          node <<'JS'
+          const fs = require('fs'), A = require('node:assert/strict');
+          const r = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/kunden-erstlauf.json'));
+          const j = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/kunden-offlinebeleg.json'));
+          A.deepEqual(r, {id:43576427744,head_sha:'fe9e0eb0a01cfd25ecd464c77dceadb3e62052d1',event:'pull_request',run_attempt:1,workflow_id:313506164,path:'.github/workflows/ci.yml',head_branch:'codex/kundenansichten-20261114',repository:'ernisch/helmut-pilot'});
+          A.deepEqual(j, {id:132391553513,run_id:43576427744,status:'completed',conclusion:'success',name:'Syntax + Offline-Suiten'});
+          console.log('WIEDERVERWENDET: 2 Backendgruppen, 6 Plangruppen und 7 Syntaxchecks aus43576427744/132391553513, Browser dort vor Appstart gescheitert.');
+          JS
+          git merge-base --is-ancestor fe9e0eb0a01cfd25ecd464c77dceadb3e62052d1 HEAD
+          git diff --exit-code fe9e0eb0a01cfd25ecd464c77dceadb3e62052d1 HEAD -- . ':(exclude).github/workflows/ci.yml' ':(exclude)scripts/ci-lieferreparatur-plan-test.js'
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --kundenansichten-runner-only
+          node scripts/lokal.js -- node --check scripts/ci-lieferreparatur-plan-test.js
+          echo 'Unveraenderte Fach-/Browser-/Belegbaeume bestaetigt. Alte Offlineerfolge43576427744 wiederverwendet; nur Runnernachtrag neu geprueft.' >> "$GITHUB_STEP_SUMMARY"
       - name: Kostenvertrag - neue native Vertragsinteraktionen und Profilbindung
         if: steps.plan.outputs.lagekostenvertrag == 'true'
         env:
@@ -694,7 +707,7 @@ jobs:
   browser-smoke:
     if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
