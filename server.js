@@ -1166,22 +1166,12 @@ async function handleRequest(request, response) {
         const val = validateProfile(profile);
         if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
         // --- FRISCHEVERTRAG, Schritt 1: Fenster bestimmen ---------------------
-        // Liegt fuer HEUTE bereits ein Erfolg vor (zweiter Lauf, Watchdog, Neustart),
-        // gilt exakt dessen Fenster weiter — sonst waeren bereits ausgelieferte
-        // Meldungen im Wiederholungslauf ploetzlich nicht mehr "neu".
-        const heutiger = briefingFrische.vertragAktiv()
-          ? await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag)
-          : { lauf: null, fehler: "vertrag-aus" };
-        let fenster = null;
-        if (briefingFrische.vertragAktiv()) {
-          if (heutiger.lauf && heutiger.lauf.fensterStart) {
-            fenster = briefingFrische.frischeFenster({ letzterErfolgAt: heutiger.lauf.fensterStart });
-            fenster.quelle = "lauf-quittung";
-          } else {
-            const letzter = await briefingLauf.ladeLetztenErfolg(storageModul, tenantId, berlinTag, { maxTage: 2, inklusiveHeute: false });
-            fenster = briefingFrische.frischeFenster({ letzterErfolgAt: letzter.erzeugtAm });
-          }
-        }
+        // Nur ein inhaltlich gebundener Abschluss pinnt das heutige Fenster.
+        // Ein technisch gespeicherter Gap konsumiert keine Meldungen; echte
+        // Abschluesse behalten fuer Wiederholungen exakt ihr bestehendes Fenster.
+        const { heutiger, fenster } = briefingFrische.vertragAktiv()
+          ? await briefingLauf.fensterFuerMorgen(storageModul, profile, berlinTag, { jetzt: new Date(t0) })
+          : { heutiger: { lauf: null, fehler: "vertrag-aus" }, fenster: null };
         const briefing = await withTimeout(buildV3Briefing(profile, tenantId, { frischeFenster: fenster }), 60000, "cron-briefing-build")
           .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
         // P29-1: ein Timeout ist KEIN Erfolg. Der Befund wird in die Mandats-
