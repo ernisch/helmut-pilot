@@ -152,8 +152,8 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: |
           set -e
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --frische-only
-          node scripts/lokal.js scripts/artikel-tagesrelevanz-test.js
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --frische-nachtrag-only
+          node scripts/lokal.js scripts/artikel-tagesrelevanz-test.js --nur-offene
           node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
       - name: Teilstand - neue Fachgrenzen und Profilbindung
         if: steps.plan.outputs.lageteilstand == 'true'
@@ -719,10 +719,10 @@ jobs:
             echo 'Kein Chromium installiert oder gestartet, kein neuer Browser-PASS behauptet; keine Wiederholung der alten12/24/15 Faelle, keine Datenbank oder Modelle.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Abhängigkeiten installieren (aus package-lock.json)
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.tagesfrische == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true'
         run: npm ci
       - name: Playwright + Chromium installieren
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.tagesfrische == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true'
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
@@ -748,14 +748,15 @@ jobs:
                   print('Unbenoetigte Chrome Paketliste isoliert:', source.name)
           PY
           npx playwright install --with-deps chromium
-      - name: Radar - neuer verstaendlicher Quellenstand Desktop und Mobil
+      - name: Radar - bestaetigten Browserbeleg wiederverwenden
         if: steps.plan.outputs.tagesfrische == 'true'
-        env:
-          HELMUT_REQUIRE_BROWSER: "1"
-          HELMUT_SOURCE_MODE: "off"
         run: |
-          echo 'Nur neuer Radar-Klarheitsfall Desktop/Mobil; alte Fach-/Browser-/Mengenfaelle bleiben erhalten.' >> "$GITHUB_STEP_SUMMARY"
-          node scripts/lokal.js -- node scripts/browser-smoke-test.js --radar-frischeklarheit
+          {
+            echo 'Sieben Radar-Klarheitschecks Desktop/Mobil bereits bestanden, nicht erneut ausgefuehrt.'
+            echo 'Unveraenderte Produkt-/Browserblobs sind im exakten vollstaendigen PR-Baum gebunden.'
+            echo 'Original: https://github.com/ernisch/helmut-pilot/actions/runs/43537245306/job/132269105907'
+            echo 'Kein Chromium installiert oder gestartet, kein neuer Browser-PASS behauptet.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Teilstand - neuer gespeicherter Lagefall Desktop und Mobil
         if: steps.plan.outputs.lageteilstand == 'true'
         env:

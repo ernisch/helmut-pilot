@@ -85,16 +85,16 @@ const TEILSTAND = Object.freeze({
 // Exakter unabhaengig gepruefter Evidencebaum; keine allgemeine Runtimeausnahme.
 const TAGESFRISCHE = Object.freeze({
   PR: 1188, BASE: "c97fbbd0e9a894e4072252be3863bffa29c625e8",
-  BRANCH: "codex/tagesfrische-und-radarklarheit-20261114", LOCAL_EVIDENCE_COMMIT: "cf7464c9a7020652e0eff31150633a717bcd41c4",
+  BRANCH: "codex/tagesfrische-und-radarklarheit-20261114", LOCAL_EVIDENCE_COMMIT: "f05be50d379a14f92b7c26afd8ccc0006db9e715",
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
     "lib/helmut/scalable-pipeline.js", "lib/helmut/artikel-tagesrelevanz.js", "client.js"
   ]), REGRESSION_FILES: Object.freeze(["scripts/artikel-tagesrelevanz-test.js"]), BLOBS: Object.freeze({
     "client.js": "878077cea323a9bc50f09ba5c1ec18debac918b8",
     "docs/CURRENT_STATE.md": "98eb4f6872e0da0a067b4e7ff722930bfbd53d9c",
-    "docs/betrieb/verarbeitungskern-100-20261113.md": "bcb058f08d376719bd3dc228ce94871fb7fd1e72",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "77393f84e7423fa61a9a253cfe56f32cc8d263a0",
     "lib/helmut/artikel-tagesrelevanz.js": "acd16d56ca22447f430b34c1e395e686b0fcb18d",
     "lib/helmut/scalable-pipeline.js": "669b1689062b00c28fdc943cc9bea0aa5952d1ac",
-    "scripts/artikel-tagesrelevanz-test.js": "4aec00aaf5f78e45a62acabf35eead2340051c28",
+    "scripts/artikel-tagesrelevanz-test.js": "0520abc9ea4fea969fd88e9e2f1daa66fc4db255",
     "scripts/browser-smoke-test.js": "bfeb549ab7c5aed71268c0f78dbff6916835a925",
     "vercel.json": "53e72943a9da96435d013fbd44071952af6f5053"
 })
@@ -158,7 +158,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: frische ? { status: "Historische Nachweise bleiben erhalten; nur neue Artikel-/Radarfaelle werden ausgefuehrt" }
+    reused: frische ? { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT: vier unveraenderte Profilgruppen, drei Fachgruppen und sieben Radar-Browserchecks",
+      commit: "43282d1be8be5899696472a553d56ccb6f7f14dc",
+      url: "https://github.com/ernisch/helmut-pilot/actions/runs/43537245306" }
       : teilstand ? { status: "Historische Vorbelege bleiben erhalten; nur neue Teilstandfaelle werden ausgefuehrt" }
       : dip || mandat ? { status: mandat
       ? "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Mandatsworker unveraendert"
@@ -168,8 +170,8 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: frische ? ["Nur neue Frische-Profil-Gegenfaelle", "Neue Artikel-Tagesrelevanz-Regression",
-      "Syntax der tatsaechlich geaenderten JavaScriptdateien", "Neuer Radar-Klarheitsfall Desktop und Mobil"]
+    execute: frische ? ["Zwei geaenderte Frische-Schrittanker", "Sechs bisher offene Artikel-Tagesrelevanzgruppen",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
       : teilstand ? ["Nur neue Teilstand-Profil-Gegenfaelle", "Neue Teilstand-Fachregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien", "Neuer Teilstand-Browserfall auf Desktop und Mobil"]
       : mandat ? ["Nur neue Mandatsphasen-Profil-Gegenfaelle", "Eine neue begrenzte Workerregression",

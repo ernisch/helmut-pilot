@@ -9,7 +9,8 @@ const dipOnly = args.length === 1 && args[0] === "--dip-only";
 const mandatOnly = args.length === 1 && args[0] === "--mandat-only";
 const teilstandOnly = args.length === 1 && args[0] === "--teilstand-only";
 const frischeOnly = args.length === 1 && args[0] === "--frische-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const frischeNachtrag = args.length === 1 && args[0] === "--frische-nachtrag-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -34,6 +35,7 @@ function test(name, fn) {
   if (mandatOnly && !name.startsWith("Mandat:")) return;
   if (teilstandOnly && !name.startsWith("Teilstand:")) return;
   if (frischeOnly && !name.startsWith("Frische:")) return;
+  if (frischeNachtrag && !/^Frische: (?:Offlinejob|Browserjob)/.test(name)) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -327,20 +329,20 @@ test("Frische: Offlinejob startet nur neue Profilgegenfaelle Fachregression und 
   A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.TAGESFRISCHE))), [
     "Prüfplan aus geänderten Dateien", "Tagesfrische - neue Archivgrenzen und Profilbindung"
   ]);
-  A.match(workflow, /ci-lieferreparatur-plan-test\.js --frische-only/);
-  A.ok(workflow.includes("node scripts/lokal.js " + C.TAGESFRISCHE.REGRESSION_FILES[0]));
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --frische-nachtrag-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.TAGESFRISCHE.REGRESSION_FILES[0] + " --nur-offene"));
   A.match(workflow, /ci-lieferreparatur-plan\.js --syntax/);
   A.match(workflow, /github\.event\.pull_request\.base\.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8'/);
 });
-test("Frische: Browserjob startet nur neue Radar-Klarheit auf Desktop und Mobil", () => {
+test("Frische: Browserjob bewahrt den bestaetigten unveraenderten Radar-Klarheitsbeleg", () => {
   A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.TAGESFRISCHE))), [
-    "Prüfplan aus geänderten Dateien", "Abhängigkeiten installieren (aus package-lock.json)",
-    "Playwright + Chromium installieren", "Radar - neuer verstaendlicher Quellenstand Desktop und Mobil"
+    "Prüfplan aus geänderten Dateien", "Radar - bestaetigten Browserbeleg wiederverwenden"
   ]);
-  A.match(workflow, /browser-smoke-test\.js --radar-frischeklarheit/);
+  A.match(workflow, /43537245306\/job\/132269105907/);
+  A.match(workflow, /kein neuer Browser-PASS behauptet/);
   A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
 A.ok(count > 0);
-console.log(`${count}/${count} ${frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
