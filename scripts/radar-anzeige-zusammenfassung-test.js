@@ -24,7 +24,7 @@ assert.equal(state.anzeige.articles.length, 0);
 assert.equal(state.anzeige.summary.line1, "In dieser Radaransicht werden derzeit keine zugeordneten Signale angezeigt.");
 assert.equal(state.anzeige.summary.text, state.anzeige.summary.line1);
 assert.equal(state.anzeige.summary.line2, "");
-assert.match(state.summary.line2, /ein neues Signal/);
+assert.equal(state.summary.line2, "In deinem politischen Umfeld wird eine Entwicklung beobachtet.");
 assert.equal(JSON.stringify(args), before, "Zusammenfassung verändert keine Auswahl oder Quelldaten");
 
 const mentioned = { ...kos[0], mentioned_mps: [profile.fullName] };
@@ -44,5 +44,5 @@ const emptyEnv = { party: [], constituency: [], committees: [] };
 assert.match(R.buildSummary([], emptyEnv, [], now).text, /Im vorliegenden Datenbestand/);
 const visibleSignal = R.buildSummary([], emptyEnv, [{}], now, { nurAnzeige: true });
 assert.equal(visibleSignal.line1, "In dieser Radaransicht werden derzeit keine direkten Erwähnungen angezeigt.");
-assert.match(visibleSignal.line2, /ein neues Signal/);
+assert.equal(visibleSignal.line2, "In deinem politischen Umfeld wird eine Entwicklung beobachtet.");
 console.log("18/18 Radar Zusammenfassungsprüfungen bestanden");
