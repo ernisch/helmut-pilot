@@ -81,29 +81,48 @@ const TEILSTAND = Object.freeze({
     "vercel.json": "4f7c75ce053b4458378aa79d2f7f4e6bc0ece5aa"
   })
 });
+// Fuenftes festes Profil: aktuelle Artikelarbeit und reine Radar-Klarheit.
+// Exakter unabhaengig gepruefter Evidencebaum; keine allgemeine Runtimeausnahme.
+const TAGESFRISCHE = Object.freeze({
+  PR: 1188, BASE: "c97fbbd0e9a894e4072252be3863bffa29c625e8",
+  BRANCH: "codex/tagesfrische-und-radarklarheit-20261114", LOCAL_EVIDENCE_COMMIT: "cf7464c9a7020652e0eff31150633a717bcd41c4",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
+    "lib/helmut/scalable-pipeline.js", "lib/helmut/artikel-tagesrelevanz.js", "client.js"
+  ]), REGRESSION_FILES: Object.freeze(["scripts/artikel-tagesrelevanz-test.js"]), BLOBS: Object.freeze({
+    "client.js": "878077cea323a9bc50f09ba5c1ec18debac918b8",
+    "docs/CURRENT_STATE.md": "98eb4f6872e0da0a067b4e7ff722930bfbd53d9c",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "bcb058f08d376719bd3dc228ce94871fb7fd1e72",
+    "lib/helmut/artikel-tagesrelevanz.js": "acd16d56ca22447f430b34c1e395e686b0fcb18d",
+    "lib/helmut/scalable-pipeline.js": "669b1689062b00c28fdc943cc9bea0aa5952d1ac",
+    "scripts/artikel-tagesrelevanz-test.js": "4aec00aaf5f78e45a62acabf35eead2340051c28",
+    "scripts/browser-smoke-test.js": "bfeb549ab7c5aed71268c0f78dbff6916835a925",
+    "vercel.json": "53e72943a9da96435d013fbd44071952af6f5053"
+})
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === TEILSTAND.PR || headRef === TEILSTAND.BRANCH ? TEILSTAND
+const profileFor = ({ prNumber, headRef }) => prNumber === TAGESFRISCHE.PR || headRef === TAGESFRISCHE.BRANCH ? TAGESFRISCHE
+  : prNumber === TEILSTAND.PR || headRef === TEILSTAND.BRANCH ? TEILSTAND
   : prNumber === MANDAT.PR || headRef === MANDAT.BRANCH ? MANDAT
   : prNumber === DIP.PR || headRef === DIP.BRANCH ? DIP : EINPROFIL;
 const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (teilstand ? 6 : dip || mandat ? 1 : 4)
-    && REGRESSION_FILES.length === (teilstand || dip || mandat ? 1 : 3)
+    && RUNTIME_FILES.length === (frische ? 3 : teilstand ? 6 : dip || mandat ? 1 : 4)
+    && REGRESSION_FILES.length === (frische || teilstand || dip || mandat ? 1 : 3)
     && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
@@ -129,16 +148,18 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: teilstand ? "Exakter gepruefter Lage-Teilstand ohne Lockerung des Originalqualitaetsvertrags"
+    reason: frische ? "Exakte datumsgebundene Artikelarbeit und verstaendlicher gespeicherter Radarstand"
+      : teilstand ? "Exakter gepruefter Lage-Teilstand ohne Lockerung des Originalqualitaetsvertrags"
       : mandat ? "Exakte begrenzte Mandatsphase ohne Reader- oder Datenbankaenderung"
       : dip ? "Exakte DIP-Einzelartikelisolation ohne Browser- oder Datenbankaenderung"
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: teilstand ? { status: "Historische Vorbelege bleiben erhalten; nur neue Teilstandfaelle werden ausgefuehrt" }
+    reused: frische ? { status: "Historische Nachweise bleiben erhalten; nur neue Artikel-/Radarfaelle werden ausgefuehrt" }
+      : teilstand ? { status: "Historische Vorbelege bleiben erhalten; nur neue Teilstandfaelle werden ausgefuehrt" }
       : dip || mandat ? { status: mandat
       ? "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Mandatsworker unveraendert"
       : "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Quellenhandler unveraendert",
@@ -147,7 +168,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: teilstand ? ["Nur neue Teilstand-Profil-Gegenfaelle", "Neue Teilstand-Fachregression",
+    execute: frische ? ["Nur neue Frische-Profil-Gegenfaelle", "Neue Artikel-Tagesrelevanz-Regression",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien", "Neuer Radar-Klarheitsfall Desktop und Mobil"]
+      : teilstand ? ["Nur neue Teilstand-Profil-Gegenfaelle", "Neue Teilstand-Fachregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien", "Neuer Teilstand-Browserfall auf Desktop und Mobil"]
       : mandat ? ["Nur neue Mandatsphasen-Profil-Gegenfaelle", "Eine neue begrenzte Workerregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
@@ -199,7 +222,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
