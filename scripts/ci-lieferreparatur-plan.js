@@ -130,9 +130,28 @@ const VERSIONSKONFLIKT = Object.freeze({
     "vercel.json": "7333a34ba8e230354d12b84b2ab9a2033ace7415"
   })
 });
+// Achtes festes Profil: eine streng gebundene Ergaenzung nach bekanntem Negativreview.
+const LAGEERGAENZUNG = Object.freeze({
+  PR: 1191, BASE: "0339f19e6167d9f0f9eff67b7acfb0e997af1180",
+  BRANCH: "codex/lage-ergaenzung-20261114",
+  LOCAL_EVIDENCE_COMMIT: "e517ef976c4e7308a8021cdf56e3fe1d584456cd",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
+    "lib/helmut/lage.js", "lib/helmut/ai.js", "lib/helmut/lage-ergaenzung.js"
+  ]), REGRESSION_FILES: Object.freeze(["scripts/lage-ergaenzung-test.js"]),
+  BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "f2574c90c0fb3dfe6cc3d0ff98cea9a06183377c",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "d2e58880cda1ad6daf03250a476fcc1e0d737e5d",
+    "lib/helmut/lage.js": "40eb287daa6478b6541632f1db984b915f142df7",
+    "lib/helmut/ai.js": "8098593988c3fe220636459be0e0d599e95469c8",
+    "lib/helmut/lage-ergaenzung.js": "00899a0ee097889419ad03a63b975006b8c0ed34",
+    "scripts/lage-ergaenzung-test.js": "813ea9f05a58fe89ca7b66e5b44dab14b575e7bb",
+    "vercel.json": "9ca2788b82276face0ff07102a44061b0e033d7a"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === VERSIONSKONFLIKT.PR || headRef === VERSIONSKONFLIKT.BRANCH ? VERSIONSKONFLIKT
+const profileFor = ({ prNumber, headRef }) => prNumber === LAGEERGAENZUNG.PR || headRef === LAGEERGAENZUNG.BRANCH ? LAGEERGAENZUNG
+  : prNumber === VERSIONSKONFLIKT.PR || headRef === VERSIONSKONFLIKT.BRANCH ? VERSIONSKONFLIKT
   : prNumber === ABRUFANTEIL.PR || headRef === ABRUFANTEIL.BRANCH ? ABRUFANTEIL
   : prNumber === TAGESFRISCHE.PR || headRef === TAGESFRISCHE.BRANCH ? TAGESFRISCHE
   : prNumber === TEILSTAND.PR || headRef === TEILSTAND.BRANCH ? TEILSTAND
@@ -142,21 +161,21 @@ const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
-    && REGRESSION_FILES.length === (konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
+    && REGRESSION_FILES.length === (ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -181,10 +200,11 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: konflikt ? "Exakte Artikelkonfliktisolation ohne Freigabe inkompatibler Quellenversionen"
+    reason: ergaenzung ? "Exakte einmalige Lage-Ergaenzung mit unveraenderter Gesamtpruefung und Phasensicherheit"
+      : konflikt ? "Exakte Artikelkonfliktisolation ohne Freigabe inkompatibler Quellenversionen"
       : abruf ? "Exakter begrenzter Abrufanteil ohne weiteren Slot oder Datenbank-/Readeraenderung"
       : frische ? "Exakte datumsgebundene Artikelarbeit und verstaendlicher gespeicherter Radarstand"
       : teilstand ? "Exakter gepruefter Lage-Teilstand ohne Lockerung des Originalqualitaetsvertrags"
@@ -193,7 +213,10 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: abruf || konflikt ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, Paketleser, Lage, Radar und Abhaengigkeiten unveraendert",
+    reused: ergaenzung ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, normaler Ausgabe-/Paketlesevertrag und Abhaengigkeiten unveraendert",
+      urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43531055622",
+        "https://github.com/ernisch/helmut-pilot/actions/runs/43537245306/job/132269105907"] }
+      : abruf || konflikt ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, Paketleser, Lage, Radar und Abhaengigkeiten unveraendert",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43531055622",
         "https://github.com/ernisch/helmut-pilot/actions/runs/43537245306/job/132269105907"] }
       : frische ? { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT: vier unveraenderte Profilgruppen, drei Fachgruppen und sieben Radar-Browserchecks",
@@ -208,7 +231,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: konflikt ? ["Nur neue Versionskonflikt-Profilgegenfaelle", "Neue native Artikelkonfliktregression",
+    execute: ergaenzung ? ["Nur neue Ergaenzungs-Profilgegenfaelle", "Neue Lage-/KI-/Phaseninteraktionen",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
+      : konflikt ? ["Nur neue Versionskonflikt-Profilgegenfaelle", "Neue native Artikelkonfliktregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
       : abruf ? ["Nur neue Abrufanteil-Profilgegenfaelle", "Neue begrenzte Worker-Fairnessregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
@@ -266,7 +291,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

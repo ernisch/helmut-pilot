@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/lage-ergaenzung-20261114": false,
       "codex/artikel-versionskonflikte-20261114": false,
       "codex/quellenabruf-arbeitsanteil-20261114": false,
       "codex/tagesfrische-und-radarklarheit-20261114": false,
