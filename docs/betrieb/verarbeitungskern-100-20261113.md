@@ -30,7 +30,20 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:2/10Merges (PR1188/1189),8weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:3/10Merges (PR1188/1189/1190),7weitere nur beiGruen verbleiben.
+**PR1190 regulaer ausgerollt,05:29–05:34UTC:** Merge
+0339f19e6167d9f0f9eff67b7acfb0e997af1180, Parents441ed0af/14295ec3,
+Treece919789e274dd832e50fee145bde7432b81bd92 exakt wie gepruefter Kopf.
+CI43561501437 beide Pflichtchecks gruen:9/9neueArtikelgruppen,6/6neueProfilgruppen,
+geaenderte JS-Syntax bestanden. Keine alten Gruppen ausgefuehrt. Root und
+unabhaengige Fach-/Test-/CI-/Vollbaumreviews ohne Befund, Evidence5cf693f2.
+Vercel dpl_3zGF2y2A1NuGN33QgvEC2X4Wnu1Y Git/Production/fra1 READY05:29:09UTC,
+Hauptalias/Runtime0339, anonym401; exklusive Profile und Sperren bestaetigt.
+Vor Merge0laufendeProzesse/Leases und nurCEMaktiv. Kosten05:34unveraendert
+0,567350USDTag/3,290827USDgesamt/8alteoffeneReserven; aktuelles79erPaket und
+Quittung05:15unveraendert. Keine Produktlaeufe/Modelle oder Datenkorrekturen
+zur Nachkontrolle, Diagnose greift kuenftig im normalen Sourcepfad.
+Nachtzaehler3/10, sieben weitere nur bei Gruen. Lage bleibt Teilstand.
 **Belegter Artikelversionskonflikt, 04:56 UTC:** Neuer441-Worker fasst die drei
 Restquellen im Abrufanteil bereits04:45:38–04:45:45 an. Einzelne bestaetigte Fehler
 halten den gemischten Rest nicht auf. Zwei Quellen melden weiter insgesamt vier
