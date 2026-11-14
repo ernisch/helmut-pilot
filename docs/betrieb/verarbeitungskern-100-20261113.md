@@ -31,6 +31,31 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+**PR1189 normal ausgerollt, 04:30–04:40 UTC:** Merge
+441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616, Parents5a734cc3/26efed8b,
+Tree5a1e501bf7b350f5beba71b0147b4d0f044d7ea5 exakt wie gepruefter Kopf.
+CI43556801462: 8/8 neue Workergruppen, 6/6 neue Profilgruppen und geaenderte
+JS-Syntax bestanden; beide Pflichtchecks gruen, Browserbelege nur wiederverwendet.
+Root/Runtime-/CI-/Vollbaumreviews ohne Befund, Evidencec1512499.
+Regulaeres Gitdeploymentdpl_CDE4tn7LvZDQyGwBtiMGeMYQ5drd READY/fra1 um04:30:45UTC;
+Hauptalias/Runtime441ed0af, exklusive relationale Profile und Sperren bestaetigt,
+anonym401. Vor Merge keine laufenden Prozesse/Leases, nur CEM aktiv.
+Nachtzaehler jetzt **2/10**, acht weitere nur bei Gruen. Keine Budget-/Datenaenderung.
+Noch auf5a gestarteter Lauf04:30:23–04:34:08UTC:105erledigt/0Fehler/193deferred.
+Neuer Abrufanteil kann erst im regulaeren04:45-Fenster real beansprucht werden.
+Mandatsprojektion04:15:29 und Paketmaterialisierung04:30:37 erledigt. Neues Paket
+04:30:35.531UTC/hashb409f318ac833384dca20bdcd7a33226a78f0b9e2308f6a07b1d634015c4a26d:
+78Eintraege, bestaetigter Lageabsatz erhalten. Aktuelle Leserprobe besteht bis
+Absatz-/Teilstandpruefung, scheitert dann an erwarteter gebundener Quittung:
+quittungGebunden=false, denn Morgenlagequittung weiterhin03:37 fuer altes Paket.
+Kein neuer Leser-PASS/keine Vollabnahme behauptet; regulaerer Morgenabschluss steht aus.
+Kostenbuch04:40:0,552729USDTag/3,276206USDgesamt, acht alte offene Reserven.
+Neue reine Offline-Groessenmessung: aktuelles Paketpayload3.366.851UTF8-Bytes,
+davon2.760.132Bytes rekursive vorherigerStand-Historie (rund82%). Ohne Historie
+606.700Bytes. Archiv unveraendert; kein Slim-RPC vorhanden. Mehrfache JSONB-Feld-
+Extraktion spart Netzbytes, kann aber TOAST-/DB-RAMarbeit erhoehen; deshalb ohne
+belegten DB-Ressourcenvorteil nicht eingebaut. Konkretes offenes100-Kunden-Risiko,
+kein Kapazitaets-/RAMversprechen. Keine Test-, Modell- oder Migrationswiederholung.
 **Kontrolle 14.11., 04:07 UTC und gezielter Folgefix:** main/Runtime weiterhin
 5a734cc3; nur CEM aktiv, Kommunikations-/Kohortensperre bestaetigt.
 Fuenfter Quellenlauf 04:00:46–04:04:33 UTC: 2 erledigt, 2 endgueltige Fehler,
