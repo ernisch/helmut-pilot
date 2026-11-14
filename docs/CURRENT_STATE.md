@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
-**14.11.2026UTC/Berlin: PR1189 live. Automatisches Paket04:30:78Eintraege/1Absatz.
-Weiter Teilstand; Quittung noch auf03:37 gebunden. Kein vollstaendiger Liefernachweis.**
+**14.11.2026UTC/Berlin: PR1189 live. Paket05:15:79Eintraege/5Karten/1Lageabsatz.
+Leser/Profil/Quelle/Tag/Quittung bestaetigt; Lage bleibt Teilstand. PR1190 in Pruefung.**
 Production/main `441ed0af`, [PR1189](https://github.com/ernisch/helmut-pilot/pull/1189), gepruefter Kopf `26efed8b`.
 Vercel `dpl_CDE4tn7LvZDQyGwBtiMGeMYQ5drd`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
@@ -13,8 +13,8 @@ bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1189: acht neue Workergruppen/sechs neue CI-Gruppen/Syntax bestanden in43556801462.
 Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Nur begrenzter Abrufanteil;
 keine weiteren Slots, Budgets, Cron oder Datenkorrekturen. Runtime/Alias441/anonym401.
-Regulaeres04:30-Paket78Eintraege/1Absatz bleibt mangels aktueller Quittung vorlaeufig.
-Kosten04:40:0,552729USDTag/3,276206USDgesamt/8alteReserven; Quellenlauf105erledigt/0Fehler.
+Regulaeres05:15-Paket79Eintraege/1Absatz wird gebunden ausgeliefert; weiter Teilstand.
+Kosten05:01:0,567350USDTag/3,290827USDgesamt/8alteReserven; 04:45-Worker13done/2Fehler.
 
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.

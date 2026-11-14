@@ -47,8 +47,31 @@ Archivstand als idempotenten Artikel-Diagnosejob isolieren. Alte Nebenvarianten
 bei vorhandener guter aktueller Version ignorieren; fehlende Canonical-/Hash-/
 Lesebestaetigung bleibt unbekannt und sperrt Sourceabschluss. Keine Metadaten-
 Umschreibung alter KO-Belege, Readerablehnung unveraendert, keine Jobresets.
-Fehlerartikel bleiben in Qualitaets-/Versorgungsstatus sichtbar. Umsetzung und
-enge neue Regression offen; bisher weiter2/10Nachtmerges.
+Fehlerartikel bleiben in Qualitaets-/Versorgungsstatus sichtbar. Folgefix PR1190
+implementiert und unabhaengig ohne Blocker gelesen: Workercommit a269f204,
+genau nativer Versionsleser/Sourcehandler plus neun neue Interaktionsgruppen.
+Privater WeakMap-Befund bindet vorhandene Canonical und validen Archivhash;
+manipulierte/serialisierte Fehlermarker und ungueltige Canonical-Daten bleiben
+UNKNOWN. Gute Variante derselben ID gewinnt, zusaetzlicher unbekannter Zustand
+bleibt Sourcefehler. Idempotente Diagnosen pro ID+Stand/max1 enden vor Modellen;
+strenger Quellenguard unveraendert. Effektives originales Claimfenster bleibt
+gebunden, kein Date.now-Ersatz. Neun neue Fach-/sechs neue CI-Gruppen und Syntax
+noch offen; keine alten Gruppen wiederholen. Bisher weiter2/10Nachtmerges.
+**Regulaerer Morgenabschluss05:15 bestaetigt:** Lauf05:15:30–05:15:43UTC bleibt
+partial, ein Mandat wegen fachlichem Teilstand zurueckgestellt. Paket05:15:40.939UTC
+mit79Eintraegen/5Karten/1geprueftemAbsatz, Hash
+cf18de1cf08e2cbd57dab789bf79ef672b0d9bb5a8851e9603b3d26fa7b64747.
+Quittung05:15:43.292UTC bindet aktuelles Paket/Profil/Berlintag/Briefinghash.
+Normaler Leser auf neuen exakten privaten Livesnapshots05:18UTC ueber
+scripts/lokal.js bestanden: Profil/Quellen/Policy/Tag/Quittung passen, Absatz
+unveraendert und gueltiger Teilbeleg, keine privaten Reviews im DTO, Snapshots
+unveraendert. Kein authentifizierter Production-HTTP-/Browsernachweis.
+Fehler bleiben Quellenversorgung offen/kein Tagesanlass/LageTeilstand;
+keine Vollabnahme. Vorzeitige Quittungserwartung04:30 bleibt als gescheiterter
+Zwischennachweis erhalten. Regulaere Lage05:00:23–05:00:30UTC partial/1verarbeitet/
+0Fehler; kein neuer voller Lagecache. Erster441-Quellenlauf04:45:23–04:49:09UTC:
+13erledigt/2endgueltigeFehler/211deferred, Restquellen wurden im Abrufanteil erreicht.
+Kosten05:01:0,567350USDTag/3,290827USDgesamt,8alteoffeneReserven/0neueoffene.
 **PR1189 normal ausgerollt, 04:30–04:40 UTC:** Merge
 441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616, Parents5a734cc3/26efed8b,
 Tree5a1e501bf7b350f5beba71b0147b4d0f044d7ea5 exakt wie gepruefter Kopf.
