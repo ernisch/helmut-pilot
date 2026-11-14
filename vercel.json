@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/lage-kostenvertrag-20261114": false,
       "codex/lage-ergaenzung-20261114": false,
       "codex/artikel-versionskonflikte-20261114": false,
       "codex/quellenabruf-arbeitsanteil-20261114": false,
