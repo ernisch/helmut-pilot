@@ -1,4 +1,22 @@
 # CURRENT STATE — Helmut
+**14.11.2026,17:13UTC: PR1198 integriert,20neueGruppenbelegt, Pflicht-CI nochOFFEN.**
+Base/main/Production529d47f8 unveraendert; keine neue Produkt-/Modelloperation.
+Genau5Runtime-Dateien und3neueRegressionen,2Statusdocs+3gebundeneCI-Dateien.
+Artikel-Abseits: nurgebundeneNULL/NULL-Publisherziele odernativvollbestaetigte
+technischeExtraktionsnegative. Positiv/UNKNOWN/Store/Deadline habenVorrang.
+Abseitsmarker vorAbschlussperFortschrittCAS, nativeKostenfreiversuchemax3,
+spätereClaims/Wiedervorlagen quittierennurStatus. KeineParser-/Modellwiederöffnung.
+Fachbelege: gueltigeEinzelbelegebleiben trotzungueltigerNachbarn erhalten;
+privatev2Diagnose mitmax12Hash-/Boolbelegen,Annahmebedingungenunveraendertstreng.
+Quellenabschluss: beendetemitFehlern bleibenVersorgungoffen/GAP,neueErklaerung
+stattbehaupteterweiterlaufenderVerarbeitung; keinRuhe-/Vollversorgungspass.
+LokaleNEUEGruppen20belegt:8Fachisolierung(1Lauf),4Abschluss(1Lauf),8Abseits
+(3PASSimrotenErstlauf,5PASSimNachtrag;nurFremdstand-Testfixturekorrigiert).
+Erstfehlerunveraendertgesichert,keinebereitsgruenenFach/Browser/Mengenfaellewiederholt.
+Root+2unabhaengigeReviewsruntime/testohneoffenenBefund; finaleCI-Bindungnochfolgend.
+AlleKundenausgabenweiterb2cb2abd/77Vorgaenge/2vorlaeufigeTexte,keineTagesprioritaet.
+KeinevollstaendigeFunktions-/100KundenabnahmeausdieserlokalenPruefungableiten.
+
 **14.11.2026: neuer autonomer Umsetzungsauftrag nach erneuter Betreiberfreigabe.**
 Betreiber erlaubt weitere auftragsbezogene normale Merges bei exakt gruener Pflicht-CI
 und unabhaengiger Abnahme; die fruehere10erMergegrenze begrenzt diese neue Freigabe nicht.
