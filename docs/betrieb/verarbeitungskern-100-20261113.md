@@ -31,7 +31,7 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:3/10Merges (PR1188/1189/1190),7weitere nur beiGruen verbleiben.
-**Gezielte Lage-Ergaenzung in Umsetzung:** Originaler Teilstand ist gueltig und
+**PR1191 gezielte Lage-Ergaenzung implementiert, CI offen:** Originaler Teilstand ist gueltig und
 genau ein Absatz nur wegen Profilbezug abgelehnt. Ein einziges Ersatzobjekt aus
 uebrigen originalen Quellen soll mit dem wortgleichen positiven Originalabsatz
 erneut durch den unveraenderten strengen Q-/Paarvertrag gehen. Hoechstens ein
@@ -39,8 +39,21 @@ Ergaenzungsvertrag je Basis-Eingabe, Originalteilstandhash, Regelv1, Mandat/Tag;
 vorhandene V-Phasen und Kosten-/Slot-/Tenantgates, kein UNKNOWN-Schluesselausweg.
 Unklare oder negative Ergaenzung behaelt den bestaetigten Teilstand; App/cacheOnly,
 historische/frozen/gebundene Pfade unveraendert. Kein Tagesanlass/Quellenbeleg
-entsteht durch eine Textkorrektur. Kein neuer Modellaufruf oder Test bisher;
-Implementierung, enge neue Regression und unabhaengige Abnahme offen.
+entsteht durch eine Textkorrektur. Produktcommit a291878b plus OFF-Nachtrag
+fc94edce in Integration97ae6d46/2c27b299: lage.js/ai.js, privater WeakMap-Vertrag
+lage-ergaenzung.js und zehn neue Interaktionsgruppen. Native Phasen speichern
+Entwurf/Review getrennt; bestaetigte Phasen bleiben kostenlos wiederverwendbar,
+unklare Ausgaenge gesperrt. Modell OFF startet keine neue Phase. Bereits bestaetigte
+Teilkopie ueberlebt spaetere Lesefehler nur mit erneut geprueften Bindungen;
+erfolgreiches GET(null) oder geaenderte Quellen/Policy erlauben keinen Rueckfall.
+Vollcache gewinnt auch nach verlorenem Schreibausgang; privater Ergaenzungsbeleg
+bleibt ausserhalb des DTO. Root plus zwei unabhaengige Runtime-/Test-/Delta-Reviews
+und separate CI-Strukturreview ohne Befund. Zehn neue Interaktionsgruppen/sechs
+neue CI-Gruppen/geaenderte Syntax noch nicht ausgefuehrt, alte Belege unveraendert.
+Reine lokale Vertragsprobe auf exaktem05:15-Teilstand: drei andere Quellen fuer
+Ergaenzung verfuegbar. Keine DB-/Modellaufrufe oder Produktdatenaenderung dabei;
+fachliche Tragfaehigkeit entscheidet erst die unveraenderte Inhaltspruefung.
+Tatsaechliche Production bleibt ein Absatz; kein neuer Voll-PASS.
 **PR1190 regulaer ausgerollt,05:29–05:34UTC:** Merge
 0339f19e6167d9f0f9eff67b7acfb0e997af1180, Parents441ed0af/14295ec3,
 Treece919789e274dd832e50fee145bde7432b81bd92 exakt wie gepruefter Kopf.

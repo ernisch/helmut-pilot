@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
 **14.11.2026UTC/Berlin: PR1190 live. Paket05:15:79Eintraege/5Karten/1Lageabsatz.
-Leser/Profil/Quelle/Tag/Quittung bestaetigt; Lage bleibt Teilstand. Einmal-Ergaenzung in Arbeit.**
+Leser/Profil/Quelle/Tag/Quittung bestaetigt; Lage bleibt Teilstand. PR1191 implementiert, neue CI offen.**
 Production/main `0339f19e`, [PR1190](https://github.com/ernisch/helmut-pilot/pull/1190), gepruefter Kopf `14295ec3`.
 Vercel `dpl_3zGF2y2A1NuGN33QgvEC2X4Wnu1Y`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
@@ -15,6 +15,13 @@ Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Strenger Reader ble
 Konfliktartikel isoliert, keine Datenkorrektur/Budgetaenderung. Runtime/Alias0339/anonym401.
 Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
 Kosten05:34:0,567350USDTag/3,290827USDgesamt/8alteReserven; Paket/Quittung unveraendert.
+PR1191 ergaenzt einen bestaetigten Teilstand hoechstens einmal je Basis/Originalhash/Tag.
+Positiver Absatz bleibt wortgleich; beide alten Artikel sind ausgeschlossen, gesamte
+neue Zweierausgabe durchlaeuft unveraenderten Q-/Paarvertrag. UNKNOWN bleibt gesperrt.
+CacheOnly/Altpfade unveraendert; Fehler behalten verifizierten Teilstand. Root plus
+unabhaengige Runtime-/Delta-/CI-Reviews ohne Befund; AI-OFF startet keine Phase.
+Zehn neue Interaktionsgruppen/sechs neue CI-Gruppen/Syntax noch nicht ausgefuehrt;
+keine bezahlte Verarbeitung. Reale Eingabe besitzt drei andere Quellen, kein Voll-PASS.
 
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
