@@ -1,4 +1,18 @@
 # CURRENT STATE — Helmut
+**14.11.2026: neuer autonomer Umsetzungsauftrag nach erneuter Betreiberfreigabe.**
+Betreiber erlaubt weitere auftragsbezogene normale Merges bei exakt gruener Pflicht-CI
+und unabhaengiger Abnahme; die fruehere10erMergegrenze begrenzt diese neue Freigabe nicht.
+Produktziel: unlesbare Artikel nachvollziehbar abseits, brauchbare Nachbarn bis Briefing,
+Lage und Radar; sichere begrenzte Reparatur ohne Aufweichen von Belegen oder UNKNOWN.
+Isolierter Branch codex/autonome-artikelversorgung-20261114 abmain529d47f8.
+Root integriert; Fresh schreibt nur Artikel-Abseits/Pipeline, Delivery nur Fachbelege,
+je eigenerWorktree, maximal3Agenten. Historische Nachweise unveraendert behalten.
+NurCEM bleibt aktiv; Budgets1USDTag/30gesamt und8alteReserven unveraendert.
+Keine neuen Quellenfenster, Datenkorrekturen, Migrationen, Env/Cron/Flags oder Kunden
+allein aus Mergefreigabe ableiten; kein Designumbau, keine Mails/Kommunikation.
+Betriebsvorflug16:38UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt/8offene/0Leases.
+Die folgenden datierten Ergebnisse sind bestehende Primaerbelege, kein neuer Voll-PASS.
+
 **14.11.2026,14:49UTC: echtes aktualisiertes Tagespaket gespeichert+ausgeliefert; Tagesprioritaet weiteroffen.**
 main/Production529d47f8(PR1197), Runtime/Schutzbindung13:22:26UTCbestaetigt.
 77Vorgaenge/Briefing2/Lage2/Radar2+Partei1 realgespeichert+normalgelesen; weiterhinvorlaeufig.
