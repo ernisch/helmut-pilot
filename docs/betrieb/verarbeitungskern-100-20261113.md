@@ -47,6 +47,35 @@ Kostenbuch03:22:54UTC:0,137613USDTag/2,861090USDgesamt,8alteoffeneReserven
 unveraendert. Paket00:07/hash63694c77 unveraendert. Kein manueller Quellenlauf,
 keine neue Wiederverarbeitung, Tests oder Modellaufrufe zur Diagnose.
 
+**Zwischenlauf14.11.,03:35–03:50UTC:** Drittes regulaeres Quellenfenster
+03:30:12–03:34:02UTC erledigt16Auftraege ohne Einzelfehler,81zurueckgestellt.
+Danach einmal bestehende Lage- und Morgenpaketroute fuer CEM im laufenden
+Einprofilauftrag auf neuen Eingaben gestartet, beide200. Neuer Paketstand
+03:37:17.783UTC:72Eintraege/5Lagekarten/1bestaetigterAbsatz, Hash
+495c41d1c460b9a37f9587464a5bb61f3e41bf6cca2950a321546668eac4787b.
+Teilbeleg98fbdb20d82549fe78fceffbea902ec9bd69f43b4a5134c5c7b91e942fa6f822
+bindet Eingabe74c899d6aebc22d95959b1c8320107e475b9639d14120d49a5458aa7fcb2fc48.
+Zwei neue Modellaufrufe0,012273USD; danach0,251616USDTag/2,975093USDgesamt,
+acht alte offene Reserven unveraendert. Keine blinde Wiederholung.
+Normaler Paketleser03:50UTC auf exakten privaten Production-Snapshots ueber
+scripts/lokal.js bestanden:72Eintraege/5Karten/1Absatz/2Radarentwicklungen;
+Profil/Quellen/Policy/Berlintag/Quittung passen, private Reviewdaten fehlen im DTO,
+Snapshots unveraendert. Kein authentifizierter HTTP-/Browsernachweis.
+Radar letzter Quellenbeleg nun12.11.13:01:58UTC, weiterhin korrektstale.
+Paket bleibt teilweise:Quellenversorgung offen,keinTagesanlass,LageTeilstand.
+Neuer Entwurf verwendet erneut ein sachlich unpassendes Profilfeld fuer eine
+Quelle; unabhaengiger Review haelt nur diesen Absatz zurueck. Zwei unabhaengige
+rein lokale Gegenpruefungen der privaten Originalbindung: Stichwortoptionen
+schliessen Tarifbindung aus, empfehlen aber erneut den zuvor abgelehnten
+Ausschussbezug allein wegen Gewerkschaftsnennung. Kein belegter sicherer Fix;
+keine Runtime-/Promptaenderung und keine neue Bezahlung gleicher Eingaben.
+Andere eigenstaendige Fachthemen vorhanden, zweiter volltragfaehiger Absatz
+damit weder bewiesen noch ausgeschlossen. Review und Teilstand bleiben erhalten.
+Viertes regulaeres Quellenfenster03:45:12–03:48:58UTC
+cron-crawl-20261114034512-v1k4b:77Ziel/23erledigt/0Fehler/51zurueckgestellt,
+statussuccess, weiter5a734cc3. Kostenbuch03:54UTC:0,355701USDTag/
+3,079178USDgesamt/8alteoffeneReserven. Paket03:37 unveraendert.
+
 Zwei heutige Eingangsdiagnosen sind isolierte DIP-Dokumente292420/292370,
 je ein Versuch, Grunddip-quellfelder-nicht-bestaetigt, kein Modellversand.
 Originalantwort/Feldcodes fehlen; keineRawzeilen gespeichert. Die oeffentlichen

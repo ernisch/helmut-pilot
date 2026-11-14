@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
-**14.11.2026UTC/Berlin: PR1188 live beansprucht;03:00/03:15 automatisch75Auftraege
-erledigt. Paket57Eintraege/8Karten/1Absatz bis05:15; Quellenversorgung noch offen.**
+**14.11.2026UTC/Berlin: PR1188 live;03:37 neues Paket72Eintraege/5Karten/1Absatz.
+Gespeicherter Leser liefert es gebunden aus; weiter Teilstand/Quellen offen.**
 Production/main `5a734cc3`, [PR1188](https://github.com/ernisch/helmut-pilot/pull/1188), gepruefter Kopf `a58c0de9`.
 Vercel `dpl_D79CzZSN6FcY4BMNV6hmvm4P8QHg`
 READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarbeit` (Datei `20261113165614`, nicht erneut anwenden).
@@ -10,11 +10,11 @@ Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderu
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 
-Manueller Einprofiltest nach explizitem Go20:49–20:50 UTC: einmal Lage, einmal Paketbau,
-beide200. Neue Lage mit2 belegten Absaetzen/9 Karten, volle Lageansicht und gebundene
-Quittung gespeichert; zwei Modellaufrufe0,015513 USD. Tagesbindung0,317017 USD,
-gesamt2,538017 USD, acht alte offene Reserven erhalten. Tagespaket teilweise:
-Quellenversorgung offen/kein Tagesanlass. Kein fachlicher Gesamt-PASS.
+Zwischenlauf03:35–03:37UTC im bestehenden Einprofilauftrag: Lage/Paket je einmal200.
+Paket03:37:17.783UTC/hash495c41d1:72Eintraege/5Karten/1gepruefter Lageabsatz,
+Radar2Entwicklungen, letzter Beleg12.11. Leser auf exakten privaten Livesnapshots:
+Profil/Quellen/Policy/Tag/Quittung gebunden; keine privaten Reviewdaten im DTO.
+Zwei Modellaufrufe0,012273USD;Tag0,251616USD/gesamt2,975093USD/8alteReserven.
 
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
