@@ -30,7 +30,32 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
+**PR1193 normal gemergt08:43UTC, reguläres Deployment08:51noch fehlend:**
+Gepruefter Kopf b87f20ac623da5dc5beba680731b47cfb0073729, Evidenceabb5dc3f,
+Merge4a49cbefa84950128116599dd667b181f79909be, Parents097d14/b87f20,
+Treeb59344e7680d9d84a6b88229cf173cbc63c7ddc7 exakt wie Kopf. Root+unabhaengige
+Runtime/UI/Radar/Delta/CI/Vollbaumreviews ohne Restbefund. Nachtzaehler6/10.
+CI43576941086 beide Pflichtchecks gruen:5/5neue echteChromiumBrowserchecks
+Desktop/Mobil,2neue/geaenderteRunnergruppen undgeanderteTestsyntax. Erster
+CI43576427744:2Backend/6Plan/7Syntax bestanden, Browsersetup vorAppstartFAIL,
+weil ubuntu-latest inzwischen26.04 und Playwright1.56.1 nicht kompatibel.
+Nur exaktes1193Tupel browserjob auf24.04, Default/Playwrightpin unveraendert.
+Gruener Erstofflinejob132391553513 viaGitHubRun/Job/Head/Attempt/Repo/Workflow
+und vollstaendige Gitidentitaet uebernommen; kein Wiederholen gruener Gruppen.
+Bis08:51kein Vercel-Deployment/GitHub-Deploymentstatus fuerMerge vorhanden;
+letzte Production bleibt097d14/dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd. Gitlink
+repo/main aktiv, keine nachgewiesene Anbieterursache. [skip ci]-Marker im Merge
+als Hypothese, bisherige Merges damit funktionierten; keine Ursache behaupten.
+EIN gitgestuetzter Ersatzrollout ist nur als konkreter Vorschlag unabhaengig
+geprueft: /workspace/helmut-review/pr1193-production-rollout.json, SHA256
+ce742f3b2d6d5331d8d7b0711869f009165efa9d7d891c06ad482bb46cbfaab5.
+Userfreigabe separat angefragt und AUSSTEHEND. Keine API-Deploymentmutation,
+kein zweiter Weg, kein neuer Quell-/Modell-/SQLlauf. Vor eventuellem GO erneut
+Dedupe und aktuelle Lage lesen, danach READY/Commit/Alias/Auth/Assetbytes pruefen.
+Budgetvorflug unveraendert0,581580USDTag/3,305057USDgesamt/8alteReserven,
+nurCEM/0aktuelleProzesse/Leases. Keine UI-Liveabnahme behaupten, solange alte Assets.
+
 **PR1193 konkrete UI-Reparatur, erste gezielte Abnahme offen:**
 Radarbackend e8b51613 (Root2dda1b5e) von Root+Delivery abgenommen: nur neutrale
 Dynamikformulierung,2neue Bestandsgruppen,2angepasste alte Erwartungen ohne

@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
-**14.11.2026,08:10UTC: echte Kundenscreenshots zeigen Darstellungsfehler.
-2gepruefteLageabsaetze geliefert, UI-ReparaturPR1193 und erste neue Browserabnahme offen.**
-Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
+**14.11.2026,08:51UTC: PR1193 gemergt/gruen, Production-Rollout bislang fehlend.
+5neueBrowserchecks bestanden; gepruefter Ersatzrollout separat angefragt, nicht ausgefuehrt.**
+main `4a49cbef`, [PR1193](https://github.com/ernisch/helmut-pilot/pull/1193), Kopf `b87f20ac`; Production noch `097d14e2`.
 Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
 Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
@@ -10,8 +10,8 @@ Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation g
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1190:9Artikel-/6CI-Gruppen43561501437 bestanden; strenger Versionsreader bleibt.
 Realer Leser08:05:79Items/5Karten/2Absaetze/Quittung. Keine UI-Vollabnahme.
-Screenshot: Lageabsatz nur in geschlossenen Details, mobiler Titel zu lang;
-Radar nennt3alteDynamiken „neu“. Quellenstand14 stammt korrekt aus Umfeldquelle.
+PR1193 behebt versteckte Lageabsaetze/mobilen Riesentitel/Radarneuigkeit,5Browserfaelle gruen;
+Production zeigt noch alten UI-Code; Quellenstand14 stammt korrekt aus Umfeldquelle.
 Briefinggap bleibt fachlich richtig; vorhandene79 sind keine neuen Tagesprioritaeten.
 Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
@@ -34,7 +34,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**5/10Merges verbraucht,5frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**6/10Merges verbraucht,4frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
