@@ -30,7 +30,25 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:2/10Merges (PR1188/1189),8weitere nur beiGruen verbleiben.
+**Belegter Artikelversionskonflikt, 04:56 UTC:** Neuer441-Worker fasst die drei
+Restquellen im Abrufanteil bereits04:45:38–04:45:45 an. Einzelne bestaetigte Fehler
+halten den gemischten Rest nicht auf. Zwei Quellen melden weiter insgesamt vier
+nicht zuordenbare Artikelversionen (Bundestag1/Bundesregierung3), EUR-Lex liefert
+eine ungueltige RSS-Antwort. Keine Qualitaetslockerung oder erneute Produktabrufe.
+Einmalige lesende Diagnose der drei betroffenen amtlichen RSS-Dateien und
+43 indexgebundene Canonical-Metadaten: alle43Rows vorhanden, genau4Metadatenkonflikte.
+Nur deren vier Archiv-Keybereiche gelesen: acht Alt-/Neu-Versionen, alle Hashes
+gueltig; je eine entspricht dem aktuellen Feed und eine den alten Canonical-Daten.
+Native Versionsleser lehnen den Wechsel korrekt ab. Ganze Quellen wiederholen
+dadurch trotz brauchbarer Nachbarn bis fuenfmal; kein fehlender Schreibbeleg.
+Geplanter kleiner Folgefix: ausschliesslich nachgewiesenen vorhandenen inkompatiblen
+Archivstand als idempotenten Artikel-Diagnosejob isolieren. Alte Nebenvarianten
+bei vorhandener guter aktueller Version ignorieren; fehlende Canonical-/Hash-/
+Lesebestaetigung bleibt unbekannt und sperrt Sourceabschluss. Keine Metadaten-
+Umschreibung alter KO-Belege, Readerablehnung unveraendert, keine Jobresets.
+Fehlerartikel bleiben in Qualitaets-/Versorgungsstatus sichtbar. Umsetzung und
+enge neue Regression offen; bisher weiter2/10Nachtmerges.
 **PR1189 normal ausgerollt, 04:30–04:40 UTC:** Merge
 441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616, Parents5a734cc3/26efed8b,
 Tree5a1e501bf7b350f5beba71b0147b4d0f044d7ea5 exakt wie gepruefter Kopf.
