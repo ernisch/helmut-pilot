@@ -10,6 +10,55 @@ Kein Kapazitaetsnachweis fuer 100 Kunden.**
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
 **Weiterer echter Lieferblocker,22:52–22:56 UTC:**
+**Inzwischen ausgerollt und wirklich beansprucht:** PR1186 nach konkreter Freigabe
+normal auf32311c78fb17843631f6851ec7103b5f9759ff68 gemergt, Parentscc283e0b/97901263,
+Dateibaum identisch zum geprueften Kopf. CI43526156655 beide Pflichtchecks gruen:
+neun neue Workergruppen/sechs neue Profilgruppen und geaenderte Syntax, keine
+alten Tests. Regulaeres Deploymentdpl_8gAYArheEw81mYsUP1WoQSJg9M8q READY,
+Hauptalias/Runtime32311c78, anonym401, Kommunikationssperre bestaetigt.
+Live-Adminlauf23:34:59UTC auf32311c78: Projektion23:35:03.4356 und Materialisierung
+23:35:14.5211 erstmals je1Versuch erledigt. Aktuelle Quellenarbeit bleibt offen;
+erfolgreicher Claim/Abschluss beweist keine Vollversorgung oder Textqualitaet.
+Laufende Kontrolle danach: derselbe Quellenlauf endete23:38:45UTC teilweise,
+161Ziel/18erledigt/1endgueltig fehlgeschlagen/136zurueckgestellt. Sieben neue
+Modellaufrufe0,040726USD; Tagesbindung13.11.UTC0,502477USD, gesamt2,723477USD,
+acht alte offene Reserven unveraendert. Das Paket14.11. wurde23:35:36.032UTC
+erneut gespeichert:58Eintraege/8Karten, weiterhin kein gepruefter Lagetext und
+dieselben vier offenen Fehlerklassen. Keine Vollversorgung behauptet.
+
+**Separater Qualitaetsbefund und enger Gegenfall:** originales bestaetigtes
+Review14.11. lehnt Absatz0 ausschliesslich mit profilbezug=false ab; andere Flags
+sowie Absatz1 und Paarvergleich positiv. Kein Mapping-/Parserfehler. Mit echtem
+KO-Lektuere-/Abschnittsbeleg besteht wortgleicher Absatz1 plus zugehoeriges
+positives Einzelurteil (nur Index1→0) denselben strikten Q.pruefe-/Sachdetailscheck,
+Originalphasen-/Profilhashes gueltig und unveraendert. Kein Modell/DBwrite.
+Normaler Speichervertrag verlangt2–4Absaetze; diese Grenze wird nicht abgesenkt.
+Eigener hashgebundener, insert-only Teilstand im bestehenden Speicher in Arbeit:
+negative Urteile erhalten, alle Bindungen und positive Paar-/Einzelpruefung Pflicht,
+keine anderen Fehlerausnahmen, Paket bleibt teilweise, App zeigt klaren Hinweis.
+Private Originalentwuerfe/Reviews duerfen nicht in App-DTOs gelangen.
+
+**Enger Ausgabevertrag in PR1187 (noch nicht ausgerollt):** Ausschliesslich ein
+bestaetigter Zweiabsatzentwurf mit genau einem negativen Profilurteil und einem
+vollstaendig positiven Einzelurteil kommt infrage. Alle anderen Einzelkriterien,
+Schema-/Index-/Quellen-/Sachdetailsbindungen und der Originalpaarvergleich muessen
+bestehen. Kein negatives Urteil wird umgeschrieben; der ausgewaehlte Absatz bleibt
+wortgleich und durchlaeuft die bestehenden Fachpruefungen erneut. Normale Lagen
+behalten ihren2–4Absatzvertrag. Drei-/Vierabsatzfaelle bleiben in diesem Fix gesperrt.
+Ein eigener insert-only Slot `lage-teilstand` in `briefings` bindet Originalphasen,
+Mandant, aktuelles Profil, Quellen-/KO-Eingabe, Berliner Tag und Ausgabehash.
+Unklarer Schreibausgang wird nur nachgelesen; bestaetigte Originale bleiben erhalten.
+Der normale Appstart liest das gespeicherte Paket, erzeugt keine neue Modellausgabe
+und kennzeichnet den Teilstand. Volltexte haben Vorrang; ein Teilstand gilt niemals
+als vollstaendige Versorgung oder Faktenpruefung. Private Herkunftsbelege bleiben
+serverseitig. Live-Schema bestaetigt nurPK(id), keinen Slot-CHECK: keine Migration.
+Root und unabhaengiger Fachagent haben die sechs Produktdateien sowie die neue
+Fachregression und den erweiterten vorhandenen Browserharness ohne offenen
+Codeblocker geprueft. Zuvor gefundene Kartenleck-/Vollcache-Rennfaelle sind im
+eingefrorenen Stand behoben. Vorgesehene neue Abnahme: neun Fachgruppen,
+sechs CI-Profilgruppen, geaenderte Syntax und drei Browserchecks je Desktop/Mobil
+plus Schutzguard. Ergebnisse noch offen; historische Gruppen werden nicht wiederholt.
+
 Der zweite Adminlauf endete22:59:38 UTC:151Ziel,16erledigt,6Fehler,
 121zurueckgestellt,8wiederholt. Bisherige Grenzen unveraendert.
 Nach Berliner Mitternacht auf weiterem ausdruecklichen Testauftrag genau einmal

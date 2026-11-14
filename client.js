@@ -5531,6 +5531,7 @@ function renderLageView() {
   const disruption = lageDisruption(data);
   return `${header}
     ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
+    ${data.teilstand?.version === 1 ? '<div data-ui-lage-teilstand>' + renderUiEmpty("Lage als geprüfter Teilstand", "Ein geprüfter Absatz ist verfügbar; ein weiterer wurde wegen fehlenden Profilbezugs zurückgehalten.") + '</div>' : ""}
     ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
     <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
       <section class="ui-master" aria-label="Politische Vorgänge">

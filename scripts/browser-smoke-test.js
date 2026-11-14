@@ -31,9 +31,11 @@ const path = require("path");
 const fs = require("fs");
 const root = path.join(__dirname, "..");
 const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
+const tagespaketTeilstand = process.argv.includes("--tagespaket-teilstand");
 const tagespaketRuhelageOnly = process.argv.includes("--nur-ruhelage");
 if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage braucht --tagespaket-jsonb");
-const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb;
+if (tagespaketTeilstand && (tagespaketJsonb || tagespaketRuhelageOnly)) throw Error("Teilstand ist ein eigener gezielter Tagespaketfall");
+const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand;
 
 function loadPlaywright() {
   const candidates = [
@@ -56,7 +58,7 @@ function check(name, cond, detail = "") {
 // Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
 // Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
 // Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
-async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false } = {}) {
+async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false, teilstand = false } = {}) {
   const assert = require("node:assert/strict");
   process.env.HELMUT_AUTH_MODE = "accounts";
   process.env.HELMUT_STORAGE_BACKEND = "local";
@@ -84,9 +86,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   const fixture = require("./fixtures/profilhash-integration");
   const { day, now } = fixture;
   const profile = { ...fixture.profile, onboardedAt: now.toISOString() };
-  const text = fixture.fixture().text, rows = new Map([[text.id, structuredClone(text)]]);
-  const briefing = structuredClone(fixture.briefing);
-  const lageAnsicht = B.lageAusgabe(text.payload);
+  const text = fixture.fixture().text;
+  let rows = new Map([[text.id, structuredClone(text)]]);
+  let briefing = structuredClone(fixture.briefing);
+  let lageAnsicht = B.lageAusgabe(text.payload);
   assert.equal(lageAnsicht.fromCache, true);
   assert.equal(lageAnsicht.pendingNarrative, false);
   assert.deepEqual(lageAnsicht.quellenBindung, {
@@ -97,7 +100,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   briefing.currentRadarState = { status: "fresh", articles: [{ vorgangId: "vg-synth-1",
     title: "Gespeicherter synthetischer Radarhinweis" }] };
   briefing.tagespaketGrundlage = [1, 2].map(i => ({ id: `ko-synth-${i}`, vorgang_id: `vg-synth-${i}` }));
-  if (jsonb) {
+  if (jsonb || teilstand) {
     process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{
       publicationUrl: "https://example.invalid/held-publication", reason: "unresolved-event-relation",
       review: { id: "synthetic-browser-jsonb", receiptSHA256: "a".repeat(64),
@@ -114,7 +117,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
   let packageReads = 0;
   let identityReads = 0;
-  const storage = { assertTenant: S.assertTenant,
+  let storage = { assertTenant: S.assertTenant,
     getRenderedBriefingV3: async (id, slot, tag) => {
       assert.equal(id, profile.id); assert.equal(tag, day); packageReads++;
       return structuredClone(rows.get(`bf-${id}-${slot}-${tag}`) || null);
@@ -123,7 +126,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       assert(!rows.has(row.id)); rows.set(row.id, structuredClone(row)); return { saved: true };
     }
   };
-  if (jsonb) {
+  if (jsonb || teilstand) {
     // Echter schmaler Identitaetsleser und echte Sperrpruefung, nur dessen
     // Datenquelle besteht aus zwei vorhandenen synthetischen Artikelidentitaeten.
     const identities = [1, 2].map(i => ({ knowledge_object_id: `ko-synth-${i}`,
@@ -143,12 +146,30 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       }
     });
   }
+  let teilFixture;
+  if (teilstand) {
+    // Derselbe Paket-/HTTP-/SPA-Harness, nur die neue positive Teilauswahl.
+    // Auch die Insert-only-Vorstufe nutzt ausschliesslich lokalen Transport.
+    teilFixture = await require("./lage-teilstand-test").fixture({
+      storageApi: originals[0][1], fullText: text, packageNow: false });
+    rows = teilFixture.rows; briefing = teilFixture.briefing; lageAnsicht = teilFixture.view;
+    const identities = storage.getPublicationSourceIdentities;
+    const readPackage = teilFixture.storage.getRenderedBriefingV3;
+    storage = { ...teilFixture.storage, getPublicationSourceIdentities: identities,
+      getRenderedBriefingV3: (...args) => { packageReads++; return readPackage(...args); } };
+  }
   await B.materialisiere({ profile, userId: profile.id, now, briefing, lageAnsicht, storage });
   const row = rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);
   assert(row, "Synthetisches Tagespaket muss vor dem Browserstart gespeichert sein");
-  assert(require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig(row.payload.lage),
-    "Karten allein ersetzen keinen gespeicherten geprueften Narrativtext");
-  assert.deepEqual(row.payload.lage, text.payload);
+  if (teilstand) {
+    assert(require("../lib/helmut/lage-teilstand").gueltig(row.payload.lage, { userId: profile.id, tag: day, profile, now }));
+    assert.equal(require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig(row.payload.lage), false);
+    assert.deepEqual(row.payload.lage, teilFixture.part.payload);
+  } else {
+    assert(require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig(row.payload.lage),
+      "Karten allein ersetzen keinen gespeicherten geprueften Narrativtext");
+    assert.deepEqual(row.payload.lage, text.payload);
+  }
   if (jsonb) {
     const info = row.payload.briefing.publicationEligibilityPolicy;
     const fromJsonb = { hash: info.hash, version: info.version, heldPublications: info.heldPublications };
@@ -159,7 +180,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
   // Der bestehende Quellenzeitpunkt kann ohne neuen Tagesanlass einen ehrlichen
   // Teilstand ergeben. Fehlender Lage-/Quellenbeleg ist hier niemals zulaessig.
-  const expectedErrors = jsonb || briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
+  const expectedErrors = teilstand ? ["lage-teilstand"]
+    : jsonb || briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
   assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
   const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: now,
     status: L.STATUS_ERFOLG, ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row),
@@ -172,7 +194,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   S.getProfile = async id => { assert.equal(id, profile.id); return structuredClone(profile); };
   S.getTasks = S.getUserNotes = async id => { assert.equal(id, profile.id); return []; };
   S.getRenderedBriefingV3 = storage.getRenderedBriefingV3;
-  if (jsonb) S.getPublicationSourceIdentities = storage.getPublicationSourceIdentities;
+  if (jsonb || teilstand) S.getPublicationSourceIdentities = storage.getPublicationSourceIdentities;
   // Synthetischer Sitzungsanbieter; die HTTP-Autorisierung selbst bleibt echt.
   accounts.resolveSession = async token => token === "synthetic" ? { user: {
     id: "synthetic-browser-user", role: "abgeordneter", politicianId: profile.id } } : null;
@@ -252,6 +274,46 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/app/start");
         await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
         const response = await responsePromise, start = await response.json();
+        if (teilstand) {
+          const b = start.briefing, positive = teilFixture.draft.paragraphs[1].text;
+          const negative = teilFixture.draft.paragraphs[0].text;
+          check(`${label}: gepruefter Teilstand wird ueber echte Sitzung und gespeichertes Tagespaket ausgeliefert`,
+            response.status() === 200 && start.profile?.id === profile.id && b?.available === true
+            && b.paketStatus?.zustand === "teilweise" && b.paketStatus.vollstaendig === false
+            && b.paketStatus.quittungGebunden === true && b.paketStatus.tag === day
+            && b.gespeicherterNachweis?.inhaltHash === row.payload.inhaltHash
+            && b.gespeicherterNachweis?.profilHash === row.payload.profilHash);
+          assert.deepEqual(b.paketStatus.fehler, ["lage-teilstand"]);
+          assert.deepEqual(b.publicationEligibilityPolicy, P.publicInfo());
+          assert.deepEqual(b.paketStatus.quellenStand, row.payload.quellenStand);
+          assert.deepEqual(b.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          assert.equal(b.lageBriefing.paragraphs.length, 1);
+          assert.equal(b.lageBriefing.paragraphs[0].text, positive);
+          assert.equal(b.lageBriefing.teilstand.vollstaendig, false);
+          assert(!JSON.stringify(b).includes("provenienz"));
+          assert(!JSON.stringify(b).includes("mandatsbegruendung"));
+          assert(!JSON.stringify(b.lageBriefing).includes(negative));
+          await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+          const nav = isMobile ? ".mobile-dock" : ".nav-list";
+          await page.locator(`${nav} [data-view="briefing"]`).click();
+          const hint = page.locator("[data-ui-lage-teilstand]");
+          await hint.waitFor({ state: "visible" });
+          const cards = page.locator("[data-ui-lage-select]");
+          await page.locator('[data-ui-lage-select="vg-synth-2"]').click();
+          check(`${label}: positiver Absatz und ehrlicher Teilhinweis sind sichtbar, negatives Urteil bleibt verborgen`,
+            (await hint.innerText()).includes("Lage als geprüfter Teilstand")
+            && (await hint.innerText()).includes("wegen fehlenden Profilbezugs zurückgehalten")
+            && await cards.count() === 2
+            && (await page.locator(".ui-lage-detail .vsheet-lede").innerText()).includes(positive)
+            && await page.locator('.ui-lage-detail .ui-source-access a[href="https://example.invalid/dokument/2"]').count() === 1
+            && !(await page.locator(".app-frame").innerText()).includes(negative)
+            && !(await page.locator(".app-frame").innerText()).includes("mandatsbegruendung"));
+          check(`${label}: Teilstand liest unter aktiver Publikationssperre nur Paket Quittung und gebundene Identitaeten`,
+            packageReads - readsBefore === 2 && identityReads - identityReadsBefore === 2
+            && pageErrors.length === 0 && apiErrors.length === 0 && unexpected.length === 0
+            && methods.every(method => method === "GET"), [...pageErrors, ...apiErrors, ...unexpected].slice(0, 3).join(" | "));
+          continue; // Keine historischen Tagespaket-, JSONB- oder Ruhelagefaelle.
+        }
         if (jsonb) {
           const b = start.briefing;
           if (ruhelageOnly) {
@@ -344,14 +406,15 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       // Schutzwachen bleiben aktiv; daraus wird kein wiederholter 13. PASS.
       assert.deepEqual(forbidden, []); assert.equal(JSON.stringify([...rows]), before);
     } else {
-      check(jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
+      check(teilstand ? "Teilstand-Auslieferung ohne Korpus Modell oder Speicherveraenderung"
+        : jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
         && JSON.stringify([...rows]) === before, forbidden.join(", "));
     }
   } finally {
     if (browser) await browser.close();
     if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
     for (const [module, original] of originals) Object.assign(module, original);
-    if (jsonb) {
+    if (jsonb || teilstand) {
       if (previousPolicy === undefined) delete process.env[P.ENV];
       else process.env[P.ENV] = previousPolicy;
     }
@@ -378,8 +441,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
 
   if (tagespaketOnly) {
-    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly });
-    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
+    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand });
+    console.log(`\n${passed} PASS, ${failed} FAIL (${tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 

@@ -59,26 +59,51 @@ const MANDAT = Object.freeze({
     "vercel.json": "b2ac9375c5e3de8671faa6781ddec7f2c1004126"
   })
 });
+// Viertes festes Profil: separat gepruefter Lage-Teilstand mit exakter
+// PR-/Basis-/Evidencebindung, keine allgemeine Runtimeausnahme.
+const TEILSTAND = Object.freeze({
+  PR: 1187, BASE: "32311c78fb17843631f6851ec7103b5f9759ff68", BRANCH: "codex/gepruefte-lage-teilstaende-20261114",
+  LOCAL_EVIDENCE_COMMIT: "90fc459c31aff8b7b31ca8ba9ec4a2445c441421",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
+    "lib/helmut/lage-teilstand.js", "lib/helmut/lage.js", "lib/helmut/storage.js",
+    "lib/helmut/briefing-speicher.js", "lib/helmut/tagespaket-auslieferung.js", "client.js"
+  ]), REGRESSION_FILES: Object.freeze(["scripts/lage-teilstand-test.js"]), BLOBS: Object.freeze({
+    "client.js": "71bf4cd796ebdfc2aa8be149b607656689a927fc",
+    "docs/CURRENT_STATE.md": "ed79cdb45e288071472125937e1d3b3b1f2cb8ec",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "1985c7bd3cd05fdedef7a016900ff5d10e4bcded",
+    "lib/helmut/briefing-speicher.js": "1343e328f5c83c6bc48120401fed1c5ce402777c",
+    "lib/helmut/lage-teilstand.js": "0aedee16d69a433e3fd53fc849da8da7fb7bf8b0",
+    "lib/helmut/lage.js": "b4cd7b12c9427c0c722d25e4deed96f912d95a45",
+    "lib/helmut/storage.js": "b7491d9fc91094196e373748e79285c32ce5365f",
+    "lib/helmut/tagespaket-auslieferung.js": "fcd6c0cb2ae9bf8840a5f55a1fb77d4b7b0c3a0f",
+    "scripts/browser-smoke-test.js": "3ded2fa012acc125ac8522f700d458b681699b6c",
+    "scripts/lage-teilstand-test.js": "7680514530e84700a00d55a5f18544dc66e84c4e",
+    "vercel.json": "4f7c75ce053b4458378aa79d2f7f4e6bc0ece5aa"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === MANDAT.PR || headRef === MANDAT.BRANCH ? MANDAT
+const profileFor = ({ prNumber, headRef }) => prNumber === TEILSTAND.PR || headRef === TEILSTAND.BRANCH ? TEILSTAND
+  : prNumber === MANDAT.PR || headRef === MANDAT.BRANCH ? MANDAT
   : prNumber === DIP.PR || headRef === DIP.BRANCH ? DIP : EINPROFIL;
 const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
-  const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT;
+  const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
+    teilstand = profile === TEILSTAND;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
-  need(Number.isSafeInteger(PR) && PR > 0 && sha(LOCAL_EVIDENCE_COMMIT)
+  need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (dip || mandat ? 1 : 4) && REGRESSION_FILES.length === (dip || mandat ? 1 : 3)
+    && RUNTIME_FILES.length === (teilstand ? 6 : dip || mandat ? 1 : 4)
+    && REGRESSION_FILES.length === (teilstand || dip || mandat ? 1 : 3)
     && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
@@ -104,15 +129,17 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: mandat ? "Exakte begrenzte Mandatsphase ohne Reader- oder Datenbankaenderung"
+    reason: teilstand ? "Exakter gepruefter Lage-Teilstand ohne Lockerung des Originalqualitaetsvertrags"
+      : mandat ? "Exakte begrenzte Mandatsphase ohne Reader- oder Datenbankaenderung"
       : dip ? "Exakte DIP-Einzelartikelisolation ohne Browser- oder Datenbankaenderung"
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: dip || mandat ? { status: mandat
+    reused: teilstand ? { status: "Historische Vorbelege bleiben erhalten; nur neue Teilstandfaelle werden ausgefuehrt" }
+      : dip || mandat ? { status: mandat
       ? "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Mandatsworker unveraendert"
       : "Browser bewusst nicht erneut ausgefuehrt; Eingaben ausser Quellenhandler unveraendert",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43512468427",
@@ -120,7 +147,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: mandat ? ["Nur neue Mandatsphasen-Profil-Gegenfaelle", "Eine neue begrenzte Workerregression",
+    execute: teilstand ? ["Nur neue Teilstand-Profil-Gegenfaelle", "Neue Teilstand-Fachregression",
+      "Syntax der tatsaechlich geaenderten JavaScriptdateien", "Neuer Teilstand-Browserfall auf Desktop und Mobil"]
+      : mandat ? ["Nur neue Mandatsphasen-Profil-Gegenfaelle", "Eine neue begrenzte Workerregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
       : dip ? ["Nur neue DIP-Profil-Gegenfaelle", "Eine neue DIP-Einzelartikelregression",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
@@ -170,7 +199,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

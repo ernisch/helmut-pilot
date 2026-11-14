@@ -7,7 +7,8 @@ const C = require("./ci-lieferreparatur-plan");
 const args = process.argv.slice(2), nachtrag = args.length === 1 && args[0] === "--nur-nachtrag";
 const dipOnly = args.length === 1 && args[0] === "--dip-only";
 const mandatOnly = args.length === 1 && args[0] === "--mandat-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const teilstandOnly = args.length === 1 && args[0] === "--teilstand-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -30,6 +31,7 @@ function test(name, fn) {
   if (nachtrag && !name.startsWith("Nachtrag:")) return;
   if (dipOnly && !name.startsWith("DIP:")) return;
   if (mandatOnly && !name.startsWith("Mandat:")) return;
+  if (teilstandOnly && !name.startsWith("Teilstand:")) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -226,5 +228,61 @@ test("Mandat: Browserjob belegt unveraenderte Eingaben ohne alten Browser oder M
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Teilstand: nur das vierte feste Profil aktiviert neue Fach und Browsergegenfaelle", () => {
+  const p = C.validate(fixture(C.TEILSTAND));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "lageteilstand");
+  A.equal(p.source.pr, C.TEILSTAND.PR); A.equal(p.source.base, C.TEILSTAND.BASE);
+  A.equal(C.TEILSTAND.RUNTIME_FILES.length, 6); A.equal(C.TEILSTAND.REGRESSION_FILES.length, 1);
+});
+test("Teilstand: falsche Profile Metadaten Ereignisse und Checkoutkoepfe bleiben gesperrt", () => {
+  for (const change of [f => { f.pr.base.sha = C.MANDAT.BASE; }, f => { f.prNumber = C.MANDAT.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.DIP.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "anderer-branch"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "anderer-branch"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.TEILSTAND);
+});
+test("Teilstand: jeder feste Blob ist erforderlich und fremde Runtime hat keine Ausnahme", () => {
+  for (const file of Object.keys(C.TEILSTAND.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.TEILSTAND);
+    denied(f => { f.headTree.delete(file); }, C.TEILSTAND);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.TEILSTAND);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.TEILSTAND);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.TEILSTAND);
+  for (const file of ["lib/helmut/lage-textqualitaet.js", "lib/helmut/ai.js", "lib/helmut/lage-quellenbeleg.js",
+    "lib/helmut/lage-verarbeitungsbeleg.js", "lib/helmut/unerwartet.js"])
+    denied(f => { f.headTree.set(file, row("1")); }, C.TEILSTAND);
+});
+test("Teilstand: fehlender Belegbaum und ungueltige CI bleiben gesperrt", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.TEILSTAND);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.TEILSTAND);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.TEILSTAND);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.TEILSTAND);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.TEILSTAND);
+  }
+});
+test("Teilstand: Offlinejob startet nur neue Profilgegenfaelle Fachregression und Syntax", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.TEILSTAND))), [
+    "Prüfplan aus geänderten Dateien", "Teilstand - neue Fachgrenzen und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --teilstand-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.TEILSTAND.REGRESSION_FILES[0]));
+  A.match(workflow, /ci-lieferreparatur-plan\.js --syntax/);
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == '32311c78fb17843631f6851ec7103b5f9759ff68'/);
+});
+test("Teilstand: Browserjob startet nur neuen gespeicherten Teilstand auf Desktop und Mobil", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.TEILSTAND))), [
+    "Prüfplan aus geänderten Dateien", "Abhängigkeiten installieren (aus package-lock.json)",
+    "Playwright + Chromium installieren", "Teilstand - neuer gespeicherter Lagefall Desktop und Mobil"
+  ]);
+  A.match(workflow, /browser-smoke-test\.js --tagespaket-teilstand/);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
