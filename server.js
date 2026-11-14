@@ -206,6 +206,13 @@ async function handleRequest(request, response) {
           storage, build: buildV3Briefing, leseLage: buildLageBriefing }));
       const profile = await storage.getProfile(userId);
       if (!profile || profile.id !== userId) throw new Error("nachweis-profil-fehlt");
+      // Ohne historische Tagesauswahl denselben gespeicherten Vertrag wie die
+      // regulaere App lesen. Kein Korpusbau, Quellenlauf oder Modellaufruf.
+      if (!url.searchParams.has("tag") && !url.searchParams.has("modus")) {
+        const aktuellerAppAbruf = new URL("http://localhost/api/briefing/latest");
+        return sendJson(response, await latestBriefingPayload({ politicianId: userId, profile,
+          url: aktuellerAppAbruf, compact: false }));
+      }
       const nachweisUrl = new URL("http://localhost/api/briefing/latest");
       nachweisUrl.searchParams.set("aktuellGespeichert", day || "");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day || "")) throw new Error("briefing-tag-ungueltig");

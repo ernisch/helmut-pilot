@@ -32,6 +32,46 @@ regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselb
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
 **Briefingsprint14.11.09:35UTC: zwei Ursachen reproduziert, noch kein neuer Rollout.**
+Nachtrag09:57UTC: beide Ursachenfixes unabhaengig abgenommen und14/14neue
+lokale Gruppen ueber scripts/lokal.js bestanden (Checkpoint7, Gattungen7).
+Nachtrag10:11UTC: zusaetzlich7/7neue Teilbriefing-/Ausliefergruppen lokal
+bestanden, insgesamt21/21. Der erste Teilbriefinglauf endete vor Gruppe1 am
+fehlenden aktiven Policybeleg des wiederverwendeten synthetischen Fixtures;
+kein Produktfehler und0Fachgruppen ausgefuehrt. Genau3Testsetupzeilen korrigiert,
+unabhaengig abgenommen, erst dann alle7neuenGruppen erfolgreich ausgefuehrt.
+Keine bereits erfolgreiche Gruppe wiederholt. Runtime von Root und Fresh geprueft.
+Der reale neue Produktleser auf exakt demselben privaten08:04-Paket und seiner
+Originalquittung liefert10:07UTC zwei gepruefte Absatzreferenzen fuer den
+vorlaeufigen Briefingstand, Quellen13Nov16:08 und12Nov00:00 unveraendert.
+Paket812d3b817be84cb2348238692fdc8b00f350415e542dce89a359cb17799ea67d,
+CurrentState weiterhin gap, Quittung gebunden, Originale unveraendert,
+keine privaten Review-/Ergaenzungsdaten im DTO. Noch kein Production-HTTP/UI-PASS.
+Bestehender geschuetzter GET-Cronnachweis liest ohne historische Tagesauswahl
+jetzt denselben gespeicherten Appvertrag; explizite Tage/Modi bleiben unveraendert.
+Cronauth, Parameter-, Policy- und Mandatsbindung bleiben vor diesem0KI-Lesepfad.
+LokaleGruppe7 prueft den echten Serverblock. Keine neue Route oder Schreibfunktion.
+CI fuer PR1194 wird auf exakt gebundenen Runtime-/Test-/Doku-/Konfigbaum begrenzt:
+21lokaleFachgruppen uebernehmen, nur6neuePlangruppen/Syntax und5neueDesktop-/
+Mobilbrowserchecks ausfuehren. Noch keine Browserwiederholung/Modelle/DBaenderung.
+Reale exakte12/13/14-Pakete samt ihren Originalquittungen hashgebunden gegen
+den neuen Qualifizierer geprueft:12Abschluss,13/14offen; Fenster12Nov08:26:31.371.
+Originale unveraendert. Der reale Fuenfquellenmix wird nach der Identitaetskorrektur
+abgelehnt; kein falsches frisches Pflegebriefing. Bereits gelesene widerspruechliche
+Artikelzuordnungen stoppen vor neuer Kennung oder anderem Kandidaten/CAS/Modell.
+Keine globale Aussage ueber ungelesene Altzuordnungen. Sieben neue Gattungsgruppen
+pruefen konkrete positive Fortsetzungen,24Reihenfolgen und den normalen Artikelpfad
+ohne vorgegebene Kennung einschliesslich UNKNOWN-/Neukeyschutz.
+Eine weitere enge thematische Hypothese an genau einem aktuellen EU-Antrag blieb
+negativ: keine source-/KO-belegten aktiven Profilthemen, Score38 unveraendert.
+Kein Themen-/Schwellen-/Promptfix daraus abgeleitet, keine weitere Modellprobe.
+In [PR1194](https://github.com/ernisch/helmut-pilot/pull/1194) wird zusaetzlich
+die ehrliche Zwischenstandauslieferung umgesetzt: zwei bereits streng gepruefte
+Paketabsaetze mit eigenen echten Quellendaten im Briefing sichtbar. Nur aktueller
+gebundener Gap/Teilstand; keine erfundene Prioritaet, Handlung oder Neuigkeit.
+Vollstaendiger Briefinginhalt gewinnt; quiet/error/UNKNOWN/fremd/alt sind kein
+Ersatzbriefing. Versorgung, Checkpoint und Gesamtpaket bleiben offen/teilweise.
+Das ist noch keine fertige Umsetzung oder Productionabnahme; keine neuen Modelle.
+
 Der technische Morgenabschluss wurde faelschlich als fachlicher Inhaltscheckpoint
 verwendet. Das reale13Nov-Paket22:05:03.882UTC ist empty/gap; sein Briefinghash
 e317c029a1d0d3c9b28437bdcd2ea4f0a821de36389880b0d03c623df4c71548

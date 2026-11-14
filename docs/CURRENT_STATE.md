@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**14.11.2026,09:35UTC: Briefingsprint aktiv; zwei konkrete Ursachen gefunden.
+**14.11.2026,10:11UTC: Briefingsprint aktiv;21neue Gruppen bestanden.
 Noch kein brauchbares Tagesbriefing. PR1193 weiterhin auf Production.**
 main `4a49cbef`, [PR1193](https://github.com/ernisch/helmut-pilot/pull/1193), Kopf `b87f20ac`; Production `4a49cbef`.
 Vercel `dpl_DNSeek1KJwM8Wq1UCU6VhyEtHe3r` Git-Ersatzrollout/Production READY08:56:55UTC;
@@ -15,7 +15,7 @@ Briefinggap ist sichtbar; die Zeitgrenze war jedoch durch einen leeren Erfolg fa
 Exakt hashgebundener Gap13Nov zaehlte als Inhaltsabschluss und schloss Quellen13Nov aus.
 Nativer neuer Einzelfall: korrektes Fenster12Nov liefert einen Kandidaten; dessen alter
 Pflegeinhalt wird aber durch fremde Suchthilfequelle frisch. Zweiter Identitaetsfehler:
-Fraktion/Antrag/Gesundheit tragen unzulaessig Ereignisgewicht. Beide Fixes in Entwicklung;
+Fraktion/Antrag/Gesundheit tragen unzulaessig Ereignisgewicht. Beide Fixes lokal geprueft;
 keine Quellen-/Modell-/Productiondatenaktion. Details und historische Belege im Architekturbericht.
 Kosten09:08:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
