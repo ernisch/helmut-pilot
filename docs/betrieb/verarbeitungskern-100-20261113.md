@@ -31,6 +31,60 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:9/10Merges (PR1188/1189/1190/1191/1192/1193/1194/1195/1196),1weiterer nur beiGruen verbleibt.
+**PR1197 Reparaturvorbereitung14.11.12:46UTC, nochkeinMerge/GO/Produktlauf:**
+[Fachthemen und Originalartikel](https://github.com/ernisch/helmut-pilot/pull/1197)
+vereint die beiden belegten Ursachen und einen gesondert freizugebenden Einmalentwurf.
+Acht NEUE Fachthemen-Gruppen am integrierten b0a32c73 einmal ueber scripts/lokal.js
+bestanden: nativeEinmalanalyse/CAS, optionaleFehlbelege, DocID+Originalpassage,
+geleseneAbschnitte/12erAuswahl,Kontext,keineAltTags/erfundeneAemter,UNKNOWN-Sperre,
+fiktiveMdB-/MdL-Fachmerkmale. KeinealteSuite/zusätzlicherbezahlterAufruf.
+ZweiteUrsache:105wartendeU sindalleattempts0/faellig,38publisherohneArtikelziel,
+67DirectmitURLaberleerem/kurzemText. ZweiqueuegebundeneRoharchive+nativeHashprobe
+bestaetigen exakteInput-/Cachebindung. Beidev2Cachebelege sindbestaetigtluecke/
+strukturierter-artikel-mehrdeutig-oder-fehlend; v1fehlend. KeineUNKNOWN-Freigabe.
+Zwei begrenzte oeffentlicheDiagnose-GETs liefernHTTP200(128041/440259Bytes),native
+alteExtraktion reproduziertgenaudenselbenLayoutfehler. KeineProduktablage/Modelle.
+KleinerParserfix: eigenegeschlosseneBReg-/DLF-Provenienz,Header/Datum/Ziel/Bodyvoll
+gebunden. UnbekannteProsa/Gegenbelege vor/nach/inHeader oderArtikelhuelle stoppt;
+Cookie/Podcast/Teaser nurkonkretbelegteNichtinhaltsbereiche. AlleReviews vorerstenTests.
+FuernurvollbestaetigtenaltenLayoutnegativgrund genau1globaleFolgerevision derselben
+Artikelversion. Originale/Altpositivevorrangig;fehlend/reserviert/UNKNOWN/kaputt/andere
+Gruende/Hosts erzeugenkeinenRevisionsescape. GleicheCAS-/Anbieter-/Deadlinegrenzen.
+Sourcecode2c4cf9cf+d65fcd22 integriert5f4c1465+55fe468f;9/9NEUEGruppen
+einmallokalPASS nachunabhaengigerRuntime-/Testabnahme.2erstmaligeFixpositive auf
+denbereitsgespeichertenechtenHTTP200-Antworten: BReg2Absaetze/475Zeichen, DLF5/1647;
+beideartikeltext-v3,eigeneProvenienz,Originalpublikation13Nov13:20UTC/22:12:48UTC,
+Inputstand/AntwortSHA256/Belegvalidierungbestaetigt. Alte9Gruppen nichtwiederholt.
+Reviewbefunde(Headline-/Hüllengegenbelege/Sichtbarkeit)vorerstenTestsbehoben,
+keinentsprechenderverlorenerInhalt alsProduktnachweisumgedeutet.
+Zusaetzlicher konkreterBetriebsblocker:8/8Fenster,2400/2400s UND16/16Originalabrufe
+sindheuteverbraucht. Vercel-Config fuerexaktdiese3numerischenWerte reinlesendgeprueft;
+keineSecret-/Admincredential-/DIP-Keysuche,keineUmgebungsveraenderung.
+Einmalentwurf32: NUR echterAdminauftrag+UTC14Nov+exakte8/2400/16 undBESTAETIGTE
+normaleFenster-Tagesgrenzablehnung erlaubt1globalenSonderkey(cap1),danach normale
+globaleZaehlungenmax9Fenster/2700s. Max16Zusatzoriginale(Gesamt32)NURimlebenden
+privatenAsyncLocalStorage desgleichen300sFensters; zuvorimmernormale16versuchen.
+WeakSet/Tag/Frist/nachbeidenawaits/finallyinvalidierung verhindernfremdes/spaetesRecht;
+alleQuoteninbestehenderDBRPC,keineprozesslokalenKontingente. UNKNOWN/Teilbuchungen
+bleibenverbraucht,keineKompensation. Modellvertragunveraendert1USDTag/30gesamt.
+AchtNEUEEinmal-Gruppen am729c2ffb einmal lokalPASS,Root+Freshunabhaengigabgenommen.
+Gesamt1197lokal25/25NEUEGruppen(8Fach/9Quelle/8Einmal)+2echteFixpositive;
+vorige33Fach/18Plan+1Nachtrag/10Browsererfolge unveraendert,nichtwiederholt.
+NeuerCI-Vertrag bindetexaktPR1197/Base58e21bf5/Branch/15NichtCIblobs+3CI-Dateien;
+nur6NEUEPlangruppen+geaenderteJS-Syntax,beidePflichtchecks stehennochOFFEN.
+Browserbewusstnichtausgefuehrt,App/Styles/Auth/serverunveraendert;keinBrowserPASSneu.
+Keinserver-/Adminauth-/UI-/Cron-/Env-/Modellwechsel,MigrationoderDatenreset.
+WICHTIG: Dieses Ausnahmecode-Deployment und die eine Adminausfuehrung benoetigen
+EXPLIZITES NEUES BETREIBER-GO vorMerge. Bisherige10Mergefreigabe autorisiertkeinen
+Quote-/ExtraSource-Bypass. KandidatbleibtDRAFT,GOnochNICHTgefragt/erteilt.
+NachGruen+GO: normalerMerge(letzter10/10),Gitrollout,echteAdminsession+CSRF startet
+hoechstens1Fenster,danachlesenderAbgleichneuerArtikel/Topics/Decisions/Einzelquoten.
+NurbeiechtenNEUENbestaetigtenEingaben einmalbestehendeLageverarbeitung undnormaler
+Morgenabschluss,gleicheGeld-/UNKNOWNwachen. Erfolg erstbeiechtergespeicherterPrioritaet
+mitMandats-/Profil-/Quellen-/Berlintag-/Quittungsbindung undnormalerAppauslieferung.
+KeineWiederverwendungverbrauchterRecovery-/Ersatzrolloutrechte. OhneGOkeineAktivierung.
+Produktdesignunveraendert;MobilerEntwurf imageexec-9264c8c1 bleibtMockup.
+
 **Fortsetzung Tagesprioritaet14.11.11:54UTC: belegte neue Schnittstellenluecke.**
 Betreiber verlangt ehrliche MdB-/MdL-Einschaetzung, echtes mobilesMockup ohneProdukt-
 Designaenderung undanschliessend weitereBehebungbisbelastbareMandatsprioritaeten.
