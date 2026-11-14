@@ -14,7 +14,8 @@ const abrufOnly = args.length === 1 && args[0] === "--abrufanteil-only";
 const konfliktOnly = args.length === 1 && args[0] === "--versionskonflikt-only";
 const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
 const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const kundenOnly = args.length === 1 && args[0] === "--kundenansichten-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -44,6 +45,7 @@ function test(name, fn) {
   if (konfliktOnly && !name.startsWith("Versionskonflikt:")) return;
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
   if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
+  if (kundenOnly && !name.startsWith("Kundenansicht:")) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -572,5 +574,61 @@ test("Kostenvertrag: Browserjob bestaetigt unveraenderte Eingaben ohne erneuten 
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Kundenansicht: nur zehntes exaktes Profil aktiviert nur neue Kundenansichten", () => {
+  const p = C.validate(fixture(C.KUNDENANSICHTEN));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "kundenansichten");
+  A.equal(p.source.pr, 1193); A.equal(p.source.base, C.KUNDENANSICHTEN.BASE);
+  A.equal(C.KUNDENANSICHTEN.RUNTIME_FILES.length, 3); A.equal(C.KUNDENANSICHTEN.REGRESSION_FILES.length, 3);
+  A.match(p.reused.status, /Neue Browserfaelle werden ausgefuehrt/);
+});
+test("Kundenansicht: fremde Metadaten Ereignisse und Koepfe erhalten keine Ausnahme", () => {
+  for (const change of [f => { f.pr.base.sha = C.TAGESFRISCHE.BASE; }, f => { f.prNumber = C.TAGESFRISCHE.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.TAGESFRISCHE.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "fremd"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "fremd"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.KUNDENANSICHTEN);
+});
+test("Kundenansicht: jeder Abnahmeblob und unveraenderte Runtime bleiben strikt gebunden", () => {
+  for (const file of Object.keys(C.KUNDENANSICHTEN.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.KUNDENANSICHTEN);
+    denied(f => { f.headTree.delete(file); }, C.KUNDENANSICHTEN);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.KUNDENANSICHTEN);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.KUNDENANSICHTEN);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.KUNDENANSICHTEN);
+  for (const file of ["client.js", "scripts/browser-smoke-test.js", "lib/helmut/ai.js", "lib/helmut/scalable-pipeline.js",
+    "lib/helmut/storage.js", "lib/helmut/tagespaket-auslieferung.js"])
+    denied(f => { f.headTree.set(file, row("1")); }, C.KUNDENANSICHTEN);
+});
+test("Kundenansicht: fehlende Belege und ungueltige CI stoppen geschlossen", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.KUNDENANSICHTEN);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.KUNDENANSICHTEN);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.KUNDENANSICHTEN);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.KUNDENANSICHTEN);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.KUNDENANSICHTEN);
+  }
+});
+test("Kundenansicht: Offlinejob fuehrt ausschliesslich neue Gegenfaelle Radarbestandsinteraktionen und Syntax aus", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.KUNDENANSICHTEN))), [
+    "Prüfplan aus geänderten Dateien", "Kundenansichten - neue Radarbestandsfaelle und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --kundenansichten-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.KUNDENANSICHTEN.REGRESSION_FILES[0]));
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57'/);
+});
+test("Kundenansicht: Browserjob fuehrt nur neue Kundenansichten mit Browserpflicht aus", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.KUNDENANSICHTEN))), [
+    "Prüfplan aus geänderten Dateien", "Abhängigkeiten installieren (aus package-lock.json)",
+    "Playwright + Chromium installieren", "Kundenansichten - neue sichtbare Lage und ehrlicher Radarbestand"
+  ]);
+  A.match(workflow, /43537245306\/job\/132269105907/);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
