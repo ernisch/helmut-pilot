@@ -31,8 +31,13 @@ function response(kind, d = document(kind)) {
   const body = breg ? `<div class="bpa-cookie-banner"><h1>Hinweis zum Datenschutz</h1><p>COOKIE NICHT LESEN</p></div>`
     + `<h1 class="bpa-accessibility">${title}</h1><main id="main"><div id="rs_reading_area_header">`
     + `<header class="bpa-article-header"><h2 class="bpa-topline-title-wrapper"><span>${title}</span></h2>`
-    + `<div class="bpa-short-text"><p>${attribution}</p></div><time datetime="2026-11-13T08:00:00Z">Freitag, 13. November 2026</time>`
-    + `<p>BEDIENMETATEXT NICHT LESEN</p></header></div><div id="rs_reading_area_content"><div class="bpa-article">`
+    + `<div class="bpa-short-text"><p>${attribution}</p></div><div class="bpa-header-share"><p>TEILEN NICHT LESEN</p></div>`
+    + `<ul class="bpa-collection-list"><li class="bpa-collection-item">Pressemitteilung 203</li><li class="bpa-collection-item">`
+    + `<span class="bpa-time"><time datetime="2026-11-13T08:00:00Z">Freitag, 13. November 2026</time></span></li>`
+    + `<li class="bpa-collection-item">Presse- und Informationsamt der Bundesregierung (BPA)</li></ul>`
+    + `<div class="bpa-article-meta-infos"><p class="bpa-article-header-reading-time rs_skip">1 Min. Lesedauer</p>`
+    + `<div class="bpa-readspeaker-wrapper"><p>VORLESEN NICHT LESEN</p></div></div></header></div>`
+    + `<div id="rs_reading_area_content"><div class="bpa-article">`
     + `<div class="bpa-richtext"><div class="bpa-richtext"><p>${intro}<br/><br/>${detail}</p></div></div>`
     + `<div class="bpa-tools"><p>TEILEN NICHT LESEN</p></div></div></div></main>`
     : `<nav><article><p>NAVIGATION NICHT LESEN</p></article></nav><main class="main"><section><article class="b-article">`
@@ -111,6 +116,10 @@ let count = 0; async function test(name, fn) { await fn(); count++; console.log(
       r => { r.body = r.body.replace(detail, '<span hidden>' + detail + '</span>'); },
       r => { r.body = r.body.replace(kind === "dlf" ? '<div class="article-details-text">' + correction : '<div class="bpa-richtext"><div',
         kind === "dlf" ? '<div hidden class="article-details-text">' + correction : '<div hidden class="bpa-richtext"><div'); },
+      r => { r.body = r.body.replace(kind === "dlf" ? '<span class="article-header-publication-date">' : '<div class="bpa-header-share">',
+        '<p>Dieser Gegenbeleg darf nicht verschwinden.</p>' + (kind === "dlf" ? '<span class="article-header-publication-date">' : '<div class="bpa-header-share">')); },
+      r => { r.body = r.body.replace(kind === "dlf" ? '<time datetime=' : '<li class="bpa-collection-item">Pressemitteilung 203',
+        (kind === "dlf" ? '<p>Dieser Gegenbeleg darf nicht verschwinden.</p><time datetime=' : '<li class="bpa-collection-item">Pressemitteilung 203 mit fremdem Gegenbeleg')); },
       r => { r.body = r.body.replace(kind === "dlf" ? '<section class="b-article-details">' : '<div class="bpa-article">',
         (kind === "dlf" ? '<section class="b-article-details">' : '<div class="bpa-article">') + '<p>Dieser Gegenbeleg darf nicht verschwinden.</p>'); },
       r => { r.body = r.body.replace(kind === "dlf" ? '<h2 class="article-details-title">Mehr zum Thema</h2>' : '<div class="bpa-tools">',
@@ -125,6 +134,9 @@ let count = 0; async function test(name, fn) { await fn(); count++; console.log(
         : r.body.replace('</section></div></article>', '</section>' + gegenbeleg + '</div></article>');
       T.equal(G.gewinneArtikeltext(document("dlf"), r).ok, false);
     }
+    const zwischen = response("dlf");
+    zwischen.body = zwischen.body.replace('<div class="article-content">', '<p>Dieser Gegenbeleg darf nicht verschwinden.</p><div class="article-content">');
+    T.equal(G.gewinneArtikeltext(document("dlf"), zwischen).ok, false);
   });
   await test("Neue Provenienz akzeptiert weder beliebige Hosts Layoutversionen noch fremde Strukturdeklarationen", () => {
     const d = document("breg"), good = G.gewinneArtikeltext(d, response("breg")).beleg;
