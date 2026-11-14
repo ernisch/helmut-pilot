@@ -1,6 +1,21 @@
 # CURRENT STATE — Helmut
-**14.11.2026,12:46UTC: neuer Sprint zur belegten Tagespriorisierung, Design unveraendert.**
-main/Production58e21bf5(PR1196), Briefing2/Lage2/Radar2+Partei1 weiterhinvorlaeufig.
+**14.11.2026: neuer autonomer Umsetzungsauftrag nach erneuter Betreiberfreigabe.**
+Betreiber erlaubt weitere auftragsbezogene normale Merges bei exakt gruener Pflicht-CI
+und unabhaengiger Abnahme; die fruehere10erMergegrenze begrenzt diese neue Freigabe nicht.
+Produktziel: unlesbare Artikel nachvollziehbar abseits, brauchbare Nachbarn bis Briefing,
+Lage und Radar; sichere begrenzte Reparatur ohne Aufweichen von Belegen oder UNKNOWN.
+Isolierter Branch codex/autonome-artikelversorgung-20261114 abmain529d47f8.
+Root integriert; Fresh schreibt nur Artikel-Abseits/Pipeline, Delivery nur Fachbelege,
+je eigenerWorktree, maximal3Agenten. Historische Nachweise unveraendert behalten.
+NurCEM bleibt aktiv; Budgets1USDTag/30gesamt und8alteReserven unveraendert.
+Keine neuen Quellenfenster, Datenkorrekturen, Migrationen, Env/Cron/Flags oder Kunden
+allein aus Mergefreigabe ableiten; kein Designumbau, keine Mails/Kommunikation.
+Betriebsvorflug16:38UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt/8offene/0Leases.
+Die folgenden datierten Ergebnisse sind bestehende Primaerbelege, kein neuer Voll-PASS.
+
+**14.11.2026,14:49UTC: echtes aktualisiertes Tagespaket gespeichert+ausgeliefert; Tagesprioritaet weiteroffen.**
+main/Production529d47f8(PR1197), Runtime/Schutzbindung13:22:26UTCbestaetigt.
+77Vorgaenge/Briefing2/Lage2/Radar2+Partei1 realgespeichert+normalgelesen; weiterhinvorlaeufig.
 [Architektur und Primaerbelege](betrieb/verarbeitungskern-100-20261113.md).
 Neu belegt: regulärer Understandingvertrag erzeugt/uebernimmt keineFachtags;
 Matcher erwartetFachtags/belegteAusschuesse.4gezielteLiveKOs besitzen alleFacharraysleer.
@@ -9,15 +24,30 @@ Quellen-GAP ist kein pauschalesPrioritaetsverbot; gueltigeKandidaten bleibenzula
 Live11:44:78Udone/19failed/105wartend,Source150done/2failed/1wartend,0Leases,nurCEM.
 105Uattempts0:38ohneArtikelziel/67DirectohneText;2echteLayoutfehlerreproduziert.
 Tageskontingenteprimaerbestaetigt8/8Fenster,2400/2400s UND16/16Originalabrufeverbraucht.
-Einmalentwurf9/2700/32:8neueGruppenPASS;EXTRA-GOvorMergeNOCHNICHTerteilt.
-KeinExtraLauf/Reset/Bestandsreanalyse/Modell/Produktoperation,keinealteGO-Wiederverwendung.
-Budget0,581580USDTag/3,305057USDgesamt,254Calls/84heute/8alteReserven/0heuteoffen.
+PR1197Kopfedae1493:25neueGruppen+2OriginalePASS,CI43596599597beidePflichtchecksgruen.
+Einmal9/2700/32:konkretesBetreiberGOerteilt; Merge529d47f8/Tree26d35517exaktwiegeprueft.
+Gitdeployment dpl_5DePBp7LkBbPmAXDMzW38kmCURyH Git/Production/fra1 READY13:21:22UTC.
+LesenderProduktreaderHTTP200: altesPaketd41c1c16/alleTexte/Quittung unveraendert.
+Adminlauf e86cbb54–883a–4e9b–a91f–072df072446a 14:33:47.102–14:37:33.629UTC:
+partial,5processed/167deferred/5failed;1Source+4neueKOsbestaetigt,0Leasesdanach.
+Alle4neuenFachtagsabgewiesen:fachthemen-originalpassage-fehlt; genaueUnterursacheUNKNOWN,
+Originalantwortwirdnichtarchiviert. KeinenfehlerhaftenEingangzumNeustartfreigegeben.
+Genau1freigegebenerZusatzlaufverbraucht;keinRootDuplikat/Reset/Bestandsreanalyse.
+NeuebezahlteUnderstandingcalls4einmal,keinealteGO-Wiederverwendung.
+Lage14:42:59fromCache/5Karten/2Absaetze;1Morgenabschluss14:44:05UTCtechnischbestaetigt.
+Paketb2cb2abd77Items/14:44:00.627UTC+Quittung,17neueAuslieferbedingungenalletrue.
+NormalerStoredHTTP200,Profil/Quellen/Policy/Berlintag/Quittunggebunden,privateReviewsfehlen.
+BeideAbsatzobjekte+Lagebindungwortgleich;keinCustomerAuthBrowserPASS/keinFachvollPASS.
+Budget0,620841USDTag/3,344318USDgesamt,258Calls/88heute/8alteReserven/0heuteoffen.
 Limits1USD/UTC-Tag/30gesamt,keineKunden/Dienste/Env/Cron/Migration/Datenkorrekturen.
 Bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten,nichtwiederholt.
-Paketd41c1c16/76Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
+NeuesPaketb2cb2abd/77Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
 EinzelngepruefteTexte sindkeinBelegfuerTageswichtigkeit; keinVoll-/100KundenPASS.
+EngeramtlicherAusweichpfadgeprueft:4exakteQuellenohnesachgebiet/sachgebiete/policy_field;
+kein0KI-Adapterfixbelegt. Typ/Urheber/RessortbelegenkeineFachprioritaet.
+Zusatzlauf+1Lage+1MorgenabschlusssindVERBRAUCHT;10/10Mergefreigabenverbraucht.
 MobilesMockup bereit,nurEntwurf;keineProduktdesignaenderungbeauftragtoderumgesetzt.
-Root+2bestehendeCodexAgenten,getrennteZustaendigkeiten;1gruenerNachtmergeverbleibt.
+Root+2CodexReviewsabgenommen;10/10Nachtmergesverbraucht,25PruefgruppenNICHTwiederholen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -33,7 +63,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**9/10Merges verbraucht,1frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**10/10Merges verbraucht,0verbleibend; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
