@@ -10,7 +10,8 @@ const mandatOnly = args.length === 1 && args[0] === "--mandat-only";
 const teilstandOnly = args.length === 1 && args[0] === "--teilstand-only";
 const frischeOnly = args.length === 1 && args[0] === "--frische-only";
 const frischeNachtrag = args.length === 1 && args[0] === "--frische-nachtrag-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const abrufOnly = args.length === 1 && args[0] === "--abrufanteil-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -36,6 +37,7 @@ function test(name, fn) {
   if (teilstandOnly && !name.startsWith("Teilstand:")) return;
   if (frischeOnly && !name.startsWith("Frische:")) return;
   if (frischeNachtrag && !/^Frische: (?:Offlinejob|Browserjob)/.test(name)) return;
+  if (abrufOnly && !name.startsWith("Abrufanteil:")) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -344,5 +346,60 @@ test("Frische: Browserjob bewahrt den bestaetigten unveraenderten Radar-Klarheit
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Abrufanteil: nur sechstes exaktes Profil aktiviert die neue Workerpruefung", () => {
+  const p = C.validate(fixture(C.ABRUFANTEIL));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "quellenabrufanteil");
+  A.equal(p.source.pr, 1189); A.equal(p.source.base, C.ABRUFANTEIL.BASE);
+  A.equal(C.ABRUFANTEIL.RUNTIME_FILES.length, 1); A.equal(C.ABRUFANTEIL.REGRESSION_FILES.length, 1);
+  A.match(p.reused.status, /Browser bewusst nicht erneut/);
+});
+test("Abrufanteil: fremde Metadaten Ereignisse und Koepfe erhalten keine Ausnahme", () => {
+  for (const change of [f => { f.pr.base.sha = C.TAGESFRISCHE.BASE; }, f => { f.prNumber = C.TAGESFRISCHE.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.TAGESFRISCHE.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "fremd"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "fremd"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.ABRUFANTEIL);
+});
+test("Abrufanteil: jeder Abnahmeblob und unveraenderte Runtime bleiben strikt gebunden", () => {
+  for (const file of Object.keys(C.ABRUFANTEIL.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.ABRUFANTEIL);
+    denied(f => { f.headTree.delete(file); }, C.ABRUFANTEIL);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.ABRUFANTEIL);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.ABRUFANTEIL);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.ABRUFANTEIL);
+  for (const file of ["client.js", "scripts/browser-smoke-test.js", "lib/helmut/ai.js", "lib/helmut/scalable-pipeline.js",
+    "lib/helmut/storage.js", "lib/helmut/tagespaket-auslieferung.js"])
+    denied(f => { f.headTree.set(file, row("1")); }, C.ABRUFANTEIL);
+});
+test("Abrufanteil: fehlende Belege und ungueltige CI stoppen geschlossen", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.ABRUFANTEIL);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.ABRUFANTEIL);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.ABRUFANTEIL);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.ABRUFANTEIL);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.ABRUFANTEIL);
+  }
+});
+test("Abrufanteil: Offlinejob fuehrt ausschliesslich neue Gegenfaelle Fairness und Syntax aus", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.ABRUFANTEIL))), [
+    "Prüfplan aus geänderten Dateien", "Abrufanteil - neue Fairness und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --abrufanteil-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.ABRUFANTEIL.REGRESSION_FILES[0]));
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb'/);
+});
+test("Abrufanteil: Browserjob bestaetigt unveraenderte Eingaben ohne erneuten Browserlauf", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.ABRUFANTEIL))), [
+    "Prüfplan aus geänderten Dateien", "Abrufanteil - Browser bewusst nicht erneut ausfuehren"
+  ]);
+  A.match(workflow, /43537245306\/job\/132269105907/);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
