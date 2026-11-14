@@ -31,6 +31,30 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
+**Briefingsprint14.11.09:35UTC: zwei Ursachen reproduziert, noch kein neuer Rollout.**
+Der technische Morgenabschluss wurde faelschlich als fachlicher Inhaltscheckpoint
+verwendet. Das reale13Nov-Paket22:05:03.882UTC ist empty/gap; sein Briefinghash
+e317c029a1d0d3c9b28437bdcd2ea4f0a821de36389880b0d03c623df4c71548
+entspricht exakt dem technischen Erfolgsbeleg22:05:05.483UTC. Dieser verschiebt
+das Fenster14Nov hinter die brauchbaren Quellen13Nov; heute gepinnter Gap behaelt
+die falsche Grenze.12Nov besitzt dagegen einen echten belegten Vorbereitungsstand.
+Kleinster Fix in eigenem Branch: technische Quittung erhalten, Fensterabschluss
+separat am exakt hash-/mandats-/profil-/taggebundenen gespeicherten Briefing pruefen.
+Nur echte Ausgabe oder explizit belegte Ruhelage schliesst; bekannte Gaps nicht.
+Unlesbare/fremde/fehlgebundene Inhalte bleiben UNKNOWN, Zweitageshorizont bleibt.
+Ein neuer nativer lokaler Einzelfall mit einem aktuellen KO und seinen fuenf
+Originalquellen reproduziert gap bei alter Grenze, fresh bei korrekter Grenze.
+Er deckt einen zweiten Fehler auf: Fraktion/Antrag/Gesundheit werden im bestehenden
+Identitaetsmodul als spezifische Sachbelege gewertet. Unterschiedliche Antraege
+und ein altes Pflegeinterview gelangen in einen Cluster; eine neue Suchthilfe-
+meldung wuerde damit alten Pflegeinhalt frisch machen. Kein solcher Output
+ausgeliefert. Gegenprobe durch unabhaengigen Agenten bestaetigt die fehlerhaften
+Paargewichte. Enger Ursachenfix folgt im selben Sprint; keine Schwellenlockerung.
+Root integriert, Delivery entwickelt getrennt, Fresh diagnostiziert/reviewt;
+maximal drei Agenten, getrennte Worktrees. Noch keine alten Tests wiederholt,
+keine neuen Modell-/Quellenlaeufe, keine Productiondatenkorrektur oder Aktivierung.
+Kostenbuch09:08 unveraendert0,581580USDTag/3,305057USDgesamt/8alteReserven.
+
 **PR1193 Ersatzrollout nach konkreter Freigabe erfolgt,14.11.08:56–08:58UTC:**
 Betreiber gab ausdruecklich „Einmaligen Ersatzrollout von PR1193 freigeben“.
 Direkter Vorflug: weiterhin0Deployments fuer4a49, GitHubPRmerged/exakterKopf b87.
