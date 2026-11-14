@@ -45,12 +45,21 @@ Kostenbindung 0,447599 USD heute/3,171076 USD gesamt, acht alte offene Reserven.
 Paket 03:37 unveraendert. Projektion04:15/Materialisierung04:30 noch nicht faellig.
 Unabhaengiger Codebefund: U-Prioritaet80 steht auch innerhalb derselben Tagesgruppe
 vor Quellenabruf100; der Worker reserviert bisher nur einen Mandatsanteil.
-Geplanter Folgefix auf codex/quellenabruf-arbeitsanteil-20261114: begrenzte Phase
+Implementierter Folgefix auf codex/quellenabruf-arbeitsanteil-20261114: begrenzte Phase
 fuer heutige Quellenabrufe im bestehenden Slot, danach gemischte echte Restzeit.
 Historische Abrufe bekommen dadurch keinen neuen Vorrang; gleiche Sperren,
 Kosten-/Zeitgrenzen und Typbeschraenkungen. Nur Worker und neue enge Regression;
 keine Migration, Cron-/Env-/Budgetaenderung oder zusaetzliche Verarbeitung.
-Implementierung und neue gezielte CI offen; bisher weiter nur 1/10 Nachtmerges.
+PR1189: maximal90s und ein Drittel des bestehenden Workerbudgets fuer Abrufe,
+danach echte Restzeit. Originalclaim traegt die UTC-Frische; Historie/Zukunft
+wird ohne Abruf bestaetigt zurueckgestellt, unbekannte Bindung sperrt Folgearbeit.
+Noch laufende Handler nach Promise.race sperren naechsten Claim und Folgemix.
+Alle Phasenbilanzen muessen bestaetigt sein; ein Blob-Spiegelwrite pro Slot bleibt.
+Root und unabhaengiges Runtime-/Testreview ohne Befund, Workercommit331ab8c8.
+Acht neue Fachgruppen und sechs neue Profilgruppen plus Syntax werden einmalig
+in enger CI ausgefuehrt. Browser, App, Auth, Lage, Radar, Paketleser und Abhaengigkeiten
+sind unveraendert; erfolgreiche Browserbelege43531055622/43537245306 bleiben erhalten.
+CI noch offen; bisher weiter nur 1/10 Nachtmerges. Kein weiterer Liveaufruf.
 **Echter erster Tagesbetrieb14.11.,03:00–03:22UTC:** main weiter5a734cc3.
 Plan14 fertig eingereiht156/156. Regulaerer Lauf
 `cron-crawl-20261114030012-15m2h`03:00:12–03:03:57UTC:128Ziel/56erledigt/
