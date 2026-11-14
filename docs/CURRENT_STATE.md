@@ -1,4 +1,41 @@
 # CURRENT STATE — Helmut
+**14.11.2026, 18:10 UTC: PR1199 lokal integriert; 20 neue Gruppen belegt, Pflicht-CI noch offen.**
+Branch `codex/artikel-wiedergewinnung-20261114`, Basis/main/Production weiter
+`4d70c990` (PR1198). Neun Runtimepfade, zwei neue Regressionen; keine Appgestaltung,
+Authentifizierungs-, SQL-, Cron-, Budget- oder Kundenaktivierungsaenderung.
+Kuenftige technisch negative HTTP200-Originalantworten werden bei ausreichender
+Restzeit begrenzt und komprimiert separat gesichert: maximal 1 MiB Original und
+256 KiB gzip, Quellen-/Bytehash und urspruengliche Lesezeit gebunden. Die App liest
+keine Rohantworten. Erst eine spaetere ausdruecklich gepruefte Parserrevision kann
+dasselbe Original genau einmal ohne Abruf oder Modell neu extrahieren; Revision1
+hebt heute keine alten Sperren auf. Bodylose Altfaelle und UNKNOWN bleiben gesperrt.
+Originaljob-Fortschritt muss vor spaeterer regulaerer Modellarbeit bestaetigt sein.
+Fachstatus unterscheidet fehlende/teilweise/defekte Zuordnung von vollstaendig
+gebundenen Fachbelegen ohne Mandatstreffer. Letztere erlauben weiterhin den ehrlichen
+Zustand "Keine neue Tagesprioritaet"; daraus folgt keine allgemeine Entwarnung.
+Neue Nachweise: 9 Wiedergewinnungsgruppen im ersten Lauf und 11 Fachstatusgruppen
+(7 erster Lauf, 4 neue Gegenfaelle nach statischer Konzeptkorrektur; keine Wiederholung).
+Zwei unabhaengige Runtime-/Testreviews ohne offenen Befund. Geplant sind nur sechs
+neue CI-Plangruppen und 13 betroffene JS-Syntaxpruefungen, keine alten Tests/Browser.
+Gespeicherte Ausgabe weiter `b2cb2abd`, 77 Vorgaenge, zwei vorlaeufige Briefingtexte,
+Lage/Radar/Quittung vorhanden; KEIN neuer Tagesprioritaets- oder 100-Kunden-Nachweis.
+Naechster echter Producerbeleg benoetigt das regulaere Quellenfenster am 15.11.;
+heutiges Zusatzfenster und beide Folgeoperationen bleiben verbraucht. Autonome
+Nachkontrolle ist fuer 15.11.03:07 bis 07:07 UTC geplant; Produktcron unveraendert.
+
+**14.11.2026,17:22UTC: PR1198 normal gemergt/Production READY und lesend bestaetigt.**
+Merge4d70c990b12b1c7dc7872a9d53ee5c16aba819f0, gepruefterKopfa56ae56c,
+Evidence50a3315d/Treeffa9ccd9exaktgleich. CI43620326473beidePflichtchecksgruen,
+6NEUEPlangruppen+10Syntax,20lokaleFachgruppenbelegeuebernommen. KeinAltlauf.
+Git/Production/fra1dpl_Ax4JYCaVSTxXL5e8AEndyyUH2Wpc READY17:20:46.412UTC.
+Runtime/Hauptalias/Profil-/Kommunikationsschutz17:21:54bestaetigt;normalStoredGET200
+bewahrtPaketb2cb2abd/77Items/2Texte/Radar/Quittungwortgleich. Kostenweiter0,620841USD
+Tag/3,344318gesamt/258Calls/8alteReserven,nurCEM/0Leases. KeinSource-/Modellstart.
+NeueBetreiberfreigabe:1gruenerMerge1198bisher,kein10erNeulimit;Ressourcengrenzenbleiben.
+ProducerwirkungaufechteneuenArtikelstandOFFEN;keinTagesprioritaets-/100KundenPASS.
+Auftraglaeuftweiter:SichereOriginalantwort-WiedergewinnungundFachstatuspruefen,
+keineblindebezahlteWiederholung/Quotenaufhebung/zusätzlicheKunden.
+
 **14.11.2026,17:13UTC: PR1198 integriert,20neueGruppenbelegt, Pflicht-CI nochOFFEN.**
 Base/main/Production529d47f8 unveraendert; keine neue Produkt-/Modelloperation.
 Genau5Runtime-Dateien und3neueRegressionen,2Statusdocs+3gebundeneCI-Dateien.
