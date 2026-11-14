@@ -1,5 +1,54 @@
 # Verarbeitungskern fuer die ersten 100 aktiven Kunden
 
+## PR1199: begrenzte Wiedergewinnung und ehrlicher Fachstatus
+
+14.11.2026, 18:10 UTC. [PR1199](https://github.com/ernisch/helmut-pilot/pull/1199)
+ist lokal integriert, Basis `4d70c990`. Pflicht-CI, Merge und Rollout stehen noch aus.
+Neun Runtimepfade und zwei neue Regressionen; keine Migration oder Aenderung an
+Cron, Env, Budgets, Authentifizierung, Kundenaktivierung oder Gestaltung.
+
+Eine vollstaendige HTTP200-Antwort mit bestaetigtem technischem Extraktionsfehler
+kann kuenftig in einem separaten vorhandenen CAS-Speicher kalt gesichert werden.
+Grenzen: 1 MiB UTF8, 256 KiB gzip, exakte Quelle, Bytehashes und Original-Lesezeit;
+keine Header, geheimen URL-Parameter oder Rohantworten im App-Lesepfad. Fehlt die
+absolute Restzeit, entfaellt die optionale Ablage zugunsten des Hauptabschlusses.
+Eine explizite spaetere Parserrevision erlaubt eine reine Neugewinnung je
+Artikelversion/Revision, maximal acht Revisionsstaende. Fruehere Positive und
+unklare Ausgaenge haben Vorrang. Kein HTTP- oder Modellaufruf durch die Reparatur,
+kein Reaktivieren terminaler Jobs ausserhalb bestehender Wiedervorlage. Ein
+positiver Reparaturbeleg muss zuerst am urspruenglichen Job per Fortschritt-CAS
+gebunden werden; weitere Modellarbeit bleibt im unveraenderten Verstehenvertrag.
+Die aktuelle Revision1 sichert nur neue geeignete Fehlerantworten. Bestehende
+bodylose Negative werden weder nachabgerufen noch neu datiert oder freigegeben.
+
+Der Fachstatus verhindert eine falsche Ruhelage bei aktuellen fehlenden,
+teilweisen oder kaputten Fachbelegen. Vollstaendig gebundene Fachbelege ohne
+Mandatstreffer bleiben ein erlaubter, vorsichtig formulierter NoPriority-Zustand.
+Fachbelege sind kein allgemeiner semantischer Irrelevanz- oder Vollversorgungsbeweis.
+Positive Mandatskandidaten behalten Vorrang. Fremde oder fehlende Profilbindungen
+und manipulierte Quellen-/Beleghashes duerfen die Fachluecke nicht verdecken.
+
+20 neue lokale Gruppen tatsaechlich bestanden:
+
+- 9 Wiedergewinnungsgruppen genau einmal im Erstlauf; Quellcommit `365261641f08662e1cbd33fa4645483d560f8c97`, Integration `855f1d23`. Echter vorhandener CAS-Adapter, echte reine Extraktion, Originaljob-Fortschritts-CAS und nativer kostenpflichtiger UNKNOWN-Vertrag wurden gezielt verbunden geprueft. Log `/tmp/helmut-1199-artikel-wiedergewinnung-native.log`, SHA256 `664162e1f9e9421d715143ae0994ceec7a665336e210df7937cc25fc9ac7d976`.
+- 7 erste Fachstatusgruppen genau einmal; Quellcommit `611d9ccc5f8d6fa3a782ca365f124b70cdcd4fd3`, Integration `225f074d`. Log `/tmp/helmut-1199-fachstatus-native.log`, SHA256 `32a289fec47bcb1b69aff4090bfc240c1e51158007c1fed7399de6fda4279695`.
+- 4 zusaetzliche neue Fachstatusgegenfaelle nach statisch erkannter Konzeptluecke: voll gebundene, aber nicht passende Fachthemen duerfen NoPriority bleiben. Quellcommit `1a35ba34d8b90537ceae6ee71fff6bb7f35bca33`, Integration `85e3dacd`. Nur diese vier ausgefuehrt, die sieben Erfolge erhalten. Log `/tmp/helmut-1199-fachstatus-nachtrag-native.log`, SHA256 `50601a2bf58849ca823dd351ea93c915dac280e3bc3ba8d7e7e8209aa4135bbc`.
+
+Root und zwei unabhaengige Agenten haben die finalen Runtime-/Teststaende ohne
+offenen Befund geprueft. Testfixtureluecken und ein Altpositiv-Reader-Modus wurden
+vor der ersten Wiedergewinnungspruefung korrigiert; kein fehlgeschlagener Lauf
+entstand dadurch. Geplante CI: nur sechs neue Profilgegenfaelle und 13 geaenderte
+JS-Syntaxpruefungen. Historische 20 PR1198-Gruppen und alle vorherigen Fach-,
+Browser- und Mengennachweise bleiben erhalten; keine Wiederholung, kein neuer
+Browser-PASS. Tests waren synthetisch, ohne Netzwerk, Modelle oder Production.
+
+Die reale Ausgabe bleibt der gebundene gespeicherte Stand `b2cb2abd` mit
+77 Vorgaengen, zwei vorlaeufigen Briefingtexten sowie vorhandener Lage und Radar.
+Keine neue Tagesprioritaet oder vollstaendige Morgenlieferung ist damit bewiesen.
+Heutiges Zusatzquellenfenster und seine Folgeoperationen sind verbraucht. Die
+autonome Fortsetzung beobachtet ab 15.11.03:07 UTC die regulaeren Produktfenster;
+sie aendert den Produktcron nicht. Kein 100-Kunden- oder RAM-Kapazitaetsversprechen.
+
 Stand 13.11.2026. Entwicklungsbranch `codex/verarbeitungskern-100-20261113`,
 Ausgangsstand `fe94f3eb`. Kerncommit `8d780785`; die Auslieferung ist ein
 getrennter Folgecommit desselben Reviewbranches. **Kernumbau nach konkreter
