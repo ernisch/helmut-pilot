@@ -30,7 +30,24 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:4/10Merges (PR1188/1189/1190/1191),6weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+**PR1192 nach gruener enger CI regulaer ausgerollt,06:20–06:23UTC:**
+Merge097d14e29be63e0c19d7c8fedae9e7eb16195c57, Parents21816be7/6265b594,
+Tree46a1769c8f70a1022edaa620ea286726873e7526 exakt wie gepruefter Kopf.
+CI43565666630 beide Pflichtchecks gruen:2/2neue native Kostenvertragsfaelle,
+6/6neue Profilgruppen und4geaenderte JS-Syntax. Alte10Interaktionsgruppen/
+Browser-/Mengenbelege nicht wiederholt. Root plus unabhaengige Code-/Test-/CI-/
+Vollbaumreviews ohne Befund; Evidencea6b1293c. Vercel
+ dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd Git/Production/fra1 READY06:20:30UTC,
+Hauptalias/Runtime097d14/anonym401 und exklusive Profile/Sperren bestaetigt.
+Vor Merge weiter0aktuelleProzesse/Leases/nurCEM;0,567350USDTag/3,290827USDgesamt/
+8alteoffeneReserven/0heuteoffen. Keine erneute Produkt-/Modelloperation.
+Korrektur hebt unbekannten vorhandenen Start nicht auf. Konkreter separater
+Wiederaufnahmeentwurf wird nur zur Betreiberpruefung vorbereitet; keine Daten-
+korrektur/Schluesselaenderung oder bezahlte Wiederholung freigegeben/ausgefuehrt.
+Nachtzaehler5/10. Aktuelle79erAusgabe bleibt1Absatz und gebundene Quittung,
+Radar3belegteEntwicklungen/fresh; kein authentifizierter HTTP-/Browser-Vollbeleg.
+
 **PR1192 Kleinstfix implementiert, neue enge Abnahme offen:** Autor5f576f53,
 exakt ai.js (zwei Overrides entfernt) und bestehender Lage-Ergaenzungstest mit
 strengem --kostenvertrag-only. Genau zwei neue Faelle: nativer Azurevertrag mit
