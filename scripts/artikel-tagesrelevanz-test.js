@@ -7,6 +7,13 @@ const P = require("../lib/helmut/scalable-pipeline"), D = require("../lib/helmut
   R = require("../lib/helmut/roh-quellenstaende"), T = require("../lib/helmut/artikel-tagesrelevanz"),
   F = require("../lib/helmut/briefing-frische"), B = require("../lib/helmut/bundestag-artikelstand");
 const now = Date.parse("2026-11-14T04:00:00Z"), env = { HELMUT_SCALABLE_PIPELINE: "on" };
+const args = process.argv.slice(2), nurOffene = args.length === 1 && args[0] === "--nur-offene";
+A(args.length === 0 || nurOffene, "Unbekannte Auswahl darf keine Fachgruppen auslassen");
+const bereitsBestanden = new Set([
+  "Archiv bleibt vollstaendig gespeichert, nur geeigneter ausgewahlter Nachbar erhaelt Tagesauftrag",
+  "Wiederabruf promotet historischen Bestand nicht und dupliziert keine aktuelle kostenpflichtige Arbeit",
+  "Bestehender Vierzehntagehorizont bleibt unveraendert und nimmt keine Zukunft oder Abruffrische an"
+]);
 const sha = value => crypto.createHash("sha256").update(value).digest("hex");
 // Dieselben erfundenen Ausschussartikel wie in der Artikelkernfixture.
 const item = (thema, datum) => ({ title: `Synthetischer Ausschussbericht ${thema}`,
@@ -46,8 +53,12 @@ function welt({ roh = [aktuell, alt], geladen = [aktuell, alt, ausserhalbAuswahl
   return w;
 }
 let count = 0;
-async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
+async function test(name, fn) {
+  if (nurOffene && bereitsBestanden.has(name)) return;
+  await fn(); count++; console.log("PASS " + name);
+}
 (async () => {
+  if (nurOffene) console.log("WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT: erste drei Fachgruppen aus CI43537245306 am43282d1b; hier nur sechs offene Gruppen.");
   await test("Archiv bleibt vollstaendig gespeichert, nur geeigneter ausgewahlter Nachbar erhaelt Tagesauftrag", async () => {
     const w = welt(), r = await w.run(), row = D.toRawDocumentRow(aktuell);
     A.equal(w.archiv.size, 3); A.equal(r.rohitems, 3); A.equal(r.bestaetigtOhneTagesauftrag, 2);
@@ -77,7 +88,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(check("2006-06-11T12:00:00Z"), false);
   });
   await test("Gebundener Artikelstand behaelt ganzen Berliner Tag und faellt bei Widerspruch nie auf Zeitstempel zurueck", async () => {
-    const url = "https://www.bundestag.de/dokumente/textarchiv/2026/kw39-synthetische-beispielreform-1234567";
+    const url = D.canonicalizeUrl("https://www.bundestag.de/dokumente/textarchiv/2026/kw39-synthetische-beispielreform-1234567");
     const stand = tag => {
       const s = { version: B.VERSION, herkunft: B.HERKUNFT, url, titel: aktuell.title,
         publikationstag: tag, absatzHash: sha("synthetischer Leitabsatz") };
@@ -169,5 +180,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const r = await w.run(); A.equal(r.zurueckgestellt, true); A.equal(r.zeitbudgetErschoepft, true);
     A.equal(reads, 1); A.equal(max, 1); A.deepEqual(w.calls, []);
   });
-  console.log(`${count}/${count} neue Artikel-Tagesrelevanzgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
+  A.equal(count, nurOffene ? 6 : 9);
+  console.log(`${count}/${count} ${nurOffene ? "noch offene" : "neue"} Artikel-Tagesrelevanzgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
