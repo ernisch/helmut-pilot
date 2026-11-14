@@ -21,11 +21,11 @@ Helmut ist **kein** Medienmonitoring-Tool, kein News-Reader und kein Dashboard.
 Helmut beantwortet morgens und im Tagesverlauf:
 
 - Was steht heute an?
-- Worauf solltest du reagieren?
+- Worauf sollten Sie reagieren?
 - Welche Chance entsteht, welches Risiko entsteht?
 - Welcher Termin muss vorbereitet werden?
-- Welche Formulierung kannst du direkt nutzen?
-- Welche Aufgabe kannst du delegieren?
+- Welche Formulierung können Sie direkt nutzen?
+- Welche Aufgabe können Sie delegieren?
 
 Kernsatz: *Helmut reduziert die politische Morgenlage auf Entscheidungen,
 Kommunikation und Aufgaben.*
@@ -82,6 +82,8 @@ Neue Funktionen sind nachrangig gegenueber diesem Ziel.
 Der verbindliche [Bereichsvertrag](betrieb/lage-radar-briefing-abnahme-20260924.md)
 trennt Produktziel, ausgerollte Absicherung und noch offene fachliche Abnahme.
 
+Der [fachliche Produktvertrag v1.1](produktvertrag-20261115.md) legt die 27 vom Betreiber beschlossenen Produktregeln einschließlich der verbindlichen Sie Form fest. Der tatsächliche Umsetzungsstand und bestehende technische Sicherheitsregeln bleiben davon getrennt.
+
 ## 5 · Verbindliche Produktprinzipien
 
 1. **Entscheidungen statt Daten.** Helmut zeigt nicht, was passiert ist, sondern was
@@ -106,7 +108,7 @@ trennt Produktziel, ausgerollte Absicherung und noch offene fachliche Abnahme.
    (`scheduler.personNewsSource`, id `<mandats-id>-news`).
 5. **Einfachheit vor Funktionsumfang.** Konkreter politischer Nutzen und
    Verkaufsbereitschaft schlagen jede zusätzliche Funktion.
-6. **Deutsch, Du-Form, mobil zuerst.** Die Oberfläche spricht Deutsch; Zeiten in
+6. **Deutsch, Sie Form, mobil zuerst.** Die Oberfläche spricht Deutsch; Zeiten in
    `Europe/Berlin`.
 
 ## 6 · Wichtigste technische Regeln
