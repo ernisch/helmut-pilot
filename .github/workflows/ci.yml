@@ -166,9 +166,11 @@ jobs:
         if: steps.plan.outputs.radarartikel == 'true'
         run: |
           set -e
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --radarartikel-only
-          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
-          echo 'Neue lokale Artikelbindungsgruppen am exakten Evidencebaum WIEDERVERWENDET; alte 27Fach/12Plan/5Browserbelege nicht wiederholt.' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --radarartikel-nachtrag-only
+          node scripts/lokal.js -- node --check scripts/browser-smoke-test.js
+          node scripts/lokal.js -- node --check scripts/ci-lieferreparatur-plan.js
+          node scripts/lokal.js -- node --check scripts/ci-lieferreparatur-plan-test.js
+          echo '6Plan-/6Syntaxerfolge aus CI43589058224 WIEDERVERWENDET; hier nur geaenderter Nachtragsanker und 3geaenderteJS. Native6 und alte27/12/5 erhalten; Browser vorher0Checks.' >> "$GITHUB_STEP_SUMMARY"
       - name: Briefingvolltext - neue Profilbindung und geaenderte Syntax
         if: steps.plan.outputs.briefingvolltext == 'true'
         run: |

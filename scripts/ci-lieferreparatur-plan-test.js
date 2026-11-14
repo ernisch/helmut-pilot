@@ -16,10 +16,11 @@ const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
 const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
 const kundenOnly = args.length === 1 && args[0] === "--kundenansichten-only";
 const radarartikelOnly = args.length === 1 && args[0] === "--radarartikel-only";
+const radarartikelNachtrag = args.length === 1 && args[0] === "--radarartikel-nachtrag-only";
 const volltextOnly = args.length === 1 && args[0] === "--volltextschutz-only";
 const fensterOnly = args.length === 1 && args[0] === "--briefingfenster-only";
 const kundenRunnerOnly = args.length === 1 && args[0] === "--kundenansichten-runner-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly || radarartikelOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly || radarartikelOnly || radarartikelNachtrag, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -50,6 +51,7 @@ function test(name, fn) {
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
   if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
   if (radarartikelOnly && !name.startsWith("Radarartikel:")) return;
+  if (radarartikelNachtrag && !name.startsWith("Radarartikel: Offlinejob")) return;
   if (volltextOnly && !name.startsWith("Volltextschutz:")) return;
   if (fensterOnly && !name.startsWith("Briefingfenster:")) return;
   if (kundenOnly && !name.startsWith("Kundenansicht:")) return;
@@ -782,7 +784,9 @@ test("Radarartikel: Offlinejob prueft nur neue Planfaelle und Syntax ohne Fachwi
   A.deepEqual(active("offline-suite","browser-smoke",C.validate(fixture(C.RADARARTIKEL))),[
     "Prüfplan aus geänderten Dateien","Radarartikel - neue Profilbindung und geaenderte Syntax"]);
   const section=workflow.slice(workflow.indexOf("      - name: Radarartikel - neue Profilbindung"),workflow.indexOf("      - name: Briefingvolltext - neue Profilbindung"));
-  A.match(section,/ci-lieferreparatur-plan-test\.js --radarartikel-only/);A.match(section,/ci-lieferreparatur-plan\.js --syntax/);
+  A.match(section,/ci-lieferreparatur-plan-test\.js --radarartikel-nachtrag-only/);
+  for(const file of ["scripts/browser-smoke-test.js","scripts/ci-lieferreparatur-plan.js","scripts/ci-lieferreparatur-plan-test.js"])A.ok(section.includes("node scripts/lokal.js -- node --check "+file));
+  A.match(section,/43589058224/);A.equal(section.includes("ci-lieferreparatur-plan.js --syntax"),false);
   A.match(section,/WIEDERVERWENDET/);A.equal(section.includes("node scripts/lokal.js scripts/radar-einzelartikel-titelbindung-test.js"),false);
   A.match(workflow,/github\.event\.pull_request\.base\.sha == '87505694ae9318d660f2052e634613d720729c03'/);
 });
@@ -798,4 +802,4 @@ test("Radarartikel: Browserjob prueft nur neue Artikelanzeige mit PflichtChromiu
 });
 
 A.ok(count > 0);
-console.log(`${count}/${count} ${radarartikelOnly ? "neue Radarartikel-Profilgegenfaelle" : volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${radarartikelNachtrag ? "geaenderte Radarartikel-Nachtragsgruppe" : radarartikelOnly ? "neue Radarartikel-Profilgegenfaelle" : volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);

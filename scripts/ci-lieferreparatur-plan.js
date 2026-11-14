@@ -231,18 +231,18 @@ const VOLLTEXTSCHUTZ = Object.freeze({
 const RADARARTIKEL = Object.freeze({
   PR: 1196, BASE: "87505694ae9318d660f2052e634613d720729c03",
   BRANCH: "codex/radar-artikelanzeige-20261114",
-  LOCAL_EVIDENCE_COMMIT: "a07a64760352292822d2a52cac8f897259d4c243",
+  LOCAL_EVIDENCE_COMMIT: "307aab44ac39ee2d05428454c549a04057128ade",
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
     "lib/helmut/briefing-bereichsvertrag.js", "lib/helmut/tagespaket-auslieferung.js"
   ]), REGRESSION_FILES: Object.freeze([
     "scripts/radar-einzelartikel-titelbindung-test.js", "scripts/browser-smoke-test.js"
   ]), BLOBS: Object.freeze({
-    "docs/CURRENT_STATE.md": "66e44ced2051898302b165d1cfbc98e59de51c53",
-    "docs/betrieb/verarbeitungskern-100-20261113.md": "dec6b5d3940377f72ab0af0993ab8388e0687eb4",
+    "docs/CURRENT_STATE.md": "9018c32d91d290751b6f06e37112701de03dd853",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "f2d4c3b5222c4385bc0d26a3b1381d097c97b7ba",
     "lib/helmut/briefing-bereichsvertrag.js": "453a56357dcc3615b9651be638acba27a4acbccf",
     "lib/helmut/tagespaket-auslieferung.js": "2b90a346e58f4c26ac17ec3da8f98bd6315f6747",
     "scripts/radar-einzelartikel-titelbindung-test.js": "b0abd0be5b939d288072331866dbcae008530af4",
-    "scripts/browser-smoke-test.js": "e9419256536ce0b922d9c0b0c74fded0627cc0fa",
+    "scripts/browser-smoke-test.js": "ab851cbcfacbecb6235965102618ea78c61d849f",
     "vercel.json": "2417031461d775743264e04755f24284f90404de"
   })
 });
