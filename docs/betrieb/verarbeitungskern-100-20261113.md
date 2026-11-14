@@ -65,7 +65,8 @@ Quittung05:15:43.292UTC bindet aktuelles Paket/Profil/Berlintag/Briefinghash.
 Normaler Leser auf neuen exakten privaten Livesnapshots05:18UTC ueber
 scripts/lokal.js bestanden: Profil/Quellen/Policy/Tag/Quittung passen, Absatz
 unveraendert und gueltiger Teilbeleg, keine privaten Reviews im DTO, Snapshots
-unveraendert. Kein authentifizierter Production-HTTP-/Browsernachweis.
+unveraendert. Radar jetzt3 gespeicherte belegte Entwicklungen, Anzeige fresh;
+damit alte2/stale-Angabe abgeloest. Kein authentifizierter Production-HTTP-/Browsernachweis.
 Fehler bleiben Quellenversorgung offen/kein Tagesanlass/LageTeilstand;
 keine Vollabnahme. Vorzeitige Quittungserwartung04:30 bleibt als gescheiterter
 Zwischennachweis erhalten. Regulaere Lage05:00:23–05:00:30UTC partial/1verarbeitet/

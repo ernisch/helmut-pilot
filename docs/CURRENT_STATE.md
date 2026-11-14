@@ -13,7 +13,7 @@ bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1189: acht neue Workergruppen/sechs neue CI-Gruppen/Syntax bestanden in43556801462.
 Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Nur begrenzter Abrufanteil;
 keine weiteren Slots, Budgets, Cron oder Datenkorrekturen. Runtime/Alias441/anonym401.
-Regulaeres05:15-Paket79Eintraege/1Absatz wird gebunden ausgeliefert; weiter Teilstand.
+Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
 Kosten05:01:0,567350USDTag/3,290827USDgesamt/8alteReserven; 04:45-Worker13done/2Fehler.
 
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
