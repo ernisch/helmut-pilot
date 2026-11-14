@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
-**14.11.2026UTC/Berlin: PR1192 live; heutiger Ergaenzungsstart bleibt gesperrt.
-Paket05:15 weiterhin79Eintraege/5Karten/1Absatz; Radar3Entwicklungen/fresh.**
+**14.11.2026,08:05UTC: einmalige Wiederaufnahme nach konkretem Betreiber-GO erfolgt.
+Paket08:04:79Eintraege/5Karten/2gepruefteLageabsaetze; Radar3Entwicklungen/fresh.**
 Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
 Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
 Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
@@ -11,13 +11,13 @@ bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1190: neun neue Artikelgruppen/sechs neue CI-Gruppen/Syntax bestanden in43561501437.
 Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Strenger Reader bleibt;
 Konfliktartikel isoliert, keine Datenkorrektur/Budgetaenderung. Runtime/Alias0339/anonym401.
-Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
-Kosten05:34:0,567350USDTag/3,290827USDgesamt/8alteReserven; Paket/Quittung unveraendert.
+Paket08:04gebunden/2Absätze; Gesamtteilstand Quellenversorgung/keinTagesanlass, kein LageTeilstand.
+Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
 Realer Lagepfad06:05:44–53: nur bestaetigter Teilstand, neue Startphase ohne Entwurf.
 Zwei neue costInputVersionHash-Overrides verletzen nativen Kostenvertrag vor Reserve;
 keine neuen Calls/Kosten. Reviewluecke. PR1192:2Overrides entfernt;2nativeFaelle bestanden.
-Start bleibt gesperrt; kein Reset/Neukey/Retry.6CI-Gruppen/Syntax gruen43565666630.
+Nach konkretem GO: Originalarchiv/CAS,1Lage/2Calls+1Morgen;neuer Leser Profil/Tag/Quelle/Quittung PASS.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
