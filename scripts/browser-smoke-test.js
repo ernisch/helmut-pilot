@@ -204,7 +204,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         const ids = JSON.parse("[" + filter.slice(4, -1) + "]");
         assert.deepEqual(ids, ["ko-synth-1", "ko-synth-2"]);
         const offset = Number(url.searchParams.get("offset"));
-        assert([0, 2].includes(offset)); identityReads++;
+        assert((radarArtikel ? [0, identities.length] : [0, 2]).includes(offset)); identityReads++;
         return structuredClone(identities.slice(offset, offset + Number(url.searchParams.get("limit"))));
       }
     });
