@@ -126,6 +126,23 @@ Diehistorischen1197Belegeundproduktive77erAusgabebleibenbestehen. KeinFachvoll-
 oder100KundenPASS. NachnormalemgrünemMergeGitrolloutlesendnachkontrollieren;
 naechsteechteQuellenwirkungausregulaeremFenster,nichtdurchunbefugtenZusatzlauf.
 
+**PR1198 regulaerer Rollout14.11.2026,17:20–17:22UTC:**
+NormalerMerge4d70c990b12b1c7dc7872a9d53ee5c16aba819f0mitParents529d47f8/a56ae56c,
+Treeffa9ccd901092988b7ad3ebff10975de52458642exaktgeprueft. CI43620326473:
+beidePflichtchecksgruen,Offlinejob132524365014belegt6NEUEProfilgruppenund10Syntax,
+Browserjob132524365250uebernimmtRendererbelegeohneChromium/neuenBrowserPASS.
+Root+2unabhaengigeVollbaum-/Runtime-/CI-/TestreviewsalleohneoffenenBefund.
+Gitdeploymentdpl_Ax4JYCaVSTxXL5e8AEndyyUH2Wpc Production/fra1READY17:20:46.412UTC.
+Hauptalias+geschuetzteRuntime4d70c990/ProfilExklusiv/Kommunikations-/Kohortenschutz
+17:21:54bestaetigt. NormalerProduktleserHTTP200(Requestcle1::fra1::7nfqr-1794676911885-a7fcdac7bd47)
+bewahrtPaketb2cb2abd/77Items/2gepruefteTexte/gebundenenRadar+Quittungwortgleich.
+LesendeProbe,keineProdukt-/Modellschreibwirkung. KeinneuerTagesprioritaetsnachweis.
+VorMergeKostenprimaer258Calls/88heute/0,620841USDTag/3,344318gesamt/8alteoffene,
+nurCEM/0aktiveLeases. QuellenfensterundbisherigeEinmalfolgerechtebleibenverbraucht.
+NeueBetreiberfreigabeweiterauftragsbezogenegrueneMerges,ersterdavon1198;
+keinBudget-/Cron-/Env-/Kunden-/Datenkorrekturrechtabgeleitet. WeiterarbeitamProdukt,
+naechsteregulaereQuelle/Lage/PaketbeobachtungbleibtfuerLiveabnahmeerforderlich.
+
 ## Reparatur der tatsaechlichen Lieferblocker (13.11.2026, 21 UTC)
 
 **Nachtauftrag14.11.2026,00:33UTC:** Betreiber erlaubt vollautonome Behebung und
