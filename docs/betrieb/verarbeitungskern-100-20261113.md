@@ -31,6 +31,16 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:3/10Merges (PR1188/1189/1190),7weitere nur beiGruen verbleiben.
+**Gezielte Lage-Ergaenzung in Umsetzung:** Originaler Teilstand ist gueltig und
+genau ein Absatz nur wegen Profilbezug abgelehnt. Ein einziges Ersatzobjekt aus
+uebrigen originalen Quellen soll mit dem wortgleichen positiven Originalabsatz
+erneut durch den unveraenderten strengen Q-/Paarvertrag gehen. Hoechstens ein
+Ergaenzungsvertrag je Basis-Eingabe, Originalteilstandhash, Regelv1, Mandat/Tag;
+vorhandene V-Phasen und Kosten-/Slot-/Tenantgates, kein UNKNOWN-Schluesselausweg.
+Unklare oder negative Ergaenzung behaelt den bestaetigten Teilstand; App/cacheOnly,
+historische/frozen/gebundene Pfade unveraendert. Kein Tagesanlass/Quellenbeleg
+entsteht durch eine Textkorrektur. Kein neuer Modellaufruf oder Test bisher;
+Implementierung, enge neue Regression und unabhaengige Abnahme offen.
 **PR1190 regulaer ausgerollt,05:29–05:34UTC:** Merge
 0339f19e6167d9f0f9eff67b7acfb0e997af1180, Parents441ed0af/14295ec3,
 Treece919789e274dd832e50fee145bde7432b81bd92 exakt wie gepruefter Kopf.
