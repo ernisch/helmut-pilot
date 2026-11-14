@@ -114,7 +114,8 @@
       "codex/vorgang-beweispaar-20260920": false,
       "codex/ereignisketten-20260920": false,
       "codex/dip-quellfelder-20260920": false,
-      "codex/verstehen-169-actions-20260923": false
+      "codex/verstehen-169-actions-20260923": false,
+      "codex/briefing-tagesprioritaet-20261114": false
     }
   },
   "functions": {
@@ -174,11 +175,26 @@
     }
   ],
   "crons": [
-    { "path": "/api/cron/crawl", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/crawl?arbeitsfenster=1", "schedule": "0,15,30,45 3 * * *" },
-    { "path": "/api/cron/crawl?arbeitsfenster=1", "schedule": "15,30,45 4 * * *" },
-    { "path": "/api/cron/lage-briefing", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/morning-briefing", "schedule": "15 5 * * *" }
+    {
+      "path": "/api/cron/crawl",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/crawl?arbeitsfenster=1",
+      "schedule": "0,15,30,45 3 * * *"
+    },
+    {
+      "path": "/api/cron/crawl?arbeitsfenster=1",
+      "schedule": "15,30,45 4 * * *"
+    },
+    {
+      "path": "/api/cron/lage-briefing",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/morning-briefing",
+      "schedule": "15 5 * * *"
+    }
   ],
   "ignoreCommand": "node scripts/vercel-ignore-build.js"
 }

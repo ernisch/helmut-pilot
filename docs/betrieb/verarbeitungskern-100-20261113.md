@@ -30,7 +30,92 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:8/10Merges (PR1188/1189/1190/1191/1192/1193/1194/1195),2weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:9/10Merges (PR1188/1189/1190/1191/1192/1193/1194/1195/1196),1weiterer nur beiGruen verbleibt.
+**PR1197 Reparaturvorbereitung14.11.12:46UTC, nochkeinMerge/GO/Produktlauf:**
+[Fachthemen und Originalartikel](https://github.com/ernisch/helmut-pilot/pull/1197)
+vereint die beiden belegten Ursachen und einen gesondert freizugebenden Einmalentwurf.
+Acht NEUE Fachthemen-Gruppen am integrierten b0a32c73 einmal ueber scripts/lokal.js
+bestanden: nativeEinmalanalyse/CAS, optionaleFehlbelege, DocID+Originalpassage,
+geleseneAbschnitte/12erAuswahl,Kontext,keineAltTags/erfundeneAemter,UNKNOWN-Sperre,
+fiktiveMdB-/MdL-Fachmerkmale. KeinealteSuite/zusätzlicherbezahlterAufruf.
+ZweiteUrsache:105wartendeU sindalleattempts0/faellig,38publisherohneArtikelziel,
+67DirectmitURLaberleerem/kurzemText. ZweiqueuegebundeneRoharchive+nativeHashprobe
+bestaetigen exakteInput-/Cachebindung. Beidev2Cachebelege sindbestaetigtluecke/
+strukturierter-artikel-mehrdeutig-oder-fehlend; v1fehlend. KeineUNKNOWN-Freigabe.
+Zwei begrenzte oeffentlicheDiagnose-GETs liefernHTTP200(128041/440259Bytes),native
+alteExtraktion reproduziertgenaudenselbenLayoutfehler. KeineProduktablage/Modelle.
+KleinerParserfix: eigenegeschlosseneBReg-/DLF-Provenienz,Header/Datum/Ziel/Bodyvoll
+gebunden. UnbekannteProsa/Gegenbelege vor/nach/inHeader oderArtikelhuelle stoppt;
+Cookie/Podcast/Teaser nurkonkretbelegteNichtinhaltsbereiche. AlleReviews vorerstenTests.
+FuernurvollbestaetigtenaltenLayoutnegativgrund genau1globaleFolgerevision derselben
+Artikelversion. Originale/Altpositivevorrangig;fehlend/reserviert/UNKNOWN/kaputt/andere
+Gruende/Hosts erzeugenkeinenRevisionsescape. GleicheCAS-/Anbieter-/Deadlinegrenzen.
+Sourcecode2c4cf9cf+d65fcd22 integriert5f4c1465+55fe468f;9/9NEUEGruppen
+einmallokalPASS nachunabhaengigerRuntime-/Testabnahme.2erstmaligeFixpositive auf
+denbereitsgespeichertenechtenHTTP200-Antworten: BReg2Absaetze/475Zeichen, DLF5/1647;
+beideartikeltext-v3,eigeneProvenienz,Originalpublikation13Nov13:20UTC/22:12:48UTC,
+Inputstand/AntwortSHA256/Belegvalidierungbestaetigt. Alte9Gruppen nichtwiederholt.
+Reviewbefunde(Headline-/Hüllengegenbelege/Sichtbarkeit)vorerstenTestsbehoben,
+keinentsprechenderverlorenerInhalt alsProduktnachweisumgedeutet.
+Zusaetzlicher konkreterBetriebsblocker:8/8Fenster,2400/2400s UND16/16Originalabrufe
+sindheuteverbraucht. Vercel-Config fuerexaktdiese3numerischenWerte reinlesendgeprueft;
+keineSecret-/Admincredential-/DIP-Keysuche,keineUmgebungsveraenderung.
+Einmalentwurf32: NUR echterAdminauftrag+UTC14Nov+exakte8/2400/16 undBESTAETIGTE
+normaleFenster-Tagesgrenzablehnung erlaubt1globalenSonderkey(cap1),danach normale
+globaleZaehlungenmax9Fenster/2700s. Max16Zusatzoriginale(Gesamt32)NURimlebenden
+privatenAsyncLocalStorage desgleichen300sFensters; zuvorimmernormale16versuchen.
+WeakSet/Tag/Frist/nachbeidenawaits/finallyinvalidierung verhindernfremdes/spaetesRecht;
+alleQuoteninbestehenderDBRPC,keineprozesslokalenKontingente. UNKNOWN/Teilbuchungen
+bleibenverbraucht,keineKompensation. Modellvertragunveraendert1USDTag/30gesamt.
+AchtNEUEEinmal-Gruppen am729c2ffb einmal lokalPASS,Root+Freshunabhaengigabgenommen.
+Gesamt1197lokal25/25NEUEGruppen(8Fach/9Quelle/8Einmal)+2echteFixpositive;
+vorige33Fach/18Plan+1Nachtrag/10Browsererfolge unveraendert,nichtwiederholt.
+NeuerCI-Vertrag bindetexaktPR1197/Base58e21bf5/Branch/15NichtCIblobs+3CI-Dateien;
+nur6NEUEPlangruppen+geaenderteJS-Syntax,beidePflichtchecks stehennochOFFEN.
+Browserbewusstnichtausgefuehrt,App/Styles/Auth/serverunveraendert;keinBrowserPASSneu.
+Keinserver-/Adminauth-/UI-/Cron-/Env-/Modellwechsel,MigrationoderDatenreset.
+WICHTIG: Dieses Ausnahmecode-Deployment und die eine Adminausfuehrung benoetigen
+EXPLIZITES NEUES BETREIBER-GO vorMerge. Bisherige10Mergefreigabe autorisiertkeinen
+Quote-/ExtraSource-Bypass. KandidatbleibtDRAFT,GOnochNICHTgefragt/erteilt.
+NachGruen+GO: normalerMerge(letzter10/10),Gitrollout,echteAdminsession+CSRF startet
+hoechstens1Fenster,danachlesenderAbgleichneuerArtikel/Topics/Decisions/Einzelquoten.
+NurbeiechtenNEUENbestaetigtenEingaben einmalbestehendeLageverarbeitung undnormaler
+Morgenabschluss,gleicheGeld-/UNKNOWNwachen. Erfolg erstbeiechtergespeicherterPrioritaet
+mitMandats-/Profil-/Quellen-/Berlintag-/Quittungsbindung undnormalerAppauslieferung.
+KeineWiederverwendungverbrauchterRecovery-/Ersatzrolloutrechte. OhneGOkeineAktivierung.
+Produktdesignunveraendert;MobilerEntwurf imageexec-9264c8c1 bleibtMockup.
+
+**Fortsetzung Tagesprioritaet14.11.11:54UTC: belegte neue Schnittstellenluecke.**
+Betreiber verlangt ehrliche MdB-/MdL-Einschaetzung, echtes mobilesMockup ohneProdukt-
+Designaenderung undanschliessend weitereBehebungbisbelastbareMandatsprioritaeten.
+Root arbeitetisoliertcodex/briefing-tagesprioritaet-20261114abmain58e21bf5;
+Delivery schreibt nurUnderstanding-Schema/Assemble/neuenFachbeleghelper/neueRegression,
+Fresh prueftunabhaengigQuellenabschluss/Originalkontext;max3inklRoot.
+NarrowLivebeleg4KOs:tags/policy_field/ausschuesse/mentioned_committees alleArraysleer,
+Bund-Levelhigh/confidence80–85. V3RawselectenthaeltFelder,keinAdapterverlust.
+RegulaeresSchema/Prompt fordert keineFachtags; Assemblewhitelistet sienicht.
+Matching erwartet jedochgenaudieseDimension oderbelegteAusschussbeteiligung. Eine
+fehlendeAusschussbeteiligung darf nichtalsFachgebietersatz erfundenwerden.
+EngerFix inEntwicklung:boundedTags+DokumentID+wortgleicherOriginalpassagenbeleg im
+SELBENbisherigenUnderstandingcall, deterministischanquellengenauegeleseneInputversion
+binden undueberbestehendenCASspeichern;fehlend/ungueltig=>leereTags/ehrlicherStatus,
+Sachstandnichtverwerfen.KeineThemenlexik-/Schwellen-/Mandats-/Budgetlockerung.
+Altegespeichertecomplete/UNKNOWN-Ergebnisse nichtneuoeffnen/bezahltwiederholen.
+Lage-Paarreview beweistnurRelevanzseinerAbsaetze,nichtRangfolge/Dringlichkeit/Topnachricht;
+keinentsprechenderUrteiltransfer. Admin-Fachtagbackfill istkostenvertraglichnichtzugelassen.
+Live11:44:U78erledigt/19failed/105wartend,Source150done/2failed/1wartend,0Leases,nurCEM.
+Alle105wartendenU sindfaelligundattempts0;104artikelkontext-offen,1Verstehenartikelkontext-offen.
+SiehängenVORModellstartamOriginalinhaltspfad, derjetztgezieltuntersuchtwird.
+Quellen-GAP sperrt gueltigePrioritaetennicht; erscheintersbei0Candidates,keinFalse-Gapbelegt.
+8/8Tagesfenster+2400/2400reservierteSekundenprimaerbestaetigt. EchteAdminsession+CSRF
+könnenUhrzeit,aberkeinenverbrauchtenMengendeckeluebergehen. Keine9.Aktion/Quotarueckgabe/
+Env-Cron-Aenderungautorisiert; einbegruendeterAusnahmevorschlagbedarfneuemkonkretenGO.
+Kostenunveraendert0,581580USDTag/3,305057gesamt,254Calls/84heute/8alteoffeneReserven.
+FehlgeschlageneersteReadaggregation(profile.idstattuser_id) korrigiert,keineSchreibwirkung.
+AllebisherigenNachweiseerhalten,keinealtenTests/Modell-/Lastwiederholungen.
+MobilesMockup imageexec-9264c8c1 nurEntwurf, Produktdesignunveraendert.
+WeiterkeinFachvollPASS,1gruenerNachtmergeverbleibt.
+
 **PR1194 normal gemergt und ausgerollt,14.11.10:18–10:28UTC:**
 Kopf46a173bf79749141ace5c14a79cbaccfdae1c8b9, Evidenceb632c6fb,
 Mergee148640fb195b9a713f613e868965e5990ee9c9a mit Parents4a49/46a173,
@@ -58,6 +143,28 @@ Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entferne
 (Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
 Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
 Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+**PR1196 normalgemergt und realeAuslieferung,14.11.11:22UTC:**
+Merge58e21bf57efa3441c4ab0ea822896b02e7180d4b, gepruefterKopf8ae057063d90dd05db09e7ec5b62ee2403720d8e,
+Evidence307aab44, Mergebaum76797368b4584f9107fbeeba154d20bb4919946f exakt wieKopf.
+[CI43589381399](https://github.com/ernisch/helmut-pilot/actions/runs/43589381399)
+beidePflichtchecks gruen:1geaenderterOfflineanker+3geaenderteSyntaxdateien und
+5/5NEUEChromium-Artikelkartenchecks Desktop/Mobil/NoWrites.6erstePlan/6Syntax
+und6lokaleFachgruppen gebundenwiederverwendet. Alte27Fach/12Plan/5Browser erhalten.
+Root+unabhaengigesNachtrags-/Vollbaumreview ohneBefund; keinForce/Adminbypass.
+NormalGitdeploymentdpl_Axbnp1FpEsCbRYyEztggKFx3Hcvy Production/fra1 READY11:20:51.565UTC;
+Hauptalias/Runtime58e2/Exklusivprofil-/Kommunikations-/Kohortensperren bestaetigt.
+Echtergeschuetzter normalerProduction-Appreader11:21:17UTC HTTP200 liefert2gepruefte
+vorlaeufigeBriefingabschnitte/2Lageabsätze/2Radarentwicklungen/1Parteikarte.
+Alle3Radartitel entsprechen ihrer eigenenArtikelquelle undexaktemDatum; SPD/Grünen-
+Quelle benutzt nun ihreSPD/Grünen-Ueberschrift. Keine Karte verloren,keinerfundenerTrend.
+Exakt unveraendert: Pakethashd41c1c16/gespeicherterNachweis/76Items/Quittung/
+beideLageabsätze samtQuellenbindung/RohRadar. NurgeklonteAnzeige korrigiert, keineWrite-
+oderHintergrund-/Modell-/Quellenoperation. Sourcesgap bleibt ehrlichgap/vorlaeufig;
+keinVollbriefing-/echterKundenloginBrowser-/100KundenPASS behauptet.
+Kostenbuch11:19 reinlesend unveraendert254Calls/84heute/8alteoffeneReserven/0heuteoffen,
+0,581580USDTag/3,305057USDgesamt. Keine neue bezahlte Verarbeitung oder neuenKunden.
+Nachtzaehler9/10,1weitereFreigabe beiGruen. NaechsterSchritt: bestehendeApp vollstaendig neu laden.
+
 **1196 CI-Nachtrag11:18UTC:** CI43589058224 hat6/6NEUEPlanfaelle und6JS-Syntax
 bestanden. Browsercheck bricht VOR erstemPASS an fehlendemgespeicherterNachweis ab.
 BeideAgenten+Root belegen reinenHarnessfehler: neueFixturehat3Identitaeten, nativer

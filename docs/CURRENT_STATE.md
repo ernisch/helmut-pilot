@@ -1,23 +1,23 @@
 # CURRENT STATE — Helmut
-**14.11.2026,11:18UTC: Briefing mit2geprueftenAbschnitten und Radar2 auf Production.
-Radarfix lokal6/6geprueft; CI6Plan/6Syntaxgruen,Browserfixture korrigiert.**
-main/Production `87505694`, [PR1195](https://github.com/ernisch/helmut-pilot/pull/1195), Kopf `2e684600`.
-Vercel `dpl_8GpRgQ8nEex5RHS65A8LZghDjMS4` regulaerGit/Production/fra1 READY10:43:19UTC.
-[Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
-Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
-bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt, keine neuen Kunden/Dienste/Env/Cron.
-27neueFachgruppen lokal,12neueCI-Gruppen/17Syntax/5Browserchecks gruen; alte Erfolge erhalten.
-1194CI43584269849,1195CI43586409603; unabhaengige Runtime-/CI-/Vollbaumreviews.
-GENAU1normaler0KI-Morgenabschluss10:45 auf korrigiertenEingaben,keineQuellenfenster/Resets.
-Neues Paketd41c1c16/76Items/2Lageabsätze/2Radar,Quittung gebunden,Texte wortgleich.
-Original812d3b81 realarchiviert;254Calls/84heute/8alteReserven/0heuteoffen unveraendert.
-EchteProductionHTTP-Auslieferung10:45 bestätigt;kein Kundenlogin-Browser-/VollbriefingPASS.
-Quellenversorgung/Tagesprioritaet bleiben offen,Teilstand ehrlich,100Kunden weiterunbelegt.
-PR1196: Titel striktan Vorgang/Artikeladresse/exaktePubzeit; fehlend/widerspruechlich=>ausblenden.
-6neueNativegruppen+unabhaengigeReviews bestanden; beideechtenDynamiken+Partei bleiben.
-Nur sichtbareKopie, Paket/Quittung/Texte unveraendert;Browser0Checks vorFixturefix,5offen.
-Keine neuen Modelle/Quellen-/SQLschreiblaeufe;keine weitere Materialisierung vorgesehen.
-Kosten10:47:0,581580USDTag/3,305057USDgesamt;0laufendeProzesse/Leases,nurCEM.
+**14.11.2026,12:46UTC: neuer Sprint zur belegten Tagespriorisierung, Design unveraendert.**
+main/Production58e21bf5(PR1196), Briefing2/Lage2/Radar2+Partei1 weiterhinvorlaeufig.
+[Architektur und Primaerbelege](betrieb/verarbeitungskern-100-20261113.md).
+Neu belegt: regulärer Understandingvertrag erzeugt/uebernimmt keineFachtags;
+Matcher erwartetFachtags/belegteAusschuesse.4gezielteLiveKOs besitzen alleFacharraysleer.
+PR1197: gleicherCall-Fachtags8/8neuPASS; Originalseitenlayoutfix9/9neuPASS+2echteFixpositive.
+Quellen-GAP ist kein pauschalesPrioritaetsverbot; gueltigeKandidaten bleibenzulaessig.
+Live11:44:78Udone/19failed/105wartend,Source150done/2failed/1wartend,0Leases,nurCEM.
+105Uattempts0:38ohneArtikelziel/67DirectohneText;2echteLayoutfehlerreproduziert.
+Tageskontingenteprimaerbestaetigt8/8Fenster,2400/2400s UND16/16Originalabrufeverbraucht.
+Einmalentwurf9/2700/32:8neueGruppenPASS;EXTRA-GOvorMergeNOCHNICHTerteilt.
+KeinExtraLauf/Reset/Bestandsreanalyse/Modell/Produktoperation,keinealteGO-Wiederverwendung.
+Budget0,581580USDTag/3,305057USDgesamt,254Calls/84heute/8alteReserven/0heuteoffen.
+Limits1USD/UTC-Tag/30gesamt,keineKunden/Dienste/Env/Cron/Migration/Datenkorrekturen.
+Bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten,nichtwiederholt.
+Paketd41c1c16/76Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
+EinzelngepruefteTexte sindkeinBelegfuerTageswichtigkeit; keinVoll-/100KundenPASS.
+MobilesMockup bereit,nurEntwurf;keineProduktdesignaenderungbeauftragtoderumgesetzt.
+Root+2bestehendeCodexAgenten,getrennteZustaendigkeiten;1gruenerNachtmergeverbleibt.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -33,7 +33,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**8/10Merges verbraucht,2frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**9/10Merges verbraucht,1frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
