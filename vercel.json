@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/radar-artikelanzeige-20261114": false,
       "codex/briefing-bestand-erhalten-20261114": false,
       "codex/briefing-fenster-20261114": false,
       "codex/kundenansichten-20261114": false,

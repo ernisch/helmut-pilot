@@ -1,22 +1,22 @@
 # CURRENT STATE — Helmut
-**14.11.2026,10:28UTC: PR1194 auf Production; zwei gepruefte Briefingabschnitte
-werden ehrlich als vorlaeufiger Stand ausgeliefert. Radaraktualisierung vorbereitet.**
-main/Production `e148640f`, [PR1194](https://github.com/ernisch/helmut-pilot/pull/1194), Kopf `46a173bf`.
-Vercel `dpl_6TVccKEXiw5NWbfjxj8kzQMXp9LA` regulaer Git/Production/fra1 READY10:18:34UTC;
-Alias/Runtime/exakteClientbytes/HTMLversion/anonym401 bestaetigt, keine Migration.
+**14.11.2026,10:53UTC: Briefing mit2geprueftenAbschnitten und Radar2 auf Production.
+Letzte Radar-Artikelueberschrift wird an ihre eigene Quelle gebunden.**
+main/Production `87505694`, [PR1195](https://github.com/ernisch/helmut-pilot/pull/1195), Kopf `2e684600`.
+Vercel `dpl_8GpRgQ8nEex5RHS65A8LZghDjMS4` regulaerGit/Production/fra1 READY10:43:19UTC.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt, keine neuen Kunden/Dienste/Env/Cron.
-21/21 neue lokale Fachgruppen,6/6 neue CI-Gruppen,13Syntax,5/5 neue Browserchecks
-CI43584269849 gruen, unabhaengige Runtime-/CI-/Vollbaumreviews. Alte Erfolge erhalten.
-Echte geschuetzte ProductionHTTP-Auslieferung10:20:2gepruefteAbschnitte,Profil/Tag/Quelle/
-Quittung gebunden, originales Paket812d3b81 unveraendert; kein Kundenlogin-BrowserPASS.
-Quellenversorgung und Tagesprioritaet bleiben offen; kein Vollbriefing-/100KundenPASS.
-Alter gespeicherter Radar enthaelt noch1widerlegten Themenmix unter3Dynamiken.
-Rein lesender aktueller Neubau10:26:76Items/2Radar,beideVollabsaetze+Bindung erhalten.
-Noch kein neuer Morgenabschluss: Volltextschutz lokal6/6geprueft, Pflicht-CI offen.
-Kein bestaetigter Textverlust/keine neuen Modelle/Quellen-/SQLschreiblaeufe.
-Kosten10:15:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
+27neueFachgruppen lokal,12neueCI-Gruppen/17Syntax/5Browserchecks gruen; alte Erfolge erhalten.
+1194CI43584269849,1195CI43586409603; unabhaengige Runtime-/CI-/Vollbaumreviews.
+GENAU1normaler0KI-Morgenabschluss10:45 auf korrigiertenEingaben,keineQuellenfenster/Resets.
+Neues Paketd41c1c16/76Items/2Lageabsätze/2Radar,Quittung gebunden,Texte wortgleich.
+Original812d3b81 realarchiviert;254Calls/84heute/8alteReserven/0heuteoffen unveraendert.
+EchteProductionHTTP-Auslieferung10:45 bestätigt;kein Kundenlogin-Browser-/VollbriefingPASS.
+Quellenversorgung/Tagesprioritaet bleiben offen,Teilstand ehrlich,100Kunden weiterunbelegt.
+Restbefund: Parteikarte nimmt altenKO-Titel zur Linken-Abstimmung,aber neuereSPD/Grünen-
+Quelle/Datum. KorrekteArtikelmetadaten liegenimselbenPaket,engeReader-/Producerkorrekturfolgt.
+Keine neuen Modelle/Quellen-/SQLschreiblaeufe;keine weitere Materialisierung vorgesehen.
+Kosten10:47:0,581580USDTag/3,305057USDgesamt;0laufendeProzesse/Leases,nurCEM.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -32,7 +32,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**7/10Merges verbraucht,3frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**8/10Merges verbraucht,2frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
