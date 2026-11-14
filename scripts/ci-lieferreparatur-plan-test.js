@@ -13,7 +13,8 @@ const frischeNachtrag = args.length === 1 && args[0] === "--frische-nachtrag-onl
 const abrufOnly = args.length === 1 && args[0] === "--abrufanteil-only";
 const konfliktOnly = args.length === 1 && args[0] === "--versionskonflikt-only";
 const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -42,6 +43,7 @@ function test(name, fn) {
   if (abrufOnly && !name.startsWith("Abrufanteil:")) return;
   if (konfliktOnly && !name.startsWith("Versionskonflikt:")) return;
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
+  if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
   fn(); count++; console.log("PASS " + name);
 }
 function denied(change, profile = C) { const f = fixture(profile); change(f); A.throws(() => C.validate(f), /lieferreparatur-ci:/); }
@@ -515,5 +517,60 @@ test("Ergaenzung: Browserjob bestaetigt unveraenderte Eingaben ohne erneuten Bro
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
+test("Kostenvertrag: nur neuntes exaktes Profil aktiviert nur den neuen Kostenvertragsanschluss", () => {
+  const p = C.validate(fixture(C.LAGEKOSTEN));
+  for (const key of C.OUTPUTS) A.equal(p[key], key === "lagekostenvertrag");
+  A.equal(p.source.pr, 1192); A.equal(p.source.base, C.LAGEKOSTEN.BASE);
+  A.equal(C.LAGEKOSTEN.RUNTIME_FILES.length, 1); A.equal(C.LAGEKOSTEN.REGRESSION_FILES.length, 1);
+  A.match(p.reused.status, /Browser bewusst nicht erneut/);
+});
+test("Kostenvertrag: fremde Metadaten Ereignisse und Koepfe erhalten keine Ausnahme", () => {
+  for (const change of [f => { f.pr.base.sha = C.TAGESFRISCHE.BASE; }, f => { f.prNumber = C.TAGESFRISCHE.PR; },
+    f => { f.pr.number = C.PR; }, f => { f.headRef = C.TAGESFRISCHE.BRANCH; }, f => { f.pr.head.ref = C.BRANCH; },
+    f => { f.pr.base.ref = "fremd"; }, f => { f.pr.base.repo.full_name = "fremd/repo"; },
+    f => { f.pr.head.repo.full_name = "fremd/repo"; }, f => { f.pr.state = "closed"; },
+    f => { delete f.pr.draft; }, f => { f.ref = "refs/heads/main"; }, f => { f.baseRef = "fremd"; },
+    f => { f.event = "push"; }, f => { f.event = "workflow_dispatch"; }, f => { f.event = "pull_request_target"; },
+    f => { f.repository = "fremd/repo"; }, f => { f.checkedOutHead = oid("1"); }]) denied(change, C.LAGEKOSTEN);
+});
+test("Kostenvertrag: jeder Abnahmeblob und unveraenderte Runtime bleiben strikt gebunden", () => {
+  for (const file of Object.keys(C.LAGEKOSTEN.BLOBS)) {
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.LAGEKOSTEN);
+    denied(f => { f.headTree.delete(file); }, C.LAGEKOSTEN);
+    denied(f => { f.headTree.get(file).mode = "100755"; }, C.LAGEKOSTEN);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.LAGEKOSTEN);
+  }
+  for (const file of ["package-lock.json", "scripts/lokal.js", "supabase/migrations/unveraenderte-basis.sql"])
+    denied(f => { f.headTree.get(file).oid = oid("1"); }, C.LAGEKOSTEN);
+  for (const file of ["client.js", "scripts/browser-smoke-test.js", "lib/helmut/ai.js", "lib/helmut/scalable-pipeline.js",
+    "lib/helmut/storage.js", "lib/helmut/tagespaket-auslieferung.js"])
+    denied(f => { f.headTree.set(file, row("1")); }, C.LAGEKOSTEN);
+});
+test("Kostenvertrag: fehlende Belege und ungueltige CI stoppen geschlossen", () => {
+  denied(f => { f.evidenceTree = new Map(); }, C.LAGEKOSTEN);
+  denied(f => { f.evidenceTree.get("scripts/lokal.js").oid = oid("1"); }, C.LAGEKOSTEN);
+  for (const file of C.CI_FILES) {
+    denied(f => { f.headTree.delete(file); }, C.LAGEKOSTEN);
+    denied(f => { f.headTree.get(file).mode = "120000"; }, C.LAGEKOSTEN);
+    denied(f => { f.headTree.get(file).type = "commit"; }, C.LAGEKOSTEN);
+  }
+});
+test("Kostenvertrag: Offlinejob fuehrt ausschliesslich neue Gegenfaelle Ergaenzungsinteraktionen und Syntax aus", () => {
+  A.deepEqual(active("offline-suite", "browser-smoke", C.validate(fixture(C.LAGEKOSTEN))), [
+    "Prüfplan aus geänderten Dateien", "Kostenvertrag - neue native Vertragsinteraktionen und Profilbindung"
+  ]);
+  A.match(workflow, /ci-lieferreparatur-plan-test\.js --kostenvertrag-plan-only/);
+  A.ok(workflow.includes("node scripts/lokal.js " + C.LAGEKOSTEN.REGRESSION_FILES[0] + " --kostenvertrag-only"));
+  A.match(workflow, /github\.event\.pull_request\.base\.sha == '21816be73c5a7a759b35e907b9030a37d5c9b294'/);
+});
+test("Kostenvertrag: Browserjob bestaetigt unveraenderte Eingaben ohne erneuten Browserlauf", () => {
+  A.deepEqual(active("browser-smoke", "synthetic-resource-diagnostic", C.validate(fixture(C.LAGEKOSTEN))), [
+    "Prüfplan aus geänderten Dateien", "Kostenvertrag - Browser bewusst nicht erneut ausfuehren"
+  ]);
+  A.match(workflow, /43537245306\/job\/132269105907/);
+  A.equal((workflow.match(/^          HELMUT_CI_PR_HEAD_REF:/gm) || []).length, 2);
+  const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
+});
 A.ok(count > 0);
-console.log(`${count}/${count} ${ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
