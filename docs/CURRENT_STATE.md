@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
-**14.11.2026,08:05UTC: einmalige Wiederaufnahme nach konkretem Betreiber-GO erfolgt.
-Paket08:04:79Eintraege/5Karten/2gepruefteLageabsaetze; Radar3Entwicklungen/fresh.**
+**14.11.2026,08:10UTC: echte Kundenscreenshots zeigen Darstellungsfehler.
+2gepruefteLageabsaetze geliefert, aber in Details versteckt; UI-Reparatur in Arbeit.**
 Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
 Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
 Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
@@ -8,10 +8,11 @@ Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert akti
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
-PR1190: neun neue Artikelgruppen/sechs neue CI-Gruppen/Syntax bestanden in43561501437.
-Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Strenger Reader bleibt;
-Konfliktartikel isoliert, keine Datenkorrektur/Budgetaenderung. Runtime/Alias0339/anonym401.
-Paket08:04gebunden/2Absätze; Gesamtteilstand Quellenversorgung/keinTagesanlass, kein LageTeilstand.
+PR1190:9Artikel-/6CI-Gruppen43561501437 bestanden; strenger Versionsreader bleibt.
+Realer Leser08:05:79Items/5Karten/2Absaetze/Quittung. Keine UI-Vollabnahme.
+Screenshot: Lageabsatz nur in geschlossenen Details, mobiler Titel zu lang;
+Radar nennt3alteDynamiken „neu“. Quellenstand14 stammt korrekt aus Umfeldquelle.
+Briefinggap bleibt fachlich richtig; vorhandene79 sind keine neuen Tagesprioritaeten.
 Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
 Realer Lagepfad06:05:44–53: nur bestaetigter Teilstand, neue Startphase ohne Entwurf.

@@ -31,6 +31,20 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+**Echte Kundenscreenshots14.11.08:09UTC: UI-Abnahme noch nicht bestanden.**
+Der SnapshotleserPASS08:05 belegt Daten/DTO, keinen sichtbaren Text im Browser.
+Tatsaechliche zwei Lageabsaetze sind nur in geschlossenen Details der Karten2/4;
+Lageuebersicht zeigt ausschliesslich Karten. Spaeter CSS-Override hebt mobile
+Dreizeilenbegrenzung auf, Titel bis277Zeichen dominieren die Ansicht. Radar zeigt
+„3neueSignale“ ohne Neuigkeitsbeleg; drei Dynamiken stammen13./12./08.11.
+Quelldatum14 ist korrekt aus einer anderen sichtbaren Umfeldquelle; kein Datumsfix.
+Briefinggap entspricht fehlendem Tagesanlass/offenem Quellenstand; alte79Items
+werden nicht zu heutigen Prioritaeten umgedeutet. Kleinster Fix: gepruefte
+Lageeinordnung direkt in Lage, mobile Titel begrenzen bei vollem Detailtext,
+neutraler Radarbestand auch fuer bestehende Pakete. Quellen/Profil/Policy/DTO/
+Budget unveraendert,0KI/keine Datenkorrektur. Neue gezielte Browser- und Backendfaelle,
+keine Wiederholung alter Suiten, bisher noch keine Tests ausgefuehrt.
+
 **Einmalige Wiederaufnahme nach konkreter Betreiberfreigabe,14.11.08:01–08:05UTC:**
 Betreiber erteilte ausdruecklich „Ja, diese einmalige Wiederaufnahme freigeben“.
 Vorflug: Runtime097d14/Schutzsperren korrekt, nurCEMaktiv/0aktuelleProzesse/Leases,
