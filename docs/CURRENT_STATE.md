@@ -1,4 +1,25 @@
 # CURRENT STATE — Helmut
+**14.11.2026, 20:59 UTC: neue verbundene Offline-Simulation bestanden; Production unveraendert.**
+Auf die Betreiberfrage nach sofortiger Simulation genau eine NEUE Integrationsgruppe
+ausgefuehrt: fuenf kuenstliche Artikel, zwei kuenstliche Mandate. Zwei bestaetigte
+Defekte enden abseits, ein UNKNOWN bleibt offen, zwei gute Artikel durchlaufen den
+nativen Worker, echtes Understanding/Belegannahme und individuelle Prioritaetsauswahl
+bis Paketwrite/Readback, Quittung und normalem Paketleser. Beide Profile erhalten
+unterschiedliche passende Prioritaeten, Lagekarten und Radar. Keine handgesetzte
+Primary oder Decision. Vorgegebene Modellantworten und lokale Speicheradapter sind
+ausdrueckliche Testgrenzen; keine KI-, Supabase-, Cron- oder Kundenbrowserabnahme.
+Lage-Narrativ nicht simuliert, beide Ausgaben ehrlich teilweise/fachlicheVollabnahmefalse.
+Erstlauf rot/0PASS wegen fehlendem strengen Bestandsleser im Testadapter; ausschliesslich
+diesen Adapter plus Fehlerdiagnose ergaenzt. Ein Nachlauf derselben noch unbestandenen
+Gruppe gruen; keine alten Tests wiederholt. Root und unabhaengiger Review ohne Befund.
+Keine Runtimeaenderung, Modelle, Netzwerk oder Productionwrites durch die Simulation.
+Rein lesender Vorflug20:48UTC bestaetigt unveraendert0,620841USDTag/3,344318gesamt,
+8alteReserven, 9Fenster/2700s/23Originale/Zusatzkey1 verbraucht,0Leases.
+Ein neuer echter Quellenstart wurde nicht versucht; er wuerde zuerst einen Adminslot
+buchen und dann am bereits verbrauchten Tages-/Ausnahmekontingent stoppen.
+Normaler Nachweis mit echten neuen Quellen und Modellantworten bleibt offen; die
+bestehende autonome Fortsetzung beobachtet weiterhin das regulaere Morgenfenster.
+
 **14.11.2026, 18:16 UTC: PR1199 normal gemergt und auf Production lesend bestaetigt.**
 Merge `a70efd1c8521770d1c119a65db620814ea08283e`, gepruefter Kopf `dad7f0ce`,
 Evidence `ef1fea03`, identischer Tree `cc007bc3`. Beide Pflichtchecks in

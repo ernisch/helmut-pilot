@@ -1,5 +1,47 @@
 # Verarbeitungskern fuer die ersten 100 aktiven Kunden
 
+## Sofortige verbundene Simulation auf unveraendertem Productioncode
+
+14.11.2026, 20:59 UTC. Auf Wunsch nach einem sofortigen Test statt Warten wurde
+genau eine neue integrative Offlinegruppe auf `a70efd1c` verbunden geprueft.
+Isolierter Branch `codex/durchgaengige-briefing-simulation-20261114`, einzige neue
+Testdatei `scripts/artikel-bis-tagespaket-simulation.js`, finaler Blob
+`71abe663d576ee274c1b6b969d99abd055228cda`. Keine Runtimekorrektur erforderlich.
+
+Fuenf deklarierte kuenstliche Artikel ergeben zwei bestaetigt unbrauchbare,
+einen unbekannten und zwei brauchbare Artikel. Native Kette: bestehender Queue-
+Treiber und `scalable-pipeline.fuehreAuftragAus`, `understanding.understandOneCluster`,
+Verstehen-CAS-Adapter, Fachbelegvalidierung, individuelle native Matching-/Decision-
+und Briefingprioritaetswahl, cacheOnly-Lage und Radar, Paketmaterialisierung mit
+Readback, gebundene Morgenquittung und normaler Tagespaketleser. Zwei bestehende
+rein synthetische Profilfixtures mit verschiedenen Schwerpunkten erhalten jeweils
+ihre eigene Prioritaet. Keine Primary oder Decision per Hand gesetzt. Der normale
+Leser benoetigt je Mandat zwei reine Reads, schreibt nichts, behaelt Profilhash,
+Berliner Tag und Quittung und gibt keine privaten Fachpruefungsdaten aus.
+
+Testgrenzen: Quellen und Antworten an `requestUnderstanding` sind vorgegeben;
+Queue, CAS-RPC-Transport und Paketspeicher sind lokale Adapter. Kein HTTP-Aufruf,
+echtes Modell, Supabase, Vercel-Cron, Kundensitzung oder Lastlauf beteiligt. Kein
+Lage-Narrativ kuenstlich freigegeben: Karten sichtbar, Narrativ offen, Versorgung
+teilweise und fachliche Vollabnahme false. Das ist ein zusaetzlicher technischer
+Integrationsbeleg, keine reale Vollabnahme oder Garantie fuer Modellantworten.
+
+Beide tatsaechlichen Laeufe bleiben erhalten:
+
+- Erstlauf rot, null erfolgreiche Gruppen. Testadapter enthielt keinen `getExistingStreng`; der native Restvertrag stoppt damit korrekt vor dem Modell. Log `/tmp/helmut-artikel-bis-tagespaket-simulation-20261114-erstlauf.log`, SHA256 `2a5faaf92262116e440b5b92376360f312894d780acc581eedcc48caac842052`.
+- Nur den lokalen strengen Bestandsleser aus derselben KO-Ablage und synthetische Fehlerdiagnose ergaenzt. Root und unabhaengiger Deltareview bestanden. Genau ein Nachlauf derselben noch unbestandenen Gruppe ueber `node scripts/lokal.js scripts/artikel-bis-tagespaket-simulation.js` gruen: 1/1. Log `/tmp/helmut-artikel-bis-tagespaket-simulation-20261114-nachtrag1.log`, SHA256 `fb902cd5f7dc0756f27eecbaaaac6779da2a9204b6963f576f858f73b5dca8d9`.
+
+Keine alten Erfolge, Browser- oder Mengenpruefungen wiederholt. Keine Runtime-/
+Productionaenderung oder weiterer Rollout fuer diese Simulation. Vorflug20:48UTC
+rein lesend: Kosten0,620841USDTag/3,344318gesamt/258Calls/88heute/8alteoffeneReserven,
+Quoten9Fenster/2700Sekunden/23Originale/Zusatzkey1 verbraucht,0aktiveLeases.
+Ein weiterer echter Adminstart wurde nicht provoziert: er reserviert zunaechst
+einen Slot und scheitert dann am verbrauchten Tages-/Ausnahmeschluessel. USD-Rest
+allein erlaubt keinen weiteren Quellenlauf. Echter Zusatzlauf wuerde eine neue
+konkrete Quotenfreigabe und eng gepruefte Umsetzung sowie echte Adminsitzung+CSRF
+benoetigen; alte GOs bleiben verbraucht. Ohne diese bleibt der naechste echte
+Nachweis das unveraenderte regulaere Morgenfenster mit autonomer Nachkontrolle.
+
 ## PR1199: begrenzte Wiedergewinnung und ehrlicher Fachstatus
 
 **Rolloutbeleg 14.11.2026, 18:16 UTC:** normal gemergt auf
