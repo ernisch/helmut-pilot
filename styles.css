@@ -9468,6 +9468,11 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
 }
 
 /* Mobile Lage: kurze Vorschau; vollstaendiger Inhalt bleibt im Detail. */
+.ui-lage-einordnung { margin: 0 0 28px; padding: 22px 0; border-block: 1px solid var(--hairline); max-width: 78ch; }
+.ui-lage-einordnung h2 { margin: 0 0 10px; font: 400 25px/1.25 var(--ui-serif); }
+.ui-lage-einordnung-absatz { margin-top: 20px; }
+.ui-lage-einordnung-absatz > p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; overflow-wrap: anywhere; }
+.ui-lage-einordnung .vsheet-sources { margin: 0; }
 .ui-row-source { display: none; }
 @media (max-width: 767px) {
   .ui-lage-workspace .ui-vorgang-list { gap: 0; }
@@ -9597,7 +9602,7 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .view-radar .ui-page-subtitle { margin-top: 6px; font-size: 14px; line-height: 1.4; }
   .app-frame.ui-lage-detail-open { --hh: 130px; }
   .app-frame.ui-lage-detail-open .ui-page { padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
-  .ui-lage-detail-open .ui-lage-page-heading { display: none; }
+  .ui-lage-detail-open :is(.ui-lage-page-heading, .ui-lage-einordnung) { display: none; }
   .ui-lage-detail .ui-mobile-back { margin: 0 0 6px; min-height: 44px; }
   .ui-lage-detail .vsheet-head { padding-top: 0; }
   .ui-lage-detail .vsheet-head .lage2-vtag { margin-bottom: 2px; }
@@ -9615,7 +9620,7 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-page [data-ui-lage-partial] .ui-empty { column-gap: 10px; padding-bottom: 14px; }
   .ui-lage-workspace .ui-section-heading { gap: 5px; margin-bottom: 4px; font-size: 13px; }
   .ui-lage-workspace .ui-row-title {
-    display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere;
     font-size: 19px; line-height: 1.25;
   }
   .ui-lage-workspace .ui-row-source { flex-wrap: wrap; gap: 2px 6px; font-size: 13px; line-height: 1.4; }

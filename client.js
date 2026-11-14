@@ -5513,13 +5513,38 @@ function lageListSourceHtml(v) {
   return `<span class="ui-row-source"><span class="ui-row-source-name" title="${escapeAttribute(name)}">${escapeHtml(name)}</span><span>${escapeHtml(date || "Datum unbekannt")}</span>${lageStatusChip(v) ? `<span>Vorgangsstatus: ${escapeHtml(lageStatusChip(v))}</span>` : ""}</span>`;
 }
 
+function lageGepruefteAbsaetze(data) {
+  if (data?.available !== true || data.fromCache !== true || data.pendingNarrative || data.demo || !data.qualitaet?.version) return [];
+  if (!profile?.id || profile.id !== activePoliticianId) return [];
+  const state = briefing?.currentHelmutState;
+  if ((state?.tenantId && state.tenantId !== profile?.id)
+    || (state?.profileId && state.profileId !== profile?.id)) return [];
+  return (Array.isArray(data.paragraphs) ? data.paragraphs : []).filter(p =>
+    typeof p?.text === "string" && p.text.trim() && Array.isArray(p.vorgangIds) && p.vorgangIds.length === 1
+    && Array.isArray(p.sources) && p.sources.length > 0
+    && p.sources.every(q => typeof q?.quelleId === "string" && q.quelleId
+      && isDirectArticleHref(q.url, q)));
+}
+
+function renderLageEinordnung(data) {
+  const paragraphs = lageGepruefteAbsaetze(data);
+  if (!paragraphs.length) return "";
+  return `<section class="ui-lage-einordnung" data-ui-lage-einordnung aria-label="Geprüfte Lageeinordnung">
+    <h2>Geprüfte Lageeinordnung</h2>
+    <p class="ui-evidence-note">Gespeicherte KI-Einordnung · kein Originalauszug. Die Originalquellen sind je Absatz verlinkt.</p>
+    ${paragraphs.map(p => `<article class="ui-lage-einordnung-absatz"><p data-ui-lage-absatz>${escapeHtml(p.text)}</p>
+      <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
+  </section>`;
+}
+
 function renderLageView() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
   const items = lageVisibleVorgaenge(data);
   const header = `<div class="ui-lage-page-heading">${renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.")}</div>`;
+  const einordnung = renderLageEinordnung(data);
   if (!items.length) {
-    return header + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
+    return header + einordnung + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
   }
   const selected = items.find(v => lageAnzeigeId(v) === uiLageSelectedId) || items[0];
   const selectedId = lageAnzeigeId(selected);
@@ -5533,6 +5558,7 @@ function renderLageView() {
     ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
     ${data.teilstand?.version === 1 ? '<div data-ui-lage-teilstand>' + renderUiEmpty("Lage als geprüfter Teilstand", "Ein geprüfter Absatz ist verfügbar; ein weiterer wurde wegen fehlenden Profilbezugs zurückgehalten.") + '</div>' : ""}
     ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
+    ${einordnung}
     <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
       <section class="ui-master" aria-label="Politische Vorgänge">
         <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${stand ? `<span data-lage-stand>${escapeHtml(stand)}</span>` : `${items.length} Vorgänge`}${checked && freshness ? `<br><span data-lage-source-recency>${escapeHtml(freshness)}</span>` : ""}</span></div>
@@ -5846,7 +5872,7 @@ function vsheetRelevanzHtml(v) {
 function lageParagraphContextHtml(v) {
   if (v.quellenhinweis) return "";
   const id = lageAnzeigeId(v);
-  const paragraphs = (Array.isArray(lageData()?.paragraphs) ? lageData().paragraphs : [])
+  const paragraphs = lageGepruefteAbsaetze(lageData())
     .filter(p => Array.isArray(p.vorgangIds) && p.vorgangIds.includes(id) && lageField(p.text));
   if (!paragraphs.length) return "";
   return `<details class="vsheet-sec ui-source-evidence"><summary>Zugeordnete Lageeinordnung lesen</summary>
@@ -8277,7 +8303,14 @@ function renderRadarHeader(state) {
 // --- Persönliche Zusammenfassung --------------------------------------------
 function renderRadarSummary(state) {
   const s = state.summary || {};
-  const lines = [s.line1, s.line2].filter(Boolean);
+  const dynamics = radarOpenableItems(state.dynamics).length;
+  const environment = ["party", "constituency", "committees"]
+    .reduce((sum, key) => sum + radarOpenableItems(state.environment?.[key]).length, 0);
+  const line2 = dynamics === 1 ? "In deinem politischen Umfeld wird eine Entwicklung beobachtet."
+    : dynamics > 1 ? `In deinem politischen Umfeld werden ${dynamics} Entwicklungen beobachtet.`
+      : environment === 1 ? "Eine Entwicklung aus deinem politischen Umfeld ist relevant."
+        : environment > 1 ? `${environment} Entwicklungen aus deinem politischen Umfeld sind relevant.` : "";
+  const lines = [s.line1, line2].filter(Boolean);
   if (!lines.length) return "";
   const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(uiSieText(ln))}</span>`).join("");
   return `
