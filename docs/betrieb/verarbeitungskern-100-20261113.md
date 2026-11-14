@@ -19,11 +19,28 @@ achtvom13.11. und einer12.06.2026. Sourcehandler persistiert neben Kandidaten au
 alle geladenen Fundstellen und reiht danach alle bestaetigtenIDs als Tagesarbeit ein.
 Geplanter enger Fix: Archiv erhalten, kostenpflichtige Tagesarbeit aus exakt
 gebundenen Kandidaten im bestehenden Relevanzhorizont; alte Fundstellen nichtneu
-heutePromoten. Bereits bestehende Archivjobs vor Modellversand ehrlich behandeln.
+heutePromoten. Bestehende U-/Archivauftraege bleiben unveraendert; die vorhandene
+SQL bearbeitet heutige Arbeit unabhaengig von historischen Prioritaeten zuerst.
 Radar zeigt belegtes08.11.-Signal korrektstale, kein neuer fachlicher Filterfehler
 belegt. Nur unklare Kundentexte korrigieren; Frische-/Bezug-/Fristpruefungen bleiben.
 Fehlender Tagesplan14 vor erstem03UTC-Fenster und fehlender neuer Tagesanlass sind
 derzeit ehrliche Luecken, kein nachgewiesener UTC/Berlinfehler.
+Fuer die erforderliche Nachtfortsetzung ist eine begrenzte ChatGPT-Aufgabe angelegt,
+kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
+stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
+regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
+Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
+Zaehler seit Nachtfreigabe:0Merges; jeweils nach tatsaechlichem Rollout nachtragen.
+Implementierung PR1188 vor CI unabhaengig gegengeprueft: drei Quelldateien und
+zwei Radar-/Browserdateien ohne offenen Befund. Exakte Versionsbindung liest nur
+die ausgewaehlten bestaetigten Artikelstaende sequentiell nach; kein Korpusread.
+Gleiche URL beweist keine gleiche Artikelversion. Langer Originaltext und der
+bestehende enge Herausgeberaliasvertrag bleiben erhalten. Unbekannter Ausgang
+bleibt Fehler, bereits eingereihte gute Nachbarn bleiben erhalten. Bestehende
+Understandingauftraege/Modelle/Archivpfade und14d-Relevanzhorizont unveraendert;
+Relevanz ist ausdruecklich kein neuer Tagesanlass. Geplant:9neueFachgruppen,
+6neueProfilgruppen,7neueRadar-Browserchecks Desktop/Mobil und geaenderte Syntax.
+Keine erfolgreichen Vorbelege wiederholen; Tests noch offen.
 
 **Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
 normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
