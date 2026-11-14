@@ -15,10 +15,11 @@ const konfliktOnly = args.length === 1 && args[0] === "--versionskonflikt-only";
 const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
 const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
 const kundenOnly = args.length === 1 && args[0] === "--kundenansichten-only";
+const radarartikelOnly = args.length === 1 && args[0] === "--radarartikel-only";
 const volltextOnly = args.length === 1 && args[0] === "--volltextschutz-only";
 const fensterOnly = args.length === 1 && args[0] === "--briefingfenster-only";
 const kundenRunnerOnly = args.length === 1 && args[0] === "--kundenansichten-runner-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly || volltextOnly || radarartikelOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -48,6 +49,7 @@ function test(name, fn) {
   if (konfliktOnly && !name.startsWith("Versionskonflikt:")) return;
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
   if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
+  if (radarartikelOnly && !name.startsWith("Radarartikel:")) return;
   if (volltextOnly && !name.startsWith("Volltextschutz:")) return;
   if (fensterOnly && !name.startsWith("Briefingfenster:")) return;
   if (kundenOnly && !name.startsWith("Kundenansicht:")) return;
@@ -641,7 +643,7 @@ test("Kundenansicht: Browserjob fuehrt nur neue Kundenansichten mit Browserpflic
 test("Kundenansicht: kompatibler Runner ist nur am exakten1193Tupel gepinnt und Browser bleibt Pflicht", () => {
   const browser = workflow.slice(workflow.indexOf("  browser-smoke:"), workflow.indexOf("  synthetic-resource-diagnostic:"));
   const runner = browser.split("\n").find(line => line.startsWith("    runs-on:"));
-  A.equal(runner, "    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}");
+  A.equal(runner, "    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}");
   A.match(browser, /playwright@1\.56\.1/); A.match(browser, /HELMUT_REQUIRE_BROWSER: "1"/);
   A.match(browser, /node scripts\/lokal\.js scripts\/browser-smoke-test\.js --kundenansichten/);
 });
@@ -695,7 +697,7 @@ test("Briefingfenster: Browserjob prueft nur neue gebundene Briefingteilstaende 
   A.match(workflow,/node scripts\/lokal\.js scripts\/browser-smoke-test\.js --briefing-teilstand/);
   const browser=workflow.slice(workflow.indexOf("  browser-smoke:"),workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.match(browser,/HELMUT_REQUIRE_BROWSER: "1"/);
-  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
+  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
 });
 
 
@@ -746,5 +748,54 @@ test("Volltextschutz: Browserjob behaelt unveraenderte Belege ohne neuen Browser
   A.match(workflow,/Kein neuer Browser-PASS/);
 });
 
+
+test("Radarartikel: exaktes Profil bindet nur Quellenanzeige und neue Regression",()=>{
+  const p=C.validate(fixture(C.RADARARTIKEL));for(const key of C.OUTPUTS)A.equal(p[key],key==="radarartikel");
+  A.equal(p.source.pr,1196);A.equal(p.source.base,C.RADARARTIKEL.BASE);
+  A.equal(C.RADARARTIKEL.RUNTIME_FILES.length,2);A.equal(C.RADARARTIKEL.REGRESSION_FILES.length,2);
+  A.match(p.reused.status,/Nur neue Radarartikel/);
+});
+test("Radarartikel: fremde Ereignisse Metadaten Basen Koepfe und Forks bleiben gesperrt",()=>{
+  for(const change of [f=>{f.pr.base.sha=C.VOLLTEXTSCHUTZ.BASE;},f=>{f.prNumber++;},f=>{f.pr.number++;},
+    f=>{f.headRef="fremd";},f=>{f.pr.head.ref="fremd";},f=>{f.pr.base.ref="fremd";},
+    f=>{f.pr.base.repo.full_name="fremd/repo";},f=>{f.pr.head.repo.full_name="fremd/repo";},
+    f=>{f.pr.state="closed";},f=>{delete f.pr.draft;},f=>{f.ref="refs/heads/main";},
+    f=>{f.event="push";},f=>{f.event="workflow_dispatch";},f=>{f.event="pull_request_target";},
+    f=>{f.repository="fremd/repo";},f=>{f.checkedOutHead=oid("1");}])denied(change,C.RADARARTIKEL);
+});
+test("Radarartikel: alle sieben Abnahmeblobs und uebrige Abhaengigkeiten bleiben strikt",()=>{
+  for(const file of Object.keys(C.RADARARTIKEL.BLOBS))for(const change of [
+    f=>{f.headTree.get(file).oid=oid("1");},f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="100755";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.RADARARTIKEL);
+  for(const file of ["server.js","package-lock.json","scripts/lokal.js","supabase/migrations/unveraenderte-basis.sql"])
+    denied(f=>{f.headTree.get(file).oid=oid("1");},C.RADARARTIKEL);
+  for(const file of ["client.js","lib/helmut/ai.js","lib/helmut/storage.js","lib/helmut/briefing-speicher.js"])
+    denied(f=>{f.headTree.set(file,row("1"));},C.RADARARTIKEL);
+});
+test("Radarartikel: fehlende Evidence und ungueltige CI Dateien stoppen geschlossen",()=>{
+  denied(f=>{f.evidenceTree=new Map();},C.RADARARTIKEL);
+  denied(f=>{f.evidenceTree.get("scripts/lokal.js").oid=oid("1");},C.RADARARTIKEL);
+  for(const file of C.CI_FILES)for(const change of [f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="120000";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.RADARARTIKEL);
+});
+test("Radarartikel: Offlinejob prueft nur neue Planfaelle und Syntax ohne Fachwiederholung",()=>{
+  A.deepEqual(active("offline-suite","browser-smoke",C.validate(fixture(C.RADARARTIKEL))),[
+    "Prüfplan aus geänderten Dateien","Radarartikel - neue Profilbindung und geaenderte Syntax"]);
+  const section=workflow.slice(workflow.indexOf("      - name: Radarartikel - neue Profilbindung"),workflow.indexOf("      - name: Briefingvolltext - neue Profilbindung"));
+  A.match(section,/ci-lieferreparatur-plan-test\.js --radarartikel-only/);A.match(section,/ci-lieferreparatur-plan\.js --syntax/);
+  A.match(section,/WIEDERVERWENDET/);A.equal(section.includes("node scripts/lokal.js scripts/radar-einzelartikel-titelbindung-test.js"),false);
+  A.match(workflow,/github\.event\.pull_request\.base\.sha == '87505694ae9318d660f2052e634613d720729c03'/);
+});
+test("Radarartikel: Browserjob prueft nur neue Artikelanzeige mit PflichtChromium auf exaktem1196Runner",()=>{
+  A.deepEqual(active("browser-smoke","synthetic-resource-diagnostic",C.validate(fixture(C.RADARARTIKEL))),[
+    "Prüfplan aus geänderten Dateien","Abhängigkeiten installieren (aus package-lock.json)",
+    "Playwright + Chromium installieren","Radarartikel - neue Artikelbindung Desktop und Mobil"]);
+  const browser=workflow.slice(workflow.indexOf("  browser-smoke:"),workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.match(browser,/HELMUT_REQUIRE_BROWSER: "1"/);A.match(browser,/playwright@1\.56\.1/);
+  A.match(browser,/node scripts\/lokal\.js scripts\/browser-smoke-test\.js --radar-artikelbindung/);
+  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(workflow.slice(0,workflow.indexOf("  synthetic-resource-diagnostic:"))),false);
+});
+
 A.ok(count > 0);
-console.log(`${count}/${count} ${volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${radarartikelOnly ? "neue Radarartikel-Profilgegenfaelle" : volltextOnly ? "neue Volltextschutz-Profilgegenfaelle" : fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
