@@ -246,9 +246,38 @@ const RADARARTIKEL = Object.freeze({
     "vercel.json": "2417031461d775743264e04755f24284f90404de"
   })
 });
+// Vierzehntes festes Profil: Fachthemen im selben gebundenen Artikelaufruf.
+const FACHTHEMEN = Object.freeze({
+  PR: 1197, BASE: "58e21bf57efa3441c4ab0ea822896b02e7180d4b",
+  BRANCH: "codex/briefing-tagesprioritaet-20261114",
+  LOCAL_EVIDENCE_COMMIT: "0d55fe3302eed91730eba25e354f738f34badcc6",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
+    "lib/helmut/understanding-schema.js", "lib/helmut/understanding.js", "lib/helmut/understanding-fachthemen.js",
+    "lib/helmut/artikelkontext-gewinnung.js", "lib/helmut/artikelkontext-beschaffung.js",
+    "lib/helmut/artikelkontext-belegspeicher.js", "lib/helmut/artikelkontext.js", "lib/helmut/artikelkontext-quellenlayout.js",
+    "lib/helmut/quellen-arbeitsfenster.js"
+  ]), REGRESSION_FILES: Object.freeze(["scripts/understanding-fachthemen-test.js", "scripts/artikelkontext-quellenlayout-test.js", "scripts/quellen-einmalfenster-test.js"]), BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "b38eb71ad4cd86ecb7c6ca9292b3ccc0916d7877",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "ab4e7e389c7caa61c88e9cd9841274bb33c87bb2",
+    "lib/helmut/understanding-schema.js": "a193ce14f7a0d0e577d22a0ceaecc2151cc2fa9c",
+    "lib/helmut/understanding.js": "6244b6040efd8ea82e667a6cdca4724e5b85863e",
+    "lib/helmut/understanding-fachthemen.js": "c426dcafec03510da6ac03284df74bd4b622fc55",
+    "scripts/understanding-fachthemen-test.js": "501ac6607f75fc7054586719a40e06af768d2796",
+    "lib/helmut/artikelkontext-gewinnung.js": "cdfa9eec65c10f7dd1c15dff3c7c52529b3100ea",
+    "lib/helmut/artikelkontext-beschaffung.js": "788b1f9b1e7f6ac18dec98940efaa60e1eb3e044",
+    "lib/helmut/artikelkontext-belegspeicher.js": "b9f38cb93781c094b350bb8b4de8d6937649daf9",
+    "lib/helmut/artikelkontext.js": "6a9b399f267f533f8fda82e403da324be92e1eb5",
+    "lib/helmut/artikelkontext-quellenlayout.js": "e86d1476ed1139276e9160d79230a3f238d93cad",
+    "scripts/artikelkontext-quellenlayout-test.js": "3a9a677f0a892d7f3879d5b8d317fbef2ea16d3c",
+    "lib/helmut/quellen-arbeitsfenster.js": "057f1da4ee567e4bc127ed1a3fe665b8c09f1d5d",
+    "scripts/quellen-einmalfenster-test.js": "840c40c868afe5c66227d084cf1f45018e5bf7a9",
+    "vercel.json": "abe09e5467e008a3735c9b1348cabd363b9f5288"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === RADARARTIKEL.PR || headRef === RADARARTIKEL.BRANCH ? RADARARTIKEL
+const profileFor = ({ prNumber, headRef }) => prNumber === FACHTHEMEN.PR || headRef === FACHTHEMEN.BRANCH ? FACHTHEMEN
+  : prNumber === RADARARTIKEL.PR || headRef === RADARARTIKEL.BRANCH ? RADARARTIKEL
   : prNumber === VOLLTEXTSCHUTZ.PR || headRef === VOLLTEXTSCHUTZ.BRANCH ? VOLLTEXTSCHUTZ
   : prNumber === BRIEFINGFENSTER.PR || headRef === BRIEFINGFENSTER.BRANCH ? BRIEFINGFENSTER
   : prNumber === KUNDENANSICHTEN.PR || headRef === KUNDENANSICHTEN.BRANCH ? KUNDENANSICHTEN
@@ -264,21 +293,21 @@ const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten", "briefingfenster", "briefingvolltext", "radarartikel"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten", "briefingfenster", "briefingvolltext", "radarartikel", "fachthemen"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN, fenster = profile === BRIEFINGFENSTER, volltext = profile === VOLLTEXTSCHUTZ, radarartikel = profile === RADARARTIKEL;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN, fenster = profile === BRIEFINGFENSTER, volltext = profile === VOLLTEXTSCHUTZ, radarartikel = profile === RADARARTIKEL, fachthemen = profile === FACHTHEMEN;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (radarartikel ? 2 : volltext ? 1 : fenster ? 7 : kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
-    && REGRESSION_FILES.length === (radarartikel ? 2 : volltext ? 1 : fenster ? 4 : kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden || fenster || volltext || radarartikel ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (fachthemen ? 9 : radarartikel ? 2 : volltext ? 1 : fenster ? 7 : kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
+    && REGRESSION_FILES.length === (fachthemen ? 3 : radarartikel ? 2 : volltext ? 1 : fenster ? 4 : kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden || fenster || volltext || radarartikel || fachthemen ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -303,10 +332,11 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = radarartikel ? "radarartikel" : volltext ? "briefingvolltext" : fenster ? "briefingfenster" : kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = fachthemen ? "fachthemen" : radarartikel ? "radarartikel" : volltext ? "briefingvolltext" : fenster ? "briefingfenster" : kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: radarartikel ? "Exakte Radar-Artikelueberschrift mit identischer Quelle und Publikationszeit in Producer und gespeichertem Appreader"
+    reason: fachthemen ? "Quellengebundene Fachthemen und Originalartikel mit separat freizugebendem einmaligem Adminfenster"
+      : radarartikel ? "Exakte Radar-Artikelueberschrift mit identischer Quelle und Publikationszeit in Producer und gespeichertem Appreader"
       : volltext ? "Exakter Abbruch vor Paketwrite bei drohendem Verlust bestaetigten Volltexts"
       : fenster ? "Exakter Briefingcheckpoint, strikte Ereignisidentitaet und sichtbarer ehrlich gebundener Briefingteilstand"
       : kunden ? "Exakte Kundenansichten: sichtbare Lageeinordnung, kompakte mobile Titel und ehrlicher Radarbestand"
@@ -321,7 +351,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: radarartikel ? { status: "Neue lokale Artikelbindungsgruppen hashgebunden wiederverwendet; 27 Fach-/12 Plan-/5 Browsererfolge erhalten. Nur neue Radarartikel-Browserfaelle werden ausgefuehrt",
+    reused: fachthemen ? { status: "Neue lokale Fachbeleg-, Originalartikel- und Einmalfenstergruppen hashgebunden wiederverwendet; bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten. App/UI/Auth unveraendert",
+      commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` }
+      : radarartikel ? { status: "Neue lokale Artikelbindungsgruppen hashgebunden wiederverwendet; 27 Fach-/12 Plan-/5 Browsererfolge erhalten. Nur neue Radarartikel-Browserfaelle werden ausgefuehrt",
       commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` }
       : volltext ? { status: "Neue lokale Volltextschutzgruppen hashgebunden wiederverwendet; 21 Fach-/6 Plan-/5 Browsererfolge1194 nicht erneut ausgefuehrt. Appreader/UI/Auth unveraendert",
       commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}`,
@@ -348,7 +380,8 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: radarartikel ? ["Nur neue Radarartikel-Profilgegenfaelle", "Geaenderte JavaScript-Syntax", "Neue Artikelbindung in echtem Chromium Desktop und Mobil"]
+    execute: fachthemen ? ["Nur neue Fachthemen-Profilgegenfaelle", "Geaenderte JavaScript-Syntax"]
+      : radarartikel ? ["Nur neue Radarartikel-Profilgegenfaelle", "Geaenderte JavaScript-Syntax", "Neue Artikelbindung in echtem Chromium Desktop und Mobil"]
       : volltext ? ["Nur neue Volltextschutz-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien"]
       : fenster ? ["Nur neue Briefingfenster-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien", "Neue Briefingteilstand-Ansichten Desktop und Mobil"]
       : kunden ? ["Sechs neue Pruefplan-Gegenfaelle", "Zwei neue Radar-Bestandsinteraktionen",
@@ -415,7 +448,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, BRIEFINGFENSTER, VOLLTEXTSCHUTZ, RADARARTIKEL, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, BRIEFINGFENSTER, VOLLTEXTSCHUTZ, RADARARTIKEL, FACHTHEMEN, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
