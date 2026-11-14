@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/briefing-bestand-erhalten-20261114": false,
       "codex/briefing-fenster-20261114": false,
       "codex/kundenansichten-20261114": false,
       "codex/lage-kostenvertrag-20261114": false,

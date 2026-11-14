@@ -75,7 +75,7 @@ jobs:
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
     services:
       postgres:
-        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1189 && github.event.pull_request.base.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb' && github.event.pull_request.head.ref == 'codex/quellenabruf-arbeitsanteil-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1190 && github.event.pull_request.base.sha == '441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616' && github.event.pull_request.head.ref == 'codex/artikel-versionskonflikte-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1191 && github.event.pull_request.base.sha == '0339f19e6167d9f0f9eff67b7acfb0e997af1180' && github.event.pull_request.head.ref == 'codex/lage-ergaenzung-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1192 && github.event.pull_request.base.sha == '21816be73c5a7a759b35e907b9030a37d5c9b294' && github.event.pull_request.head.ref == 'codex/lage-kostenvertrag-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') && 'postgres:17' || '' }}
+        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1189 && github.event.pull_request.base.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb' && github.event.pull_request.head.ref == 'codex/quellenabruf-arbeitsanteil-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1190 && github.event.pull_request.base.sha == '441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616' && github.event.pull_request.head.ref == 'codex/artikel-versionskonflikte-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1191 && github.event.pull_request.base.sha == '0339f19e6167d9f0f9eff67b7acfb0e997af1180' && github.event.pull_request.head.ref == 'codex/lage-ergaenzung-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1192 && github.event.pull_request.base.sha == '21816be73c5a7a759b35e907b9030a37d5c9b294' && github.event.pull_request.head.ref == 'codex/lage-kostenvertrag-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1195 && github.event.pull_request.base.sha == 'e148640fb195b9a713f613e868965e5990ee9c9a' && github.event.pull_request.head.ref == 'codex/briefing-bestand-erhalten-20261114') && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: helmut
           POSTGRES_PASSWORD: helmut
@@ -131,7 +131,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/kundenansichten-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-fenster-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-bestand-erhalten-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1195 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -158,6 +160,13 @@ jobs:
           fi
           printf 'Geänderte Dateien:\n%s\n' "$CHANGED"
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Briefingvolltext - neue Profilbindung und geaenderte Syntax
+        if: steps.plan.outputs.briefingvolltext == 'true'
+        run: |
+          set -e
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --volltextschutz-only
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
+          echo 'Neue lokale Volltextschutzgruppen am exakten Evidencebaum WIEDERVERWENDET; 21 Fach-/6 Plan-/5 Browserbelege1194 unveraendert erhalten.' >> "$GITHUB_STEP_SUMMARY"
       - name: Briefingfenster - neue Profilbindung und geaenderte Syntax
         if: steps.plan.outputs.briefingfenster == 'true'
         run: |
@@ -345,7 +354,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -759,7 +768,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/kundenansichten-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-fenster-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-bestand-erhalten-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1195 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -785,6 +796,10 @@ jobs:
             CHANGED=""
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Briefingvolltext - unveraenderten Browserbeleg erhalten
+        if: steps.plan.outputs.briefingvolltext == 'true'
+        run: |
+          echo 'Browser bewusst nicht erneut ausgefuehrt: Appreader/UI/Auth und Browserprogramm unveraendert; fuenf reale Checks aus CI43584269849 bleiben erhalten. Kein neuer Browser-PASS.' >> "$GITHUB_STEP_SUMMARY"
       - name: Kostenvertrag - Browser bewusst nicht erneut ausfuehren
         if: steps.plan.outputs.lagekostenvertrag == 'true'
         run: |
