@@ -30,7 +30,7 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:0Merges; jeweils nach tatsaechlichem Rollout nachtragen.
+Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
 Implementierung PR1188 vor CI unabhaengig gegengeprueft: drei Quelldateien und
 zwei Radar-/Browserdateien ohne offenen Befund. Exakte Versionsbindung liest nur
 die ausgewaehlten bestaetigten Artikelstaende sequentiell nach; kein Korpusread.
@@ -50,6 +50,27 @@ und waehlt exakt6noch offeneFachgruppen; erste3Fachgruppen werden nicht wiederho
 Unabhaengig gegengeprueft, Produkt-/Browsercode unveraendert. Nachtrags-CI soll nur
 6offeneFachgruppen,2geaenderteCI-Schrittanker und fehlendeSyntax ausfuehren;
 4unveraenderteProfilgruppen und7Browserchecks werden sichtbar wiederverwendet.
+Nachtrags-CI43537801132 am `a58c0de9d5bd14bdecc0771fb8546b845230b431`:
+beide Pflichtchecks gruen;6offeneFachgruppen+2geaenderteSchrittanker+Syntax bestanden,
+keineBrowserinstallation/-wiederholung. Damit alle9Fachgruppen und7Browserchecks
+ueber beide Laeufe bestaetigt,4Profilgruppen unveraendert und2Anker neu abgenommen.
+Root und beide unabhaengigen Fach-/CI-Reviews ohne offenen Befund.
+
+**Erster Nachtmerge ausgerollt:** PR1188 normal auf
+`5a734cc38549c0e6f922bf7471d44042ed3b5deb`, Parentsc97fbbd0/a58c0de9;
+Dateibaum `b7fe873e9e3371d2d7b4ee20b20a26e3d791e288` exakt wie gepruefter Kopf.
+Vercel `dpl_D79CzZSN6FcY4BMNV6hmvm4P8QHg` regulaerGit/Production/fra1 READY,
+Hauptalias und Runtime5a734cc3 bestaetigt, anonym401. Ausgelieferteclient.js
+bytegleich zum geprueften Original, SHA256
+`f9d55ded81c94405c9661880872692878bbc3f1158ddff83f2146aca82f0254b`,
+neueRadarkundentexte vorhanden. Kommunikations-/Kohortenquellensperre aktiv.
+VorMerge0laufendeProzesse/aktiveLeases. GenauCEMaktiv; Tagesbindung14.11.UTC0USD,
+gesamt2,723477USD/8alteoffeneReserven unveraendert. Kein neuerQuellen-/Modelllauf,
+keine Datenkorrektur/Migration/Env-/Budget-/Cron-/Kunden-/Mailaenderung.
+Bestehendes Paket00:07:20.357UTC/hash63694c77 unveraendert57Eintraege/1Absatz;
+Quellen offen/keinTagesanlass/LageTeilstand bleiben ehrlich teilweise. Noch keine
+Livebeanspruchung des neuen Tages-Enqueuepfads vor regulaerem03UTC-Start;
+die begrenzte Nachtfortsetzung beobachtet diesen und spaeter05:15UTC dasPaket.
 
 **Aktueller Rollout und Liveausgabe,14.11.2026UTC:** Nach konkretem Go PR1187
 normal auf `c97fbbd0e9a894e4072252be3863bffa29c625e8` gemergt; Parents32311c78/2cdd5eef,
