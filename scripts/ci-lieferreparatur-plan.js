@@ -185,9 +185,38 @@ const KUNDENANSICHTEN = Object.freeze({
     "vercel.json": "352fa106b8438a3661598829fc7f6c94ecc8a372"
   })
 });
+// Elftes festes Profil: qualifizierter Fensterabschluss und strikte Ereignisgattungen.
+const BRIEFINGFENSTER = Object.freeze({
+  PR: 1194, BASE: "4a49cbefa84950128116599dd667b181f79909be",
+  BRANCH: "codex/briefing-fenster-20261114",
+  LOCAL_EVIDENCE_COMMIT: "b632c6fbe22d050fecff90ef1db1fc27817d6fda",
+  LOCAL_EVIDENCE_PATH, RUNTIME_FILES: Object.freeze([
+    "lib/helmut/briefing-lauf.js", "lib/helmut/storage.js", "server.js", "lib/helmut/vorgang-identity.js",
+    "lib/helmut/understanding.js", "lib/helmut/tagespaket-auslieferung.js", "client.js"
+  ]), REGRESSION_FILES: Object.freeze([
+    "scripts/briefing-fenster-checkpoint-test.js", "scripts/vorgang-verfahrensgattungen-test.js",
+    "scripts/briefing-gepruefter-teilstand-test.js", "scripts/browser-smoke-test.js"
+  ]), BLOBS: Object.freeze({
+    "docs/CURRENT_STATE.md": "b3b54d22da2a4b4b35dee4ff5bfd5c68de2cba97",
+    "docs/betrieb/verarbeitungskern-100-20261113.md": "77a46a9faf928e30c503afe1dc527eee107f4601",
+    "lib/helmut/briefing-lauf.js": "ee3ed29ffad9a09d57b3216569b032ec3b84516a",
+    "lib/helmut/storage.js": "69ebcf16a9b8041d3fd59619b1214caef164c0d4",
+    "server.js": "6a2899a8d46fe10fa42d47454984d273d258c72b",
+    "client.js": "fe041e01f883dda858645c9b5d21bbc31060704e",
+    "lib/helmut/tagespaket-auslieferung.js": "5431a994cbfe166711584676959caaf7289d7f58",
+    "scripts/briefing-gepruefter-teilstand-test.js": "5aaca8d980dda75eba21844086e33aa6b40df0f5",
+    "scripts/browser-smoke-test.js": "10f360105210f5a30889c2464d5708907c87dd09",
+    "lib/helmut/understanding.js": "79a0e37a16757034a30c85445d6ccd82c0bed672",
+    "lib/helmut/vorgang-identity.js": "5cfc31233573d6601156a9f40fc5e8309f157f62",
+    "scripts/briefing-fenster-checkpoint-test.js": "135c305f4c4e9568e3836ad1a7d16d63e5b12f67",
+    "scripts/vorgang-verfahrensgattungen-test.js": "fe3dc6ad117f6ee86200d512a7cd47e02d185134",
+    "vercel.json": "8e1c4f53cf8684986bf03c1a351ae89e12a50c2e"
+  })
+});
 const EINPROFIL = Object.freeze({ PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT,
   LOCAL_EVIDENCE_PATH, RUNTIME_FILES, REGRESSION_FILES, BLOBS });
-const profileFor = ({ prNumber, headRef }) => prNumber === KUNDENANSICHTEN.PR || headRef === KUNDENANSICHTEN.BRANCH ? KUNDENANSICHTEN
+const profileFor = ({ prNumber, headRef }) => prNumber === BRIEFINGFENSTER.PR || headRef === BRIEFINGFENSTER.BRANCH ? BRIEFINGFENSTER
+  : prNumber === KUNDENANSICHTEN.PR || headRef === KUNDENANSICHTEN.BRANCH ? KUNDENANSICHTEN
   : prNumber === LAGEKOSTEN.PR || headRef === LAGEKOSTEN.BRANCH ? LAGEKOSTEN
   : prNumber === LAGEERGAENZUNG.PR || headRef === LAGEERGAENZUNG.BRANCH ? LAGEERGAENZUNG
   : prNumber === VERSIONSKONFLIKT.PR || headRef === VERSIONSKONFLIKT.BRANCH ? VERSIONSKONFLIKT
@@ -200,21 +229,21 @@ const CI_FILES = Object.freeze([
   ".github/workflows/ci.yml", "scripts/ci-lieferreparatur-plan.js",
   "scripts/ci-lieferreparatur-plan-test.js"
 ]);
-const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten"]);
+const OUTPUTS = Object.freeze(["standard", "core", "area", "database", "browser", "syntax", "npm", "verarbeitungskern", "lieferreparatur", "dipartikelisolation", "mandatsarbeitvorrang", "lageteilstand", "tagesfrische", "quellenabrufanteil", "artikelversionskonflikt", "lageergaenzung", "lagekostenvertrag", "kundenansichten", "briefingfenster"]);
 const sha = value => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
 function need(ok, reason) { if (!ok) throw Error("lieferreparatur-ci:" + reason); }
 
 function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, checkedOutHead, baseTree, headTree, evidenceTree }) {
   const profile = profileFor({ prNumber, headRef }), dip = profile === DIP, mandat = profile === MANDAT,
-    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN;
+    teilstand = profile === TEILSTAND, frische = profile === TAGESFRISCHE, abruf = profile === ABRUFANTEIL, konflikt = profile === VERSIONSKONFLIKT, ergaenzung = profile === LAGEERGAENZUNG, kosten = profile === LAGEKOSTEN, kunden = profile === KUNDENANSICHTEN, fenster = profile === BRIEFINGFENSTER;
   const { PR, BASE, BRANCH, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
     RUNTIME_FILES, REGRESSION_FILES, BLOBS } = profile;
   need(Number.isSafeInteger(PR) && PR > 0 && sha(BASE) && sha(LOCAL_EVIDENCE_COMMIT)
     && LOCAL_EVIDENCE_PATH.startsWith("docs/") && sha(BLOBS[LOCAL_EVIDENCE_PATH])
-    && RUNTIME_FILES.length === (kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
-    && REGRESSION_FILES.length === (kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
-    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
+    && RUNTIME_FILES.length === (fenster ? 7 : kunden ? 3 : kosten ? 1 : ergaenzung ? 3 : konflikt ? 2 : frische ? 3 : teilstand ? 6 : dip || mandat || abruf ? 1 : 4)
+    && REGRESSION_FILES.length === (fenster ? 4 : kunden ? 3 : kosten || ergaenzung || konflikt || frische || teilstand || dip || mandat || abruf ? 1 : 3)
+    && [...RUNTIME_FILES, ...REGRESSION_FILES, ...(dip || mandat || abruf || konflikt || ergaenzung || kosten || kunden || fenster ? [] : ["scripts/browser-smoke-test.js"])].every(file => sha(BLOBS[file])), "belegbindung-fehlt");
   need(event === "pull_request" && repository === REPOSITORY, "pr-ereignis-repository");
   need(ref === `refs/pull/${PR}/merge` && headRef === BRANCH && baseRef === "main"
     && prNumber === PR && pr?.number === PR && pr.state === "open" && typeof pr.draft === "boolean"
@@ -239,10 +268,11 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
   }
   const changed = [...new Set([...baseTree.keys(), ...headTree.keys()])]
     .filter(file => !same(baseTree.get(file), headTree.get(file))).sort();
-  const mode = kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
+  const mode = fenster ? "briefingfenster" : kunden ? "kundenansichten" : kosten ? "lagekostenvertrag" : ergaenzung ? "lageergaenzung" : konflikt ? "artikelversionskonflikt" : abruf ? "quellenabrufanteil" : frische ? "tagesfrische" : teilstand ? "lageteilstand" : mandat ? "mandatsarbeitvorrang" : dip ? "dipartikelisolation" : "lieferreparatur";
   return {
     mode,
-    reason: kunden ? "Exakte Kundenansichten: sichtbare Lageeinordnung, kompakte mobile Titel und ehrlicher Radarbestand"
+    reason: fenster ? "Exakter Briefingcheckpoint, strikte Ereignisidentitaet und sichtbarer ehrlich gebundener Briefingteilstand"
+      : kunden ? "Exakte Kundenansichten: sichtbare Lageeinordnung, kompakte mobile Titel und ehrlicher Radarbestand"
       : kosten ? "Exakter nativer Kostenvertragsanschluss ohne Phasen- oder Budgetlockerung"
       : ergaenzung ? "Exakte einmalige Lage-Ergaenzung mit unveraenderter Gesamtpruefung und Phasensicherheit"
       : konflikt ? "Exakte Artikelkonfliktisolation ohne Freigabe inkompatibler Quellenversionen"
@@ -254,7 +284,9 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : "Exakter Einprofil-Reparaturstand mit gebundenen lokalen Nachweisen",
     ...Object.fromEntries(OUTPUTS.map(key => [key, key === mode])), changed,
     source: { repository: REPOSITORY, pr: PR, base: BASE, head: checkedOutHead },
-    reused: kunden ? { status: "Neue Browserfaelle werden ausgefuehrt; alte nicht betroffene Fach-/Browser-/Mengenbelege erhalten",
+    reused: fenster ? { status: "Lokale neue Checkpoint-/Gattungs-/Ausliefergruppen am exakt gebundenen Evidencebaum bestanden; nicht erneut ausgefuehrt. Nur neue Briefingteilstand-Browserfaelle werden ausgefuehrt; alte Nachweise bleiben erhalten",
+      commit: LOCAL_EVIDENCE_COMMIT, url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` }
+      : kunden ? { status: "Neue Browserfaelle werden ausgefuehrt; alte nicht betroffene Fach-/Browser-/Mengenbelege erhalten",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43565666630"] }
       : kosten || ergaenzung ? { status: "Browser bewusst nicht erneut ausgefuehrt; App, Auth, normaler Ausgabe-/Paketlesevertrag und Abhaengigkeiten unveraendert",
       urls: ["https://github.com/ernisch/helmut-pilot/actions/runs/43531055622",
@@ -274,7 +306,8 @@ function validate({ event, repository, ref, headRef, baseRef, prNumber, pr, chec
       : { status: "WIEDERVERWENDET, NICHT ERNEUT AUSGEFUEHRT", cases: 24,
       commit: LOCAL_EVIDENCE_COMMIT,
       url: `https://github.com/${REPOSITORY}/blob/${LOCAL_EVIDENCE_COMMIT}/${LOCAL_EVIDENCE_PATH}` },
-    execute: kunden ? ["Sechs neue Pruefplan-Gegenfaelle", "Zwei neue Radar-Bestandsinteraktionen",
+    execute: fenster ? ["Nur neue Briefingfenster-Profilgegenfaelle", "Syntax tatsaechlich geaenderter JavaScriptdateien", "Neue Briefingteilstand-Ansichten Desktop und Mobil"]
+      : kunden ? ["Sechs neue Pruefplan-Gegenfaelle", "Zwei neue Radar-Bestandsinteraktionen",
       "Neue Kundenansichten in echtem Chromium Desktop und Mobil", "Syntax geaenderter JavaScriptdateien"]
       : kosten ? ["Nur neue Kostenvertrags-Profilgegenfaelle", "Zwei neue native Kosten-/Lageinteraktionen",
       "Syntax der tatsaechlich geaenderten JavaScriptdateien"]
@@ -338,7 +371,7 @@ function main() {
   }
 }
 module.exports = { REPOSITORY, BASE, BRANCH, PR, LOCAL_EVIDENCE_COMMIT, LOCAL_EVIDENCE_PATH,
-  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, CI_FILES, OUTPUTS, validate, fromCheckout };
+  RUNTIME_FILES, REGRESSION_FILES, BLOBS, DIP, MANDAT, TEILSTAND, TAGESFRISCHE, ABRUFANTEIL, VERSIONSKONFLIKT, LAGEERGAENZUNG, LAGEKOSTEN, KUNDENANSICHTEN, BRIEFINGFENSTER, CI_FILES, OUTPUTS, validate, fromCheckout };
 if (require.main === module) {
   try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

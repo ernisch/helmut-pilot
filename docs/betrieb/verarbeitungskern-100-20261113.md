@@ -30,7 +30,118 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:6/10Merges (PR1188/1189/1190/1191/1192/1193),4weitere nur beiGruen verbleiben.
+**Briefingsprint14.11.09:35UTC: zwei Ursachen reproduziert, noch kein neuer Rollout.**
+Nachtrag09:57UTC: beide Ursachenfixes unabhaengig abgenommen und14/14neue
+lokale Gruppen ueber scripts/lokal.js bestanden (Checkpoint7, Gattungen7).
+Nachtrag10:11UTC: zusaetzlich7/7neue Teilbriefing-/Ausliefergruppen lokal
+bestanden, insgesamt21/21. Der erste Teilbriefinglauf endete vor Gruppe1 am
+fehlenden aktiven Policybeleg des wiederverwendeten synthetischen Fixtures;
+kein Produktfehler und0Fachgruppen ausgefuehrt. Genau3Testsetupzeilen korrigiert,
+unabhaengig abgenommen, erst dann alle7neuenGruppen erfolgreich ausgefuehrt.
+Keine bereits erfolgreiche Gruppe wiederholt. Runtime von Root und Fresh geprueft.
+Der reale neue Produktleser auf exakt demselben privaten08:04-Paket und seiner
+Originalquittung liefert10:07UTC zwei gepruefte Absatzreferenzen fuer den
+vorlaeufigen Briefingstand, Quellen13Nov16:08 und12Nov00:00 unveraendert.
+Paket812d3b817be84cb2348238692fdc8b00f350415e542dce89a359cb17799ea67d,
+CurrentState weiterhin gap, Quittung gebunden, Originale unveraendert,
+keine privaten Review-/Ergaenzungsdaten im DTO. Noch kein Production-HTTP/UI-PASS.
+Bestehender geschuetzter GET-Cronnachweis liest ohne historische Tagesauswahl
+jetzt denselben gespeicherten Appvertrag; explizite Tage/Modi bleiben unveraendert.
+Cronauth, Parameter-, Policy- und Mandatsbindung bleiben vor diesem0KI-Lesepfad.
+LokaleGruppe7 prueft den echten Serverblock. Keine neue Route oder Schreibfunktion.
+CI fuer PR1194 wird auf exakt gebundenen Runtime-/Test-/Doku-/Konfigbaum begrenzt:
+21lokaleFachgruppen uebernehmen, nur6neuePlangruppen/Syntax und5neueDesktop-/
+Mobilbrowserchecks ausfuehren. Noch keine Browserwiederholung/Modelle/DBaenderung.
+Reale exakte12/13/14-Pakete samt ihren Originalquittungen hashgebunden gegen
+den neuen Qualifizierer geprueft:12Abschluss,13/14offen; Fenster12Nov08:26:31.371.
+Originale unveraendert. Der reale Fuenfquellenmix wird nach der Identitaetskorrektur
+abgelehnt; kein falsches frisches Pflegebriefing. Bereits gelesene widerspruechliche
+Artikelzuordnungen stoppen vor neuer Kennung oder anderem Kandidaten/CAS/Modell.
+Keine globale Aussage ueber ungelesene Altzuordnungen. Sieben neue Gattungsgruppen
+pruefen konkrete positive Fortsetzungen,24Reihenfolgen und den normalen Artikelpfad
+ohne vorgegebene Kennung einschliesslich UNKNOWN-/Neukeyschutz.
+Eine weitere enge thematische Hypothese an genau einem aktuellen EU-Antrag blieb
+negativ: keine source-/KO-belegten aktiven Profilthemen, Score38 unveraendert.
+Kein Themen-/Schwellen-/Promptfix daraus abgeleitet, keine weitere Modellprobe.
+In [PR1194](https://github.com/ernisch/helmut-pilot/pull/1194) wird zusaetzlich
+die ehrliche Zwischenstandauslieferung umgesetzt: zwei bereits streng gepruefte
+Paketabsaetze mit eigenen echten Quellendaten im Briefing sichtbar. Nur aktueller
+gebundener Gap/Teilstand; keine erfundene Prioritaet, Handlung oder Neuigkeit.
+Vollstaendiger Briefinginhalt gewinnt; quiet/error/UNKNOWN/fremd/alt sind kein
+Ersatzbriefing. Versorgung, Checkpoint und Gesamtpaket bleiben offen/teilweise.
+Das ist noch keine fertige Umsetzung oder Productionabnahme; keine neuen Modelle.
+
+Der technische Morgenabschluss wurde faelschlich als fachlicher Inhaltscheckpoint
+verwendet. Das reale13Nov-Paket22:05:03.882UTC ist empty/gap; sein Briefinghash
+e317c029a1d0d3c9b28437bdcd2ea4f0a821de36389880b0d03c623df4c71548
+entspricht exakt dem technischen Erfolgsbeleg22:05:05.483UTC. Dieser verschiebt
+das Fenster14Nov hinter die brauchbaren Quellen13Nov; heute gepinnter Gap behaelt
+die falsche Grenze.12Nov besitzt dagegen einen echten belegten Vorbereitungsstand.
+Kleinster Fix in eigenem Branch: technische Quittung erhalten, Fensterabschluss
+separat am exakt hash-/mandats-/profil-/taggebundenen gespeicherten Briefing pruefen.
+Nur echte Ausgabe oder explizit belegte Ruhelage schliesst; bekannte Gaps nicht.
+Unlesbare/fremde/fehlgebundene Inhalte bleiben UNKNOWN, Zweitageshorizont bleibt.
+Ein neuer nativer lokaler Einzelfall mit einem aktuellen KO und seinen fuenf
+Originalquellen reproduziert gap bei alter Grenze, fresh bei korrekter Grenze.
+Er deckt einen zweiten Fehler auf: Fraktion/Antrag/Gesundheit werden im bestehenden
+Identitaetsmodul als spezifische Sachbelege gewertet. Unterschiedliche Antraege
+und ein altes Pflegeinterview gelangen in einen Cluster; eine neue Suchthilfe-
+meldung wuerde damit alten Pflegeinhalt frisch machen. Kein solcher Output
+ausgeliefert. Gegenprobe durch unabhaengigen Agenten bestaetigt die fehlerhaften
+Paargewichte. Enger Ursachenfix folgt im selben Sprint; keine Schwellenlockerung.
+Root integriert, Delivery entwickelt getrennt, Fresh diagnostiziert/reviewt;
+maximal drei Agenten, getrennte Worktrees. Noch keine alten Tests wiederholt,
+keine neuen Modell-/Quellenlaeufe, keine Productiondatenkorrektur oder Aktivierung.
+Kostenbuch09:08 unveraendert0,581580USDTag/3,305057USDgesamt/8alteReserven.
+
+**PR1193 Ersatzrollout nach konkreter Freigabe erfolgt,14.11.08:56–08:58UTC:**
+Betreiber gab ausdruecklich „Einmaligen Ersatzrollout von PR1193 freigeben“.
+Direkter Vorflug: weiterhin0Deployments fuer4a49, GitHubPRmerged/exakterKopf b87.
+Genau der gepruefte API-Vorschlag ce742f3b via vorhandener Git-Verbindung mit
+ref4a49 undwithLatestCommitfalse einmal ausgefuehrt, keine weiteren Optionen.
+Vercel dpl_DNSeek1KJwM8Wq1UCU6VhyEtHe3r Production/fra1 READY08:56:55.712UTC,
+Merge4a49cbefa84950128116599dd667b181f79909be, normaler Hauptalias gebunden.
+Hauptalias-GETs: geschuetzter Runtimebeleg200/exakterSHA/Production/Supabasebereit/
+exklusiveProfile/Kommunikations-/Kohortensperren=true; anonymer Appstart401.
+Oeffentliche Live-Dateien byteidentisch zum geprueftenKopf/Mergebaum:
+client.js Gitblob46f878dc64ee4cc9ce351f84b5c4b9d1c4556fdc,
+styles.css9b6d1cbf68c56623c800142bc053cbd99e5d19fe. LiveHTML referenziert
+beide mit?v=4a49cbef, somit Versionswechsel auch fuer installierte App.
+Unabhaengiger lokaler Artefakt-/Gitobjektabgleich durch Fresh ohne Befund,
+keine Wiederholung der Browser-/Backendtests und keine weiteren Netzlaeufe dort.
+Kein authentifizierter Production-UI-PASS behauptet. Quellenversorgung/fehlender
+Briefing-Tagesanlass bleiben ehrlich; keine alten79Items zuPrioritaeten promotet.
+Keine Quellen-/Modell-/SQLlaeufe, Budget-/Cron-/Env-/Kunden-/Zugangsänderung.
+Das konkrete einmalige Ersatzrolloutrecht ist verbraucht. Nachtzaehler bleibt6/10.
+Die Ursache des ausbleibenden automatischen Gitrollouts bleibt unbelegt;
+Ersatzrollout behebt die Auslieferung dieses Commits, keine Gitautomatikheilung behaupten.
+
+**PR1193 normal gemergt08:43UTC, reguläres Deployment08:51noch fehlend:**
+Gepruefter Kopf b87f20ac623da5dc5beba680731b47cfb0073729, Evidenceabb5dc3f,
+Merge4a49cbefa84950128116599dd667b181f79909be, Parents097d14/b87f20,
+Treeb59344e7680d9d84a6b88229cf173cbc63c7ddc7 exakt wie Kopf. Root+unabhaengige
+Runtime/UI/Radar/Delta/CI/Vollbaumreviews ohne Restbefund. Nachtzaehler6/10.
+CI43576941086 beide Pflichtchecks gruen:5/5neue echteChromiumBrowserchecks
+Desktop/Mobil,2neue/geaenderteRunnergruppen undgeanderteTestsyntax. Erster
+CI43576427744:2Backend/6Plan/7Syntax bestanden, Browsersetup vorAppstartFAIL,
+weil ubuntu-latest inzwischen26.04 und Playwright1.56.1 nicht kompatibel.
+Nur exaktes1193Tupel browserjob auf24.04, Default/Playwrightpin unveraendert.
+Gruener Erstofflinejob132391553513 viaGitHubRun/Job/Head/Attempt/Repo/Workflow
+und vollstaendige Gitidentitaet uebernommen; kein Wiederholen gruener Gruppen.
+Bis08:51kein Vercel-Deployment/GitHub-Deploymentstatus fuerMerge vorhanden;
+letzte Production bleibt097d14/dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd. Gitlink
+repo/main aktiv, keine nachgewiesene Anbieterursache. [skip ci]-Marker im Merge
+als Hypothese, bisherige Merges damit funktionierten; keine Ursache behaupten.
+EIN gitgestuetzter Ersatzrollout ist nur als konkreter Vorschlag unabhaengig
+geprueft: /workspace/helmut-review/pr1193-production-rollout.json, SHA256
+ce742f3b2d6d5331d8d7b0711869f009165efa9d7d891c06ad482bb46cbfaab5.
+Userfreigabe separat angefragt und AUSSTEHEND. Keine API-Deploymentmutation,
+kein zweiter Weg, kein neuer Quell-/Modell-/SQLlauf. Vor eventuellem GO erneut
+Dedupe und aktuelle Lage lesen, danach READY/Commit/Alias/Auth/Assetbytes pruefen.
+Budgetvorflug unveraendert0,581580USDTag/3,305057USDgesamt/8alteReserven,
+nurCEM/0aktuelleProzesse/Leases. Keine UI-Liveabnahme behaupten, solange alte Assets.
+
 **PR1193 konkrete UI-Reparatur, erste gezielte Abnahme offen:**
 Radarbackend e8b51613 (Root2dda1b5e) von Root+Delivery abgenommen: nur neutrale
 Dynamikformulierung,2neue Bestandsgruppen,2angepasste alte Erwartungen ohne

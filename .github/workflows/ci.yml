@@ -75,7 +75,7 @@ jobs:
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
     services:
       postgres:
-        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1189 && github.event.pull_request.base.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb' && github.event.pull_request.head.ref == 'codex/quellenabruf-arbeitsanteil-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1190 && github.event.pull_request.base.sha == '441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616' && github.event.pull_request.head.ref == 'codex/artikel-versionskonflikte-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1191 && github.event.pull_request.base.sha == '0339f19e6167d9f0f9eff67b7acfb0e997af1180' && github.event.pull_request.head.ref == 'codex/lage-ergaenzung-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1192 && github.event.pull_request.base.sha == '21816be73c5a7a759b35e907b9030a37d5c9b294' && github.event.pull_request.head.ref == 'codex/lage-kostenvertrag-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') && 'postgres:17' || '' }}
+        image: ${{ inputs.mode != 'verarbeitungskern' && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1184 && github.event.pull_request.base.sha == '597d7876d3f1ce963174fe749ffb28bd98f15065' && github.event.pull_request.head.ref == 'codex/einprofil-lieferfaehigkeit-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1185 && github.event.pull_request.base.sha == '73b34b02c7690656191a5d45d5efd32c954ff771' && github.event.pull_request.head.ref == 'codex/dip-einzelartikel-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1186 && github.event.pull_request.base.sha == 'cc283e0bae8ed7b9f25c551379a9ee1f8895a91c' && github.event.pull_request.head.ref == 'codex/mandatsarbeit-vorrang-20261113') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1187 && github.event.pull_request.base.sha == '32311c78fb17843631f6851ec7103b5f9759ff68' && github.event.pull_request.head.ref == 'codex/gepruefte-lage-teilstaende-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1188 && github.event.pull_request.base.sha == 'c97fbbd0e9a894e4072252be3863bffa29c625e8' && github.event.pull_request.head.ref == 'codex/tagesfrische-und-radarklarheit-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1189 && github.event.pull_request.base.sha == '5a734cc38549c0e6f922bf7471d44042ed3b5deb' && github.event.pull_request.head.ref == 'codex/quellenabruf-arbeitsanteil-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1190 && github.event.pull_request.base.sha == '441ed0af2bf4bd1a5dbd137d8eb7ac4c3d87b616' && github.event.pull_request.head.ref == 'codex/artikel-versionskonflikte-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1191 && github.event.pull_request.base.sha == '0339f19e6167d9f0f9eff67b7acfb0e997af1180' && github.event.pull_request.head.ref == 'codex/lage-ergaenzung-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1192 && github.event.pull_request.base.sha == '21816be73c5a7a759b35e907b9030a37d5c9b294' && github.event.pull_request.head.ref == 'codex/lage-kostenvertrag-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') && !(github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: helmut
           POSTGRES_PASSWORD: helmut
@@ -129,7 +129,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/lage-kostenvertrag-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1192 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/kundenansichten-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-fenster-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -156,6 +158,13 @@ jobs:
           fi
           printf 'Geänderte Dateien:\n%s\n' "$CHANGED"
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Briefingfenster - neue Profilbindung und geaenderte Syntax
+        if: steps.plan.outputs.briefingfenster == 'true'
+        run: |
+          set -e
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan-test.js --briefingfenster-only
+          node scripts/lokal.js scripts/ci-lieferreparatur-plan.js --syntax
+          echo 'Neue lokale Checkpoint-/Gattungs-/Ausliefergruppen WIEDERVERWENDET am exakt gebundenen Evidencebaum; keine alten Fach-/Mengenpruefungen wiederholt.' >> "$GITHUB_STEP_SUMMARY"
       - name: Kundenansichten - neue Radarbestandsfaelle und Profilbindung
         if: steps.plan.outputs.kundenansichten == 'true'
         env:
@@ -336,7 +345,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -707,7 +716,7 @@ jobs:
   browser-smoke:
     if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
-    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114' && 'ubuntu-24.04' || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -748,7 +757,9 @@ jobs:
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/lage-kostenvertrag-20261114 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1192 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/kundenansichten-20261114 ] \
-            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ]; then
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1193 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-fenster-20261114 ] \
+            || [ "${HELMUT_CI_PR_NUMBER:-}" = 1194 ]; then
             node scripts/ci-lieferreparatur-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -841,10 +852,10 @@ jobs:
             echo 'Kein Chromium installiert oder gestartet, kein neuer Browser-PASS behauptet; keine Wiederholung der alten12/24/15 Faelle, keine Datenbank oder Modelle.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Abhängigkeiten installieren (aus package-lock.json)
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.kundenansichten == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.kundenansichten == 'true' || steps.plan.outputs.briefingfenster == 'true'
         run: npm ci
       - name: Playwright + Chromium installieren
-        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.kundenansichten == 'true'
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.lieferreparatur == 'true' || steps.plan.outputs.lageteilstand == 'true' || steps.plan.outputs.kundenansichten == 'true' || steps.plan.outputs.briefingfenster == 'true'
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
@@ -876,6 +887,12 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
           HELMUT_REQUIRE_BROWSER: "1"
         run: node scripts/lokal.js scripts/browser-smoke-test.js --kundenansichten
+      - name: Briefingfenster - neuer gepruefter Teilstand Desktop und Mobil
+        if: steps.plan.outputs.briefingfenster == 'true'
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/lokal.js scripts/browser-smoke-test.js --briefing-teilstand
       - name: Radar - bestaetigten Browserbeleg wiederverwenden
         if: steps.plan.outputs.tagesfrische == 'true'
         run: |

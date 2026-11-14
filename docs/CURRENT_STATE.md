@@ -1,24 +1,23 @@
 # CURRENT STATE — Helmut
-**14.11.2026,08:10UTC: echte Kundenscreenshots zeigen Darstellungsfehler.
-2gepruefteLageabsaetze geliefert, UI-ReparaturPR1193 und erste neue Browserabnahme offen.**
-Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
-Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
-Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
+**14.11.2026,10:11UTC: Briefingsprint aktiv;21neue Gruppen bestanden.
+Noch kein brauchbares Tagesbriefing. PR1193 weiterhin auf Production.**
+main `4a49cbef`, [PR1193](https://github.com/ernisch/helmut-pilot/pull/1193), Kopf `b87f20ac`; Production `4a49cbef`.
+Vercel `dpl_DNSeek1KJwM8Wq1UCU6VhyEtHe3r` Git-Ersatzrollout/Production READY08:56:55UTC;
+Alias/Runtime4a49/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
 PR1190:9Artikel-/6CI-Gruppen43561501437 bestanden; strenger Versionsreader bleibt.
 Realer Leser08:05:79Items/5Karten/2Absaetze/Quittung. Keine UI-Vollabnahme.
-Screenshot: Lageabsatz nur in geschlossenen Details, mobiler Titel zu lang;
-Radar nennt3alteDynamiken „neu“. Quellenstand14 stammt korrekt aus Umfeldquelle.
-Briefinggap bleibt fachlich richtig; vorhandene79 sind keine neuen Tagesprioritaeten.
-Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
-PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
-Realer Lagepfad06:05:44–53: nur bestaetigter Teilstand, neue Startphase ohne Entwurf.
-Zwei neue costInputVersionHash-Overrides verletzen nativen Kostenvertrag vor Reserve;
-keine neuen Calls/Kosten. Reviewluecke. PR1192:2Overrides entfernt;2nativeFaelle bestanden.
-Nach konkretem GO: Originalarchiv/CAS,1Lage/2Calls+1Morgen;neuer Leser Profil/Tag/Quelle/Quittung PASS.
+PR1193:5Browserfaelle gruen; Live-JS/CSS bytegleich, neueAssetversion/Auth bestaetigt.
+Briefinggap ist sichtbar; die Zeitgrenze war jedoch durch einen leeren Erfolg falsch gesetzt.
+Exakt hashgebundener Gap13Nov zaehlte als Inhaltsabschluss und schloss Quellen13Nov aus.
+Nativer neuer Einzelfall: korrektes Fenster12Nov liefert einen Kandidaten; dessen alter
+Pflegeinhalt wird aber durch fremde Suchthilfequelle frisch. Zweiter Identitaetsfehler:
+Fraktion/Antrag/Gesundheit tragen unzulaessig Ereignisgewicht. Beide Fixes lokal geprueft;
+keine Quellen-/Modell-/Productiondatenaktion. Details und historische Belege im Architekturbericht.
+Kosten09:08:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -34,7 +33,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**5/10Merges verbraucht,5frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**6/10Merges verbraucht,4frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,

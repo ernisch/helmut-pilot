@@ -15,8 +15,9 @@ const konfliktOnly = args.length === 1 && args[0] === "--versionskonflikt-only";
 const ergaenzungOnly = args.length === 1 && args[0] === "--ergaenzung-only";
 const kostenOnly = args.length === 1 && args[0] === "--kostenvertrag-plan-only";
 const kundenOnly = args.length === 1 && args[0] === "--kundenansichten-only";
+const fensterOnly = args.length === 1 && args[0] === "--briefingfenster-only";
 const kundenRunnerOnly = args.length === 1 && args[0] === "--kundenansichten-runner-only";
-A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
+A.ok(args.length === 0 || nachtrag || dipOnly || mandatOnly || teilstandOnly || frischeOnly || frischeNachtrag || abrufOnly || konfliktOnly || ergaenzungOnly || kostenOnly || kundenOnly || kundenRunnerOnly || fensterOnly, "Unbekannte Auswahl darf keine Pruefungen auslassen");
 const oid = char => char.repeat(40), row = char => ({ mode: "100644", type: "blob", oid: oid(char) });
 function fixture(profile = C) {
   const baseTree = new Map([["server.js", row("a")], ["package-lock.json", row("b")],
@@ -46,6 +47,7 @@ function test(name, fn) {
   if (konfliktOnly && !name.startsWith("Versionskonflikt:")) return;
   if (ergaenzungOnly && !name.startsWith("Ergaenzung:")) return;
   if (kostenOnly && !name.startsWith("Kostenvertrag:")) return;
+  if (fensterOnly && !name.startsWith("Briefingfenster:")) return;
   if (kundenOnly && !name.startsWith("Kundenansicht:")) return;
   if (kundenRunnerOnly && !/^Kundenansicht: (?:Offlinejob|kompatibler Runner)/.test(name)) return;
   fn(); count++; console.log("PASS " + name);
@@ -637,10 +639,62 @@ test("Kundenansicht: Browserjob fuehrt nur neue Kundenansichten mit Browserpflic
 test("Kundenansicht: kompatibler Runner ist nur am exakten1193Tupel gepinnt und Browser bleibt Pflicht", () => {
   const browser = workflow.slice(workflow.indexOf("  browser-smoke:"), workflow.indexOf("  synthetic-resource-diagnostic:"));
   const runner = browser.split("\n").find(line => line.startsWith("    runs-on:"));
-  A.equal(runner, "    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114' && 'ubuntu-24.04' || 'ubuntu-latest' }}");
+  A.equal(runner, "    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}");
   A.match(browser, /playwright@1\.56\.1/); A.match(browser, /HELMUT_REQUIRE_BROWSER: "1"/);
   A.match(browser, /node scripts\/lokal\.js scripts\/browser-smoke-test\.js --kundenansichten/);
 });
 
+
+test("Briefingfenster: exaktes Profil prueft nur neue Bindungsfaelle und Syntax", () => {
+  const p=C.validate(fixture(C.BRIEFINGFENSTER));
+  for(const key of C.OUTPUTS) A.equal(p[key],key==="briefingfenster");
+  A.equal(p.source.pr,1194);A.equal(p.source.base,C.BRIEFINGFENSTER.BASE);
+  A.equal(C.BRIEFINGFENSTER.RUNTIME_FILES.length,7);A.equal(C.BRIEFINGFENSTER.REGRESSION_FILES.length,4);
+  A.match(p.reused.status,/Lokale neue Checkpoint/);A.match(p.reused.status,/nicht erneut/);
+});
+test("Briefingfenster: fremde Ereignisse Metadaten Basen und Koepfe bleiben gesperrt", () => {
+  for(const change of [f=>{f.pr.base.sha=C.LAGEKOSTEN.BASE;},f=>{f.prNumber++;},f=>{f.pr.number++;},
+    f=>{f.headRef="fremd";},f=>{f.pr.head.ref="fremd";},f=>{f.pr.base.ref="fremd";},
+    f=>{f.pr.base.repo.full_name="fremd/repo";},f=>{f.pr.head.repo.full_name="fremd/repo";},
+    f=>{f.pr.state="closed";},f=>{delete f.pr.draft;},f=>{f.ref="refs/heads/main";},
+    f=>{f.event="push";},f=>{f.event="workflow_dispatch";},f=>{f.event="pull_request_target";},
+    f=>{f.repository="fremd/repo";},f=>{f.checkedOutHead=oid("1");}])denied(change,C.BRIEFINGFENSTER);
+});
+test("Briefingfenster: jeder Abnahmeblob und alle unveraenderten Abhaengigkeiten sind verpflichtend", () => {
+  for(const file of Object.keys(C.BRIEFINGFENSTER.BLOBS)) for(const change of [
+    f=>{f.headTree.get(file).oid=oid("1");},f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="100755";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.BRIEFINGFENSTER);
+  for(const file of ["package-lock.json","scripts/lokal.js","supabase/migrations/unveraenderte-basis.sql"])
+    denied(f=>{f.headTree.get(file).oid=oid("1");},C.BRIEFINGFENSTER);
+  for(const file of ["styles.css","lib/helmut/ai.js","lib/helmut/scalable-pipeline.js"])
+    denied(f=>{f.headTree.set(file,row("1"));},C.BRIEFINGFENSTER);
+});
+test("Briefingfenster: fehlende Evidence und ungueltige CI Dateien stoppen geschlossen", () => {
+  denied(f=>{f.evidenceTree=new Map();},C.BRIEFINGFENSTER);
+  denied(f=>{f.evidenceTree.get("scripts/lokal.js").oid=oid("1");},C.BRIEFINGFENSTER);
+  for(const file of C.CI_FILES) for(const change of [f=>{f.headTree.delete(file);},
+    f=>{f.headTree.get(file).mode="120000";},f=>{f.headTree.get(file).type="commit";}])denied(change,C.BRIEFINGFENSTER);
+});
+test("Briefingfenster: Offlinejob wiederholt keine bestandenen lokalen Fach oder Mengenpruefungen", () => {
+  A.deepEqual(active("offline-suite","browser-smoke",C.validate(fixture(C.BRIEFINGFENSTER))),[
+    "Prüfplan aus geänderten Dateien","Briefingfenster - neue Profilbindung und geaenderte Syntax"]);
+  A.match(workflow,/ci-lieferreparatur-plan-test\.js --briefingfenster-only/);
+  const section=workflow.slice(workflow.indexOf("      - name: Briefingfenster - neue Profilbindung"),workflow.indexOf("      - name: Kundenansichten - neue Radarbestandsfaelle"));
+  for(const file of C.BRIEFINGFENSTER.REGRESSION_FILES)A.equal(section.includes("node scripts/lokal.js "+file),false);
+  A.match(section,/WIEDERVERWENDET/);A.match(section,/ci-lieferreparatur-plan\.js --syntax/);
+  A.match(workflow,/github\.event\.pull_request\.base\.sha == '4a49cbefa84950128116599dd667b181f79909be'/);
+});
+test("Briefingfenster: Browserjob prueft nur neue gebundene Briefingteilstaende Desktop und Mobil", () => {
+  A.deepEqual(active("browser-smoke","synthetic-resource-diagnostic",C.validate(fixture(C.BRIEFINGFENSTER))),[
+    "Prüfplan aus geänderten Dateien","Abhängigkeiten installieren (aus package-lock.json)",
+    "Playwright + Chromium installieren","Briefingfenster - neuer gepruefter Teilstand Desktop und Mobil"]);
+  const scoped=workflow.slice(0,workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped),false);
+  A.match(workflow,/node scripts\/lokal\.js scripts\/browser-smoke-test\.js --briefing-teilstand/);
+  const browser=workflow.slice(workflow.indexOf("  browser-smoke:"),workflow.indexOf("  synthetic-resource-diagnostic:"));
+  A.match(browser,/HELMUT_REQUIRE_BROWSER: "1"/);
+  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
+});
+
 A.ok(count > 0);
-console.log(`${count}/${count} ${kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
+console.log(`${count}/${count} ${fensterOnly ? "neue Briefingfenster-Profilgegenfaelle" : kundenRunnerOnly ? "neue/geaenderte Kundenansicht-Runnergruppen" : kundenOnly ? "neue Kundenansicht-Profilgegenfaelle" : kostenOnly ? "neue Kostenvertrags-Profilgegenfaelle" : ergaenzungOnly ? "neue Ergaenzungs-Profilgegenfaelle" : konfliktOnly ? "neue Versionskonflikt-Profilgegenfaelle" : abrufOnly ? "neue Abrufanteil-Profilgegenfaelle" : frischeNachtrag ? "geaenderte Frische-Nachtragsgruppen" : frischeOnly ? "neue Frische-Profilgegenfaelle" : teilstandOnly ? "neue Teilstand-Profilgegenfaelle" : mandatOnly ? "neue Mandatsphasen-Profilgegenfaelle" : dipOnly ? "neue DIP-Profilgegenfaelle" : nachtrag ? "betroffene/neue Nachtragsfaelle" : "neue Lieferreparatur-Planpruefungen"} bestanden; keine Fach-/Mengenwiederholung.`);
