@@ -1,5 +1,4 @@
 # CURRENT STATE — Helmut
-
 **14.11.2026UTC/Berlin: PR1190 live. Paket05:15:79Eintraege/5Karten/1Lageabsatz.
 Leser/Profil/Quelle/Tag/Quittung bestaetigt; Lage bleibt Teilstand. PR1191 implementiert, neue CI offen.**
 Production/main `0339f19e`, [PR1190](https://github.com/ernisch/helmut-pilot/pull/1190), gepruefter Kopf `14295ec3`.
@@ -9,20 +8,15 @@ READY, Alias/Runtime bestaetigt, anonym401. SQL `20261113193319_frische_tagesarb
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
-
 PR1190: neun neue Artikelgruppen/sechs neue CI-Gruppen/Syntax bestanden in43561501437.
 Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Strenger Reader bleibt;
 Konfliktartikel isoliert, keine Datenkorrektur/Budgetaenderung. Runtime/Alias0339/anonym401.
 Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
 Kosten05:34:0,567350USDTag/3,290827USDgesamt/8alteReserven; Paket/Quittung unveraendert.
-PR1191 ergaenzt einen bestaetigten Teilstand hoechstens einmal je Basis/Originalhash/Tag.
-Positiver Absatz bleibt wortgleich; beide alten Artikel sind ausgeschlossen, gesamte
-neue Zweierausgabe durchlaeuft unveraenderten Q-/Paarvertrag. UNKNOWN bleibt gesperrt.
-CacheOnly/Altpfade unveraendert; Fehler behalten verifizierten Teilstand. Root plus
-unabhaengige Runtime-/Delta-/CI-Reviews ohne Befund; AI-OFF startet keine Phase.
-Zehn neue Interaktionsgruppen/sechs neue CI-Gruppen/Syntax noch nicht ausgefuehrt;
-keine bezahlte Verarbeitung. Reale Eingabe besitzt drei andere Quellen, kein Voll-PASS.
-
+PR1191: einmalige Ergaenzung je Basis/Originalhash/Tag, positiver Absatz unveraendert,
+beide Originalartikel ausgeschlossen; strenger Q-/Paarvertrag und UNKNOWN-Sperre.
+AI-OFF ohne Start; drei andere reale Quellen. Unabhaengige Reviews ohne Befund.
+Neue10Interaktions-/6CI-Gruppen/Syntax offen; keine bezahlte Verarbeitung/Vollabnahme.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -34,7 +28,6 @@ verbraucht. Abgeschlossene Einzeljobfehler sperren uebrige Tagesarbeit nicht meh
 unklarer Ausgang/Leaseverlust bleibt gesperrt. Historische Reste loesen keine Slots aus.
 Explizite Ruhelage gilt bei sonst vollstaendigen Belegen als vollstaendig; Luecken nicht.
 Neue lokale Gruppen/Faelle24/24: Quellen7, Auslieferung7, JSONB7, Verwaltung3. Unabhaengige Reviews ohne Restbefund; alte Nachweise erhalten.
-
 Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 gruen;
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
@@ -47,7 +40,6 @@ SQL dennoch bereits aktiv; Migrationsregister rein lesend bestaetigt:
 `20261113094853_job_metrics_ohne_materialisierung`. Nicht erneut anwenden.
 [DB-Speicher/OOM und bestehende Belege](betrieb/db-speicherspitzen-20261113.md).
 Ausreichende RAM-Reserve und 100-Kunden-Zeit-/Kostenrahmen bleiben unbelegt.
-
 [Unveraenderter vorheriger Status mit Lage/Radar-, Buero-, Profil- und UX-Belegen](https://github.com/ernisch/helmut-pilot/blob/fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f/docs/CURRENT_STATE.md).
 Die folgenden datierten Abschnitte sind erhaltener vorheriger Betriebsstand;
 daraus entstehen keine neuen Laufrechte.
