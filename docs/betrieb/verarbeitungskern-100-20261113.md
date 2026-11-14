@@ -30,7 +30,83 @@ kein Produktcron: `Automation_0aeb84a62fe081918220991cee7564b7`,14.11.03:07UTC
 stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie prueft
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
-Zaehler seit Nachtfreigabe:4/10Merges (PR1188/1189/1190/1191),6weitere nur beiGruen verbleiben.
+Zaehler seit Nachtfreigabe:5/10Merges (PR1188/1189/1190/1191/1192),5weitere nur beiGruen verbleiben.
+**PR1193 konkrete UI-Reparatur, erste gezielte Abnahme offen:**
+Radarbackend e8b51613 (Root2dda1b5e) von Root+Delivery abgenommen: nur neutrale
+Dynamikformulierung,2neue Bestandsgruppen,2angepasste alte Erwartungen ohne
+Wiederholung der18Altgruppen. UI-Freeze client.js/styles.css/browser-smoke-test.js:
+direkt sichtbare wortgleiche gespeicherte Lageabsaetze mit ihren eigenen Quellen,
+aktive Profil-/Belegschranke, mobile Titel3Zeilen bei vollstaendigem Detailtitel,
+neutrale Radarzahl auch fuer gespeicherte Altpakete. Root+FreshReadreviews fanden
+einen Null-Dynamik-Fallback; anschliessender enger Nachtrag behandelt auch0oeffnende
+Dynamiken bei sichtbarem Umfeldbestand. Root+FreshDeltareview ohne Restbefund.
+UI-Autorcommit3b2cc0bb, Produktblobs46f878dc/9b6d1cbf/f1980da3; unveraendert
+uebernommen. Alle benoetigten Code-/Test-/CI-Strukturreviews abgeschlossen.
+Pruefplan bindet PR1193/Base097d14/Branch und neun NonCI-Dateien plus drei CI-Dateien.
+Nur2neue Radargruppen/6neue Profilgruppen/Syntax und5neue Browserchecks (Desktop/
+Mobil+NoWrites) vorgesehen; bisher keine Tests gestartet. Keine Modelle/DBaenderung.
+Heutige Radar-Umfeldquelle hat Score36/„Ignorieren“/nur Parteimatch; allein heutige
+Publikation begruendet keinen Briefing-Tagesanlass. Quellen-/Tagesanlassgates bleiben.
+
+**Echte Kundenscreenshots14.11.08:09UTC: UI-Abnahme noch nicht bestanden.**
+Der SnapshotleserPASS08:05 belegt Daten/DTO, keinen sichtbaren Text im Browser.
+Tatsaechliche zwei Lageabsaetze sind nur in geschlossenen Details der Karten2/4;
+Lageuebersicht zeigt ausschliesslich Karten. Spaeter CSS-Override hebt mobile
+Dreizeilenbegrenzung auf, Titel bis277Zeichen dominieren die Ansicht. Radar zeigt
+„3neueSignale“ ohne Neuigkeitsbeleg; drei Dynamiken stammen13./12./08.11.
+Quelldatum14 ist korrekt aus einer anderen sichtbaren Umfeldquelle; kein Datumsfix.
+Briefinggap entspricht fehlendem Tagesanlass/offenem Quellenstand; alte79Items
+werden nicht zu heutigen Prioritaeten umgedeutet. Kleinster Fix: gepruefte
+Lageeinordnung direkt in Lage, mobile Titel begrenzen bei vollem Detailtext,
+neutraler Radarbestand auch fuer bestehende Pakete. Quellen/Profil/Policy/DTO/
+Budget unveraendert,0KI/keine Datenkorrektur. Neue gezielte Browser- und Backendfaelle,
+keine Wiederholung alter Suiten, bisher noch keine Tests ausgefuehrt.
+
+**Einmalige Wiederaufnahme nach konkreter Betreiberfreigabe,14.11.08:01–08:05UTC:**
+Betreiber erteilte ausdruecklich „Ja, diese einmalige Wiederaufnahme freigeben“.
+Vorflug: Runtime097d14/Schutzsperren korrekt, nurCEMaktiv/0aktuelleProzesse/Leases,
+0,567350USDTag/3,290827USDgesamt/8alteoffene/0heuteoffeneReserven. Genau der
+gepruefte SQL-Entwurf ef4c31b5 mit gesetztem Einmal-GO wurde ausgefuehrt; vollstaendiges
+Originalarchiv inklusive Owner/Hash/created_at rein lesend bestaetigt,0altePhasen.
+Gleicher Eingabeschluessel2543f711, keine Migration/Budget-/Cron-/Env-Aenderung.
+EINE Lageoperation briefing-lage-20261114080301-ygimh,08:03:01.365–08:03:35.218UTC:
+zwei strikt gepruefte Absaetze gespeichert08:03:34.300, unveraenderter Positivabsatz,
+private Ergaenzungsbindung und ein bestaetigter Paarvergleich. Genau2abgerechnete
+Modellcalls insgesamt0,014230USD, keine weitere neue Reserve offen. EIN Morgenabschluss
+briefing-morning-20261114080421-0wpbv,08:04:21.435–08:04:36.137UTC,0zusaetzlicheKI.
+Neues Paket08:04:32.925UTC/hash812d3b817be84cb2348238692fdc8b00f350415e542dce89a359cb17799ea67d:
+79Eintraege/5Karten/2Lageabsaetze/Radar3belegteEntwicklungen/fresh. Neue Quittung
+08:04:35.657UTC passend. Normaler Produktleser auf exakten neuen privaten Livesnapshots
+ueber scripts/lokal.js einmal gezielt08:05PASS:Profil/Quelle/Policy/Berlintag/Quittung,
+voller E-Lagevertrag/Originalpositiv unveraendert/keine privaten Reviewdaten im DTO.
+Bestehende Tests nicht wiederholt. Lauf-/Gesamtpaket bleibt partial: ausschliesslich
+quellenversorgung-unvollstaendig und briefing-ohne-tagesanlass; lage-teilstand entfaellt.
+Kein authentifizierter Production-HTTP-/Browsernachweis, kein100Kundenkapazitaetsnachweis.
+Endkosten0,581580USDTag/3,305057USDgesamt/8alteoffene/0heuteoffene, genau2neueCalls.
+Die konkrete SQL-/Lage-/Morgenfreigabe ist verbraucht, nicht erneut verwenden.
+Nachtzaehler unveraendert5/10. Keine neuen Sourceslots/Modelle/Productionkorrekturen.
+
+**PR1192 nach gruener enger CI regulaer ausgerollt,06:20–06:23UTC:**
+Merge097d14e29be63e0c19d7c8fedae9e7eb16195c57, Parents21816be7/6265b594,
+Tree46a1769c8f70a1022edaa620ea286726873e7526 exakt wie gepruefter Kopf.
+CI43565666630 beide Pflichtchecks gruen:2/2neue native Kostenvertragsfaelle,
+6/6neue Profilgruppen und4geaenderte JS-Syntax. Alte10Interaktionsgruppen/
+Browser-/Mengenbelege nicht wiederholt. Root plus unabhaengige Code-/Test-/CI-/
+Vollbaumreviews ohne Befund; Evidencea6b1293c. Vercel
+ dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd Git/Production/fra1 READY06:20:30UTC,
+Hauptalias/Runtime097d14/anonym401 und exklusive Profile/Sperren bestaetigt.
+Vor Merge weiter0aktuelleProzesse/Leases/nurCEM;0,567350USDTag/3,290827USDgesamt/
+8alteoffeneReserven/0heuteoffen. Keine erneute Produkt-/Modelloperation.
+Korrektur hebt unbekannten vorhandenen Start nicht auf. Konkreter separater
+Wiederaufnahmeentwurf ist von Root und unabhaengig geprueft; konkrete Betreiber-
+freigabe fuer Datenkorrektur/kurze Schreibsperre angefragt, weiterhin ausstehend.
+Privater Entwurf/workspace/helmut-review/lage-start-wiederaufnahme-20261114.sql,
+SHA256ef4c31b54181e2672b43d40c5345aadd22d72f5dbc952a4e4328d6b4733a1a2b.
+DefaultSTOP vor LOCK/DML, UTC-/Berlintag14 hart gebunden; vollstaendiges Original-
+archiv und exakter CAS/keine Folgephasen. Keine Ausfuehrung oder DB-Probe.
+Nachtzaehler5/10. Aktuelle79erAusgabe bleibt1Absatz und gebundene Quittung,
+Radar3belegteEntwicklungen/fresh; kein authentifizierter HTTP-/Browser-Vollbeleg.
+
 **PR1192 Kleinstfix implementiert, neue enge Abnahme offen:** Autor5f576f53,
 exakt ai.js (zwei Overrides entfernt) und bestehender Lage-Ergaenzungstest mit
 strengem --kostenvertrag-only. Genau zwei neue Faelle: nativer Azurevertrag mit

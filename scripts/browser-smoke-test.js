@@ -33,11 +33,13 @@ const root = path.join(__dirname, "..");
 const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
 const tagespaketTeilstand = process.argv.includes("--tagespaket-teilstand");
 const radarFrischeklarheit = process.argv.includes("--radar-frischeklarheit");
+const kundenansichten = process.argv.includes("--kundenansichten");
+if (kundenansichten && process.argv.slice(2).some(arg => arg !== "--kundenansichten")) throw Error("Kundenansichten sind ein eigener gezielter Tagespaketfall");
 const tagespaketRuhelageOnly = process.argv.includes("--nur-ruhelage");
 if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage braucht --tagespaket-jsonb");
 if (tagespaketTeilstand && (tagespaketJsonb || tagespaketRuhelageOnly)) throw Error("Teilstand ist ein eigener gezielter Tagespaketfall");
 if (radarFrischeklarheit && (process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || tagespaketRuhelageOnly)) throw Error("Radar-Frischeklarheit ist ein eigener gezielter Tagespaketfall");
-const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || radarFrischeklarheit;
+const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || radarFrischeklarheit || kundenansichten;
 
 function loadPlaywright() {
   const candidates = [
@@ -60,7 +62,7 @@ function check(name, cond, detail = "") {
 // Begrenzter Liefernachweis fuer den Verarbeitungskern: echte SPA und HTTP-/
 // Auth-/Mandantenschicht, vorhandene erfundene Quellen, gespeicherter Paketstand.
 // Kein Ersatz fuer historische Fach-, Last-, PWA- oder Verwaltungsnachweise.
-async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false, teilstand = false, radarFrische = false } = {}) {
+async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false, teilstand = false, radarFrische = false, kunden = false } = {}) {
   const assert = require("node:assert/strict");
   process.env.HELMUT_AUTH_MODE = "accounts";
   process.env.HELMUT_STORAGE_BACKEND = "local";
@@ -113,7 +115,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         sourceUrl: "https://example.invalid/dokument/1", lastUpdatedAt: sichtbarAm
       }] } };
   }
-  if (jsonb || teilstand) {
+  if (jsonb || teilstand || kunden) {
     process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{
       publicationUrl: "https://example.invalid/held-publication", reason: "unresolved-event-relation",
       review: { id: "synthetic-browser-jsonb", receiptSHA256: "a".repeat(64),
@@ -128,6 +130,22 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
     }] } };
     briefing.publicationEligibilityPolicy = P.publicInfo();
   }
+  let langerTitel;
+  if (kunden) {
+    langerTitel = ("Synthetischer vollstaendiger Titel zur Beratung eines Haushaltsentwurfs und den zugehoerigen Ausschussunterlagen ").repeat(5).trim();
+    lageAnsicht.vorgaenge[0].displayTitle = langerTitel;
+    briefing.currentHelmutState = { status: "empty", tenantId: profile.id, profileId: profile.id,
+      versorgung: { version: 1, zustand: "offen" }, emptyState: { kind: "gap",
+        headline: "Quellenlage noch nicht ausreichend ausgewertet",
+        detail: "Die Quellenverarbeitung ist noch nicht abgeschlossen. Ein ruhiger Nachrichtentag ist damit nicht belegt." } };
+    briefing.currentRadarState = { status: "fresh", quality: { sourcesLoaded: true }, anzeige: {
+      status: "fresh", summary: { line1: "In dieser Radaransicht werden derzeit keine direkten Erwähnungen angezeigt.",
+        line2: "In deinem politischen Umfeld gibt es 3 neue Signale." }, dynamics: [
+        { vorgangId: "vg-synth-1", title: "Erste gespeicherte Entwicklung", sourceUrl: "https://example.invalid/dokument/1", lastUpdatedAt: day + "T05:00:00Z" },
+        { vorgangId: "vg-synth-2", title: "Zweite gespeicherte Entwicklung", sourceUrl: "https://example.invalid/dokument/2", lastUpdatedAt: day + "T05:00:00Z" },
+        { vorgangId: "vg-synth-2", title: "Nicht oeffnender Hinweis", sourceUrl: "https://example.invalid/" }
+      ] } };
+  }
   let packageReads = 0;
   let identityReads = 0;
   let storage = { assertTenant: S.assertTenant,
@@ -139,7 +157,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       assert(!rows.has(row.id)); rows.set(row.id, structuredClone(row)); return { saved: true };
     }
   };
-  if (jsonb || teilstand) {
+  if (jsonb || teilstand || kunden) {
     // Echter schmaler Identitaetsleser und echte Sperrpruefung, nur dessen
     // Datenquelle besteht aus zwei vorhandenen synthetischen Artikelidentitaeten.
     const identities = [1, 2].map(i => ({ knowledge_object_id: `ko-synth-${i}`,
@@ -193,7 +211,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
   // Der bestehende Quellenzeitpunkt kann ohne neuen Tagesanlass einen ehrlichen
   // Teilstand ergeben. Fehlender Lage-/Quellenbeleg ist hier niemals zulaessig.
-  const expectedErrors = teilstand ? ["lage-teilstand"]
+  const expectedErrors = kunden ? ["quellenversorgung-unvollstaendig", "briefing-ohne-tagesanlass"] : teilstand ? ["lage-teilstand"]
     : jsonb || briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
   assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
   const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: now,
@@ -207,7 +225,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   S.getProfile = async id => { assert.equal(id, profile.id); return structuredClone(profile); };
   S.getTasks = S.getUserNotes = async id => { assert.equal(id, profile.id); return []; };
   S.getRenderedBriefingV3 = storage.getRenderedBriefingV3;
-  if (jsonb || teilstand) S.getPublicationSourceIdentities = storage.getPublicationSourceIdentities;
+  if (jsonb || teilstand || kunden) S.getPublicationSourceIdentities = storage.getPublicationSourceIdentities;
   // Synthetischer Sitzungsanbieter; die HTTP-Autorisierung selbst bleibt echt.
   accounts.resolveSession = async token => token === "synthetic" ? { user: {
     id: "synthetic-browser-user", role: "abgeordneter", politicianId: profile.id } } : null;
@@ -287,6 +305,73 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/app/start");
         await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
         const response = await responsePromise, start = await response.json();
+        if (kunden) {
+          assert.equal(response.status(), 200); assert.equal(start.profile?.id, profile.id);
+          assert.equal(start.briefing?.gespeicherterNachweis?.inhaltHash, row.payload.inhaltHash);
+          assert.deepEqual(start.briefing.paketStatus.fehler, expectedErrors);
+          assert.deepEqual(start.briefing.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
+          const nav = isMobile ? ".mobile-dock" : ".nav-list";
+          await page.locator(`${nav} [data-view="briefing"]`).click();
+          const einordnung = page.locator("[data-ui-lage-einordnung]");
+          await einordnung.waitFor({ state: "visible" });
+          const texte = await einordnung.locator("[data-ui-lage-absatz]").allTextContents();
+          assert.deepEqual(texte, text.payload.paragraphs.map(p => p.text));
+          for (const [i, paragraph] of lageAnsicht.paragraphs.entries()) {
+            assert.equal(await einordnung.locator("article").nth(i).locator(`a[href="${paragraph.sources[0].url}"]`).count(), 1);
+          }
+          const vorKarten = await einordnung.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector(".ui-lage-workspace")) & Node.DOCUMENT_POSITION_FOLLOWING));
+          const titel = page.locator("[data-ui-lage-select] .ui-row-title").first();
+          const titelStil = await titel.evaluate(el => ({ text: el.textContent, clamp: getComputedStyle(el).webkitLineClamp,
+            overflow: getComputedStyle(el).overflow, height: el.getBoundingClientRect().height, line: parseFloat(getComputedStyle(el).lineHeight) }));
+          assert.equal(titelStil.text, langerTitel);
+          if (isMobile) assert(titelStil.clamp === "3" && titelStil.overflow === "hidden" && titelStil.height <= titelStil.line * 3 + 1);
+          await page.locator("[data-ui-lage-select]").first().click();
+          assert.equal(await page.locator(".ui-lage-detail .vsheet-title").innerText(), langerTitel);
+          const grenzen = await page.evaluate(() => {
+            const data = lageData(), previous = profile;
+            const ohneQuellen = renderLageEinordnung({ ...data, paragraphs: data.paragraphs.map(p => ({ ...p, sources: [] })) }) === "";
+            const nichtVerfuegbar = renderLageEinordnung({ ...data, available: false }) === "";
+            profile = { ...profile, id: "synthetisches-fremdmandat" };
+            const fremd = renderLageEinordnung(data) === ""; profile = previous;
+            const text = '<img data-unerlaubtes-bild src="x" onerror="window.unerlaubt=true">';
+            const container = document.createElement("div");
+            container.innerHTML = renderLageEinordnung({ ...data, paragraphs: [{ ...data.paragraphs[0], text }] });
+            return { ohneQuellen, nichtVerfuegbar, fremd, escaped: !container.querySelector("img")
+              && container.querySelector("[data-ui-lage-absatz]")?.textContent === text };
+          });
+          assert(Object.values(grenzen).every(Boolean));
+          await page.locator(`${nav} [data-view="helmut"]`).click();
+          const gap = page.locator('.hstand-state-card[data-empty-kind="gap"]'); await gap.waitFor({ state: "visible" });
+          check(`${label}: gepruefte Lage ist direkt lesbar mit eigenen Quellen, kompaktem Titel und ehrlichem Briefinggap`,
+            vorKarten && texte.length === 2 && (await gap.innerText()).includes("Quellenlage noch nicht ausreichend ausgewertet")
+            && await page.locator("[data-ui-lage-einordnung]").count() === 0
+            && await page.locator(".ui-briefing-hero").count() === 0);
+          await page.locator(`${nav} [data-view="radar"]`).click();
+          const summary = page.locator(".radar2-summary"), lines = summary.locator(".radar2-summary-line");
+          const originalLine1 = briefing.currentRadarState.anzeige.summary.line1;
+          const plural = await lines.nth(1).innerText();
+          assert.equal(await lines.first().innerText(), originalLine1);
+          assert.equal(await page.locator(".radar2-card--dynamic").count(), 2);
+          await page.evaluate(() => { briefing.currentRadarState.anzeige.dynamics = briefing.currentRadarState.anzeige.dynamics.slice(0, 1); rerenderRadar(); });
+          const singular = await lines.nth(1).innerText();
+          await page.evaluate(() => {
+            briefing.currentRadarState.anzeige.dynamics = [{ title: "Kein oeffnender Dynamikbeleg", sourceUrl: "https://example.invalid/" }];
+            briefing.currentRadarState.anzeige.environment = { party: [{ vorgangId: "vg-synth-1", title: "Gespeicherter Umfeldhinweis",
+              sourceName: "Synthetische Quelle", sourceUrl: "https://example.invalid/dokument/1" }], constituency: [], committees: [] };
+            rerenderRadar();
+          });
+          const ohneDynamik = await lines.nth(1).innerText();
+          check(`${label}: Radar beschreibt nur oeffnende beobachtete Entwicklungen ohne alte Neuigkeitsbehauptung`,
+            plural.endsWith("werden 2 Entwicklungen beobachtet.") && singular.endsWith("wird eine Entwicklung beobachtet.")
+            && ohneDynamik.startsWith("Eine Entwicklung aus ") && ohneDynamik.endsWith("politischen Umfeld ist relevant.")
+            && await page.locator(".radar2-card--dynamic").count() === 0
+            && await lines.first().innerText() === originalLine1 && !/neue Signale|neues Signal/.test(await summary.innerText()));
+          assert.equal(packageReads - readsBefore, 2); assert.equal(identityReads - identityReadsBefore, 2);
+          assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
+          assert(methods.every(method => method === "GET"));
+          continue; // Nur die zwei neuen Kundenansichtenfaelle, keine Altgruppen.
+        }
         if (radarFrische) {
           assert.equal(response.status(), 200);
           assert.equal(start.profile?.id, profile.id);
@@ -471,7 +556,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       // Schutzwachen bleiben aktiv; daraus wird kein wiederholter 13. PASS.
       assert.deepEqual(forbidden, []); assert.equal(JSON.stringify([...rows]), before);
     } else {
-      check(radarFrische ? "Radar-Frischeklarheit ohne Korpus Modell oder Speicherveraenderung"
+      check(kunden ? "Kundenansichten ohne Korpus Modell oder Speicherveraenderung" : radarFrische ? "Radar-Frischeklarheit ohne Korpus Modell oder Speicherveraenderung"
         : teilstand ? "Teilstand-Auslieferung ohne Korpus Modell oder Speicherveraenderung"
         : jsonb ? "JSONB-Gegenfall ohne Korpus, Modell oder Speicherveraenderung" : "Tagespaket-Lieferung ohne Korpus, Modell oder Speicherveraenderung", forbidden.length === 0
         && JSON.stringify([...rows]) === before, forbidden.join(", "));
@@ -480,7 +565,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
     if (browser) await browser.close();
     if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
     for (const [module, original] of originals) Object.assign(module, original);
-    if (jsonb || teilstand) {
+    if (jsonb || teilstand || kunden) {
       if (previousPolicy === undefined) delete process.env[P.ENV];
       else process.env[P.ENV] = previousPolicy;
     }
@@ -507,8 +592,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
 
   if (tagespaketOnly) {
-    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand, radarFrische: radarFrischeklarheit });
-    console.log(`\n${passed} PASS, ${failed} FAIL (${radarFrischeklarheit ? "nur neue Radar-Frischeklarheit" : tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
+    await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand, radarFrische: radarFrischeklarheit, kunden: kundenansichten });
+    console.log(`\n${passed} PASS, ${failed} FAIL (${kundenansichten ? "nur neue Kundenansichten" : radarFrischeklarheit ? "nur neue Radar-Frischeklarheit" : tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 

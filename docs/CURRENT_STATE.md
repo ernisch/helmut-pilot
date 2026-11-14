@@ -1,23 +1,24 @@
 # CURRENT STATE — Helmut
-**14.11.2026UTC/Berlin: PR1191 live; Einmal-Ergaenzung vor Anbieter blockiert.
-Paket05:15 weiterhin79Eintraege/5Karten/1Absatz; Radar3Entwicklungen/fresh.**
-Production/main `21816be7`, [PR1191](https://github.com/ernisch/helmut-pilot/pull/1191), Kopf `6b9c1718`.
-Vercel `dpl_C5Puf8mpHtcmXHfnn151dtmVCiwh` Git/Production READY06:04:28UTC;
-Alias/Runtime21816/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
+**14.11.2026,08:10UTC: echte Kundenscreenshots zeigen Darstellungsfehler.
+2gepruefteLageabsaetze geliefert, UI-ReparaturPR1193 und erste neue Browserabnahme offen.**
+Production/main `097d14e2`, [PR1192](https://github.com/ernisch/helmut-pilot/pull/1192), Kopf `6265b594`.
+Vercel `dpl_EtEw1QHg1rx3PnsuRw445u5WJAhd` Git/Production READY06:20:30UTC;
+Alias/Runtime097d14/anonym401 bestaetigt. Keine Migration; SQL unveraendert aktiv.
 [Architektur, Nachweise und aktuelle Reparatur](betrieb/verarbeitungskern-100-20261113.md).
 Keine neue Infrastruktur, keine weiteren Kunden, keine Budget-/Cron-/Env-Aenderung.
 Nur `cem-ince`, Pipeline on, Narrativqueue off, Dispatch shadow, Kommunikation gesperrt;
 bestehende Grenzen1 USD/UTC-Tag und30 USD insgesamt unveraendert.
-PR1190: neun neue Artikelgruppen/sechs neue CI-Gruppen/Syntax bestanden in43561501437.
-Root und zwei unabhaengige Reviews/Hashabgleich ohne Befund. Strenger Reader bleibt;
-Konfliktartikel isoliert, keine Datenkorrektur/Budgetaenderung. Runtime/Alias0339/anonym401.
-Regulaeres05:15-Paket79Eintraege/1Absatz gebunden; Radar3belegteEntwicklungen jetztfresh.
-Kosten05:34:0,567350USDTag/3,290827USDgesamt/8alteReserven; Paket/Quittung unveraendert.
+PR1190:9Artikel-/6CI-Gruppen43561501437 bestanden; strenger Versionsreader bleibt.
+Realer Leser08:05:79Items/5Karten/2Absaetze/Quittung. Keine UI-Vollabnahme.
+Screenshot: Lageabsatz nur in geschlossenen Details, mobiler Titel zu lang;
+Radar nennt3alteDynamiken „neu“. Quellenstand14 stammt korrekt aus Umfeldquelle.
+Briefinggap bleibt fachlich richtig; vorhandene79 sind keine neuen Tagesprioritaeten.
+Kosten08:05:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 PR1191:10neueInteraktions-/6CI-Gruppen/Syntax gruen43564335356, unabh. Reviews.
 Realer Lagepfad06:05:44–53: nur bestaetigter Teilstand, neue Startphase ohne Entwurf.
 Zwei neue costInputVersionHash-Overrides verletzen nativen Kostenvertrag vor Reserve;
-keine neuen Calls/Kosten. Reviewluecke. PR1192:2Overrides entfernt, neue2Vertragsfaelle.
-Start bleibt gesperrt; kein Reset/Neukey/Retry. Unabh. Reviews ohne Befund, CI offen.
+keine neuen Calls/Kosten. Reviewluecke. PR1192:2Overrides entfernt;2nativeFaelle bestanden.
+Nach konkretem GO: Originalarchiv/CAS,1Lage/2Calls+1Morgen;neuer Leser Profil/Tag/Quelle/Quittung PASS.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
 Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
@@ -33,7 +34,7 @@ Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 g
 29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
 CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
 Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**4/10Merges verbraucht,6frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
+**Nachtauftrag14.11.:**5/10Merges verbraucht,5frei beiGruen; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
 **Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
 gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
 [PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
@@ -44,7 +45,6 @@ Ausreichende RAM-Reserve und 100-Kunden-Zeit-/Kostenrahmen bleiben unbelegt.
 [Unveraenderter vorheriger Status mit Lage/Radar-, Buero-, Profil- und UX-Belegen](https://github.com/ernisch/helmut-pilot/blob/fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f/docs/CURRENT_STATE.md).
 Die folgenden datierten Abschnitte sind erhaltener vorheriger Betriebsstand;
 daraus entstehen keine neuen Laufrechte.
-
 ## Quellen: aktueller Stand und fruehere Belege
 
 **11.11., Einreihung live / Kontingentvorflug vorbereitet:** PR1124 erhält Planmanifest/Hash/Inhaltsschlüssel/Artikeldatum; Runtime bestätigt `4dee3255`. Historische Manifeste und Schutzkonfiguration beim Rollout unverändert, keine aktive Verarbeitung oder Sperre. Der neue enge Vorflug prüft nach exklusiver Lease die vorhandene Workerbereitschaft und dieselbe 60s-/Slotgrenze vor der ersten Quotenreservierung. Planung/Enqueue/Claim bleiben dahinter. Teilreservierung, unbekannte Schreibantwort und Abbruch bleiben konservativ verbraucht; kein historischer Reset. Gezielte Gruppen: Arbeitsfenster21, echte lokale Route9 bestanden. Lesebereitschaft garantiert keine späteren RPC-Schreibaufrufe; der separate Pflichtfeldfehler wurde durch PR1124 behoben. Keine neuen Termine, Limits, Migration oder Productionänderung. Diagnosebelege bleiben privat. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den neuen Reparaturkopf.
