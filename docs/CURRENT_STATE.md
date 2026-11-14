@@ -14,8 +14,8 @@ Quittung gebunden, originales Paket812d3b81 unveraendert; kein Kundenlogin-Brows
 Quellenversorgung und Tagesprioritaet bleiben offen; kein Vollbriefing-/100KundenPASS.
 Alter gespeicherter Radar enthaelt noch1widerlegten Themenmix unter3Dynamiken.
 Rein lesender aktueller Neubau10:26:76Items/2Radar,beideVollabsaetze+Bindung erhalten.
-Noch kein neuer Morgenabschluss: Schutz vor Verlust bestaetigter Volltexte bei
-cacheOnly-Fehler wird isoliert entwickelt. Keine neuen Modelle/Quellen-/SQLlaeufe.
+Noch kein neuer Morgenabschluss: Volltextschutz lokal6/6geprueft, Pflicht-CI offen.
+Kein bestaetigter Textverlust/keine neuen Modelle/Quellen-/SQLschreiblaeufe.
 Kosten10:15:0,581580USDTag/3,305057USDgesamt/8alteReserven;0heuteoffen.
 [PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
 JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.

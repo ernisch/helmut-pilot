@@ -58,6 +58,24 @@ Text kann im bisherigen PARTIAL-CAS-Kopf die zwei bestaetigten Absätze entferne
 (Archiv behaelt sie, regulaere Anzeige verlöre sie). Kleinstfix im bestaetigten
 Paketspeicher soll vor Write abbrechen, keinen Alttext an neuen Quellenstand binden.
 Noch kein solcher Verlust auf Production behauptet; keine Blindmaterialisierung.
+**PR1195 Volltextschutz,14.11.10:37UTC:** kleinster dauerhafter Guard im bestehenden
+Paketspeicher (12Produktzeilen). Vorhandener E-Volltext darf nur durch einen neuen
+strengen Volltext mit exakt bestaetigter Ansicht ersetzt werden. Fehlender Cache,
+Timeout/null/undefined, Pending, abweichende Bindung oder Einabsatzteilstand stoppen
+vor Payload/CAS/Insert. Alttext wird nicht an neue Quellen gebunden; alte Pakete und
+Quittungen bleiben unveraendert. Der moderne Mandats-/Morgenpfad uebergibt die
+cacheOnly-Ansicht bereits; fehlende neue Ansichtsfreigabe wird bei Vollbestand
+bewusst nicht als Erfolg gewertet. Keine zusaetzlichen DBreads oder Modelle.
+Root und Fresh haben Runtime/Testdiff unabhaengig abgenommen.6/6NEUE native
+Speichergruppen lokal ueber scripts/lokal.js bestanden: Verlustpfade, echter T1,
+erfolgreicher Radarupdate mit wortgleichen Volltexten, echter CAS-Konflikt/Unknown
+ohne Wiederholung und Mandat/Profil/Tag/Quellenschutz. Testaufbau nutzt vorhandene
+synthetische Daten, aktiven Policybeleg und nativen CAS-Adapter mit lokalem Transport.
+Fruehere21Fach-/6Plan-/5Browsererfolge1194 bleiben unveraendert, nicht wiederholt.
+Neuer1195Pruefplan bindet exakt Basee148/Branch/5NichtCIblobs plus3CI-Dateien;
+nur6neuePlanfaelle und geaenderteJS-Syntax laufen. Browser bewusst uebersprungen,
+keine neue Browserabnahme behauptet. Beide Pflichtchecks stehen noch aus.
+Nachtzaehler bleibt7/10, Productione148 mit2vorlaeufigenBriefingabschnitten.
 
 **Briefingsprint14.11.09:35UTC: zwei Ursachen reproduziert, noch kein neuer Rollout.**
 Nachtrag09:57UTC: beide Ursachenfixes unabhaengig abgenommen und14/14neue
