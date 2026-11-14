@@ -43,8 +43,12 @@ Hauptalias/Runtime097d14/anonym401 und exklusive Profile/Sperren bestaetigt.
 Vor Merge weiter0aktuelleProzesse/Leases/nurCEM;0,567350USDTag/3,290827USDgesamt/
 8alteoffeneReserven/0heuteoffen. Keine erneute Produkt-/Modelloperation.
 Korrektur hebt unbekannten vorhandenen Start nicht auf. Konkreter separater
-Wiederaufnahmeentwurf wird nur zur Betreiberpruefung vorbereitet; keine Daten-
-korrektur/Schluesselaenderung oder bezahlte Wiederholung freigegeben/ausgefuehrt.
+Wiederaufnahmeentwurf ist von Root und unabhaengig geprueft; konkrete Betreiber-
+freigabe fuer Datenkorrektur/kurze Schreibsperre angefragt, weiterhin ausstehend.
+Privater Entwurf/workspace/helmut-review/lage-start-wiederaufnahme-20261114.sql,
+SHA256ef4c31b54181e2672b43d40c5345aadd22d72f5dbc952a4e4328d6b4733a1a2b.
+DefaultSTOP vor LOCK/DML, UTC-/Berlintag14 hart gebunden; vollstaendiges Original-
+archiv und exakter CAS/keine Folgephasen. Keine Ausfuehrung oder DB-Probe.
 Nachtzaehler5/10. Aktuelle79erAusgabe bleibt1Absatz und gebundene Quittung,
 Radar3belegteEntwicklungen/fresh; kein authentifizierter HTTP-/Browser-Vollbeleg.
 
