@@ -207,6 +207,16 @@ async function main() {
     process.env.HELMUT_SCALABLE_PIPELINE = "off"; await f.run(); A.equal(calls, 1);
     process.env.HELMUT_SCALABLE_PIPELINE = "on"; await f.run({ missingOnly: true, beforeGenerate: async () => {} }); A.equal(calls, 2);
     A.equal(f.requests.length, 0);
+    const off = await welt(), key = off.data().eingabeHash; off.transport(); delete process.env.OPENAI_API_KEY;
+    A.equal((await off.run()).paragraphs.length, 1); A.equal(off.requests.length, 0); A.deepEqual(off.phaseWrites, []);
+    A.equal(off.data().eingabeHash, key);
+    process.env.OPENAI_API_KEY = "NUR_LOKALE_TRANSPORTATTRAPPE";
+    A.equal((await off.run()).paragraphs.length, 2); A.equal(off.requests.length, 2); A.equal(off.data().eingabeHash, key);
+    const replay = await welt(), rp = await replay.phase(); await rp.onDraft(replay.raw());
+    await rp.beforeReview(); await rp.onReview(urteil(replay.raw())); replay.phaseWrites = []; replay.transport();
+    delete process.env.OPENAI_API_KEY;
+    S.canSpendLlmForTenant = async () => A.fail("Bestaetigte Phasen benoetigen keine neue Kostenfreigabe");
+    A.equal((await replay.run()).paragraphs.length, 2); A.equal(replay.requests.length, 0); A.deepEqual(replay.phaseWrites, []);
   });
   await test("Vollcache gewinnt vor und waehrend der Ergaenzung und verlorener Schreibausgang wird lesend geklaert", async () => {
     const f = await welt(); f.rows.set(f.cacheId, f.full()); f.transport();
