@@ -31,6 +31,38 @@ stuendlich fuenf Ausfuehrungen bis07:07UTC, danach kein weiterer Termin. Sie pru
 regulaere Quellen-/Lage-/Paketlaeufe und setzt belegte Reparaturen unter denselben
 Grenzen fort. Die gemeinsame10-Merge-Freigabe wird nicht je Ausfuehrung erneuert.
 Zaehler seit Nachtfreigabe:1/10Merges (PR1188),9weitere nur beiGruen verbleiben.
+**Echter erster Tagesbetrieb14.11.,03:00–03:22UTC:** main weiter5a734cc3.
+Plan14 fertig eingereiht156/156. Regulaerer Lauf
+`cron-crawl-20261114030012-15m2h`03:00:12–03:03:57UTC:128Ziel/56erledigt/
+4endgueltigeFehler/61zurueckgestellt/7wiederholt, statuspartial. Danach33heutige
+Abrufjobs und6heutigeUnderstandingjobs erledigt. Kein heutigerU-Artikel mit
+Rohpublikation ausserhalb14d-Horizont; sechs erledigte haben11.–12.11.-Datum.
+Die vier Einzelfehler stoppten keine Fortsetzung: zweiter regulaerer Lauf
+`cron-crawl-20261114031512-lsdgd`03:15:12–03:18:58UTC:102Ziel/19erledigt/
+1endgueltigerFehler/82zurueckgestellt, statuspartial. ZweiFenster/600Sekunden
+reserviert.03:22:54UTC kumulativ42heutigeAbrufjobs+16heutigeU erledigt,
+111Abrufe/28U offen,3heutigeUfehlgeschlagen. Projektion04:15 und Paket04:30
+noch nicht faellig; Lage05:00/regulaeresMorgenpaket05:15stehen aus.
+Kostenbuch03:22:54UTC:0,137613USDTag/2,861090USDgesamt,8alteoffeneReserven
+unveraendert. Paket00:07/hash63694c77 unveraendert. Kein manueller Quellenlauf,
+keine neue Wiederverarbeitung, Tests oder Modellaufrufe zur Diagnose.
+
+Zwei heutige Eingangsdiagnosen sind isolierte DIP-Dokumente292420/292370,
+je ein Versuch, Grunddip-quellfelder-nicht-bestaetigt, kein Modellversand.
+Originalantwort/Feldcodes fehlen; keineRawzeilen gespeichert. Die oeffentlichen
+Dokumentseiten liefern nur SPA-Huellen. ZweckgebundenerDIP-Zugang imWorkspace
+und gezielterVercel-Metadatenlesung nicht verfuegbar. Kein Parserfehler aus
+Hypothesen abgeleitet, keineSecret-/Authumgehung. Diagnose bleibtUNKNOWN;
+belegter Hashrueckbezug bei spaeterer Originalsichtung moeglich. Ein weiterer
+heutiger U-Endfehler istartikel-pruefung-fehlgeschlagen:skipped-failed; der
+bestaetigt fehlgeschlagene Bestand wird ohne ausdruecklicheWiederaufnahme nicht
+erneut bezahlt. Enger unabhaengiger Identitaetsabgleich abgeschlossen: Artikel,
+Auftrag und KO entstanden heute03:00:50–03:01:09UTC; KO hat genau diesen einen
+Dokumentlink, keine neuen Nachbarn an einem alten Fehlercluster. DerselbeStand
+32202cc6 ist archiviert. CASfencing1/versuche1/ki_aufrufe1, letzteAenderung
+03:01:09.847UTC, Zustandunbekannt/Grundvalidierung-fehlgeschlagen. Spaetere
+Jobversuche03:15 endeten ohne zweiten Modellstart. Keine Historienblockade
+belegt und keine Wiederaufnahme, Reset- oder Codeaenderung vorgenommen.
 Rein lesende Fruehkontrolle14.11.02:48UTC: main/Runtime weiter5a734cc3,
 kein neuer Quellenlauf/Plan14 vor03UTC; Paket/hash63694c77 und Kostenbindung
 0USDTag/2,723477USDgesamt/8offeneReserven unveraendert, nurCEMaktiv.
