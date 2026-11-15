@@ -1,36 +1,30 @@
 # CURRENT STATE — Helmut
-**15.11.2026,01:26UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
+**15.11.2026,01:59UTC: Quellenfixes live, vollstaendige Versorgung weiterhin offen.**
 
-Betreiber hat auftragsbezogene gruene Merges bis maximal20 freigegeben; bisher0.
-Kein zusaetzlicher bezahlter Modelllauf, Datenreset, Cron-/Env-/Budgeteingriff.
-Aktueller main6763dc8e (Produktvertrag1.1), Productionruntime80bd6c87/PR1200 READY.
-PR1203: BMG-Einstieg und zwei fehlende Lage-Leervertragsfelder repariert.
-CI43659471955: native Kernschritte und189/189Standard gruen;378/391Bereich gruen.
-Alle13weiteren Fehler auf unveraendertem main reproduziert. Bestehende Fixtures
-an heutige Mandats-/Quellen-/Checkpoint-/Appstartvertraege angepasst; Prosa nutzt
-hashgebundenes Originalschema nur im historischen Offlinehelfer. Echte Riegel bleiben.
-Ein nativer PG17-Claimtest war faelschlich als offline klassifiziert; jetzt nur sein
-unveraenderter eigener netzloser CI-Schritt. Auswahlvertrag prueft dessen Erhalt.
-Betroffene Einzelpruefungen lokal gruen. Browser-CI43662742553 scheitert vor Tests:
-Playwright1.56.1 unterstuetzt Ubuntu26 nicht. Nur Browserjob an Ubuntu24 gepinnt;
-Browserpflicht und gepinnter Chromium bleiben. Neue exakte Pflicht-CI erforderlich.
-PR1204 Kopf8956819c: beide Pflichtchecks gruen,14/14Kern und87/87Quellensuiten
-(CI43659496575); nach Integration des neuen Vorgaengers erneut bestaetigen.
-Fruehere8Quellenfixturefehler ebenfalls auf main reproduziert und gezielt120Gruppen
-geprueft. Statushistorie verlustfrei archiviert; kein Laufnachweis umgewertet.
-PR1204 gestapelt auf1203: hib-Suffix, BMAS-/ZDF-/BMG-Presseabsatz eng gebunden.
-6gespeicherte echte Originale lokal vorhernegativ/nachherpositiv,25Layoutgruppen,
-17Bundestagsgruppen und11generische Gewinnungsgruppen gruen. Keine Modellantwort.
-[Parser-Belege und offene Quellenfaelle](betrieb/quellen-parser-folge-20261115.md).
-Quellenabschluss14Nov22:25:5verarbeitet/58fehlgeschlagen/78zurueckgestellt.
-Morgenquittung weiterteilweise; gespeichert17fbead5/77Items/2vorlaeufigeTexte.
-Alle5Erfolgsjob-Payloads und Briefing bei lesenderNachkontrolle23:51UTC unveraendert.
-38Fehljobs haben keinen bestaetigten Originalartikel; keine erfundenen Ersatzlinks.
-Mandatsabdeckung:4Fehler/111Warnungen/13Konfigurationsabweichungen; kein Voll-PASS.
-Historische Fehljobs/Negative/UNKNOWN bleiben erhalten. Regulaere Produktcrons
-03:00–04:45Quellen,05:00Lage,05:15Morgen UTC; Nachtfortsetzung03:07–07:07.
-Naechster Schritt: Pflicht-CI abschliessen, exakt gruene PRs nacheinander mergen und
-Deployment lesend bestaetigen; regulaeren echten Versorgungsabschluss nachpruefen.
+PR1203 regulaer gemergt:356fe781; gepruefter Kopf23f59eff,CI43663042110.
+Native SQL-Schritte,189/189Standard,390/390Bereich und neuer Chromium-Smoke gruen.
+PR1204 regulaer gemergt:5f3875e1; gepruefter Kopfd076f33a,CI43665246842.
+14/14Schnellkern+87/87Quellensuiten gruen; beide Pflichtchecks erfolgreich.
+Nicht betroffener Browserlauf im Folge-PR bewusst ausgelassen, kein neuer Browser-PASS.
+Runtime5f3875e1:Production READY dpl_CfqLovsLHr1LYHr9AagxQrpj95WG;
+Projekt/Commit/Team geprueft, oeffentlicheShell HTTP200 mit Version5f3875e1.
+BMG-Einstieg,hib-Suffix,BMAS,ZDF,BMG-Presse eng repariert; sechs identische echte
+Originalantworten lokal vorhernegativ/nachherpositiv. Keine Datum-/Quellenlockerung.
+Zwei fehlende Lage-Leervertragsfelder ergaenzt. Alte Testfixtures an geltende
+Vertraege gebunden; nur nativer PG17-Claimtest aus falscher Offlineeinordnung
+entfernt, eigener netzloser Kernschritt erhalten. Chromiumrunner jetzt Ubuntu24.
+Nachkontrolle01:57UTC:alle5Erfolgsjobs erledigt und Payload-MD5 unveraendert;
+gespeichertes Briefing weiter InhaltHash17fbead5. Kein historischer Job-/Cachereset.
+Kein zusaetzlicher bezahlter Modelllauf oder Production-Daten-/Cron-/Budgeteingriff.
+Historischer Quellenabschluss14Nov22:25 bleibt5/58/78,38Fehljobs ohne Originalziel.
+Abdeckungsquittung meldet4Fehler/111Warnungen/13Konfigdrift, kein Gesamt-PASS.
+Heute bis01:57UTC kein neuer regulaerer Versorgungsabschluss vorhanden.
+Vollkatalog- und politische Profilfeldausleitung durch automatische Freigabepruefung
+abgelehnt; keine Umgehung. Nur Aggregate gelesen; Detailabgleich braucht konkretes GO.
+Regulaere Crons03:00–04:45Quellen,05:00Lage,05:15Morgen UTC unveraendert;
+bestehende Nachtkontrolle03:07–07:07UTC fuehrt lesende Abschlusspruefung fort.
+Naechster Schritt: deren echten regulaeren Versorgungsabschluss lesend bewerten.
+[Merge-, Original- und Erhaltungsbelege samt Grenzen](betrieb/versorgung-nachtabschluss-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
