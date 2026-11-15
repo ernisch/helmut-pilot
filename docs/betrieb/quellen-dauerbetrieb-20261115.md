@@ -91,7 +91,19 @@ und stillen CELEX-Sektorausschluss gefunden; alle drei korrigiert und geprueft.
 Der CI-Plan bindet PR1225, Branch/Basis/Evidence und alle zehn Runtime-/Testblobs,
 den uebrigen Baum sowie echten Merge und identischen PR-Kopf. Beide Pflichtjobs
 bleiben erforderlich; keine Auth-/Budget-/Quoten-/Schema-/Cron-/Profilmutation.
-Vor Merge: exakte Pflicht-CI und abschliessendes unabhaengiges CI-Review.
+PR1225Kopf `a6254664cf4014e8aad388c1fe2e327045bcba35`:
+[PR-CI43759893440](https://github.com/ernisch/helmut-pilot/actions/runs/43759893440)
+beide Pflichtchecks erfolgreich; unabhaengige Runtime-/CI-Endreviews geschlossen,
+kein offener P1/P2. Der echte CI-Log bestaetigt16gezielte Blobpruefungen mit
+bewusstem Skip der historischen450/5002Faelle; Schnellkern14Suiten gruen.
+
+Merge `052650a3706a7c966f99cbc3e040bf22c7b8b031`:
+[Main-CI43760131019](https://github.com/ernisch/helmut-pilot/actions/runs/43760131019)
+ebenfalls beide Pflichtchecks erfolgreich. Production-Deployment
+`dpl_AX8PD18P3pewX1fMkkcbSFEjTizg` READY, Team/Projekt/Commit und oeffentlicher
+Alias stimmen. Kein manuelles Deployment oder Umschalten.
+Oeffentliche Startseite20:49:59UTC HTTP200,6118Bytes, Runtime052650a3;
+SHA256 `f85ad5e19313490cdc5b0d66a0d2b2e7c2b0ee8bf37efb765b84362b876747e0`.
 
 Fehler bei der lokalen Testauswahl: die vorhandenen Suites source-demand und
 warteschlange-blob-entkopplung wurden einmal ohne Mengenfilter ausgefuehrt.
@@ -102,7 +114,7 @@ source-demand nicht erneut starten, Blobentkopplung ausschliesslich mit dem
 bereits vorhandenen `--gezielt`; die Pflicht-CI uebernimmt diese Begrenzung.
 Keinen historischen Mengenfall als erforderliche neue Abnahme ausgeben.
 
-Rein lesende Production-Kontrolle20:42:48UTC:0laufendeJobs, alle6vorherigen
+Rein lesende Production-Kontrollen20:42:48und20:50:19UTC:0laufendeJobs, alle6vorherigen
 Zieljobs weiter erledigt, Tagesbindung0,711983USD/Gesamtbindung4,095017USD
 unveraendert. Keine neue Verarbeitung oder Datenkorrektur ausgefuehrt.
 
@@ -114,3 +126,19 @@ erfinden. Andere Artikel ohne gepruefte Original-/Nutzungsnachweise bleiben offe
 Keine globale Rechtefreigabe, kein Gesamt-PASS und kein zahlender Kunde aus
 Metadatenzahlen allein. Betriebswirkung neuer Korrekturen im ohnehin regulaeren
 Lauf nachweisen; keine Sonderverarbeitung und keine erneute Einmalfreigabe.
+
+Automatische Wiederholungen gelten fuer die vorhandenen Quellenjobs innerhalb
+ihrer endlichen Versuchs-/Wiedervorlagegrenzen. Geschuetzte Einmal-Originalabrufe
+und unbekannte Schreib-/Abrufausgaenge werden weiterhin nicht blind wiederholt.
+Der offizielle Ersatz erweitert keine Textrechte: EUR-Lex-Originaltexte sind
+damit noch nicht als gelesen nachgewiesen. Andere Artikel ohne belastbaren
+Nutzungs-/Originalnachweis, insbesondere die zuvor dokumentierten POLITICO-/
+Table.Media- und weitere Medienfaelle, erhalten keine erfundene Freigabe.
+Welche Restquellen fuer die konkret unterstuetzten Mandate zwingend sind, darf
+die nachgelagerte Aufgabe#1218 nach regulaerem Abschluss bewerten; keine
+pauschale Vollstaendigkeitsbehauptung aus diesem Reparaturauftrag.
+
+Genau ein naechster Schritt: die unveraenderte Kontrolle am16.11.,05:25UTC
+wertet den ohnehin regulaeren Quellenlauf auf echte Abrufquittungen,
+CELLAR-Herkunft/Datum, Wiederholungs-/Abschlussausgaenge und verbleibende
+Lesetext-/Rechteblocker aus. Kein zusaetzlicher Verarbeitungslauf.
