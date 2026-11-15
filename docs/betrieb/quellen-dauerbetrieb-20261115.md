@@ -182,7 +182,21 @@ bindet genau vier Runtime-/Testblobs, Basis/Branch/PR und restlichen Baum;
 92CI-Vertragsgruppen gruen, keine Mengen-/Datenbankgesamttests ausgewaehlt.
 Der alte v1-Abrufkey `3a102fe6668cae9d5e5f463b10e30e9ef86c2c53f03743d4bd0a161cbd1d981e`
 existiert nicht; kein dortiger positiver/unklarer Altstand wird uebergangen.
-Exakte Pflicht-CI, Auslieferung und regulaere Betriebswirkung stehen noch aus.
+PR1227Kopf `e33954d16b6948ccc83d522d6ac90b048d8a7b87`:
+[PR-CI43764658647](https://github.com/ernisch/helmut-pilot/actions/runs/43764658647)
+beide Pflichtchecks erfolgreich. Merge `224b0c97544db51128fc1c2f90f56a81c977f51f`:
+[Main-CI43764849950](https://github.com/ernisch/helmut-pilot/actions/runs/43764849950)
+ebenfalls beide Pflichtchecks erfolgreich. Keine offene Reviewbeanstandung.
+Production-Deployment `dpl_DM6XQ4NWyYujWgZZuYWb9HwR4zga` READY mit diesem
+Commit am regulaeren Alias. Oeffentliches HTML21:40:36UTC HTTP200/6118Bytes,
+Version224b0c97,SHA256
+`bc6bb40d80c16241cb65f73111465e93efd419723e1f6ddba851348c0796f98b`.
+Lesende Nachkontrolle21:40:41UTC:0laufendeJobs, Zieljobweiterwartend/attempts2,
+alle6vorherigenZielerfolgeerhalten,0,711983USDTag/4,095017USDgesamt unveraendert.
+Bestehender Negativbeleg bleibt vorhanden, MD5
+`6646315b1dff6fa4c75872d879d01470`. Kein manueller Cache-/Jobschreibvorgang.
+Die regulaere Betriebswirkung bleibt offen; Offlineerfolg ist kein neuer
+Productionabschluss und darf keinen fertigen Kundenbericht vortaeuschen.
 
 CELLAR-Lesbarkeit weiter konkretisiert, ausschliesslich amtliche Metadaten:
 die deutsche Expression des Rechtsakts32026D2505 verweist nachweislich auf

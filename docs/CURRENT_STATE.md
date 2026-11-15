@@ -1,10 +1,12 @@
 # CURRENT STATE — Helmut
-**15.11.2026,21:30UTC: BMG-Redenfehler aus vorhandenem Original belegt und PR1227 vorbereitet; Versorgung weiterpartial.**
+**15.11.2026,21:40UTC: BMG-Redenreparatur PR1227 gemergt und live; regulaerer Wirksamkeitsnachweis offen, Versorgung weiterpartial.**
 
 Quellenauftrag: vorhandene Retry-/Fallback-/Monitoringwege nutzen; keine neue Infrastruktur oder Zusatzverarbeitung.
-BMG/presse/reden fehlte im bestehenden strengen Artikelkopfleser;1Pfaderweiterung+gepruefteExtraktorrevision2 vorbereitet.
+BMG/presse/reden fehlte im bestehenden strengen Artikelkopfleser;1Pfaderweiterung+gepruefteExtraktorrevision2 live.
 GebundenesOriginale2a8665/Quelle7dfafd7:offline304ZeichenIntrostattFehler;5BMG/10Wiedergewinnungsgruppen gruen,RuntimeReviewgeschlossen.
 Zieljob633d9438bereitswartend2/max3/Revision1;keinReset/Neufetch/Modelstart,regulaererClaimkannArchiv-CAS-Reparaturerreichen.
+PR1227Kopfe33954d1/CI43764658647,Merge224b0c97/MainCI43764849950:beidePflichtjobsgruen,Reviewsgeschlossen.
+Productiondpl_DM6XQ4NWyYujWgZZuYWb9HwR4zgaREADY;HTML21:40Version224b0c97;6Alt-Erfolge/Zieljob2Versuche/Kostengleich.
 CELLARamtlicheDEUManifestationenfmx4/xhtml/pdfa2a21:29belegt;keineOriginaltexteabgerufen,keinTextrechte-/Lesepass.
 Drei reproduzierte Ursachen: Prozessledger ersetzt Queue-Retry nach Abruf-/Persistenzfehler durch skipped-shared;
 defekte RSS/HTML-Antwort erscheint als leerer Erfolg; echte RSS-Parserfehler werden unknown quittiert.
