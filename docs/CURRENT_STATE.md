@@ -1,4 +1,9 @@
 # CURRENT STATE — Helmut
+**15.11.2026,00:10UTC: autonome Reparatur/regelgruene Merges bis20 freigegeben.**
+PR1203 offen; erster Schnellkern zeigt fehlende Lage-Leerzustandsfelder.
+Kleinste Vertragskorrektur lokal19/19+1Leerpaketgruppe gruen; neue Pflicht-CI folgt.
+Keine neuen Modelle, Datenresets oder geschuetzten Productionaktionen freigegeben.
+
 **14.11.2026,23:52UTC: BMG-Parserluecke lokal behoben; Integration offen.**
 Main6763dc8e enthaelt PR1200/1201; Productionruntime80bd6c87. Quellenabschluss
 5verarbeitet/58fehlgeschlagen/78zurueckgestellt, Morgenversorgung weiterhin teilweise.

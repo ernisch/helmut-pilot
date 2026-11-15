@@ -87,6 +87,7 @@ async function state({ partial = false } = {}) {
     const f = await state(); f.rows.delete(f.row.id);
     const r = await f.read(); A.equal(r.briefing.available, false);
     A.equal(r.briefing.reason, "tagespaket-fehlt"); A.equal(r.briefing.generatedAt, null);
+    A.equal(r.briefing.lageBriefing.demo, false); A.equal(r.briefing.lageBriefing.latestUpdatedAt, null);
     A.deepEqual(r.briefing.lageBriefing.vorgaenge, []); A.equal(f.reads.length, 1);
   });
   await test("Berliner Tag wechselt schon vor dem UTC-Tag; alte Pakete werden nicht umetikettiert", async () => {

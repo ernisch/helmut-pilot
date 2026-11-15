@@ -1,5 +1,18 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+Fortsetzung 15.11.2026: Betreiber hat die bestehende Pflicht-CI und bis zu 20
+auftragsbezogene gruene Merges ausdruecklich freigegeben. PR #1203 ist offen.
+Erster CI-Lauf scheitert im Schnellkern am bereits bestehenden App-Start-Vertrag:
+Im leeren Tagespaket fehlten `lageBriefing.demo` und `latestUpdatedAt`.
+Die Korrektur liefert ausschliesslich `false`/`null`; kein Inhalt oder Datum wird
+erfunden. Bestehender Vertragstest danach 19/19 gruen, gezielter bestehender
+Leerpakettest gruen. Erster lokaler Vertragstest war durch die Loopback-Sperre der
+Sandbox blockiert; mit Netzwerkberechtigung nur lokaler HTTP-Test, erfolgreich.
+Die unveraenderte CI waehlt wegen der bisher nicht zugeordneten Lieferdatei nun
+die konservativen vorhandenen Offline-/isolierten DB-Pruefungen. Keine neue
+Lastserie, kein Modelltest, keine Production-DB-Pruefung; keine CI-Abschwaechung.
+Die nachfolgenden Freigabehinweise beschreiben den historischen Vorbefund.
+
 Stand 14.11.2026, 23:52 UTC. Teilweise abgeschlossen: lokal repariert und gezielt
 geprueft, noch nicht auf `main` oder Production. Bezug: Issue #1202;
 Basis `6763dc8e43a17860375f66cc83a528753499716e`.
