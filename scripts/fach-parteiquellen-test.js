@@ -290,6 +290,26 @@ const restrictedXml = `<rss><channel><item><title>${feedItem.title}</title><link
 const restricted = CR.parseRssItems(restrictedXml)[0];
 assert.deepEqual(restricted.rssRights, ["Nur fuer private Nutzung"]);
 assert.equal(CR.normalizeRawItem(restricted, destatis).content, feedItem.title);
+const channelRestricted = restrictedXml.replace("<channel>", "<channel><copyright>Nur für private Nutzung</copyright>")
+  .replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const channelItem = CR.parseRssItems(channelRestricted)[0];
+assert.deepEqual(channelItem.rssRights, ["Nur für private Nutzung"]);
+assert.equal(CR.normalizeRawItem(channelItem, destatis).content, feedItem.title);
+const mixedRights = restrictedXml.replace("<channel>", "<channel><copyright>© Statistisches Bundesamt (Destatis), 2026</copyright>");
+assert.equal(CR.normalizeRawItem(CR.parseRssItems(mixedRights)[0], destatis).content, feedItem.title);
+const originalChannelNotice = restrictedXml.replace("<channel>", "<channel><copyright>Statistisches Bundesamt, Wiesbaden 2019</copyright>")
+  .replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const originalNoticeItem = CR.normalizeRawItem(CR.parseRssItems(originalChannelNotice)[0], destatis);
+assert.equal(originalNoticeItem.content, feedItem.content);
+assert.equal(originalNoticeItem.publishedAt, good.publishedAt, "Copyright-Jahr ist kein Publikationsdatum");
+assert.equal(CR.normalizeRawItem({ ...feedItem, rssRights: ["Statistisches Bundesamt, Wiesbaden 2019 — Nur privat"] }, destatis).content, feedItem.title);
+
+// Ein fremder Itemhinweis darf einen unveraenderten Nachbarn nicht mitumwidmen.
+const normalItem = restrictedXml.match(/<item[\s\S]*?<\/item>/)[0].replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const neighbors = CR.parseRssItems(restrictedXml.replace("</channel>", normalItem + "</channel>"));
+assert.equal(neighbors[1].rssRights, undefined);
+assert.equal(CR.normalizeRawItem(neighbors[1], destatis).content, feedItem.content);
+
 
 for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordrhein-westfalen"]]) {
   const r = R.resolveProfilePackages({ parliamentType: "Bundestag", state });

@@ -112,3 +112,12 @@ Ein zuerst unvollständiges Testprofil aktivierte erwartungsgemäß keine Quelle
 Testfixture nach nativer Zulassungsregel korrigiert, keine Produktwache verändert.
 CI-Plan bleibt gezielt:Kern und Quellenbereich,keine Datenbank-/500er-/bezahlten Tests.
 Die Production-Transaktion bleibt auf genau die oben bezeichneten8Zeilen begrenzt.
+
+Unabhängiges Review fand zunächst fehlende Übernahme von Kanalrechten. Der
+Folgefix prüft Kanal- und Artikelrechte gemeinsam, ohne Nachbarartikel zu vermischen.
+Das echte RSS nennt auf Kanalebene exakt„Statistisches Bundesamt, Wiesbaden2019“
+(mit Leerzeichen vor2019). Dieser konkrete Herausgeber-Copyrightvermerk ist nach
+den belegten allgemeinen Originalbedingungen erlaubt; er wird weder zum Artikel-
+Publikationsdatum noch zu einer abweichenden Einschränkung umgedeutet. Unbekannte
+Erweiterungen bleiben gesperrt. Neue Kanal-/Artikel-/Nachbargegenfälle lokalgrün;
+dieselben10Originalauszüge bleiben nach der Korrektur erhalten.
