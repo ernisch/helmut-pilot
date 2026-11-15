@@ -16,8 +16,8 @@ Paketlinks. Kein anderer SQL-/Schema-/Migrations-/Auth-/UI-/Budgetcode ändert s
 Der Vollseed wird nicht auf Production angewendet. Keine Quelle wird aktiviert.
 
 Vor der CI sind Fach-/Parteiquellensuite und Seeddrift am integrierten Baum lokal
-grün. Der zusätzliche Prüfplanvertrag hat38erfolgreiche Gruppen:15bestehende
-Planprüfungen und23neue Bindungs-/Gegenfälle. Alle lokalen Prüfungen liefen über
+grün. Der zusätzliche Prüfplanvertrag hat39erfolgreiche Gruppen:15bestehende
+Planprüfungen und24neue Bindungs-/Gegenfälle. Alle lokalen Prüfungen liefen über
 `scripts/lokal.js`, ohne Profile, Produktionsdaten, Quellen- oder Modellaufrufe.
 
 ## Pflicht-CI
@@ -32,7 +32,11 @@ stoppt; es gibt keinen Rückfall auf pauschale Mengenläufe.
 Für den Main-Push muss GitHub zusätzlich den tatsächlich gemergten PR mit
 passender Mergekennung, beiden Eltern und identischem PR-/Mergetree bestätigen.
 Auch dort gelten derselbe Quellenbereich und Schnellkern. Kein Branchname oder
-Commit-Titel allein ersetzt den Baumvergleich. Die UI ist unverändert; der
+Commit-Titel allein ersetzt den Baumvergleich. Die feste Basis zusammen mit
+der Evidence-Abstammung leitet auch einen falschen Main-Mergetitel zum Guard;
+dieser stoppt dann, statt ungewollt die breite Standardmenge zu starten.
+Der unabhängige Reviewbefund hierzu wurde mit einem echten Shell-Selektorgegenfall
+korrigiert; bestehende Pflichtjobs und übrige Prüfauswahl bleiben erhalten. Die UI ist unverändert; der
 Browserpflichtjob bestätigt den bewussten Skip, nicht einen neuen Browserlauf.
 
 Die planbezogenen CI-Dateien selbst werden durch Gegenfälle und Syntax geprüft;

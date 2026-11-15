@@ -213,4 +213,35 @@ check("Inaktive Quellen: Workflow benutzt dieselbe Bindung in beiden Pflichtjobs
   assert(workflow.includes(Q.MERGE_TITLE));
 });
 
+
+check("Inaktive Quellen: echter Workflow-Selektor faengt falschen Mainmergetitel vor breitem Plan ab", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const blocks = [...workflow.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1207 \][\s\S]*?\n          fi/g)].map(m => m[0]);
+  assert.equal(blocks.length, 2); assert.equal(blocks[0], blocks[1]);
+  const script = `set -e
+  git() {
+    case "$1" in
+      log) printf '%s' "$TEST_MESSAGE";;
+      rev-parse) printf '%s' "$TEST_PARENT";;
+      merge-base) return "$TEST_EVIDENCE_EXIT";;
+      *) return 99;;
+    esac
+  }
+  node() { printf 'GUARD'; return 23; }
+  ${blocks[0]}
+  printf 'BROAD'`;
+  const run = (message, parent, evidence) => require("node:child_process").spawnSync("bash", ["-c", script], {
+    encoding: "utf8", env: { PATH: process.env.PATH, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main",
+      GITHUB_OUTPUT: "/dev/null", TEST_MESSAGE: message, TEST_PARENT: parent, TEST_EVIDENCE_EXIT: String(evidence) }
+  });
+  for (const message of [Q.MERGE_TITLE, "Merge pull request #1207", "Tippfehler"]) {
+    const r = run(message, Q.BASE, 0);
+    assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  const unrelated = run("Anderer PR", Q.BASE, 1);
+  assert.equal(unrelated.status, 0, unrelated.stderr); assert.equal(unrelated.stdout, "BROAD");
+  const later = run("Spaeterer Maincommit", "8".repeat(40), 0);
+  assert.equal(later.status, 0, later.stderr); assert.equal(later.stdout, "BROAD");
+});
+
 console.log("\n" + pass + " PASS / 0 FAIL");
