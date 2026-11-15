@@ -33,8 +33,8 @@ function negativ(key, reason = REASON) {
   return { version: 1, schluessel: key, versuchId: "00000000-0000-4000-8000-000000000001",
     reserviertAm: "2026-11-14T03:00:00.000Z", zustand: "luecke", abgeschlossenAm: "2026-11-14T03:00:01.000Z", reason };
 }
-function welt(n) {
-  const w = { doc: dokument(n), rows: new Map(), calls: [], fetches: 0, extraktionen: 0, zeit: START };
+function welt(n, original = {}) {
+  const w = { doc: original.document || dokument(n), rows: new Map(), calls: [], fetches: 0, extraktionen: 0, zeit: START };
   w.now = () => new Date(w.zeit); w.advance = ms => { w.zeit += ms; };
   w.id = key => "synthetisch-artikelkontext-" + key;
   w.request = async (path, opts = {}) => {
@@ -64,7 +64,7 @@ function welt(n) {
   w.deps = (revision = w.alteRevision, extra = {}) => ({ env: ENV, speicher: w.speicher, wiedergewinnung: revision,
     now: w.now, deadlineMs: w.zeit + 180000, fetchUrl: async (url, retry, opts) => {
       w.fetches++; A.equal(url, w.doc.url); A.equal(retry, 0); A.equal(opts.artikelkontext, true); A.equal(opts.meldeStatus, true);
-      return { status: 200, finalUrl: url, body: html(w.doc) };
+      return { status: 200, finalUrl: url, body: original.body || html(w.doc) };
     }, ...extra });
   w.capture = extra => B.beschaffeArtikelkontext(w.doc, OPTS, w.deps(w.alteRevision, extra));
   w.repair = extra => B.beschaffeArtikelkontext(w.doc, OPTS, w.deps(w.neueRevision,
@@ -242,6 +242,27 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const ohneBody = welt(92); await ohneBody.capture({ deadlineMs: undefined }); const vorher = clone([...ohneBody.rows]);
     A.equal((await ohneBody.repair()).reason, REASON); A.deepEqual([...ohneBody.rows], vorher); A.equal(ohneBody.extraktionen, 0);
   });
-  A.equal(count, 9); A.deepEqual(verboten, []);
-  console.log("9/9 neue Wiedergewinnungsgruppen bestanden; keine Produktion, Originalabrufe, Modelle oder Alttestwiederholung.");
+  await test("Aktuelle BMG-Revision gewinnt den gespeicherten Redeneinstieg einmal ohne Originalabruf zurueck", async () => {
+    A.equal(W.REVISION, 2); A.equal(W.standard.revision, 2);
+    const d = D.toRawDocumentRow({ title: "Synthetische Beratung - Bundesministerium für Gesundheit (BMG)",
+      url: "https://www.bundesgesundheitsministerium.de/presse/reden/synthetische-beratung",
+      sourceName: "Bundesministerium für Gesundheit (BMG)", sourceId: "synthetisch-bmg", sourceType: "official",
+      linkType: "direct", publishedAt: "2026-11-13T10:00:00Z", retrievedAt: new Date(START).toISOString(), summary: null });
+    const intro = "Der Bundestag hat die Reform der Pflegeversicherung in erster Lesung beraten. Der folgende Originalabsatz beschreibt die Beratung ohne ihren Abschluss zu behaupten.";
+    const body = `<html><head><link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
+      + `<meta property="og:title" content="Synthetische Beratung"><meta property="og:url" content="${d.url}"></head>`
+      + `<body><main class="c-main" id="main"><article class="c-article" id="article">`
+      + `<div class="article" itemscope="itemscope" itemtype="http://schema.org/Article">`
+      + `<div class="c-page-title"><h1>Synthetische Beratung</h1><p>${intro}</p></div>`
+      + `<div class="c-component c-component--page-date"><span>13. November 2026</span></div>`
+      + `</div></article></main></body></html>`;
+    const w = welt(10, { document: d, body }); await w.capture(); const before = clone([...w.rows]);
+    const run = () => B.beschaffeArtikelkontext(w.doc, OPTS, w.deps(W.standard, { fetchUrl: fail("BMG Original erneut") }));
+    const result = await run(); A.equal(result.ok, true, result.reason); A.equal(result.beleg.text, intro);
+    A.equal(result.beleg.gewinnung.verfahren, "artikel-einstieg-v2"); A.equal(result.beleg.gelesenAm, new Date(START).toISOString());
+    A.equal(w.fetches, 1); for (const [id, row] of before) A.deepEqual(w.rows.get(id), row);
+    const saved = clone([...w.rows]); A.deepEqual(await run(), result); A.deepEqual([...w.rows], saved); A.equal(w.fetches, 1);
+  });
+  A.equal(count, 10); A.deepEqual(verboten, []);
+  console.log("10/10 Wiedergewinnungsgruppen bestanden; keine Produktion, Originalabrufe oder Modelle.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
