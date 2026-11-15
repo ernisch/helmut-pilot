@@ -1,8 +1,16 @@
 # Tägliche Versorgung: geprüfter Abschlussstand15.11.2026
 
-Stand15.11.2026,12:15UTC. Quellenreparatur aktiviert; Gesamtversorgung weiter teilweise.
+Stand15.11.2026,13:43UTC. Sofortlauf erfolgreich,Quittungsreparatur live;Gesamtversorgung weiter teilweise.
 
-**Neuester Stand:** Betreiber-GO und PR1214 haben die begrenzte Quellenhandlung
+**Aktuell:**25echteDokumente/Fehler4→0,LageundMorgen13:11aktualisiert,
+Tageskosten0,636184USD. Nachgewiesener fehlender Queue-Telemetriehook inPR1217
+mit beiden grünen Pflichtchecks und unabhängigem Review gemergt,Runtime528a9fc9
+READY/öffentlich bestätigt. Erste neue native Abrufquittung noch nicht belegt;
+heutiges Quellenkontingent8/8Fenster2400/2400Sekunden16/16Originale ausgeschöpft.
+[Sofortprüfung samt Ursache,Tests und Nachkontrolle](versorgung-sofortpruefung-20261115.md).
+Die folgende Aktivierungsbeschreibung12:15 und spätere Laufdaten10:49 sind historische Vorstände.
+
+**Aktivierung12:15UTC:** Betreiber-GO und PR1214 haben die begrenzte Quellenhandlung
 freigegeben. PR1215 am Kopf30bd4da4 mit beiden grünen Pflichtchecks/14Kern-/87Quellensuiten
 (CI43712210903) und unabhängig geschlossenem Review gemergt;Runtimec3648b08READY.
 Nach ebenfalls grünerMainCI43712532507 genau sechs neue Production-Katalogzeilen
@@ -106,7 +114,7 @@ Das installiert/aktiviert keine Quelle und beweist keinen echten Kundendurchlauf
 
 | Beschlüsse | Status und echter Beleg | Exakt fehlendes Verhalten / kleinster Umfang |
 |---|---|---|
-|1–17,24–26: Versorgung und fachliche Qualität|Teilweise: [aktueller Betriebsbeleg](../CURRENT_STATE.md), reguläres Morgenpaket partial, vier Befunde in der letzten Vor-Aktivierungsquittung; Destatis/iRights sind inzwischen begrenzt aktiv, ihr regulärer Abruf und die vollständige Ausgabe bleiben unbestätigt.|Nächsten regulären Abruf-/Morgenabschluss und tatsächliche Ausgaben gezielt abnehmen; nur dann neu belegte Fehler im freigegebenen Umfang reparieren. Keine Massentests, kein künstlicher Tagesanlass.|
+|1–17,24–26: Versorgung und fachliche Qualität|Teilweise: [Sofortbeleg](versorgung-sofortpruefung-20261115.md),25gespeicherteQuelldokumente,Fehler4→0,Attribution3/3inLage-/BriefingDTOserhalten. Lage6frischeVorgänge/Morgenpartial;QuittungshookPR1217live,ersteechteWriterwirkungnochoffen.|OhnehinregulärenAbruf-/Morgenabschluss gezielt auf neue Quittungen und tatsächliche Versorgung prüfen;keine historischen Messwerte erfinden,keine Massentests oder künstlichen Tagesanlässe.|
 |10,17–23,27 sowie Zugangsvertrag: echter Kundendurchlauf|Technisch teilweise belegt, vollständige reale Abnahme nicht geprüft. [ProduktvertragE](../produktvertrag-20261115.md#e-abnahmekriterien-für-den-ersten-zahlenden-kunden) verlangt echte Sitzung und Konto→Einladung→Posteingang→Passwort→Login/Reset. Der [Profilnachweis](../ui/profil-kompakt-20261111/README.md) schließt die authentifizierte Kundenabnahme ausdrücklich aus.|Einen autorisierten realen Kundendurchlauf anhand vorhandener Kriterien dokumentieren; technische Prüfungen wiederverwenden. Keine ungefragte Einladung oder kostenpflichtige Büroerstellung.|
 |Rechtsrahmen undE9: rechtlich tragfähiger Verkauf|Offen: [Rechtsunterlagen](../recht/anwaltsfragen-und-pilotvereinbarung-entwurf.md) ausdrücklich Entwürfe; keine aktuelle Freigabe für Rechtsgrundlage politischer Daten, DSFA, Verträge/AVV und Aufbewahrung belegt.|Vorhandene Unterlagen für den tatsächlichen Verarbeitungsumfang fachlich/rechtlich entscheiden. Keine erfundene Freigabe oder neue Infrastruktur.|
 

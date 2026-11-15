@@ -111,3 +111,40 @@ Verarbeitung aber bereits mit`verarbeitungBeendet:true`. Nur diese Erwartung
 angepasst;keine Produktionslogik geändert. Bestehende9/9Gruppen danach grün.
 Neuer Belegbaum`2c1b765d4577bb84ee8d27de25ae223528ebbc13`bindet zusätzlich
 diesen einen Testblob;beide ursprünglichen Runtime-/Regressionstestblobs unverändert.
+
+## Nach Merge tatsächlich kontrolliert
+
+[PR1217](https://github.com/ernisch/helmut-pilot/pull/1217),Endkopf
+`9f9e4dea73583b161a37fb5eda05349d05c7d887`,beidePflichtchecks
+[CI43720003288](https://github.com/ernisch/helmut-pilot/actions/runs/43720003288)
+erfolgreich:14/14Kern,47/47Plan,8/8Hook,37/37Telemetrie,9/9Artikelkonflikte
+sowie bestehender Queue-/Blobvertrag. Browserausführung bewusst nicht betroffen;
+keine pauschale Offline-/Datenbank-/Mengenprüfung und keine Modellaufrufe.
+Unabhängiges Review auch der letzten Erwartungs-/CI-Bindungsänderung ohne P1/P2.
+
+Merge`528a9fc9f15ba22a5595e006696f49d1f2b164b2`;
+[MainCI43720218065](https://github.com/ernisch/helmut-pilot/actions/runs/43720218065)
+ebenfalls beide Pflichtjobs erfolgreich. Beide Mainpläne bestätigen exakt
+`quellenquittung`,standard/database/browserfalse und tatsächlichen Mergebaum.
+Reguläres Productiondeployment`dpl_61DGW51cAvxbHpnGSfySZxqt7CTR`READY,
+Aliases einschließlich`helmut-pilot.vercel.app`gebunden;getrennte öffentliche
+HTML-Kontrolle13:41:09UTC HTTP200,Assetversion`528a9fc9`. Kein Modell-/Appstart.
+
+Erneute eng begrenzte SQL-Nachkontrolle nach Merge:nur die fünf bereits
+gebundenen alten Erfolgsjob-IDs,alle weiterhin`erledigt`und exakt dieselben
+Payload-MD5;beide neuen Quellenjobs weiterhin`erledigt/attempts1`.
+Kostenbuch13:41:55UTC bestätigt0,636184USDheute/4,019218USDgesamtgebunden,
+8offeneAltreserven. Kein zusätzlicher Verbrauch durch Tests/Merge/HTMLkontrolle.
+Quellenkontingent13:43UTC:8/8Fenster,2400/2400reservierteSekunden,
+16/16Originalabrufe;kein Reset und keine Erhöhung. Deshalb kein weiterer
+Adminquellenlauf als künstlicher Funktionsnachweis.
+
+Die technische Verdrahtung ist geprüft und live;eine echte neue Sourcequittung
+mit dieser Runtime ist noch nicht belegt. Fehlende historische Messwerte bleiben
+fehlend. Der heutige Lauf hat zwar die vier strukturellen Fehler beseitigt und
+Lage/Morgen aktualisiert,aber88Warnungen/2unbekannteWege/13Drift undpartial
+bleiben tatsächlicher letzter Abdeckungsstand. Rechts- und echte Kundenabnahme
+bleiben separat offen. **Genau ein nächster Schritt:** die bestehende einmalige
+Kontrolle16Nov05:25UTC prüft die ohnehin regulären Quellen-/Lage-/Morgenabschlüsse
+gezielt auf echte neue Abrufquittungen und verbleibende Versorgungslücken.
+Sie startet keine zusätzlichen Verarbeitungsläufe und plant sich nicht neu.
