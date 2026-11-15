@@ -1,5 +1,9 @@
 # Einmaliges Quellen-Abschlussfenster am 15. November 2026
 
+**Endstand19:41UTC: alle sechs Zielaufträge erfolgreich erledigt, vier vollständige
+Analysen und zwei echte Abrufquittungen bestätigt. Ein weiterer defekter RSS-Pfad
+ist korrigiert. Gesamtversorgung bleibt eingeschränkt; Restbefunde unten.**
+
 ## Auftrag und ausgerollter Codeumfang
 
 Erneuter Betreiberauftrag im selben Thread, 15.11. ab18:43UTC:
@@ -145,10 +149,10 @@ geprüft. Kostenbuch und Quoten ebenfalls intern unverändert. Tagesbindung weit
 0,636184USD/Gesamt4,019218USD, acht Altreserven;8Fenster/2400Sekunden/16Originale,
 neuer Einmalschlüssel noch unbenutzt und null laufende Jobs.
 
-Technisch fehlender letzter Schritt: einmaliger Klick in der echten Adminsitzung
-unter Verwaltung → Betrieb → Quellen. Der Betreiber wurde um diesen Start gebeten;
-keine erneute Freigabe verlangt und keine Anmeldung oder CSRF-Prüfung umgangen.
-Bis zur tatsächlichen Abschlussquittung bleibt der Verarbeitungsnachweis offen.
+Um19:08fehlte noch der einmalige Klick in der echten Adminsitzung unter Verwaltung
+→ Betrieb → Quellen. Der Betreiber wurde um diesen technisch notwendigen Start
+gebeten; keine erneute Freigabe verlangt und keine Anmeldung oder CSRF-Prüfung
+umgangen. Der danach tatsächlich gestartete Lauf ist im Abschluss unten belegt.
 
 ## Exakte ausgeführte Datenvorbereitung und gebundener Rückweg
 
@@ -247,5 +251,179 @@ BEGIN
 END
 $abschluss_vorbereitung_rueckweg$;
 SELECT count(*) zieljobs_prioritaet80 FROM public.helmut_jobs WHERE id IN ('1f22fa3a-f69e-4823-ba32-8a5b9fab5623'::uuid,'2ca02a70-aada-4e5b-b6c0-36ba068e51aa'::uuid,'b7ab8d16-abcf-41ae-8d3b-064c7ff85a78'::uuid,'e87719a6-46ed-4cca-bbd2-dabf7392507b'::uuid) AND priority=80;
+COMMIT;
+```
+
+## Tatsächlicher Quellenabschluss,19:18UTC
+
+Der Betreiber bestätigte genau einen Start. Native Laufkennung
+`admin-quellen-2026-11-15-6a95d304-5968-4c68-b9d7-da7edb899e0e`:
+19:14:13.529–19:18:04.077UTC, Status`success`,12erledigt/53vertagt/
+0endgültigeFehler. Die sechs vorbereiteten Zielaufträge sind jeweils mit
+`attempts=1` erledigt; kein alter Fehlversuch wurde zurückgesetzt.
+
+| Zielauftrag | Abschluss UTC | Ergebnis |
+| --- | --- | --- |
+| `13bc9e90-69bf-4fe5-85f9-ebcb8a5dde4f` | 19:14:21.014981 | Destatis-Abruf erledigt |
+| `83a52d69-8d83-4907-af4e-9645f6212bce` | 19:14:26.185008 | iRights-Abruf erledigt |
+| `e87719a6-46ed-4cca-bbd2-dabf7392507b` | 19:14:40.498354 | DIP-Inhalt erledigt |
+| `2ca02a70-aada-4e5b-b6c0-36ba068e51aa` | 19:14:56.473195 | DIP-Inhalt erledigt |
+| `b7ab8d16-abcf-41ae-8d3b-064c7ff85a78` | 19:15:11.369686 | ZDF-Inhalt erledigt |
+| `1f22fa3a-f69e-4823-ba32-8a5b9fab5623` | 19:15:28.139085 | BMAS-Inhalt erledigt |
+
+Getrennte native Inhaltskontrolle bestätigt zu jedem der vier Rohdokumente
+jeweils genau eine verknüpfte Analyse mit `understanding_status=complete`,
+Status`neu`. Die zuvor offene BMAS-Analyse wurde durch die normale Verarbeitung
+vollständig verstanden. Das ist ein tatsächlicher Wirkungserfolg der Reparaturen,
+keine bloße Queue- oder HTTP-Erfolgsmeldung.
+
+Der fehlende Writerhook ausPR1217ist erstmals real produktiv belegt:
+`source_crawl_telemetry` enthält genau die beiden tatsächlichen Abrufquittungen
+unter den neuen Sourcejob-IDs. Destatis:Status`ok`,10gefunden,0neu,206ms;
+iRights:Status`ok`,15gefunden,0neu,238ms. Der erneute Abruf hat vorhandene
+Dokumente bestätigt und keine25weiteren Dokumente erfunden. Frühere Attribution-
+und Dokumentnachweise bleiben erhalten; keine historischen Zeitmessungen ergänzt.
+
+Die gesonderte Abschlussquittung`quellen-abdeckung`19:18:04.737UTC bleibt
+`partial/eingeschraenkt`:0Fehler,88Warnungen,2unbekannteWege,13Konfigurationsdrift,
+9Bedarfspakete,0Zuordnungslücken. Technisch erfolgreicher Arbeitslauf und
+vollständige fachliche Versorgung sind getrennte Aussagen.
+
+Die beiden unbekannten Wege sind konkret erklärt:Für jeden neuen Feed liegt
+jetzt genau eine technische Abrufquittung vor. Der unveränderte bestehende
+`source-failure`-Vertrag verlangt `minLaeufe:3`. Die echte reine Ableitung auf den
+zwei gespeicherten technischen Zeilen liefert für beide`unbekannt/Zu wenige Läufe`.
+Dafür keine Profile, Modelle, HTTP- oder Datenbankwrites verwendet. Es fehlen
+jeweils zwei weitere echte Beobachtungen; keine Schwelle gesenkt oder Quittung
+vervielfältigt, um heute eine Stabilitätsbehauptung zu erzeugen.
+
+## Enger Abgleich der13Katalogabweichungen und zusätzliche URL-Reparatur
+
+Nur öffentliche Identitätsfelder mit genau demselben Code-Soll abgeglichen,
+einschließlich der ergänzenden Paketpfade; keine Profilfelder gelesen. Ergebnis:
+zwei bereits umgestellte Landeswege mit nativen Parserketten, zwei manuelle
+XML-Wege mit unterschiedlicher Methodenbezeichnung, acht abweichende Google-
+Suchdefinitionen und ein defekter RSS-Pfad. Keine pauschale Katalogsynchronisation
+oder neue Gesundheitsbehauptung aus diesen unterschiedlichen Befunden.
+
+Für `rp-linksfraktion` ist die konkrete Fehlerursache aktuell bewiesen:
+
+- Eingetragene URL`https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml`:
+  19:27:36.824679UTC HTTP404,78200Bytes,
+  SHA256`3e501378213dbfd107cbc00e0ff4c9ba8d5b68a2293fd6f7ff85b3294aa1964c`.
+- Bereits im bestehenden Code-Soll vorgesehene URL
+  `https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss`:
+  19:27:38.087513UTC HTTP200,36792Bytes,
+  SHA256`776188ed1d35e8f1ae4714ea29aa85fa0de33cccff471011e1fd6af83c9b8ec1`.
+  Trotz Server-MIME`text/html` ist der Inhalt eine vollständige RSS-Hülle.
+  Der unveränderte native Parser bestätigt15/15datierte Einträge mit direkten
+  Originaladressen desselben Herausgebers, offline ohne Modelle oder Writes.
+
+Nach unabhängigem vollständigem Review ohne P1/P2 genau eine atomare URLänderung
+am bestehenden Pfad ausgeführt. Rechte, Herausgeber, Status, Parser und alle
+sonstigen Felder unverändert; keine Aktivierung und kein weiterer Pipelinecrawl.
+Gesonderter Readback19:34:28UTC: korrekte neue URL,
+Zeilen-MD5`e04122a882a3b5ed85b5630407646ea6`,
+Invarianten-MD5 ohneURL/Änderungszeit`ecea0dd9475691e677edb88811868da5`.
+Alle anderen Katalogwege, sieben Erfolgsjobs und Kostenbuch wurden intern
+unverändert geprüft. Dieser HTTP-/Parserbeleg ist keine erfundene Production-
+Abrufquittung des künftigen korrigierten Weges und keine neue Quellenlizenz.
+
+## Lage und abschließende Kostenkontrolle,19:41UTC
+
+Die einmalige Lageaktualisierung wurde innerhalb des verbliebenen Vertragsraums
+vorbereitet: höchstens240Sekunden/maximal0,288017USD zusätzlich, ein bestehender
+Pilot, gültige Caches erhalten. Der erste direkte Verbindungsweg scheiterte vor
+HTTP-Annahme mit`ConnectionRefusedError`. Native Lesekontrolle19:37:14bestätigte
+keinen neuen Lageabschluss, unveränderte Kosten und acht Altreserven. Anschließend
+normaler proxyfähiger Zugriff, keine blinde Wiederholung einer angenommenen Mutation.
+
+Native Quittung`briefing-lage-20261115193745-i4wo4`,19:37:45.518–19:37:56.514UTC:
+HTTP200,ein Ziel/ein verarbeitetes Profil,0Fehler,gespeicherte vollständige
+Lauftelemetrie. Verfügbare Lage mit6Vorgängen und`fromCache:true`; gültigen Cache
+behalten, kein neuer Modellaufruf und keine forcierte Neugenerierung. Der
+Gesamtstatus bleibt`partial/quellenversorgung-offen`. Kein erneuter Morgenlauf
+und keine neue Benachrichtigung ausgelöst.
+
+Endkontrolle19:41:39UTC: Tagesbindung0,711983USD/Gesamt4,095017USD,acht unveränderte
+Altreserven,null laufende Jobs. Der Quellenabschluss hat0,075799USD zusätzlich
+verbraucht; alle zehn neuen Kostenbuchungen dieses Zeitfensters sind abgeschlossen.
+Die Lageprüfung verursachte keine weiteren Modellkosten. Sieben Alt-Erfolgsjobs
+weitererledigt, die fünf zuvor gebundenen Payload-MD5 weiterhin identisch.
+Einmalkey1verbraucht,9Fenster/2700Sekunden/16Originale; keine weitere Laufberechtigung
+abgeleitet und keine Kontingente oder Reserven zurückgesetzt.
+
+**Verbleibend:** fehlende weitere reguläre Stabilitätsbeobachtungen der neuen
+Feeds, EUR-Lex-WAF sowie weitere Artikel ohne geprüften Original-/Nutzungsnachweis.
+Die letzte native Gesamtversorgung bleibt eingeschränkt; keine allgemeine
+Kunden-/Rechtsabnahme. **Genau ein nächster Schritt:** Die bestehende Kontrolle
+am16.11.05:25UTC prüft die ohnehin regulären Quittungen und diese konkreten
+Restbefunde. Das heutige Zusatzfenster ist dann abgelaufen; keine Selbst-Neuplanung,
+kein erneuter Zusatzlauf und keine rückwirkende Löschung erfolgreicher Ergebnisse.
+
+## Exakte zusätzliche URL-Korrektur und Rückweg
+
+Nur die dokumentierte Einzelaktion; kein erneut auszuführender Plan.
+Der Rückweg wurde geprüft und nicht ausgeführt.
+
+### URLkorrektur vorwärts
+
+SHA256 `fb6a66ea73727a0d204c59e6b494ae5ef7b14372798198d2e45bdef40efbe13b`.
+
+```sql
+BEGIN;
+SET LOCAL statement_timeout='5s';
+SET LOCAL lock_timeout='2s';
+DO $linke_rss_url$
+DECLARE prior text; protected text; post text;
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.helmut_jobs WHERE status='laeuft') THEN RAISE EXCEPTION 'linke-rss: parallele Verarbeitung';END IF;
+ IF EXISTS(SELECT 1 FROM public.helmut_store WHERE id='main-quellenkorrektur-linke-rss-20261115-v1') THEN RAISE EXCEPTION 'linke-rss: Beleg vorhanden, nur lesen';END IF;
+ PERFORM 1 FROM public.retrieval_paths WHERE id='rp-linksfraktion' FOR UPDATE;
+ IF NOT EXISTS(SELECT 1 FROM public.retrieval_paths p WHERE id='rp-linksfraktion'
+  AND url='https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml'
+  AND md5(to_jsonb(p)::text)='306eb365d0ee7f5cfc19f39b65655e49') THEN RAISE EXCEPTION 'linke-rss: Vorwert drift';END IF;
+ prior:=md5((SELECT jsonb_agg(to_jsonb(p) ORDER BY id) FROM public.retrieval_paths p WHERE id<>'rp-linksfraktion')::text);
+ protected:=md5(jsonb_build_object('jobs',(SELECT jsonb_agg(to_jsonb(j) ORDER BY id) FROM public.helmut_jobs j WHERE id IN ('0183eb36-b40b-4d4a-bb08-4dffcdc64939','3922563e-e93f-48c5-ab50-f49afee25637','3ba1a308-50f7-48e0-9068-5cd78091a249','6eeb03b4-2457-49cc-b98a-a488a406479e','b70857dc-7936-434c-8fe2-d5a1a7f287be','7e17cdc7-3da5-46b5-8474-e428e9e97905','8f94986c-4c19-4ffe-acfd-c7c8089a8552')),'cost',(SELECT data->'betriebskostenBudget' FROM public.helmut_store WHERE id='main-auth'))::text);
+ UPDATE public.retrieval_paths SET url='https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss',updated_at=now() WHERE id='rp-linksfraktion';
+ IF NOT EXISTS(SELECT 1 FROM public.retrieval_paths p WHERE id='rp-linksfraktion' AND md5((to_jsonb(p)-'url'-'updated_at')::text)='ecea0dd9475691e677edb88811868da5') THEN RAISE EXCEPTION 'linke-rss: sonstige Zielfelder geaendert';END IF;
+ SELECT md5(to_jsonb(p)::text) INTO STRICT post FROM public.retrieval_paths p WHERE id='rp-linksfraktion';
+ INSERT INTO public.helmut_store(id,data) VALUES('main-quellenkorrektur-linke-rss-20261115-v1',jsonb_build_object('version',1,'art','rss-pfadkorrektur','path','rp-linksfraktion','korrigiertAm',clock_timestamp(),'before_md5','306eb365d0ee7f5cfc19f39b65655e49','after_md5',post,'fields_md5','ecea0dd9475691e677edb88811868da5','oldUrl','https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml','newUrl','https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss','oldHttp',404,'newHttp',200,'oldResponseSha256','3e501378213dbfd107cbc00e0ff4c9ba8d5b68a2293fd6f7ff85b3294aa1964c','newResponseSha256','776188ed1d35e8f1ae4714ea29aa85fa0de33cccff471011e1fd6af83c9b8ec1','originalGelesenAm','2026-11-15T19:27:38.087513+00:00','datedRssItems',15,'rightsChanged',false));
+ IF prior IS DISTINCT FROM md5((SELECT jsonb_agg(to_jsonb(p) ORDER BY id) FROM public.retrieval_paths p WHERE id<>'rp-linksfraktion')::text)
+  OR protected IS DISTINCT FROM md5(jsonb_build_object('jobs',(SELECT jsonb_agg(to_jsonb(j) ORDER BY id) FROM public.helmut_jobs j WHERE id IN ('0183eb36-b40b-4d4a-bb08-4dffcdc64939','3922563e-e93f-48c5-ab50-f49afee25637','3ba1a308-50f7-48e0-9068-5cd78091a249','6eeb03b4-2457-49cc-b98a-a488a406479e','b70857dc-7936-434c-8fe2-d5a1a7f287be','7e17cdc7-3da5-46b5-8474-e428e9e97905','8f94986c-4c19-4ffe-acfd-c7c8089a8552')),'cost',(SELECT data->'betriebskostenBudget' FROM public.helmut_store WHERE id='main-auth'))::text) THEN RAISE EXCEPTION 'linke-rss: geschuetzter Bestand geaendert';END IF;
+END
+$linke_rss_url$;
+SELECT id,data->>'after_md5' after_md5 FROM public.helmut_store WHERE id='main-quellenkorrektur-linke-rss-20261115-v1';
+COMMIT;
+```
+
+### URLkorrektur Rückweg
+
+SHA256 `0a8711b5b550c69298054c781f1d2dbb0a448751fe0ba1e9136dfbb96e09afc7`.
+
+```sql
+BEGIN;
+SET LOCAL statement_timeout='5s';
+SET LOCAL lock_timeout='2s';
+DO $linke_rss_rueckweg$
+DECLARE b jsonb; at_time timestamptz; n integer;
+BEGIN
+ SELECT data INTO STRICT b FROM public.helmut_store WHERE id='main-quellenkorrektur-linke-rss-20261115-v1' FOR UPDATE;
+ IF b->>'art'<>'rss-pfadkorrektur' OR b->>'path'<>'rp-linksfraktion' OR b->>'newUrl'<>'https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss'
+  OR b->>'oldUrl'<>'https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml' THEN RAISE EXCEPTION 'linke-rss-rueckweg: falscher Beleg';END IF;
+ at_time:=(b->>'korrigiertAm')::timestamptz;
+ PERFORM 1 FROM public.retrieval_paths WHERE id='rp-linksfraktion' FOR UPDATE;
+ IF NOT EXISTS(SELECT 1 FROM public.retrieval_paths p WHERE id='rp-linksfraktion' AND md5(to_jsonb(p)::text)=b->>'after_md5')
+  OR EXISTS(SELECT 1 FROM public.helmut_jobs WHERE status='laeuft')
+  OR EXISTS(SELECT 1 FROM public.helmut_jobs WHERE job_type='source_fetch' AND payload->'quelle'->>'id'='linksfraktion' AND updated_at>=at_time)
+  OR EXISTS(SELECT 1 FROM public.source_crawl_telemetry WHERE source_id='linksfraktion' AND created_at>=at_time)
+  OR EXISTS(SELECT 1 FROM public.raw_documents WHERE source_id='linksfraktion' AND retrieved_at>=at_time)
+  THEN RAISE EXCEPTION 'linke-rss-rueckweg: Stand fortgeschritten';END IF;
+ UPDATE public.retrieval_paths SET url='https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml',updated_at=now() WHERE id='rp-linksfraktion';
+ IF NOT EXISTS(SELECT 1 FROM public.retrieval_paths p WHERE id='rp-linksfraktion' AND md5((to_jsonb(p)-'url'-'updated_at')::text)=b->>'fields_md5') THEN RAISE EXCEPTION 'linke-rss-rueckweg: sonstige Zielfelder';END IF;
+ DELETE FROM public.helmut_store WHERE id='main-quellenkorrektur-linke-rss-20261115-v1' AND data=b;
+ GET DIAGNOSTICS n=ROW_COUNT;IF n<>1 THEN RAISE EXCEPTION 'linke-rss-rueckweg: Belegzahl';END IF;
+END
+$linke_rss_rueckweg$;
 COMMIT;
 ```
