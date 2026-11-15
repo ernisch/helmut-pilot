@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,13:43UTC: Sofortlauf25Dokumente/Quellenfehler4→0;QuittungsfixPR1217live,Versorgungpartial.**
+**15.11.2026,14:04UTC: Quittungsfixlive;11neueInhaltsjobserledigt,Altrueckstandgezieltdifferenziert.**
 
 **Betreiberziel15Nov: heute fertig werden; jetzt pruefen statt Aufschub auf morgen.**
 NativeSofortquelle12:54:50–12:58:35,Adminlauf1671232c:success,13erledigt/65vertagt/0endgueltigeFehler.
@@ -30,7 +30,10 @@ Privater12FelderAbgleichabgeschlossen;keineerneuteProfilabfrageoderpolitischenOr
 LeserPR1203/1204/1206,Attribution1209,Quellenprep1207erhalten;UI-PR1208separatgemergt.
 EchteKundenabnahmeundrechtlicheGesamtverkaufsfreigabeweiterunbelegt;keineFertigbehauptung.
 Produktcronsunveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC;heute8/8Fenster2400/2400s16/16Originale.
-NaechsterSchritt:16Nov05:25UTCohnehinregulaereQuellenquittungen/Lage/Morgengezieltpruefen,keinzusaetzlicherLauf.
+NeuerSofortauftrag:QuellenlimitblockiertkeineBestandsanalyse;36heutigeoffeneInhaltsjobs(21neu/15wiedergefunden).
+11InhaltsjobsderbeidenneuenFeedserledigt;RueckstandandereQuellen,keineMetadatenkonflikteausQuell-IDerraten.
+NaechsterSchritt:belegtenEUR-Lex-Fehlabrufmitgenau1beantragtem128KiB-DiagnoseGETklaeren;Freigabenochoffen.
+RegulaereRueckfallkontrolle16Nov05:25UTCbesteht,keinezusaetzlichenVerarbeitungspostsoderQuotenresets.
 [Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md) · [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md) · [Aktivierung](betrieb/quellen-einbindung-freigabe-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
