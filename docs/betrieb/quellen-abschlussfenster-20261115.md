@@ -69,7 +69,11 @@ Productionzugriff:10/10Einmalfenstergruppen,8/8Echtlaufgruppen,21/21normale
 Arbeitsfenstergruppen grün. Neue Gegenfälle prüfen insbesondere den fehlenden
 Original-Zusatzanspruch, UTC-/GO-Bindung, Replay und verlorene Buchungsantwort.
 Unabhängiges lesendes Review des vollständigen Zwei-Dateien-Diffs ohne P1/P2.
-Admin-Routen-/CSRF-Verträge und enger Pflicht-CI-Vertrag werden vor Merge geprüft.
+Bestehende9/9Routengruppen und16/16Adminstartgruppen einschließlich echter lokaler
+HTTP-/Session-/CSRF-Grenzen ebenfalls grün.60/60Prüfplangruppen einschließlich
+neuer strikter Abweisungsfälle grün. Der enge CI-Vertrag bindet beide Code-/
+Testblobs, Basis19097b28, Belegcommit2cfdd2ab, PR/Branch und vollständigen übrigen
+Baum. Unbekannte Runtime oder falscher Mainmerge stoppt, kein Mengenrückfall.
 Keine Massen-/Last-/bezahlten Tests; beide Pflichtjobs bleiben am exakten Kopf.
 
 Vor dem Start kann die kleine Codeausnahme durch einen regulären geprüften
