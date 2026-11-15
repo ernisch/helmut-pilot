@@ -250,6 +250,7 @@ function loadClient() {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__qpTest = {
     renderRadar: () => renderRadarView(),
+    expandRadar: () => { radarSignalsExpanded = true; },
     setBriefing: (b) => { briefing = b; },
     setDecisions: (d) => { decisions = d; },
     setSelectedOfficeDraft: (v) => { selectedOfficeDraft = v; },
@@ -330,6 +331,11 @@ check("client.js laedt im vm (Quellenpflicht-Hook gesetzt)", Boolean(api && api.
     quality: { status: "fresh", reason: null, lastUpdated: iso(3600e3), mentionsFound: 4, environmentMatched: 2, dynamicsDetected: 2, articleCount: 2, sourcesLoaded: true, hasThumbnails: false, thumbnailsAvailable: false }
   };
   api.setBriefing({ engine: "v3", currentRadarState: state });
+  const preview = api.renderRadar();
+  check("Radar-Client: Erstansicht begrenzt auf drei belegte Signale und bietet Aufklappen",
+    (preview.match(/class="radar2-(?:card|row)(?: |")/g) || []).length === 3
+      && preview.includes('data-radar-expand="all"'));
+  api.expandRadar();
   const html = api.renderRadar();
   check("Radar-Client: oeffnbare Items werden gerendert",
     html.includes("Sichtbare Erwaehnung") && html.includes("Sichtbares Parteisignal")

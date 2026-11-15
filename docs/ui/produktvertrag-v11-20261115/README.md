@@ -108,6 +108,21 @@ das bereits im unveränderten main fehlt. Suite unverändert erhalten; die neuen
 Textfälle gehören jetzt zur bestehenden UI-Ehrlichkeitssuite37/37. Kein behauptetes
 Gesamt-PASS dieser historischen Probe.
 
+## Quellenpflicht und aktueller main-Abgleich
+
+CI43697716311 auf `41bd3b92`: Browser grün;188/189 Standardsuiten bestanden.
+Einziger Fehler: `quellenpflicht-vertrag-test.js` erwartet vier gültige Radarsignale
+bereits in der Erstansicht. Der Test prüft nun erst drei und den sichtbaren
+Aufklapper, danach alle vier; sämtliche Negativfälle und Linkprüfungen bleiben
+unverändert. Gezielt59/59 bestanden. Keine Quellensperre gelockert.
+
+Während CI wurde main auf `236ced65` (PR1209, grüne Pflichtchecks) aktualisiert.
+Die neue iRights-Attribution liegt in getrennten Clienthilfen. Konfliktfreier
+kombinierter Baum `cbc038244fc209728f2aa171b104e34633035cdf` separat geprüft:
+130Briefing-,54Radar-Assertions,11Quellenhinweisgruppen sowie87netzlose
+Browserprüfungen bestanden. Danach main regulär in den eigenen Branch integriert;
+Quellenänderungen bleiben erhalten. Neue Pflicht-CI für diesen Kopf erforderlich.
+
 ## Risiko und Rückweg
 
 Nur Darstellung und Formatangebot ändern sich; die Datenmotor-Fachabnahme bleibt
