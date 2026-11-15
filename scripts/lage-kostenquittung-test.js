@@ -90,8 +90,9 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   if (azure) { delete process.env.AZURE_OPENAI_KEY; delete process.env.AZURE_OPENAI_ENDPOINT; }
   if (expected === "budget") assert.equal(r.error?.code, "LLM_BUDGET_EXHAUSTED");
   else if (expected) {
-    assert.equal(r.error?.code, "LAGE_AI_FAILURE");
-    assert.equal(r.error?.grund, expected);
+    assert.equal(r.error?.code, mode === "construction" ? "AI_REQUEST_BUILD_FAILED" : "LAGE_AI_FAILURE");
+    if (mode === "construction") assert.equal(r.error?.kiNichtGesendet, true);
+    else assert.equal(r.error?.grund, expected);
   } else assert.equal(r.value?.paragraphs.length, 2);
   assert(!JSON.stringify(r).includes("GEHEIMER"), "Diagnose verrät keinen Rohtext");
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");

@@ -102,7 +102,7 @@ check("Radar mit Quellenbeleg: keine sichtbaren Signale beweisen keine fehlenden
 for (const kind of ["gap", "stale"]) {
   const rGap = ui.radarEmpty({ ...gap, tab: "radar", kind });
   check(`Radar ${kind}: ausdrueckliche Datenluecke bleibt sichtbar`,
-    rGap.includes(kind === "stale" ? "Radarstand veraltet" : gap.headline) && rGap.includes(gap.detail)
+    rGap.includes(kind === "stale" ? "Keine belegten Hinweise in diesem älteren Stand" : gap.headline) && rGap.includes(gap.detail)
       && rGap.includes(`data-empty-kind="${kind}"`));
 }
 const rError = ui.radarEmpty(quietRadar, { status: "error", quality: { sourcesLoaded: true } });
