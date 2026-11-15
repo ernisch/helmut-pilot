@@ -84,6 +84,13 @@ für die Orientierungsmeldung ist ebenfalls auf den neuen Sie-Text aktualisiert.
 Kein Runtimefix, keine Lockerung einer Sicherheitsprüfung. Neuer Kopf braucht
 neue vollständige Pflicht-CI.
 
+CI43696831366 auf `bfe54c46`: Lage-/Scroll-/Historyfälle auf Desktop und Mobil
+bestanden. Der nächste Erstfehler ist ausschließlich die alte exakte Du-Erwartung
+im Profil-Speichertest (`profil-kompakt-browser.js:157`); auf den sichtbaren
+Sie-Wortlaut korrigiert. Speichern, Fehlererhalt und manuelle Wiederholung bleiben
+unverändert geprüft. Keine weitere alte Erwartung dieser geänderten Benutzertexte
+in den Browserhilfen gefunden. Auch danach ist neue Pflicht-CI erforderlich.
+
 ## Risiko und Rückweg
 
 Nur Darstellung und Formatangebot ändern sich; die Datenmotor-Fachabnahme bleibt
