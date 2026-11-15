@@ -6,7 +6,7 @@ Lokal gezielt geprüft; PR-CI, Merge und reguläres Deployment stehen noch aus.
 ## Verhalten und Abgrenzung
 
 - Kundenansprache in Einstieg, Onboarding, Profil, Rückmeldungen, Offlinehinweis,
-  Datenschutzseite und vorhandenen UI-Hilfstexten auf Sie vereinheitlicht.
+  Datenschutzseite, Offline-Ersatzseite, PWA-Installationsbeschreibung, Push-Hinweisen und vorhandenen UI-Hilfstexten auf Sie vereinheitlicht.
   Der bestehende Anzeigeadapter behandelt zusätzlich invertierte Modalverben.
   Originaltitel, gespeicherte Profilwerte und für Dritte bestimmte Bürotexte
   werden nicht pauschal umgeschrieben.
@@ -39,7 +39,7 @@ laufenden Datenmotor-Thread; dieser UI-Nachweis wird separat geführt.
 [Maschinenlesbarer Nachweis](verification.json) bindet die Runtime-Dateien per SHA256.
 
 - Briefing:130/130, Radar:54/54, Büro-Ehrlichkeit:76/76,
-  Büro-Antwortzeit:13/13 Gruppen, UI-Ehrlichkeit:34/34.
+  Büro-Antwortzeit:13/13 Gruppen, UI-Ehrlichkeit:37/37; PWA-Icons70/70 und Service-Worker-Start10/10 Gruppen.
 - Chromium:87 neue Vertragsprüfungen sowie300 Büro-Bindungsprüfungen;
   Desktop1440, Mobil390/360, echter Client und CSS mit synthetischen Eingaben.
   Formatwahl/Navigation ohne Erstellrequest, explizite Erstellung genau einmal,
@@ -90,6 +90,23 @@ im Profil-Speichertest (`profil-kompakt-browser.js:157`); auf den sichtbaren
 Sie-Wortlaut korrigiert. Speichern, Fehlererhalt und manuelle Wiederholung bleiben
 unverändert geprüft. Keine weitere alte Erwartung dieser geänderten Benutzertexte
 in den Browserhilfen gefunden. Auch danach ist neue Pflicht-CI erforderlich.
+
+## Ergänzender Sprachabgleich
+
+Der Browsercheck43697101424 auf `9876a1f9` ist grün. Zusätzlich beim finalen
+Abgleich gefundene Kundenhinweise in `sw.js`, `site.webmanifest` und `push.js`
+auf Sie korrigiert. Ausschließlich Textänderungen; keine Änderung an Push-Auswahl,
+Versand, Cacheverhalten oder Modellprompts. Modellanweisungen wie „Du bist Helmut“
+sind keine Kundenansprache und bleiben unverändert. Drei reine Push-Textfälle
+prüfen die Sie-Anrede und unveränderte Originaltitel mit Du; kein Push wurde versandt.
+Der vorhandene echte Service-Worker-Browserfall prüft nun zusätzlich die Sie-Anrede
+seiner Offlineantwort. Neuer Kopf benötigt wiederum beide Pflichtchecks.
+
+Die zunächst verwendete historische `stoerungswahrheit`-Suite meldete28/29:
+alle drei neuen Textfälle grün, ein alter Sourcetextcheck verlangt `in deiner Lage`,
+das bereits im unveränderten main fehlt. Suite unverändert erhalten; die neuen
+Textfälle gehören jetzt zur bestehenden UI-Ehrlichkeitssuite37/37. Kein behauptetes
+Gesamt-PASS dieser historischen Probe.
 
 ## Risiko und Rückweg
 

@@ -232,5 +232,21 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     assert.match(last, /Fertig & speichern/);
     assert.ok(!last.includes("data-onboard-next"));
   });
+  const pushContext = { module: { exports: {} }, require: () => ({}), process: { env: {} } };
+  const pushSource = fs.readFileSync(path.join(__dirname, "../lib/helmut/push.js"), "utf8");
+  // Pure text selection: imports inert, no dispatcher, network or storage executes.
+  vm.runInNewContext(pushSource + "\n;globalThis.best = bestBriefingPush;", pushContext);
+  await test("Morgen-Push verwendet Sie-Ansprache", async () => {
+    const daily = pushContext.best({});
+    assert.equal(daily.title, "Ihr Morgenbriefing steht bereit."); assert.match(daily.body, /Ihre Prioritäten/);
+  });
+  const mention = { id: "synthetic-mention", sourceName: "Quelle", publishedAt: new Date().toISOString() };
+  await test("Erwaehnungs-Push verwendet Sie-Ansprache", async () => {
+    const value = pushContext.best({ personMentions: [mention] });
+    assert.equal(value.title, "Neue Erwähnung über Sie."); assert.equal(value.body, "Quelle: Sie wurden erwähnt.");
+  });
+  await test("Push belaesst Originaltitel mit Du unveraendert", async () => {
+    assert.equal(pushContext.best({ personMentions: [{ ...mention, title: "Du im Parlament" }] }).body, "Quelle: Du im Parlament");
+  });
   console.log(`\n${passed}/${passed} UI Ehrlichkeitsfälle erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

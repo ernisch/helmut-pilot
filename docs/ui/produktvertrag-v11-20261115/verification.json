@@ -4,7 +4,10 @@
   "runtimeSha256": {
     "client.js": "b2553c48013b420d224f9b06b123bf86ce154ca1db13d54312a838e7ab868bf5",
     "server.js": "9b77868eea109d2bd8a3303ba36979d73a5d2e9837cf87025e3a7f290aa9efe4",
-    "index.html": "b692dd29ae33067f3615fc73ea41d480554e774176824746f1e39861935286ef"
+    "index.html": "b692dd29ae33067f3615fc73ea41d480554e774176824746f1e39861935286ef",
+    "sw.js": "dbfb3443a7733c6627f2390de932f5286b4c47db873502b0b8f119eec883b6e4",
+    "site.webmanifest": "9b9a8dc8b79d58bb8411380c8cc0835a2649209bb208c894feffd451ce813624",
+    "lib/helmut/push.js": "3bcc931bb24beb4299a5a38a168c967b208ac4094d465541654fd241cfd28033"
   },
   "browser": {
     "produktvertrag": {
@@ -123,6 +126,8 @@
     "radarUi": 54,
     "bueroEhrlichkeit": 76,
     "officeAntwortzeitGroups": 13,
-    "ehrlichkeitUi": 34
+    "ehrlichkeitUi": 37,
+    "pwaIcons": 70,
+    "serviceWorkerStartGroups": 10
   }
 }

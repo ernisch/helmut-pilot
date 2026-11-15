@@ -163,7 +163,10 @@ async function verifyInBrowser(browser) {
       const started = Date.now();
       const res = await page.reload({ waitUntil: "domcontentloaded", timeout: 13000 });
       assert(res.fromServiceWorker()); assert(Date.now() - started >= 7500 && Date.now() - started < 13000);
-      assert.match(await page.locator("body").innerText(), /Nochmal versuchen/);
+      const offlineText = await page.locator("body").innerText();
+      assert.match(offlineText, /Nochmal versuchen/);
+      assert.match(offlineText, /Ihre aktuelle Lage/);
+      assert.ok(!/\b(?:du|deine|dich)\b/.test(offlineText));
       hang = "";
       await Promise.all([page.waitForNavigation({ waitUntil: "domcontentloaded" }), page.getByRole("button", { name: "Nochmal versuchen" }).click()]);
       assert.equal(await page.locator("main").innerText(), "Startantwort bereit");
