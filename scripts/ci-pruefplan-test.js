@@ -144,4 +144,73 @@ check("Leere Dateiliste ist fail closed", () => {
   assert.equal(p.browser, true);
 });
 
+
+// Ein exakter inaktiver Quellenstand darf ohne fremde DB-/Mengenpruefungen
+// geprueft werden. Jede abweichende Runtime, SQL oder Mergebindung stoppt.
+const Q = require("./ci-inaktive-quellen-plan");
+function sourceFixture(push = false) {
+  const row = oid => ({ mode: "100644", type: "blob", oid });
+  const baseTree = new Map([["server.js", row("a".repeat(40))], ["client.js", row("b".repeat(40))],
+    ["supabase/migrations/unveraendert.sql", row("c".repeat(40))]]);
+  for (const file of Object.keys(Q.BLOBS)) baseTree.set(file, row("d".repeat(40)));
+  const evidenceTree = new Map(baseTree);
+  for (const [file, hash] of Object.entries(Q.BLOBS)) evidenceTree.set(file, row(hash));
+  const headTree = new Map(evidenceTree);
+  for (const file of Q.CI_FILES) headTree.set(file, row("e".repeat(40)));
+  const branchHead = "f".repeat(40), head = push ? "9".repeat(40) : branchHead;
+  return { event: push ? "push" : "pull_request", repository: Q.REPOSITORY,
+    ref: push ? "refs/heads/main" : `refs/pull/${Q.PR}/merge`, headRef: push ? undefined : Q.BRANCH,
+    head, before: Q.BASE, message: Q.MERGE_TITLE,
+    pr: { number: Q.PR, state: push ? "closed" : "open", draft: false, merged: push,
+      merge_commit_sha: push ? head : null,
+      base: { sha: Q.BASE, ref: "main", repo: { full_name: Q.REPOSITORY } },
+      head: { sha: branchHead, ref: Q.BRANCH, repo: { full_name: Q.REPOSITORY } } },
+    parents: push ? [Q.BASE, branchHead] : [Q.EVIDENCE], baseTree, evidenceTree, headTree,
+    prHeadTree: push ? new Map(headTree) : undefined };
+}
+function sourceDenied(change, push = false) {
+  const f = sourceFixture(push); change(f); assert.throws(() => Q.validate(f), /inaktive-quellen-ci:/);
+}
+check("Inaktive Quellen: exakter PR behaelt beide Pflichtjobs und nur Kern/Quellen", () => {
+  const p = Q.validate(sourceFixture());
+  assert.equal(p.inaktivequellen, true); assert.equal(p.core, true);
+  for (const key of ["standard", "area", "database", "browser"]) assert.equal(p[key], false);
+});
+for (const [name, change] of [
+  ["Repository", f => { f.repository = "fremd/repo"; }],
+  ["PR", f => { f.pr.number++; }],
+  ["Basis", f => { f.pr.base.sha = "1".repeat(40); }],
+  ["Branch", f => { f.pr.head.ref = "fremd"; }],
+  ["Checkout", f => { f.head = "2".repeat(40); }],
+  ["Ereignis", f => { f.event = "workflow_dispatch"; }],
+  ["Baum", f => { f.headTree = null; }],
+  ["Quellenblob", f => { f.headTree.set(Object.keys(Q.BLOBS)[0], { mode: "100644", type: "blob", oid: "3".repeat(40) }); }],
+  ["SQLblob", f => { f.headTree.delete("supabase/seeds/20260713_source_architecture_seed.sql"); }],
+  ["Belegbaum", f => { f.evidenceTree.delete(Object.keys(Q.BLOBS)[1]); }],
+  ["fremde Runtime", f => { f.headTree.delete("server.js"); }],
+  ["fremde UI", f => { f.headTree.set("client.js", { mode: "100644", type: "blob", oid: "4".repeat(40) }); }],
+  ["Migration", f => { f.headTree.delete("supabase/migrations/unveraendert.sql"); }],
+  ["unbekannte Datei", f => { f.headTree.set("lib/helmut/fremd.js", { mode: "100644", type: "blob", oid: "5".repeat(40) }); }],
+  ["CI-Symlink", f => { f.headTree.set(Q.CI_FILES[0], { mode: "120000", type: "blob", oid: "6".repeat(40) }); }]
+]) check(`Inaktive Quellen: ${name} stoppt statt Mengenrueckfall`, () => sourceDenied(change));
+check("Inaktive Quellen: wirklicher Mainmerge mit identischem PR-Baum erlaubt", () => {
+  assert.equal(Q.validate(sourceFixture(true)).mode, "inaktive-quellen");
+});
+for (const [name, change] of [
+  ["nicht gemergter PR", f => { f.pr.merged = false; }],
+  ["anderer Titel", f => { f.message += " fremd"; }],
+  ["anderer Vater", f => { f.parents[0] = "7".repeat(40); }],
+  ["fremder Mergebaum", f => { f.prHeadTree.delete("client.js"); }],
+  ["andere Vorgeschichte", f => { f.before = "8".repeat(40); }]
+]) check(`Inaktive Quellen: Main ${name} gesperrt`, () => sourceDenied(change, true));
+check("Inaktive Quellen: Workflow benutzt dieselbe Bindung in beiden Pflichtjobs", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  assert.equal((workflow.match(/node scripts\/ci-inaktive-quellen-plan\.js --github-output/g) || []).length, 2);
+  assert(workflow.includes("steps.plan.outputs.inaktivequellen == 'true'"));
+  assert(workflow.includes("scripts/run-offline-tests.js --nur-bereich --bereich quellen"));
+  assert(workflow.includes("name: Syntax + Offline-Suiten"));
+  assert(workflow.includes("name: Browser-/Mobile-Smoke (Chromium)"));
+  assert(workflow.includes(Q.MERGE_TITLE));
+});
+
 console.log("\n" + pass + " PASS / 0 FAIL");
