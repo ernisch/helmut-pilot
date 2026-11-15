@@ -8,7 +8,8 @@ const cacheOnly = process.argv.length === 3 && process.argv[2] === "--cache";
 const bmasOnly = process.argv.length === 3 && process.argv[2] === "--bmas";
 const zdfOnly = process.argv.length === 3 && process.argv[2] === "--zdf";
 const presseOnly = process.argv.length === 3 && process.argv[2] === "--bmg-presse";
-if (process.argv.length !== 2 && !bmgOnly && !cacheOnly && !bmasOnly && !zdfOnly && !presseOnly) throw Error("Unbekannte Testauswahl");
+const adhocOnly = process.argv.length === 3 && process.argv[2] === "--adhoc";
+if (process.argv.length !== 2 && !bmgOnly && !cacheOnly && !bmasOnly && !zdfOnly && !presseOnly && !adhocOnly) throw Error("Unbekannte Testauswahl");
 const forbidden = [], fail = name => () => { forbidden.push(name); throw Error(name + " verboten"); };
 global.fetch = fail("fetch"); require("node:https").request = fail("HTTPS"); require("node:http").request = fail("HTTP");
 const G = require("../lib/helmut/artikelkontext-gewinnung"), A = require("../lib/helmut/artikelkontext"),
@@ -114,6 +115,31 @@ function zdfResponse(d = zdfDocument()) {
     + `<div class="mz5q5zg" style="--mz5q5zg-0:space-between;--mz5q5zg-1:100%"><time datetime="2026-11-13T13:52:00.000+01:00">13.11.2026 | 13:52</time></div>`
     + `<p>${intro}</p></div><div><p>${correction}</p></div></main></div></body></html>` };
 }
+function adhocDocument() {
+  const url = "https://www.ad-hoc-news.de/wirtschaft/synthetische-beratung/12345678";
+  return { id: "rd-synthetisches-layout-adhoc", title: "Synthetische Beratung - ad-hoc-news.de", source_name: "ad-hoc-news.de",
+    url, canonical_url: url.replace("www.", ""), published_at: "2026-11-13T12:52:23Z", summary: null, link_type: "direct" };
+}
+function adhocResponse(d = adhocDocument()) {
+  const declared = { "@type": "NewsArticle", mainEntityOfPage: { "@type": "WebPage", "@id": d.url },
+    headline: "Synthetische Beratung", description: intro, datePublished: "2026-11-13T13:52:23+01:00",
+    dateModified: "2026-11-13T13:52:23+01:00", isAccessibleForFree: true,
+    publisher: { "@type": "Organization", name: "ad-hoc-news.de", url: "https://www.ad-hoc-news.de" } };
+  return { finalUrl: d.url, gelesenAm: now.toISOString(), body: `<html><head>`
+    + `<link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
+    + `<meta property="og:title" content="Synthetische Beratung"><meta property="og:url" content="${d.url}">`
+    + `<meta name="robots" content="index, follow"><meta name="robots" content="max-image-preview:large">`
+    + `<script type="application/ld+json">${JSON.stringify(declared)}</script></head><body><div style="position:absolute;top:0;width:100%;">`
+    + `<div id="ip_page_wrapper"><div id="ip_content_wrapper"><div class="content_container" style="margin: 0;height:100%;">`
+    + `<div id="wrapper"><div class="container" id="site_content"><div class="row news-section-container">`
+    + `<div class="col-12 templateArticles_container bgWhite" id="article_container">`
+    + `<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 templateArticles_content" id="article_content">`
+    + `<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" id="left-box">`
+    + `<article id="article" class="fulltext"><header><span class="keyword_box"><a href="/themen/Synthetisch">Synthetisch</a></span>`
+    + `<h1 class="titel">Synthetische Beratung</h1><span class="date">Veröffentlicht am: 13.11.2026 um 13:52 Uhr | Redaktion boerse-global.de</span>`
+    + `<div class="teaser">${intro}</div></header><div class="subtext"><p>${detail}</p><p>${correction}</p></div>`
+    + `</article>${"</div>".repeat(10)}<footer><p>FOOTER NICHT MITGEPRUEFT</p></footer></body></html>` };
+}
 function presseDocument() {
   const d = bmgDocument(); d.id += "-presse";
   d.url = d.url.replace("ministerium/meldungen", "presse/pressemitteilungen"); d.canonical_url = d.url.replace("www.", "");
@@ -164,10 +190,98 @@ let count = 0; async function test(name, fn) {
   if (bmasOnly && !name.startsWith("BMAS ")) return;
   if (zdfOnly && !name.startsWith("ZDF ")) return;
   if (presseOnly && !name.startsWith("BMG-Presse ")) return;
+  if (adhocOnly && !name.startsWith("Ad-hoc ")) return;
   if (cacheOnly && !/^(?:Frischer Basisstand|Reserviert kaputt|Alte positive|Unbekannte Folgelesung|Originalquota)/.test(name)) return;
   await fn(); count++; console.log("PASS " + name);
 }
 (async () => {
+  await test("Ad-hoc bindet ausschliesslich den ganzen Headerteaser als Einstieg mit eigener Positionsbasis", () => {
+    const d = adhocDocument(), r = adhocResponse(d), before = clone({ d, r });
+    for (const read of [() => G.gewinneArtikelEinstieg(d, r), () => G.gewinneArtikeltext(d, r),
+      () => G.gewinneArtikeltext(d, r, { abschnittsweise: true })]) {
+      const out = read(); T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro);
+      T.equal(out.beleg.gewinnung.struktur, "adhoc"); T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+      T.equal(out.beleg.gewinnung.positionsbasis, "html-article-header-teaser"); T.equal(out.beleg.gewinnung.artikelAbsatzZahl, 1);
+      T.equal(out.beleg.gewinnung.redaktion, "boerse-global.de"); T.equal(out.beleg.gewinnung.originalDatum, "2026-11-13T13:52:23+01:00");
+      T.equal(out.beleg.gewinnung.antwortHash, require("node:crypto").createHash("sha256").update(r.body).digest("hex"));
+      T.deepEqual(out.beleg.gewinnung.absaetze, [intro]); T.deepEqual(A.pruefeArtikelkontext([d], out.beleg), out.beleg);
+      T.equal(Object.hasOwn(out.beleg.gewinnung, "abschnitte"), false);
+    }
+    T.deepEqual({ d, r }, before);
+  });
+  await test("Ad-hoc bindet Ziel Titel und Originalsekunde ohne allgemeine URL oder Zeitlockerung", () => {
+    for (const change of [r => { r.finalUrl += "?neu=1"; },
+      r => { r.body = r.body.replace('rel="canonical"', 'rel="alternate"'); },
+      r => { r.body = r.body.replace('property="og:url" content="' + r.finalUrl, 'property="og:url" content="https://evil.example/fremd'); },
+      r => { r.body = r.body.replace('"@id":"' + r.finalUrl, '"@id":"https://evil.example/fremd'); },
+      r => { r.body = r.body.replace('property="og:title" content="Synthetische Beratung"', 'property="og:title" content="Fremder Titel"'); },
+      r => { r.body = r.body.replace('"headline":"Synthetische Beratung"', '"headline":"Fremder Titel"'); },
+      r => { r.body = r.body.replace('<h1 class="titel">Synthetische Beratung', '<h1 class="titel">Fremder Titel'); },
+      r => { r.body = r.body.replace('"datePublished":"2026-11-13T13:52:23+01:00"', '"datePublished":"2026-11-13T13:52:24+01:00"'); },
+      r => { r.body = r.body.replace('"dateModified":"2026-11-13T13:52:23+01:00"', '"dateModified":"2026-11-14T13:52:23+01:00"'); },
+      r => { r.body = r.body.replace('Veröffentlicht am: 13.11.', 'Veröffentlicht am: 14.11.'); },
+      r => { r.body = r.body.replace(' um 13:52 ', ' um 13:53 '); }]) {
+      const r = adhocResponse(); change(r); T.equal(G.gewinneArtikeltext(adhocDocument(), r).ok, false);
+    }
+    const d = adhocDocument(); d.published_at = "2026-11-13T12:52:24Z";
+    T.equal(G.gewinneArtikeltext(d, adhocResponse()).ok, false);
+    for (const url of [d.url.replace("ad-hoc-news.de", "evil.example"), d.url.replace("/wirtschaft/", "/politik/"),
+      d.url + "?neu=1", d.url + "#teaser", d.url.replace("/12345678", "/123456789")]) T.equal(L.kennung(url), null);
+  });
+  await test("Ad-hoc versteckte gestylte abweichende und mehrdeutige Teaser oder Artikel bleiben gesperrt", () => {
+    for (const change of [r => { r.body = r.body.replace('<article ', '<article hidden '); },
+      r => { r.body = r.body.replace('position:absolute;top:0;width:100%;', 'position:absolute;top:0;width:100%;display:none;'); },
+      r => { r.body = r.body.replace('class="content_container"', 'class="unbekannter_container"'); },
+      r => { r.body = r.body.replace('margin: 0;height:100%;', 'margin: 0;height:100%;visibility:hidden;'); },
+      r => { r.body = r.body.replace('margin: 0;height:100%;', 'margin: 0;height:100%;opacity:0;'); },
+      r => { r.body = r.body.replace('margin: 0;height:100%;', 'margin: 0;height:100%;color:black;'); },
+      r => { r.body = r.body.replace('id="ip_page_wrapper"', 'id="anderer_wrapper"'); },
+      r => { r.body = r.body.replace('id="left-box"', 'id="left-box" style="margin: 0;height:100%;"'); },
+      r => { r.body = r.body.replace('<header>', '<header aria-hidden="true">'); },
+      r => { r.body = r.body.replace('id="left-box"', 'id="left-box" style="display:none"'); },
+      r => { r.body = r.body.replace('class="teaser"', 'class="teaser" style="color:black"'); },
+      r => { r.body = r.body.replace('class="teaser"', 'class="teaser" hidden'); },
+      r => { r.body = r.body.replace('class="teaser"', 'class="teaser hidden-xs"'); },
+      r => { r.body = r.body.replace('class="date"', 'class="date" hidden'); },
+      r => { r.body = r.body.replace('class="titel"', 'class="titel" hidden'); },
+      r => { r.body = r.body.replace('<div class="teaser">' + intro, '<div class="teaser"><span hidden>' + intro + '</span>'); },
+      r => { r.body = r.body.replace('<div class="teaser">' + intro, '<div class="teaser">' + correction); },
+      r => { r.body = r.body.replace('<div class="teaser">', '<div class="teaser"><p>'); },
+      r => { r.body = r.body.replace('</header>', '<div class="teaser">' + intro + '</div></header>'); },
+      r => { r.body = r.body.replace('</header>', '</header><header></header>'); },
+      r => { r.body = r.body.replace('</article>', '</article><article id="article" class="fulltext"></article>'); },
+      r => { r.body = r.body.replace('</h1>', '</h1><p>Frueher Gegenbeleg.</p>'); },
+      r => { r.body = r.body.replace('<header>', '<p>Frueher Gegenbeleg.</p><header>'); },
+      r => { r.body = r.body.replace('</head>', '<script type="application/ld+json">{"@type":"Article","headline":"Fremd"}</script></head>'); },
+      r => { r.body = r.body.replace('<header>', '<header itemscope itemtype="https://schema.org/Article">'); },
+      r => { r.body = r.body.replace('"description":', '"articleBody":"Fremder Artikeltext","description":'); }]) {
+      const r = adhocResponse(); change(r); T.equal(G.gewinneArtikeltext(adhocDocument(), r).ok, false);
+    }
+  });
+  await test("Ad-hoc Robots Sperren und abweichende Redaktion oder Herausgeber bleiben gesperrt", () => {
+    for (const directive of ["noai", "nosnippet", "noindex", "max-snippet:0"]) {
+      const r = adhocResponse(); r.body = r.body.replace('</head>', `<meta name="robots" content="${directive}"></head>`);
+      T.equal(G.gewinneArtikeltext(adhocDocument(), r).ok, false);
+    }
+    for (const change of [r => { r.body = r.body.replace('Redaktion boerse-global.de', 'Redaktion Fremd'); },
+      r => { r.body = r.body.replace('"name":"ad-hoc-news.de"', '"name":"Fremd"'); },
+      r => { r.body = r.body.replace('"url":"https://www.ad-hoc-news.de"', '"url":"https://evil.example"'); },
+      r => { r.body = r.body.replace('"isAccessibleForFree":true', '"isAccessibleForFree":false'); }]) {
+      const r = adhocResponse(); change(r); T.equal(G.gewinneArtikeltext(adhocDocument(), r).ok, false);
+    }
+    const d = adhocDocument(); d.source_name = "Fremd"; T.equal(G.gewinneArtikeltext(d, adhocResponse()).ok, false);
+  });
+  await test("Ad-hoc Provenienz erlaubt keinen Volltext fremde Basis Zaehler Redaktion oder Datumsnachweis", () => {
+    const d = adhocDocument(), good = G.gewinneArtikeltext(d, adhocResponse()).beleg;
+    for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
+      b => { b.gewinnung.verfahren = "artikelabschnitte-v4"; }, b => { b.gewinnung.positionsbasis = "html-article-p"; },
+      b => { b.gewinnung.artikelAbsatzZahl = 3; }, b => { b.gewinnung.redaktion = "ad-hoc-news.de"; },
+      b => { b.gewinnung.originalDatum = "2026-11-13T12:52:24Z"; }, b => { b.gewinnung.datumsFeld = "datetime"; },
+      b => { b.gewinnung.layoutVersion = 2; }, b => { b.gewinnung.kanonischDeklariert += "?fremd=1"; },
+      b => { b.gewinnung.artikelTextHash = "0".repeat(64); }]) {
+      const b = clone(good); change(b); T.throws(() => A.pruefeArtikelkontext([d], b), /artikelkontext-/);
+    }
+  });
   await test("BMG-Presse bindet ersten Textabschnitt statt PDF-Widget oder ungeprueftem Zitat", () => {
     const d = presseDocument(), r = presseResponse(d), before = clone({ d, r }), out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
     T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro); T.equal(out.beleg.gewinnung.struktur, "bmg-presse");
@@ -479,7 +593,7 @@ let count = 0; async function test(name, fn) {
     const host = environment(); host.rows.clear(); T.equal((await host.run({ erlaubeNeuenAbruf: () => "herausgeber-nicht-freigegeben" })).reason, "herausgeber-nicht-freigegeben");
     T.equal(host.net.length, 0); T.ok(host.calls.every(c => c.method === "GET"));
   });
-  T.equal(count, bmgOnly || bmasOnly || zdfOnly || presseOnly ? 4 : cacheOnly ? 5 : 25); T.deepEqual(forbidden, []);
+  T.equal(count, adhocOnly ? 5 : bmgOnly || bmasOnly || zdfOnly || presseOnly ? 4 : cacheOnly ? 5 : 30); T.deepEqual(forbidden, []);
   console.log(`${count}/${count} ausgefuehrte Quellenlayoutgruppen bestanden; keine Modelle oder Produktionszugriffe.`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   for (const [name, value] of Object.entries(originals)) { if (value === undefined) delete process.env[name]; else process.env[name] = value; }
