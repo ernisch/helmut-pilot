@@ -1,9 +1,10 @@
 # Konkrete Freigabevorlage: zwei Quellen für bestehende Fachlücken
 
-Stand15.11.2026. **Vorschlag, nicht freigegeben und nicht ausgeführt.**
-Die automatische Freigabeprüfung hat die geplante Nutzungsflagänderung abgelehnt:
-Für diesen konkreten Nutzungsumfang und dessen Wirkung fehlt eine eindeutige
-Betreiberfreigabe. Die Ablehnung wurde nicht umgangen; kein Codeflag geändert.
+Stand15.11.2026,11:56UTC. **Durch Betreiber und gemergten PR1214 ausdrücklich
+freigegeben; Production-Ausführung folgt erst nach grünem Code-Merge/Deployment.**
+Die frühere automatische Ablehnung bleibt als historischer Beleg erhalten.
+Sie wurde nicht umgangen. Die seitdem erteilte genaue Freigabe steht in
+[AGENTS.md](../../AGENTS.md#verbindliche-dauerfreigabe-vom-15112026-quellenbetrieb-in-der-aufbauphase).
 
 ## Ursache und vorbereitete Reparatur
 
@@ -21,7 +22,7 @@ fachlich belegte Zuordnungen. Der Merge allein installiert oder aktiviert nichts
 |Destatis: `https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml`|Standard-RSS-Textauszüge nach den allgemeinen Bedingungen; individuelle abweichende Angaben bleiben gesperrt.|Statistisches Bundesamt/Destatis, Originalverweis und tatsächliches Publikationsdatum erhalten; keine Bilder und keine GENESIS-Lizenzübertragung.|
 |iRights: `https://irights.info/feed`|Metadaten sowie ausschließlich individuell belegte CC-BY-4.0-Auszüge, die der bereits integrierte strikte Reader akzeptiert.|Autor, Titel, Original/OERinfo, Datum, CC-BY-Link und Bearbeitungshinweis im gebundenen `sourceNotice`; andere Artikel bleiben Titel/Link.|
 
-Vorgeschlagene Codeänderung ausschließlich für diese zwei exakten Feedidentitäten:
+Freigegebene Codeänderung ausschließlich für diese zwei exakten Feedidentitäten:
 `commercialUseApproved:true`, `rightsReviewRequired:false`,
 `fullTextAllowed:false`, `imagesAllowed:false`, `aiTrainingAllowed:false`.
 Keine andere Quelle erbt diese Entscheidung, keine generelle Herausgeberlizenz.
@@ -83,11 +84,31 @@ gebundenen Vorwert zurückstellen, falls inzwischen unverändert. Selbst neu ang
 Zuordnungen nur entfernen, wenn unverändert und ohne abhängige Ergebnisse;
 andernfalls inaktiv erhalten. Verarbeitungserfolge und Kostenbelege nie löschen.
 
-## Voraussetzung für Ausführung
+## Gebundene Voraussetzung für Ausführung
 
-Ausdrückliches Betreiber-GO für **genau diesen eingeschränkten Nutzungsumfang,
+Das ausdrückliche Betreiber-GO aus PR1214 gilt für **genau diesen eingeschränkten Nutzungsumfang,
 die beiden Codeflags und die sechs neuen Production-Katalogzeilen samt den zwei
 Paketaktivierungen**. Danach erst Codepatch, betroffene bestehende Tests,
 unabhängiges Review, beide Pflichtchecks am Endkopf und regulärer Merge/Deployment;
 anschließend die atomare Einbindung mit lesender Nachkontrolle. Das ist kein GO
 für Quotenänderungen, Wiederholung unbekannter Modellaufrufe oder andere Quellen.
+
+## Technischer Vorabnachweis
+
+Der kleine Codepatch öffnet nur die zwei nach ID, Feedadresse und Lizenzbeleg
+gebundenen Nutzungsflags. Default-Seeds bleiben inaktiv; der SQL-Seed ist bytegleich.
+Destatis übernimmt nur datierte Presseartikel, höchstens480Zeichen als ganzen
+Satzpräfix. Sichtbare abweichende RSS-Rechte oder Nutzungsverbote führen zu
+Titel/Link. Bilder, RSS→HTML-Fallback und spätere HTML-/Spiegeltextnachladung sind
+für diesen Weg gesperrt. Originaladresse, Herausgeber und Publikationsdatum bleiben.
+Der unveränderte iRights-Reader verlangt seinen artikelweisen CC-BY-Nachweis.
+
+Gespeichertes Destatis-Original offline am echten Parser:10/10datierteMeldungen,
+10brauchbareAuszüge,0Bilder,max443Zeichen,jüngstesOriginal13Nov07:00UTC.
+Bestehende Herkunfts-/Attributionsgruppen29/29 und Auszugsgruppen14/14 grün.
+Erweiterte Fachquellensuite prüft Ausnahmen, Feedidentität und das native relationale
+Aktivierungsmodell mit einem ausdrücklich synthetischen gültigen Profil.
+Ein zuerst unvollständiges Testprofil aktivierte erwartungsgemäß keine Quellen;
+Testfixture nach nativer Zulassungsregel korrigiert, keine Produktwache verändert.
+CI-Plan bleibt gezielt:Kern und Quellenbereich,keine Datenbank-/500er-/bezahlten Tests.
+Die Production-Transaktion bleibt auf genau die oben bezeichneten8Zeilen begrenzt.
