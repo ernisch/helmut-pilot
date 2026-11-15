@@ -1,5 +1,10 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+Aktueller Abschluss15.11.2026,01:59UTC: beide Fix-PRs nach gruener Pflicht-CI
+gemergt, Runtime5f3875e1 READY; Erfolge und Briefinghash unveraendert.
+[Abschlussnachweis und verbleibende Grenzen](versorgung-nachtabschluss-20261115.md).
+Nachfolgende datierte Angaben sind erhaltene Zwischenstaende.
+
 15.11.2026,01:26UTC: Browserjob132655402623 scheitert nach dem Wechsel von
 ubuntu-latest auf26.04 schon bei Installation: Playwright1.56.1 unterstuetzt
 chromium auf ubuntu26.04-x64 nicht. Minimaler Infrastrukturfix: ausschliesslich

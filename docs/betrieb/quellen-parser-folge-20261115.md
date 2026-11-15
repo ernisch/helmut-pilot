@@ -1,5 +1,10 @@
 # Quellenparser: nachgewiesene Folgekorrekturen
 
+Aktueller Abschluss15.11.2026,01:59UTC: beide Fix-PRs nach gruener Pflicht-CI
+gemergt, Runtime5f3875e1 READY; Erfolge und Briefinghash unveraendert.
+[Abschlussnachweis und verbleibende Grenzen](versorgung-nachtabschluss-20261115.md).
+Nachfolgende datierte Angaben sind erhaltene Zwischenstaende.
+
 Stand 15.11.2026, 00:28 UTC. Betreiberauftrag: belegte Blocker autonom beheben,
 bis zu 20 auftragsbezogene Merges nur bei Gruen. Keine zusaetzlichen bezahlten
 Modelle, Datenresets oder geschuetzten Production-Aktionen.
