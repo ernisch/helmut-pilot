@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,08:34UTC: neuer Leser live, eine Quellenbindung inaktiv vorbereitet.**
+**15.11.2026,08:51UTC: neuer Leser live, zwei Quellenwege inaktiv vorbereitet.**
 
 PR1206 exakt gruen gemergt:c16ce6bc; Runtimec16ce6bc READY, vier Fix-/Nachweismerges.
 CI43694487220 am Kopfe49f4c86 erfolgreich; PR1205-Dokubuild bewusst ausgelassen.
@@ -20,14 +20,17 @@ Neue5Testgruppen gruen; vorhandene Originalbytes und alte Ergebnisse unveraender
 Neuer Leser regulaer ausgerollt; kein historischer Job dadurch als Erfolg umgewertet.
 Hostfreigabe unveraendert:18Hosts,Ad-hoc nicht freigegeben. Keine Envmutation,
 kein Zusatzfenster/Jobreset/Budgeteingriff oder zusaetzlicher bezahlter Modelllauf.
-Amtlicher Destatis-Direktfeed konkret geprueft und INAKTIV im Code vorbereitet;
-vorhandener Herausgeber, genau eine Wirtschaftsbindung, keine Digital-Doppelbindung.
-Nicht installiert/aktiviert; neue exakte Pflicht-CI folgt. Beide Digital-Luecken bleiben.
+Destatis-Daten und iRights-Digitaljournalismus INAKTIV im Code vorbereitet;
+zwei Direktfeeds, vorhandener Destatis-Herausgeber, drei begruendete Bindungen.
+Positive Nutzungsbelege:Destatis-Quellennachweis und iRights-Text-CCBY4 mit Attribution.
+Digitalstatistik-Angebot amtlich belegt; Digitalauslieferung im RSS noch unbeobachtet.
+PR1207-Erstlauf scheiterte nur am fehlenden generierten Bundseed; Drift lokal behoben,
+finale Pflicht-CI steht aus. Neue Quellen sind noch kein laufender Versorgungsbeleg.
 Heise-Direktfeed geeignet, Originalbedingungen behalten kommerzielles TDM vor;
 keine passende bestehende Lizenz in gezielter Drive-Suche gefunden.
 Nachtkontrollen03:07–07:07beendet; keine weitere Hintergrundausfuehrung behaupten.
 Regulaere Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
-Naechster Schritt: inaktive Quellenbindung exakt gruen integrieren und konkrete
+Naechster Schritt: inaktive Quellenwege exakt gruen integrieren und konkrete
 kleinste Katalog-/Freigabeeingriffe mit Vorwert und Rueckweg vorlegen.
 [Neuer Originalnachweis und Reparaturgrenzen](betrieb/adhoc-einstieg-20261115.md).
 

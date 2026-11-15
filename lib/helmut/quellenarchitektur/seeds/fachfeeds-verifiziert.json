@@ -460,7 +460,8 @@
     "rssUrl": "https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml",
     "discoveredOn": "https://www.destatis.de/DE/Service/RSS/_inhalt.html",
     "fachgebietKeys": [
-      "wirtschaft-energie"
+      "wirtschaft-energie",
+      "digitales-staatsmodernisierung"
     ],
     "nutzungsgrenze": "Copyright allgemein im Destatis-Impressum gestattet für Standard-Veröffentlichungen und Websiteinhalte einschließlich Grafiken und Downloads: Vervielfältigung und Verbreitung, auch auszugsweise, mit Quellennachweis. Ergänzende oder anderslautende Einzelangaben bleiben vorbehalten; Bilder haben gesonderte Rechte. Kein pauschaler kommerziell_ok- oder KI-Nutzungsnachweis. Konkreten Helmut-Nutzungsumfang und Einzelangaben vor Installation/Aktivierung prüfen; GENESIS-Lizenz nicht auf diesen Pressefeed übertragen.",
     "checkedAt": "2026-11-15T08:06:05.784Z",

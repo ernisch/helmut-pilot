@@ -1,6 +1,6 @@
-# Destatis Wirtschaft: genau eine fehlende Datenbindung vorbereiten
+# Destatis: zwei fachlich belegte Datenbindungen vorbereiten
 
-Stand15.11.2026,08:34UTC. Keine Liveinstallation, Aktivierung oder zusätzlichen
+Stand15.11.2026,08:56UTC. Keine Liveinstallation, Aktivierung oder zusätzlichen
 Quellen-/Modellläufe. Der vorbereitete Code bleibt ausdrücklich inaktiv.
 
 ## Belegter kleinster Umfang
@@ -26,8 +26,29 @@ das Zielpaket ist`prepared`. Keine vollständige Katalog- oder Profilausleitung.
 
 Genau ein neuer Weg`rp-fach-destatis-aktuell-rss`mit`rss/rss-regex`, vorhandenem
 Destatis-Herausgeber, Rolle`data_source`, Klasse`amtliche_daten`, genau einer
-Wirtschaftsbindung. Der alte Soziales-Suchweg bleibt identisch. Keine unbelegte
-Doppelbindung für Digitalpolitik. Beide Digital-Lücken bleiben offen.
+Wirtschafts- und einer Digitalbindung. Der alte Soziales-Suchweg bleibt identisch.
+Die zweite Angebotsbindung hat einen echten Digitalstatistikbeleg; sie ist keine
+Behauptung eines aktuell im RSS gelieferten Digitalartikels.
+
+## Begründung der zweiten Angebotsbindung
+
+Amtliche IT-Übersicht:
+https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Einkommen-Konsum-Lebensbedingungen/IT-Nutzung/_inhalt.html
+Dort verlinkte tatsächliche Pressemitteilung:
+https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/03/PD26_N014_63.html
+Original HTTP200,SHA256`708f8f6d7d413a0ad6f65c135dbd93e95ef62f05a5028aed01290dc13ab42edc`.
+Sie belegt originäre Digitalstatistik:2025nutzten59%der16–74-Jährigen soziale
+Medien,2021waren es47%. Publikation2März2026, kein frischer Tagesanlass.
+
+Die offizielle RSS-Seite bietet täglich aktuelle Pressemitteilungen allgemein
+an. Zusammen mit der echten IT-Statistik trägt das die vorbereitete fachliche
+Angebotszuordnung. Ein Digitalartikel innerhalb der aktuellen14Tage ist keine
+native Voraussetzung für Katalogrollen. Die aktuelle10-Item-Stichprobe enthält
+aber keinen Digitalartikel; vollständige RSS-Auslieferung aller Mitteilungen,
+tägliche Digitalpublikationen und tatsächliche Digitalversorgung sind unbelegt.
+Die vorhandene Rohitemauswahl prüft Profilbezug und Handlungstrigger;
+`fachgebietKeys` ist kein harter paketbezogener Themenfilter. Der historische
+HTML-Einzelartikel wird nicht als neuer regelmäßiger Abrufweg eingetragen.
 
 Defaults bleiben`paused/manual`, `active:false`, `preparedOnly:true`,
 Rechteprüfung und bisherige Freigabeflags erhalten. Kein Weg wird durch einen
@@ -51,7 +72,7 @@ verwendeten Textumfang und diese Quelle betreffen; hier wird nichts aktiviert.
 ## Vorläufige Liveänderungsvorlage, noch nicht ausgeführt
 
 Bei bestätigtem passenden Nutzungsumfang: vorhandenen Herausgeber wiederverwenden,
-genau einen fehlenden Abrufweg und dessen einen Paketlink ergänzen. Bestehende
+genau einen fehlenden Abrufweg und dessen zwei Paketlinks ergänzen. Bestehende
 Schutzflags, Paketstatus und Altpfade zunächst erhalten; Aktivierung ist ein eigener
 konkreter Schritt. Keine Seed-Neuinstallation, kein globaler Katalogabgleich,
 keine Profiländerung, keine Migration, kein Cron-/Budgeteingriff.

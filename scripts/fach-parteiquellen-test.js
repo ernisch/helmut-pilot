@@ -113,7 +113,7 @@ for (const source of S.ZUSAETZLICHE_QUELLEN) {
 assert.equal(S.ZUSAETZLICHE_QUELLEN.find((s)=>s.id==='partei-csu-direkt-rss').verification.freshnessStatus,'older_than_30_days');
 
 // Neuer Direktweg nur vorbereitet: derselbe Destatis-Herausgeber wie beim
-// unveraenderten Soziales-Suchweg, genau eine Wirtschaftsbindung, keine Abrufe.
+// unveraenderten Soziales-Suchweg; belegtes Wirtschafts- und Digitalangebot.
 const C = require("../lib/helmut/quellenarchitektur/catalog"), model = require("../lib/helmut/quellenarchitektur/model");
 const { v1Sources } = require("../lib/helmut/sources");
 const destatis = S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === "fach-destatis-aktuell-rss");
@@ -121,8 +121,8 @@ assert(destatis);
 assert.equal(destatis.url, "https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml");
 assert.equal(model.canonicalDomain(destatis.url), "destatis.de");
 assert.equal(model.canonicalDomain(destatis.url.replace("www.", "")), "destatis.de");
-assert.deepEqual(destatis.packageKeys, ["fach-wirtschaft-energie"]);
-assert.deepEqual(destatis.fachgebietKeys, ["wirtschaft-energie"]);
+assert.deepEqual(destatis.packageKeys, ["fach-wirtschaft-energie", "fach-digitales-staatsmodernisierung"]);
+assert.deepEqual(destatis.fachgebietKeys, ["wirtschaft-energie", "digitales-staatsmodernisierung"]);
 assert.equal(destatis.evidenceRole, "data_source");
 assert.deepEqual(destatis.coverageClasses, ["amtliche_daten"]);
 assert.equal(destatis.active, false);
@@ -159,7 +159,8 @@ for (const sources of [[soziales, destatis], [destatis, soziales]]) {
   assert.equal(path.evidence_role, "data_source"); assert.deepEqual(path.coverage_classes, ["amtliche_daten"]);
   assert.equal(model.isPathActive(path, ["pkg-fach-wirtschaft-energie"]), false);
   assert.deepEqual(mapped.packagePaths.filter((p) => p.retrieval_path_id === path.id),
-    [{ package_id: "pkg-fach-wirtschaft-energie", retrieval_path_id: path.id }]);
+    [{ package_id: "pkg-fach-wirtschaft-energie", retrieval_path_id: path.id },
+      { package_id: "pkg-fach-digitales-staatsmodernisierung", retrieval_path_id: path.id }]);
   assert.equal(mapped.packages.find((p) => p.key === "fach-wirtschaft-energie").status, "prepared");
   assert.deepEqual(mapped.retrievalPaths.find((p) => p.legacy_source_id === soziales.id), beforeDestatis.retrievalPaths.find((p) => p.legacy_source_id === soziales.id));
 }
@@ -227,8 +228,9 @@ assert.deepEqual(digitalCatalog.publishers.filter((p) => p.id !== irightsPublish
 assert.deepEqual(digitalCatalog.retrievalPaths.filter((p) => p.id !== irightsPath.id), beforeIrights.retrievalPaths);
 assert.deepEqual(digitalCatalog.packagePaths.filter((p) => p.retrieval_path_id !== irightsPath.id), beforeIrights.packagePaths);
 assert.equal(digitalCatalog.packages.find((p) => p.key === "fach-digitales-staatsmodernisierung").status, "prepared");
-assert(!S.ZUSAETZLICHE_QUELLEN.some((s) => s.packageKeys.includes("fach-digitales-staatsmodernisierung")
-  && s.evidenceRole === "data_source"), "Digital-Datenrolle bleibt ohne belegte neue Quelle offen");
+assert.deepEqual(S.ZUSAETZLICHE_QUELLEN.filter((s) => s.packageKeys.includes("fach-digitales-staatsmodernisierung")
+  && s.evidenceRole === "data_source").map((s) => s.id), [destatis.id],
+  "Nur die durch echte Digitalstatistik begruendete Datenbindung vorbereiten");
 
 for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordrhein-westfalen"]]) {
   const r = R.resolveProfilePackages({ parliamentType: "Bundestag", state });
