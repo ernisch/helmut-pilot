@@ -6,9 +6,10 @@ SQL-, CI- oder Quellenänderungen. Beide Pflichtjobs bleiben erforderlich.
 
 ## Exakter Umfang
 
-Basis`3734927ffe5734ab04f527cd49980f7861edf41f`, lokal geprüfter Quellenbaum
-`478bfad665d72133e38c142028778f100e633f6b`. Vier Dateien sind zusätzlich auf
-ihre bereits geprüften Gitblobs gebunden: Quellenabbildung, verifizierte Feed-
+Basis`ec79faa0540fb611c9cea117b02cfbad983cae6a`, lokal geprüfter Quellenbaum
+`9eed81afa05afc8f41fe6433f1c6bdbf70acb096`. Vier Dateien sind zusätzlich auf
+ihre bereits geprüften Gitblobs gebunden (UI-PR1208 und dessen Nachweis sind
+unverändert aus dem aktuellen Main übernommen): Quellenabbildung, verifizierte Feed-
 beobachtungen, vorhandener Fach-/Parteiquellentest und generierter Bundseed.
 Der SQL-Diff ergänzt genau einen Herausgeber, zwei`paused/manual`-Wege und drei
 Paketlinks. Kein anderer SQL-/Schema-/Migrations-/Auth-/UI-/Budgetcode ändert sich.

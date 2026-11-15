@@ -7,8 +7,8 @@ const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1207;
 const BRANCH = "codex/versorgung-destatis-20261115";
-const BASE = "3734927ffe5734ab04f527cd49980f7861edf41f";
-const EVIDENCE = "478bfad665d72133e38c142028778f100e633f6b";
+const BASE = "ec79faa0540fb611c9cea117b02cfbad983cae6a";
+const EVIDENCE = "9eed81afa05afc8f41fe6433f1c6bdbf70acb096";
 const MERGE_TITLE = "feat(quellen): inaktive Fachquellen gezielt geprueft integrieren (#1207)";
 const BLOBS = Object.freeze({
   "lib/helmut/quellenarchitektur/seeds/fach-parteiquellen.js": "9bed459c2c9630f4c9b04f345f3ff5e6fdd8a049",
