@@ -943,7 +943,7 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => sendPushToPolitician(politicianId, {
       type: "daily_briefing_ready",
       title: "Helmut ist bereit.",
-      body: "Push funktioniert. Dein Morgenbriefing kann dich künftig aktiv erreichen.",
+      body: "Push funktioniert. Ihr Morgenbriefing kann Sie künftig aktiv erreichen.",
       url: "/"
     }));
   }
@@ -4599,11 +4599,11 @@ function sendPrivacyPage(response) {
       <h2>10. Automatisierte Entscheidungen</h2>
       <p>Helmut priorisiert Informationen und erstellt Empfehlungen. Es werden nach aktuellem Produktstand keine ausschließlich automatisierten Entscheidungen über Personen getroffen, die rechtliche Wirkung entfalten oder eine Person in ähnlich erheblicher Weise beeinträchtigen. Die politische oder organisatorische Entscheidung verbleibt beim Nutzer.</p>
 
-      <h2>11. Deine Rechte</h2>
+      <h2>11. Ihre Rechte</h2>
       <p>Nach den gesetzlichen Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Soweit eine Verarbeitung auf Einwilligung beruht, kann diese für die Zukunft widerrufen werden. In der App bestehen technische Wege für Export und Löschung nutzerbezogener Daten.</p>
 
       <h2>12. Beschwerderecht</h2>
-      <p>Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren. Für den Verantwortlichen in Berlin ist insbesondere die Berliner Beauftragte für Datenschutz und Informationsfreiheit zuständig: <a href="https://www.datenschutz-berlin.de/">www.datenschutz-berlin.de</a>.</p>
+      <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren. Für den Verantwortlichen in Berlin ist insbesondere die Berliner Beauftragte für Datenschutz und Informationsfreiheit zuständig: <a href="https://www.datenschutz-berlin.de/">www.datenschutz-berlin.de</a>.</p>
 
       <h2>13. Kontakt und Stand</h2>
       <p>Datenschutzanfragen: <a href="mailto:hallo@mithelmut.de">hallo@mithelmut.de</a><br>Stand: 6. Oktober 2026</p>
@@ -4691,7 +4691,7 @@ function indexHtml() {
       <div class="splash-mark"><span class="splash-word">Helmut</span><svg class="splash-pulse" viewBox="0 0 200 40" aria-hidden="true" focusable="false"><path class="splash-pulse-base" d="M0 20H200"/><path class="splash-pulse-trace" d="M0 20H200"/></svg><small class="splash-tag">Was jetzt zählt.</small></div>
     </div>
     <main class="shell" id="app">
-      <section class="loading-screen" aria-label="Bereite deine Morgenlage vor">
+      <section class="loading-screen" aria-label="Ihre Morgenlage wird vorbereitet">
         <div class="loading-mark"><span class="splash-word">Helmut</span></div>
       </section>
     </main>
@@ -4703,7 +4703,7 @@ function indexHtml() {
           <path d="M40 20a12 12 0 1 1-3-7.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           <path d="M46 10v8h-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <p class="orientation-lock-text">Bitte drehe dein Smartphone ins Hochformat, um Helmut zu verwenden.</p>
+        <p class="orientation-lock-text">Bitte drehen Sie Ihr Smartphone ins Hochformat, um Helmut zu verwenden.</p>
       </div>
     </div>
 

@@ -21,7 +21,7 @@ body{display:grid;place-items:center;min-height:100dvh;padding:32px;background:r
 h1{font-size:22px;margin:0 0 12px;letter-spacing:-.02em}p{margin:0 0 28px;font-size:15px;line-height:1.55;color:rgba(245,241,232,.62)}
 button{appearance:none;border:0;cursor:pointer;width:100%;padding:15px 20px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8}button:active{transform:translateY(1px)}</style></head>
 <body><div class="wrap"><div class="mark">H</div><h1>Ich hab gerade keine Verbindung</h1>
-<p>Ohne Netz komme ich nicht an deine aktuelle Lage. Sobald du wieder online bist, bin ich sofort für dich da.</p>
+<p>Ohne Netz ist Ihre aktuelle Lage nicht erreichbar. Sobald Sie wieder online sind, ist Helmut wieder für Sie da.</p>
 <button type="button" onclick="location.reload()">Nochmal versuchen</button></div>
 <script>addEventListener("online",function(){location.reload()});</script></body></html>`;
 

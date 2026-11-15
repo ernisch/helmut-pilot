@@ -142,7 +142,7 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
   for (const [name, reply] of [["HTTP Fehler", response(false, {})], ["Netzfehler", networkError], ["leere Antwort", response(true, null)]]) {
     await test(`Onboarding ${name}: keine Erfolgsmeldung`, async () => {
       const ui = client(); ui.reply(reply); await ui.finish(false);
-      assert.equal(ui.toast.textContent, "Profil konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+      assert.equal(ui.toast.textContent, "Profil konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten.");
       assert.equal(ui.state().profile.id, "ui-profile");
     });
   }
@@ -150,7 +150,7 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     await test(`Onboarding ${skip ? "Später" : "Fertig"}: Serverbestätigung`, async () => {
       const ui = client(); ui.reply(response(true, { id: "ui-profile", saved: true }));
       await ui.finish(skip); assert.equal(ui.state().profile.saved, true);
-      assert.equal(ui.toast.textContent, skip ? "Du kannst dein Profil jederzeit ergänzen." : "Profil gespeichert");
+      assert.equal(ui.toast.textContent, skip ? "Sie können Ihr Profil jederzeit ergänzen." : "Profil gespeichert");
     });
   }
   for (const [name, reply] of [["HTTP Fehler", response(false, {})], ["Netzfehler", networkError], ["fehlende ID", response(true, {})]]) {
@@ -227,10 +227,26 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     assert.match(last, /Risiken & Chancen/);
     assert.match(last, /name="riskTopics"/);
     assert.match(last, /name="opportunityTopics"/);
-    assert.match(last, /wird dein Profil gespeichert/);
+    assert.match(last, /wird Ihr Profil gespeichert/);
     assert.match(last, /data-onboard-finish/);
     assert.match(last, /Fertig & speichern/);
     assert.ok(!last.includes("data-onboard-next"));
+  });
+  const pushContext = { module: { exports: {} }, require: () => ({}), process: { env: {} } };
+  const pushSource = fs.readFileSync(path.join(__dirname, "../lib/helmut/push.js"), "utf8");
+  // Pure text selection: imports inert, no dispatcher, network or storage executes.
+  vm.runInNewContext(pushSource + "\n;globalThis.best = bestBriefingPush;", pushContext);
+  await test("Morgen-Push verwendet Sie-Ansprache", async () => {
+    const daily = pushContext.best({});
+    assert.equal(daily.title, "Ihr Morgenbriefing steht bereit."); assert.match(daily.body, /Ihre Prioritäten/);
+  });
+  const mention = { id: "synthetic-mention", sourceName: "Quelle", publishedAt: new Date().toISOString() };
+  await test("Erwaehnungs-Push verwendet Sie-Ansprache", async () => {
+    const value = pushContext.best({ personMentions: [mention] });
+    assert.equal(value.title, "Neue Erwähnung über Sie."); assert.equal(value.body, "Quelle: Sie wurden erwähnt.");
+  });
+  await test("Push belaesst Originaltitel mit Du unveraendert", async () => {
+    assert.equal(pushContext.best({ personMentions: [{ ...mention, title: "Du im Parlament" }] }).body, "Quelle: Du im Parlament");
   });
   console.log(`\n${passed}/${passed} UI Ehrlichkeitsfälle erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
