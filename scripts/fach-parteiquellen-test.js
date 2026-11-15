@@ -295,6 +295,10 @@ const channelRestricted = restrictedXml.replace("<channel>", "<channel><copyrigh
 const channelItem = CR.parseRssItems(channelRestricted)[0];
 assert.deepEqual(channelItem.rssRights, ["Nur für private Nutzung"]);
 assert.equal(CR.normalizeRawItem(channelItem, destatis).content, feedItem.title);
+const repeatedChannel = channelRestricted.replace("<channel>", "<channel><copyright>© Statistisches Bundesamt (Destatis), 2026</copyright>");
+assert.equal(CR.parseRssItems(repeatedChannel)[0].rssRights.length, 2);
+assert.equal(CR.normalizeRawItem(CR.parseRssItems(repeatedChannel)[0], destatis).content, feedItem.title);
+
 const mixedRights = restrictedXml.replace("<channel>", "<channel><copyright>© Statistisches Bundesamt (Destatis), 2026</copyright>");
 assert.equal(CR.normalizeRawItem(CR.parseRssItems(mixedRights)[0], destatis).content, feedItem.title);
 const originalChannelNotice = restrictedXml.replace("<channel>", "<channel><copyright>Statistisches Bundesamt, Wiesbaden 2019</copyright>")
