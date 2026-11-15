@@ -323,7 +323,7 @@ async function transport(body, status, fn) {
       const entry = catalog.retrievalPaths.find(p => p.legacy_source_id === source.id);
       assert.equal(entry.status, "paused"); assert.equal(entry.activation_mode, "manual");
       assert.equal(entry.method, "rss"); assert.equal(M.isPathActive(entry, ["pkg-bund-basis"]), false);
-      assert.equal(entry.usage_policy.scope, "metadata_only"); assert.equal(entry.usage_policy.fullTextAllowed, false);
+      assert.equal(entry.usage_policy.scope, source.id === eurlex.id ? "metadata_and_verified_legal_excerpt" : "metadata_only"); assert.equal(entry.usage_policy.fullTextAllowed, false);
     }
     await transport("", 200, async calls => {
       const result = await C.crawlAllSources(sources);
@@ -396,7 +396,7 @@ async function transport(body, status, fn) {
     for (const source of sources) {
       assert.equal(source.rightsReviewRequired, false);
       assert.equal(source.usagePolicy.commercialUseApproved, true);
-      assert.equal(source.usagePolicy.scope, "metadata_only");
+      assert.equal(source.usagePolicy.scope, source.id === eurlex.id ? "metadata_and_verified_legal_excerpt" : "metadata_only");
       assert.equal(source.usagePolicy.fullTextAllowed, false);
     }
   });
