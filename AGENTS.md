@@ -1,6 +1,6 @@
 # HELMUT AGENT CONTRACT
 
-Stand: 11.11.2026. Diese Datei fuehrt Arbeitsweise, Freigaben und Zusammenarbeit.
+Stand: 15.11.2026. Diese Datei fuehrt Arbeitsweise, Freigaben und Zusammenarbeit.
 Technische Sicherheitsregeln: [CLAUDE.md §4–6](CLAUDE.md).
 Aktueller Betrieb und Belege: [CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
@@ -44,6 +44,82 @@ separaten Push-, Merge- oder regulaeren Deployment-GO, auch in `CLAUDE.md` und
 historischen Dokumenten. Eine spaetere ausdrueckliche Einschraenkung des Nutzers
 hat Vorrang. Fremde oder unabhaengige PRs sind nicht eingeschlossen. Fuer sonstige
 geschuetzte Production Aktionen gilt weiterhin der Abschnitt `Production Schutz`.
+
+## Verbindliche Dauerfreigabe vom 15.11.2026: Quellenbetrieb in der Aufbauphase
+
+Der Betreiber erteilt bis zum ausdruecklichen Widerruf eine **vorab erteilte,
+eng begrenzte Production-Freigabe** fuer die kleinste reversible Einbindung und
+Aktivierung von nachweislich zulaessig nutzbaren Quellen innerhalb der
+bestehenden Quellenarchitektur. Codex darf dies **ohne erneutes Betreiber-GO**
+umsetzen. Dies ist eine Ausnahme vom allgemeinen Production-Schutz, jedoch
+**keine pauschale urheberrechtliche Lizenz** und keine Freigabe fuer
+unbekannte Quellenrechte. Die Aufbauphase ersetzt keine Quellenlizenz.
+
+### Konkret freigegeben: Destatis und iRights
+
+Die vollstaendig beschriebene Aktion in
+[der konkreten Freigabevorlage](docs/betrieb/quellen-einbindung-freigabe-20261115.md)
+ist hiermit ausdruecklich als eigener, eng begrenzter Umfang freigegeben:
+die zwei dort exakt bezeichneten RSS-Feeds von Destatis und iRights,
+die fuer diese Feedidentitaeten vorgesehenen Nutzungsflags
+commercialUseApproved:true und rightsReviewRequired:false, ausschliesslich
+erlaubte kommerzielle Textauszuege mit Originalnachweis und Attribution,
+genau sechs neue Production-Katalogzeilen und die beiden dort bezeichneten
+Paketaktivierungen. fullTextAllowed:false, imagesAllowed:false und
+aiTrainingAllowed:false bleiben unveraendert. Bei Destatis nur die nach
+allgemeinen Originalbedingungen zulaessigen RSS-Auszuge; abweichende
+Einzelbedingungen sperren. Bei iRights nur artikelweise belegte CC BY 4.0
+Textauszuege, deren kompletter Herkunfts-/Lizenzhinweis im Kundenausgabepfad
+nachweisbar ist. Alle anderen Artikel bleiben Titel/Link; keine
+Bilder/Volltexte oder Lizenzuebertragung auf andere Quellen.
+
+Die Freigabe umfasst die atomare, vorwertgebundene und reversible
+Production-Katalogeinbindung unter **saemtlichen Voraussetzungen und
+Schutzgrenzen der verlinkten Vorlage**. Keine Vollseed-Anwendung,
+Migration oder Aenderung anderer Altpfade, Profile, Cronjobs, Secrets,
+Budgets oder Sicherheitsschwellen. Der Merge dieser Regel fuehrt selbst
+keine Datenbank- oder Quellenaktivierung aus.
+
+### Dauerfreigabe auch fuer kuenftige klar lizenzierte Quellen
+
+Weitere Quellen derselben bestehenden Architektur duerfen autonom bis zur
+Aktivierung umgesetzt werden, **nur wenn alle Bedingungen erfuellt sind**:
+
+1. Originalfeed, Herausgeber, kommerziell erlaubter Nutzungsumfang und
+   Lizenzbedingungen sind anhand primaerer Belege dokumentiert; eventuelle
+   Artikel-Lizenzen gelten nur fuer die einzeln belegten Artikel. Ein RSS,
+   Disclaimer oder fremder Quellenhinweis allein erteilt keine Rechte.
+2. Die existierenden Reader und Ausgabepfade erhalten nachweislich
+   Original-URL, Autor soweit erforderlich, Herausgeber, echtes
+   Publikationsdatum, Lizenz, Attribution und Bearbeitungshinweis.
+   Kein ungepruefter Volltext, keine Bilder, kein Training, keine
+   Paywallumgehung oder Inhaltsverfaelschung.
+3. Nur kleine quellenspezifische Codeflags und atomare, vorwertgepruefte,
+   idempotente und reversible Production-Quellenkatalogzeilen sowie die
+   klar zugehoerigen Paketstatus sind umfasst. **Keine** Migration,
+   Mandats-/Profil-/Kundendatenaenderung, neue Ressourcen, neuen Anbieter,
+   Cron-, Secret-, Budget-, Sicherheits- oder Quotenveraenderung.
+4. Keine parallele Arbeit oder laufende Originalserie beeintraechtigen.
+   Vor Merge sind betroffene gezielte Tests, unabhaengiges Review und
+   beide gruene Pflichtchecks am exakten PR-Kopf erforderlich.
+   Nach Aktivierung nur lesend Katalog, regulaere Abrufquittungen,
+   Attribution, Kosten und Rueckweg pruefen. Teilversorgung bleibt partial.
+
+Die vorhandene Einprofilbetriebsfreigabe mit **1 USD je UTC-Tag und 30 USD
+insgesamt** bleibt unveraendert. Regulaere ohnehin autorisierte
+Tagesverarbeitung darf im vorhandenen Rahmen laufen, aber kein
+zusaetzlicher Admin-/Test-/Massenlauf und kein neuer kostenpflichtiger
+Modellaufruf wird dadurch erlaubt. Alte Reserven, Limits und Abbruchwachen
+bleiben unveraendert.
+
+Falls Rechte, Attribution, Vorwerte, Kostenfreiraum oder Rueckweg nicht
+belegt werden koennen: Quelle inaktiv lassen, den konkreten Blocker
+**einmal** dokumentieren und mit anderer sicherer Arbeit fortfahren.
+Bei unveraendertem Sachstand **nicht dieselbe Freigabefrage wiederholen**.
+Erst bei neuem erheblichen Risiko, Abweichung vom genehmigten Umfang
+oder einer echten Betreiberentscheidung erneut fragen. Diese Regel
+erteilt keine rechtliche Freigabe des Gesamtprodukts, insbesondere
+nicht zu politischen personenbezogenen Daten, DSFA oder Kundenvertraegen.
 
 ## Verbindliche Betreiberentscheidung vom 07.11.2026: DeepSeek bis Jahresende pausiert
 
@@ -227,7 +303,9 @@ Fortschritt erhalten; UNKNOWN bleibt UNKNOWN, keine Blindtests oder Endlosschlei
 ## Production Schutz
 
 Auftragsbezogene gruene Merges und regulaer ausgeloeste Vercel Deployments sind durch
-die Dauerfreigabe vom 11.11. autorisiert. Sonstige geschuetzte Aktionen brauchen GO
+die Dauerfreigabe vom 11.11. autorisiert. Die eng begrenzte Quellen-Ausnahme vom
+15.11. oben umfasst nur die dort belegten quellenbezogenen Production-Aktionen.
+Sonstige geschuetzte Aktionen brauchen GO
 fuer konkrete Aktion, Umgebung und Umfang: sonstige Deployments/Umschaltungen,
 Migrationen, Production-Daten-/Profilanlage, Bearbeitung, Aktivierung, Deaktivierung
 oder Loeschung; Cron; Secrets/Umgebungsvariablen; Azure; Budget/Reserven;
