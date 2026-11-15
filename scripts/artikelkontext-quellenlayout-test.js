@@ -446,6 +446,23 @@ let count = 0; async function test(name, fn) {
       const r = bmgResponse(); change(r); T.equal(G.gewinneArtikeltext(bmgDocument(), r).ok, false);
     }
   });
+  await test("BMG Reden nutzen denselben gebundenen Artikelkopf ohne Video- oder Volltextbehauptung", () => {
+    const d = bmgDocument(); d.url = d.url.replace("ministerium/meldungen", "presse/reden");
+    d.canonical_url = d.url.replace("www.", ""); const r = bmgResponse(d);
+    const out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
+    T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro);
+    T.equal(out.beleg.gewinnung.struktur, "bmg"); T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+    T.equal(out.beleg.quellenHash, A.quellenstandHash(d));
+    for (const path of ["presse/reden-alt", "presse/reden/unterordner", "presse/videos"]) {
+      const bad = clone(d); bad.url = d.url.replace("presse/reden", path); bad.canonical_url = bad.url.replace("www.", "");
+      T.equal(G.gewinneArtikeltext(bad, bmgResponse(bad)).ok, false);
+    }
+    for (const alter of [x => { x.body = x.body.replace('property="og:title" content="Synthetische Beratung"', 'property="og:title" content="Fremd"'); },
+      x => { x.body = x.body.replace("13. November 2026", "12. November 2026"); },
+      x => { x.body = x.body.replace('<p>' + intro, '<p hidden>' + intro); }]) {
+      const bad = clone(r); alter(bad); T.equal(G.gewinneArtikeltext(d, bad).ok, false);
+    }
+  });
   await test("BMG Provenienz erlaubt weder Volltextbehauptung noch fremden Tag Host oder Layoutversion", () => {
     const d = bmgDocument(), good = G.gewinneArtikeltext(d, bmgResponse()).beleg;
     for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
@@ -593,7 +610,7 @@ let count = 0; async function test(name, fn) {
     const host = environment(); host.rows.clear(); T.equal((await host.run({ erlaubeNeuenAbruf: () => "herausgeber-nicht-freigegeben" })).reason, "herausgeber-nicht-freigegeben");
     T.equal(host.net.length, 0); T.ok(host.calls.every(c => c.method === "GET"));
   });
-  T.equal(count, adhocOnly ? 5 : bmgOnly || bmasOnly || zdfOnly || presseOnly ? 4 : cacheOnly ? 5 : 30); T.deepEqual(forbidden, []);
+  T.equal(count, adhocOnly ? 5 : bmgOnly ? 5 : bmasOnly || zdfOnly || presseOnly ? 4 : cacheOnly ? 5 : 31); T.deepEqual(forbidden, []);
   console.log(`${count}/${count} ausgefuehrte Quellenlayoutgruppen bestanden; keine Modelle oder Produktionszugriffe.`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   for (const [name, value] of Object.entries(originals)) { if (value === undefined) delete process.env[name]; else process.env[name] = value; }

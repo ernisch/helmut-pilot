@@ -138,7 +138,62 @@ Welche Restquellen fuer die konkret unterstuetzten Mandate zwingend sind, darf
 die nachgelagerte Aufgabe#1218 nach regulaerem Abschluss bewerten; keine
 pauschale Vollstaendigkeitsbehauptung aus diesem Reparaturauftrag.
 
-Genau ein naechster Schritt: die unveraenderte Kontrolle am16.11.,05:25UTC
+## Fortsetzung21:30UTC: BMG-Reden aus gesicherten Originalen
+
+Tatsaechlicher weiterer Readerfehler: derselbe gepruefte BMG-Artikelkopf war
+fuer `/ministerium/meldungen/` vorhanden, `/presse/reden/` fehlte im geschlossenen
+Dispatch. Der gespeicherte Originalartikel zur ersten Lesung der Pflegereform
+scheiterte daher mit `strukturierter-artikel-mehrdeutig-oder-fehlend`.
+Kleinster Fix: nur diesen amtlichen Pfad in den bestehenden Leser aufnehmen,
+keine neue Extraktionsheuristik, kein Videotranskript oder Volltextversprechen.
+Die konkrete Parserkorrektur begruendet Extraktorrevision2 fuer die vorhandene
+einmalige Wiedergewinnung aus gesicherten Antworten.
+
+Gebundene vorhandene Belege, keine neuen Originalabrufe:
+
+- Dokument `rd-1da2e3b96aca5fa17c33bad98ae99ac8fe41e402e021069644897f1f01effa60`,
+  Original `https://www.bundesgesundheitsministerium.de/presse/reden/pnog-1-lesung-bt`.
+- Originalantwort14.11.,22:23:22.396UTC,434841Bytes,SHA256
+  `e2a8665eedbc2d6c7516ffcf897a07a38401c655a46280a96d9d15700d335d9f`.
+  Genau diese eine bestehende oeffentliche Antwort wurde hashgeprueft gelesen;
+  kein Profil-, Gesamtarchiv-, Kunden- oder neuer HTTP-Abruf.
+- Cache `8b1756124cc5e921ea1fa0853285c9f8ac82d193a5450a17e8ba035acfe92f94`,
+  Originalrevision1/technischerNegativbeleg bleibt erhalten.
+- Archivversion `af0ebff8510454c7882f2d0f97c475da3e39393e656fe7913ca23a76e0acc006`;
+  minimale oeffentliche Archivprojektion ergibt exakt den Original-Quellenhash
+  `7dfafd7a2c17ca4e8256b014c220e50bf597de3c9cf5c14ea4576c6c5193c075`.
+- Offline mit genau diesen gebundenen Originaldaten: vorFix kein Layout/Fehler,
+  nachFix304Zeichen vollstaendiger Einleitungsabsatz, Originaldatum05Nov und
+  urspruengliche Lesezeit erhalten; Herkunft bleibt `artikel-einstieg-v2`.
+- Zieljob `633d9438-7d68-43cc-ad84-15326f7eab8d` ist bereitswartend,
+  attempts2/max3,wiedervorlagen0, Abseitsgrundtechnisch/gepruefteRevision1.
+  Er braucht keinen Reset/Ersatzjob/neu beantragte Freigabe. Sein regulaerer
+  Claim kann Revision2 erreichen; zuerst nur Beleg-/Payload-CAS und Vertagung,
+  erst ein spaeterer normaler Claim darf vorhandenes Understanding ausfuehren.
+
+5gezielteBMG-Gruppen und10Wiedergewinnungsgruppen gruen; unabhaengiges Runtime-
+Review geschlossen. Neue Gegenfaelle pruefen Host/Pfad/Titel/Tag/Sichtbarkeit,
+die echte Standardrevision2, einmalige Wiedergewinnung, erhaltene Altzeilen,
+Originalzeit und weiterhin gesperrte unbekannte Modell-/Schreibausgaenge.
+Kein Productionjob, Originalcache, Erfolgsbeleg, Budget oder Cron veraendert.
+Runtime-Evidence `260bc68e77bce44969c97171b7f0f901ffd5c11f`,PR1227;
+unabhaengiges CI-/Dokumentationsreview ebenfalls geschlossen. Der Pruefplan
+bindet genau vier Runtime-/Testblobs, Basis/Branch/PR und restlichen Baum;
+92CI-Vertragsgruppen gruen, keine Mengen-/Datenbankgesamttests ausgewaehlt.
+Der alte v1-Abrufkey `3a102fe6668cae9d5e5f463b10e30e9ef86c2c53f03743d4bd0a161cbd1d981e`
+existiert nicht; kein dortiger positiver/unklarer Altstand wird uebergangen.
+Exakte Pflicht-CI, Auslieferung und regulaere Betriebswirkung stehen noch aus.
+
+CELLAR-Lesbarkeit weiter konkretisiert, ausschliesslich amtliche Metadaten:
+die deutsche Expression des Rechtsakts32026D2505 verweist nachweislich auf
+`oj/L_202602505.DEU.fmx4`, `.xhtml` und `.pdfa2a`. Vollstaendiger inferred-
+Objektnachweis21:29:19UTC,HTTP200/3988Bytes,SHA256
+`eb039992a09b1782d749655bbd440378de2c49b8b7fe612ffbee67e713cf0b8a`.
+Zuvor fehlende Relationen lagen an der zu engen non-inferred-Projektion,
+nicht an einer Anbietersperre. Kein Originaltext heruntergeladen; konkreter
+Text-/Sonderrechtebeleg und Auszugspfad bleiben gesondert erforderlich.
+
+Genau ein naechster Schritt nach Auslieferung: die unveraenderte Kontrolle am16.11.,05:25UTC
 wertet den ohnehin regulaeren Quellenlauf auf echte Abrufquittungen,
 CELLAR-Herkunft/Datum, Wiederholungs-/Abschlussausgaenge und verbleibende
 Lesetext-/Rechteblocker aus. Kein zusaetzlicher Verarbeitungslauf.

@@ -396,4 +396,66 @@ check("Quellen-Dauerbetrieb: identische Selektoren stoppen vor Mengenrueckfall",
   assert(step.includes("scripts/warteschlange-blob-entkopplung-test.js --gezielt"));
 });
 
+const X = require("./ci-bmgwiedergewinnung-plan");
+check("BMG-Wiedergewinnung: beide Pflichtjobs mit Kern und gezielten Quellenpruefungen", () => {
+  const p = X.validate(sourceFixture(false, X));
+  assert.equal(p.mode, "bmgwiedergewinnung"); assert.equal(p.core, true);
+  for (const key of ["standard", "area", "database", "browser"]) assert.equal(p[key], false);
+});
+for (const [name, mutate] of [
+  ["Repository", f => { f.repository = "fremd/repo"; }],
+  ["PR", f => { f.pr.number++; }], ["Branch", f => { f.pr.head.ref = "fremd"; }],
+  ["Basis", f => { f.pr.base.sha = "1".repeat(40); }],
+  ["Kopf", f => { f.head = "2".repeat(40); }],
+  ["Fremdereignis", f => { f.event = "workflow_dispatch"; }],
+  ["Runtime-Drift", f => { f.headTree.delete(Object.keys(X.BLOBS)[0]); }],
+  ["Beleg-Drift", f => { f.evidenceTree.delete(Object.keys(X.BLOBS)[0]); }],
+  ["Auth-/UI-Drift", f => { f.headTree.delete("server.js"); }],
+  ["Migration", f => { f.headTree.delete("supabase/migrations/unveraendert.sql"); }],
+  ["unbekannte Datei", f => { f.headTree.set("fremd.js", { mode: "100644", type: "blob", oid: "5".repeat(40) }); }],
+  ["CI-Symlink", f => { f.headTree.set(X.CI_FILES[1], { mode: "120000", type: "blob", oid: "6".repeat(40) }); }]
+]) check("BMG-Wiedergewinnung: " + name + " stoppt geschlossen", () => {
+  const f = sourceFixture(false, X); mutate(f); assert.throws(() => X.validate(f), /bmgwiedergewinnung-ci:/);
+});
+check("BMG-Wiedergewinnung: jeder gebundene Runtime-/Testblob ist erforderlich", () => {
+  for (const file of Object.keys(X.BLOBS)) {
+    const f = sourceFixture(false, X); f.headTree.set(file, { mode: "100644", type: "blob", oid: "0".repeat(40) });
+    assert.throws(() => X.validate(f), /bmgwiedergewinnung-ci:/);
+  }
+});
+check("BMG-Wiedergewinnung: nur echter Mainmerge mit identischem Kopfbaum", () => {
+  assert.equal(X.validate(sourceFixture(true, X)).mode, "bmgwiedergewinnung");
+  for (const mutate of [f => { f.message = "Anderer Merge"; }, f => { f.parents.reverse(); },
+    f => { f.prHeadTree.delete("server.js"); }, f => { f.before = "1".repeat(40); }, f => { f.pr.merged = false; }]) {
+    const f = sourceFixture(true, X); mutate(f); assert.throws(() => X.validate(f), /bmgwiedergewinnung-ci:/);
+  }
+});
+check("BMG-Wiedergewinnung: identische Selektoren stoppen vor Mengenrueckfall", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const blocks = [...workflow.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1227 \][\s\S]*?\n          fi/g)].map(m => m[0]);
+  assert.equal(blocks.length, 2); assert.equal(blocks[0], blocks[1]);
+  const script = `set -e
+    git() { case "$1" in log) printf '%s' "$TEST_MESSAGE";;rev-parse) printf '%s' "$TEST_PARENT";;merge-base) return "$TEST_EVIDENCE_EXIT";;*) return 99;;esac; }
+    node() { printf 'GUARD';return 23; }
+    ${blocks[0]}
+    printf 'BROAD'`;
+  const run = (message, parent, evidence) => require("node:child_process").spawnSync("bash", ["-c", script], {
+    encoding: "utf8", env: { PATH: process.env.PATH, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main",
+      GITHUB_OUTPUT: "/dev/null", TEST_MESSAGE: message, TEST_PARENT: parent, TEST_EVIDENCE_EXIT: String(evidence) }
+  });
+  for (const message of [X.MERGE_TITLE, "Merge pull request #1227", "Tippfehler"]) {
+    const r = run(message, X.BASE, 0); assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  const unrelated = run("Anderer Merge", "8".repeat(40), 1);
+  assert.equal(unrelated.status, 0, unrelated.stderr); assert.equal(unrelated.stdout, "BROAD");
+  const later = run("Spaeterer Maincommit", "8".repeat(40), 0);
+  assert.equal(later.status, 0, later.stderr); assert.equal(later.stdout, "BROAD");
+  assert.match(workflow, /name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.bmgwiedergewinnung != 'true'/);
+  const step = workflow.split("      - name: BMG-Wiedergewinnung -")[1].split("      - name: Quellen-Dauerbetrieb -")[0];
+  assert(step.includes("scripts/artikelkontext-quellenlayout-test.js --bmg"));
+  assert(step.includes("scripts/artikel-wiedergewinnung-test.js"));
+  assert(!step.includes("source-demand-test.js"));
+  assert(!step.includes("--extended"));
+});
+
 console.log("\n" + pass + " PASS / 0 FAIL");
