@@ -1,7 +1,10 @@
 # UI-Abgleich mit Produktvertrag v1.1
 
 Stand: 15.11.2026. Branch `codex/ui-produktvertrag-v11-20261115`, Basis `c16ce6bc`.
-Lokal gezielt geprüft; PR-CI, Merge und reguläres Deployment stehen noch aus.
+**Erfolgreich für die UI-Änderung abgeschlossen.** [PR1208](https://github.com/ernisch/helmut-pilot/pull/1208)
+am15.11.2026,10:43:05UTC auf `3ae386b8` gemergt. Beide Pflichtchecks auf
+`1d26362c` erfolgreich; reguläres Production-Deployment READY und Hauptdomain
+lesend geprüft. [Live-Nachweis](live-verification.json).
 
 ## Verhalten und Abgrenzung
 
@@ -139,3 +142,26 @@ Nur Darstellung und Formatangebot ändern sich; die Datenmotor-Fachabnahme bleib
 getrennt. Ein regulärer Revert dieses UI-Commits stellt die vorherige Darstellung
 wieder her; keine Datenbereinigung oder Migration nötig. Bereits vorhandene
 Sicherheitsprüfungen, Kostenfreigaben und ausdrückliche Erstellpflicht bleiben aktiv.
+
+## Endstand nach Merge und regulärem Deployment
+
+CI43702615304:189/189 Standardsuiten,390/390 Bereichssuiten und echter
+Desktop-/Mobil-Browsercheck erfolgreich. Tatsächlicher Mergebaum
+`a42023a35a3066930b6e9bd2118e86e6a9362e84` ist exakt der vorab geprüfte Baum.
+Aktueller main vor Merge `3734927f`, alle sechs Runtime-Hashbindungen bestätigt;
+keine aktive Überschneidung mit Quellen-PR1207, keine fremden PRs übernommen.
+
+Production `dpl_5eYyFUnZr7A64NoGWSVghuxfM1Zu`, Commit `3ae386b8`, READY;
+`helmut-pilot.vercel.app` zugewiesen. Lesende Kontrolle10:44UTC: Hauptseite,
+Client,CSS,Service Worker,Manifest,Datenschutz und öffentlicher Release-Leser
+HTTP200. Alle vier ausgelieferten Dateien bytegleich zum geprüften Stand,
+Assetversion `3ae386b8`. Neue Sie-Texte in Startseite/Datenschutz bestätigt.
+Error-/Fatal-Abfrage dieses Deployments seit10:43:05UTC ohne Treffer.
+
+Öffentlicher Release-Leser: `ok=true`, `storage=true`, `ready=false`.
+Das ist kein Gesamt-PASS und keine Verkaufs- oder Datenschutzfreigabe.
+Die offenen Betriebsfragen bleiben beim Datenmotorauftrag. Kein authentifizierter
+Kundendurchlauf oder zusätzlicher bezahlter Modelltest behauptet.
+Dieser abschließende reine Nachweis-PR ändert keine Runtime und erfordert keinen
+rekursiven Dokumentations-Folge-PR. Sein Merge und Deployment/Skip werden über
+Git-/Vercel-Historie bestätigt.

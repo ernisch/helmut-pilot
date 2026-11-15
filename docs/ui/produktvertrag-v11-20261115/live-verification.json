@@ -1,0 +1,85 @@
+{
+  "checkedAtUtc": "2026-11-15T10:44:08.795463+00:00",
+  "domain": "https://helmut-pilot.vercel.app",
+  "htmlStatus": 200,
+  "assets": {
+    "client.js": {
+      "status": 200,
+      "path": "client.js?v=3ae386b8",
+      "sha256": "69111e954a71b6a6a7a92484f28dcb2d020165c8c15ad02b259269b9d4c53cc7",
+      "matchesTested": true
+    },
+    "styles.css": {
+      "status": 200,
+      "path": "styles.css?v=3ae386b8",
+      "sha256": "00d149eb03f541ccd85d8ebd79802cc09299441ab06aaddf052e4788b19929ed",
+      "matchesTested": true
+    },
+    "sw.js": {
+      "status": 200,
+      "path": "/sw.js?v=3ae386b8",
+      "sha256": "dbfb3443a7733c6627f2390de932f5286b4c47db873502b0b8f119eec883b6e4",
+      "matchesTested": true
+    },
+    "site.webmanifest": {
+      "status": 200,
+      "path": "/site.webmanifest?v=3ae386b8",
+      "sha256": "9b9a8dc8b79d58bb8411380c8cc0835a2649209bb208c894feffd451ce813624",
+      "matchesTested": true
+    }
+  },
+  "privacyStatus": 200,
+  "releaseStatus": 200,
+  "release": {
+    "ok": true,
+    "ready": false,
+    "storage": true
+  },
+  "method": "Unauthenticated read-only public GETs; no customer session, generation or protected mutation",
+  "uiPullRequest": 1208,
+  "mergeCommit": "3ae386b86eaf29fbf3499bf99914a1de61552425",
+  "mergedAt": "2026-11-15T10:43:05Z",
+  "deployment": {
+    "id": "dpl_5eYyFUnZr7A64NoGWSVghuxfM1Zu",
+    "url": "https://helmut-pilot-11zgsalxg-nohut.vercel.app",
+    "state": "READY",
+    "target": "production",
+    "mainDomainAssigned": true
+  },
+  "ci": {
+    "run": 43702615304,
+    "head": "1d26362ce76e4ad98951823d08361d9a9897a5fb",
+    "requiredChecks": {
+      "Syntax + Offline-Suiten": "SUCCESS",
+      "Browser-/Mobile-Smoke (Chromium)": "SUCCESS"
+    },
+    "standardSuites": "189/189",
+    "areaSuites": "390/390"
+  },
+  "mergeProof": {
+    "checkedAtUtc": "2026-11-15T10:42:23.511271+00:00",
+    "base": "3734927ffe5734ab04f527cd49980f7861edf41f",
+    "head": "1d26362ce76e4ad98951823d08361d9a9897a5fb",
+    "tree": "a42023a35a3066930b6e9bd2118e86e6a9362e84",
+    "ciRun": 43702615304,
+    "mergeable": "MERGEABLE",
+    "mergeState": "CLEAN",
+    "bothRequiredChecks": "SUCCESS",
+    "noDataMotorDiff": true
+  },
+  "runtimeErrorScan": {
+    "checkedAtUtc": "2026-11-15T10:45:52.468750+00:00",
+    "since": "2026-11-15T10:43:05Z",
+    "deploymentId": "dpl_5eYyFUnZr7A64NoGWSVghuxfM1Zu",
+    "levels": [
+      "error",
+      "fatal"
+    ],
+    "groupsFound": 0,
+    "method": "Vercel runtime-log count grouped by level"
+  },
+  "paidModelCallsByThisTask": 0,
+  "protectedDataOrConfigurationMutationsByThisTask": 0,
+  "status": "UI_LIVE_VERIFIED",
+  "scopeLimit": "Public release.ready=false remains an open overall readiness result; no customer session, generation test or sales approval is claimed."
+}
