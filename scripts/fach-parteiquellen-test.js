@@ -106,7 +106,7 @@ for (const source of S.ZUSAETZLICHE_QUELLEN) {
   assert.equal(source.active,false);
   assert.equal(source.preparedOnly,true);
   assert.notEqual(source.health,"healthy");
-  assert.equal(source.usagePolicy.commercialUseApproved,false);
+  assert.equal(source.usagePolicy.commercialUseApproved, ["fach-destatis-aktuell-rss", "fach-irights-rss"].includes(source.id));
   assert.equal(source.usagePolicy.fullTextAllowed,false);
   assert(source.packageKeys.every((key)=>P.PACKAGE_DEFINITIONS.some((p)=>p.key===key)));
 }
@@ -127,9 +127,9 @@ assert.equal(destatis.evidenceRole, "data_source");
 assert.deepEqual(destatis.coverageClasses, ["amtliche_daten"]);
 assert.equal(destatis.active, false);
 assert.equal(destatis.preparedOnly, true);
-assert.equal(destatis.rightsReviewRequired, true);
-assert.equal(destatis.usagePolicy.status, "review_required");
-assert.equal(destatis.usagePolicy.commercialUseApproved, false);
+assert.equal(destatis.rightsReviewRequired, false);
+assert.equal(destatis.usagePolicy.status, "text_excerpts_only");
+assert.equal(destatis.usagePolicy.commercialUseApproved, true);
 assert.equal(destatis.usagePolicy.fullTextAllowed, false);
 assert(destatis.usagePolicy.note.includes("Vervielfältigung und Verbreitung, auch auszugsweise, mit Quellennachweis"));
 assert(destatis.usagePolicy.note.includes("Einzelangaben"));
@@ -139,7 +139,7 @@ assert.equal(destatis.verification.feedParsed, true);
 assert.equal(destatis.verification.httpStatus, 200);
 assert.equal(destatis.verification.itemCount, 10);
 assert.equal(destatis.verification.latestPublishedAt, "2026-11-13T08:00:00+01:00");
-assert.equal(destatis.verification.status, "technically_verified_rights_pending");
+assert.equal(destatis.verification.status, "technically_verified_text_excerpts");
 const soziales = v1Sources.find((s) => s.id === "news-destatis-soziales");
 assert(soziales);
 const beforeDestatis = C.buildCatalog({ sources: [soziales] });
@@ -155,7 +155,7 @@ for (const sources of [[soziales, destatis], [destatis, soziales]]) {
   assert.equal(path.publisher_id, publisher.id);
   assert.equal(path.method, "rss"); assert.equal(path.parser, "rss-regex");
   assert.equal(path.status, "paused"); assert.equal(path.activation_mode, "manual");
-  assert.equal(path.prepared_only, true); assert.equal(path.rights_review_required, true);
+  assert.equal(path.prepared_only, true); assert.equal(path.rights_review_required, false);
   assert.equal(path.evidence_role, "data_source"); assert.deepEqual(path.coverage_classes, ["amtliche_daten"]);
   assert.equal(model.isPathActive(path, ["pkg-fach-wirtschaft-energie"]), false);
   assert.deepEqual(mapped.packagePaths.filter((p) => p.retrieval_path_id === path.id),
@@ -180,9 +180,9 @@ assert.equal(irights.evidenceRole, "journalistic");
 assert.deepEqual(irights.coverageClasses, ["fachmedien"]);
 assert.equal(irights.active, false);
 assert.equal(irights.preparedOnly, true);
-assert.equal(irights.rightsReviewRequired, true);
-assert.equal(irights.usagePolicy.status, "review_required");
-assert.equal(irights.usagePolicy.commercialUseApproved, false);
+assert.equal(irights.rightsReviewRequired, false);
+assert.equal(irights.usagePolicy.status, "text_excerpts_only");
+assert.equal(irights.usagePolicy.commercialUseApproved, true);
 assert.equal(irights.usagePolicy.fullTextAllowed, false);
 assert(irights.usagePolicy.note.includes("CC BY 4.0 erlaubt Weitergabe und Bearbeitung auch kommerziell"));
 for (const attribution of ["Jens Crueger", "KI und Offenheit vereinen: Open Source LLMs im Bildungsbereich", "OERinfo", "Lizenzlink", "Kennzeichnung von Änderungen", "Bilder werden nicht mitfreigegeben"])
@@ -217,7 +217,7 @@ assert.equal(irightsPath.status, "paused");
 assert.equal(irightsPath.activation_mode, "manual");
 assert.equal(irightsPath.expected_frequency, null);
 assert.equal(irightsPath.prepared_only, true);
-assert.equal(irightsPath.rights_review_required, true);
+assert.equal(irightsPath.rights_review_required, false);
 assert.equal(irightsPath.evidence_role, "journalistic");
 assert.deepEqual(irightsPath.coverage_classes, ["fachmedien"]);
 assert.deepEqual(irightsPath.usage_policy, irights.usagePolicy);
@@ -231,6 +231,89 @@ assert.equal(digitalCatalog.packages.find((p) => p.key === "fach-digitales-staat
 assert.deepEqual(S.ZUSAETZLICHE_QUELLEN.filter((s) => s.packageKeys.includes("fach-digitales-staatsmodernisierung")
   && s.evidenceRole === "data_source").map((s) => s.id), [destatis.id],
   "Nur die durch echte Digitalstatistik begruendete Datenbindung vorbereiten");
+
+
+// Fremde URLs/IDs und fehlende Lizenzbelege erben keine Nutzungsentscheidung.
+const observations = require("../lib/helmut/quellenarchitektur/seeds/fachfeeds-verifiziert.json");
+for (const id of ["destatis-aktuell", "irights"]) {
+  const v = observations.find(row => row.id === id), policy = S.textauszugPolicy(v);
+  assert.equal(policy.fullTextAllowed, false); assert.equal(policy.imagesAllowed, false);
+  assert.equal(policy.aiTrainingAllowed, false); assert.equal(policy.attributionRequired, true);
+  assert.equal(S.textauszugPolicy({ ...v, rssUrl: v.rssUrl + "?fremd=1" }), null);
+  assert.equal(S.textauszugPolicy({ ...v, id: "gleichnamige-fremde-quelle" }), null);
+  assert.equal(S.textauszugPolicy({ ...v, usageDocumentation: [] }), null);
+}
+assert.deepEqual(S.ZUSAETZLICHE_QUELLEN.filter(s => !s.rightsReviewRequired).map(s => s.id).sort(),
+  ["fach-destatis-aktuell-rss", "fach-irights-rss"], "Nur zwei exakt begrenzte Textquellen");
+
+
+// Zulassungsentscheidung ist getrennt von der relationalen Aktivierung.
+const SM = require("../lib/helmut/quellenarchitektur/source-mode");
+const feedCatalog = C.buildCatalog({ sources: [destatis, irights] });
+const params = { ...feedCatalog, legacySources: [destatis, irights],
+  profiles: [{ id: "synthetischer-quellenbedarf", fullName: "Synthetische Quellenperson", party: "SPD", profileActive: true, politische_ebene: "bundestag", focusTopics: ["Wirtschaftspolitik", "Digitalpolitik"] }], env: {} };
+assert.equal(SM.buildRelationalCrawlPlan(params).aktiv.length, 0);
+const live = { ...params, packages: params.packages.map(p =>
+  ["pkg-fach-wirtschaft-energie", "pkg-fach-digitales-staatsmodernisierung"].includes(p.id) ? { ...p, status: "active" } : p),
+  retrievalPaths: params.retrievalPaths.map(p => p.legacy_source_id === destatis.id || p.legacy_source_id === irights.id
+    ? { ...p, status: "needs_review", activation_mode: "auto" } : p) };
+const activeFeeds = SM.buildRelationalCrawlPlan(live).aktiv;
+assert.deepEqual(activeFeeds.map(p => p.source.id).sort(), [destatis.id, irights.id].sort());
+assert(activeFeeds.every(p => p.source.active === true));
+assert.equal(destatis.active, false); assert.equal(irights.active, false);
+
+// Destatis bleibt RSS-Text: Datum/Original/Quellennachweis erhalten, fremde
+// Einzelbedingungen -> Titel/Link, keine Bilder und keine Volltextnachladung.
+const CR = require("../lib/helmut/crawler"), DD = require("../lib/helmut/dedup"), EX = require("../lib/helmut/quellen-auszug");
+const feedItem = { title: "Synthetische Daten zur Entwicklung der Energiepreise",
+  url: "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/11/PD26_999_000.html",
+  publishedAt: "2026-11-13T07:00:00Z",
+  content: "Der synthetische Bericht weist fuer die untersuchte Branche einen geringeren Preisanstieg als im vorherigen Monat aus. Die amtlichen Angaben beruhen auf einer monatlichen Erhebung.",
+  imageUrl: "https://www.destatis.de/fremdes-bild.jpg" };
+const good = CR.normalizeRawItem(feedItem, destatis);
+assert.equal(good.content, feedItem.content); assert.equal(good.imageUrl, null);
+assert.equal(good.url, feedItem.url); assert.equal(good.sourceName, destatis.name);
+assert.equal(good.publishedAt, "2026-11-13T07:00:00.000Z");
+const row = DD.toRawDocumentRow(good);
+assert.equal(EX.hatOriginalinhalt(row), true); assert.equal(EX.brauchtInhalt(row), false);
+const emptyText = { ...row, summary: null };
+assert.equal(EX.brauchtInhalt(emptyText), false);
+assert.equal(EX.fromHtml(emptyText, { finalUrl: feedItem.url, body: "<main>Fremder Volltext</main>" }).ok, false);
+assert.equal(EX.fromMirror(emptyText, [good]).ok, false);
+for (const patch of [{ rssRights: ["Nur fuer private Nutzung"] }, { rssRights: ["CC BY-NC 4.0"] },
+  { rssRights: "ungueltig" }, { content: feedItem.content + " Nur mit schriftlicher Genehmigung weiterverwenden." },
+  { url: "https://www.destatis.de/DE/Service/Impressum/_inhalt.html" }, { publishedAt: null }])
+  assert.equal(CR.normalizeRawItem({ ...feedItem, ...patch }, destatis).content, feedItem.title);
+assert.equal(CR.normalizeRawItem({ ...feedItem, rssRights: ["© Statistisches Bundesamt (Destatis), 2026"] }, destatis).content, feedItem.content);
+assert.equal(CR.normalizeRawItem(feedItem, { ...destatis, url: destatis.url + "?fremd" }), null);
+const restrictedXml = `<rss><channel><item><title>${feedItem.title}</title><link>${feedItem.url}</link><pubDate>${feedItem.publishedAt}</pubDate><description>${feedItem.content}</description><dc:rights>Nur fuer private Nutzung</dc:rights></item></channel></rss>`;
+const restricted = CR.parseRssItems(restrictedXml)[0];
+assert.deepEqual(restricted.rssRights, ["Nur fuer private Nutzung"]);
+assert.equal(CR.normalizeRawItem(restricted, destatis).content, feedItem.title);
+const channelRestricted = restrictedXml.replace("<channel>", "<channel><copyright>Nur für private Nutzung</copyright>")
+  .replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const channelItem = CR.parseRssItems(channelRestricted)[0];
+assert.deepEqual(channelItem.rssRights, ["Nur für private Nutzung"]);
+assert.equal(CR.normalizeRawItem(channelItem, destatis).content, feedItem.title);
+const repeatedChannel = channelRestricted.replace("<channel>", "<channel><copyright>© Statistisches Bundesamt (Destatis), 2026</copyright>");
+assert.equal(CR.parseRssItems(repeatedChannel)[0].rssRights.length, 2);
+assert.equal(CR.normalizeRawItem(CR.parseRssItems(repeatedChannel)[0], destatis).content, feedItem.title);
+
+const mixedRights = restrictedXml.replace("<channel>", "<channel><copyright>© Statistisches Bundesamt (Destatis), 2026</copyright>");
+assert.equal(CR.normalizeRawItem(CR.parseRssItems(mixedRights)[0], destatis).content, feedItem.title);
+const originalChannelNotice = restrictedXml.replace("<channel>", "<channel><copyright>Statistisches Bundesamt, Wiesbaden 2019</copyright>")
+  .replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const originalNoticeItem = CR.normalizeRawItem(CR.parseRssItems(originalChannelNotice)[0], destatis);
+assert.equal(originalNoticeItem.content, feedItem.content);
+assert.equal(originalNoticeItem.publishedAt, good.publishedAt, "Copyright-Jahr ist kein Publikationsdatum");
+assert.equal(CR.normalizeRawItem({ ...feedItem, rssRights: ["Statistisches Bundesamt, Wiesbaden 2019 — Nur privat"] }, destatis).content, feedItem.title);
+
+// Ein fremder Itemhinweis darf einen unveraenderten Nachbarn nicht mitumwidmen.
+const normalItem = restrictedXml.match(/<item[\s\S]*?<\/item>/)[0].replace("<dc:rights>Nur fuer private Nutzung</dc:rights>", "");
+const neighbors = CR.parseRssItems(restrictedXml.replace("</channel>", normalItem + "</channel>"));
+assert.equal(neighbors[1].rssRights, undefined);
+assert.equal(CR.normalizeRawItem(neighbors[1], destatis).content, feedItem.content);
+
 
 for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordrhein-westfalen"]]) {
   const r = R.resolveProfilePackages({ parliamentType: "Bundestag", state });
