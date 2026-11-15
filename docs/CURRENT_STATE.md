@@ -1,30 +1,32 @@
 # CURRENT STATE — Helmut
-**15.11.2026,01:59UTC: Quellenfixes live, vollstaendige Versorgung weiterhin offen.**
+**15.11.2026,08:20UTC: weiterer belegter Leserfall repariert, Tagesversorgung offen.**
 
-PR1203 regulaer gemergt:356fe781; gepruefter Kopf23f59eff,CI43663042110.
-Native SQL-Schritte,189/189Standard,390/390Bereich und neuer Chromium-Smoke gruen.
-PR1204 regulaer gemergt:5f3875e1; gepruefter Kopfd076f33a,CI43665246842.
-14/14Schnellkern+87/87Quellensuiten gruen; beide Pflichtchecks erfolgreich.
-Nicht betroffener Browserlauf im Folge-PR bewusst ausgelassen, kein neuer Browser-PASS.
-Runtime5f3875e1:Production READY dpl_CfqLovsLHr1LYHr9AagxQrpj95WG;
-Projekt/Commit/Team geprueft, oeffentlicheShell HTTP200 mit Version5f3875e1.
-BMG-Einstieg,hib-Suffix,BMAS,ZDF,BMG-Presse eng repariert; sechs identische echte
-Originalantworten lokal vorhernegativ/nachherpositiv. Keine Datum-/Quellenlockerung.
-Zwei fehlende Lage-Leervertragsfelder ergaenzt. Alte Testfixtures an geltende
-Vertraege gebunden; nur nativer PG17-Claimtest aus falscher Offlineeinordnung
-entfernt, eigener netzloser Kernschritt erhalten. Chromiumrunner jetzt Ubuntu24.
-Nachkontrolle01:57UTC:alle5Erfolgsjobs erledigt und Payload-MD5 unveraendert;
-gespeichertes Briefing weiter InhaltHash17fbead5. Kein historischer Job-/Cachereset.
-Kein zusaetzlicher bezahlter Modelllauf oder Production-Daten-/Cron-/Budgeteingriff.
-Historischer Quellenabschluss14Nov22:25 bleibt5/58/78,38Fehljobs ohne Originalziel.
-Abdeckungsquittung meldet4Fehler/111Warnungen/13Konfigdrift, kein Gesamt-PASS.
-Heute bis01:57UTC kein neuer regulaerer Versorgungsabschluss vorhanden.
-Vollkatalog- und politische Profilfeldausleitung durch automatische Freigabepruefung
-abgelehnt; keine Umgehung. Nur Aggregate gelesen; Detailabgleich braucht konkretes GO.
-Regulaere Crons03:00–04:45Quellen,05:00Lage,05:15Morgen UTC unveraendert;
-bestehende Nachtkontrolle03:07–07:07UTC fuehrt lesende Abschlusspruefung fort.
-Naechster Schritt: deren echten regulaeren Versorgungsabschluss lesend bewerten.
-[Merge-, Original- und Erhaltungsbelege samt Grenzen](betrieb/versorgung-nachtabschluss-20261115.md).
+Live-Stand unveraendert:main d8b1cecb, Runtime5f3875e1 READY nach PR1203/1204;
+PR1205 dokumentiert die Nachweise, sein Build wurde bewusst ausgelassen.
+Regulaerer Morgen15Nov05:15:partial,67Eintraege/2neuegepruefteAbsätze;
+PaketHashd778e3b6, Quellenstandoffen, kein belegter Tagesanlass, kein Gesamt-PASS.
+Letzte Quellenabdeckung04:34:4Fehler/95Warnungen/13Konfigdrift,9Bedarfspakete.
+Privat genehmigter12Felder-Profilabgleich abgeschlossen, keine Werte gespeichert:
+keine Zuordnungsluecke. Vier Befunde betreffen2vorbereitete Quellenpakete;
+insgesamt fehlen2Daten/Forschung- und1Journalismusbindung mit passenden Klassen.
+Eine gezielte sichere Fuenf-Wege-Gegenpruefung bestaetigt den Umfang;
+Vollkatalogvergleich blieb nach automatischer Ablehnung unausgefuehrt.
+Nachkontrolle07:32:alle5altenErfolgsjobs erledigt/Payload-MD5 unveraendert;
+Altbriefing weiter17fbead5/77Eintraege/2Absaetze, heutiger Paketbeleg bleibt erhalten.
+Konkreter wartender Ad-hoc-Auftrag:Original HTTP200, nativer Leser vorher negativ.
+Jetzt eng gebundener vollstaendiger Headerteaser lokal positiv:135Zeichen,v2,
+keine Volltextbehauptung; Titel/URL/Originalsekunde/sichtbareRedaktion bleiben gebunden.
+Neue5Testgruppen gruen; vorhandene Originalbytes und alte Ergebnisse unveraendert.
+Neue Pflicht-CI und regulaere Integration stehen aus; nicht als live behauptet.
+Hostfreigabe unveraendert:18Hosts,Ad-hoc nicht freigegeben. Keine Envmutation,
+kein Zusatzfenster/Jobreset/Budgeteingriff oder zusaetzlicher bezahlter Modelllauf.
+Amtlicher Destatis-Direktfeed fuer eine Rollenluecke konkret geprueft, noch nicht
+installiert/aktiviert. Beide Digital-Luecken und Quellen-/Nutzungsfreigaben bleiben offen.
+Nachtkontrollen03:07–07:07beendet; keine weitere Hintergrundausfuehrung behaupten.
+Regulaere Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
+Naechster Schritt: geprueften Leser exakt gruen integrieren und die kleinsten
+belegten Katalog-/Freigabeeingriffe konkret zur Betriebsentscheidung vorlegen.
+[Neuer Originalnachweis und Reparaturgrenzen](betrieb/adhoc-einstieg-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
