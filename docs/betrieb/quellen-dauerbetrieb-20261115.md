@@ -176,7 +176,13 @@ Review geschlossen. Neue Gegenfaelle pruefen Host/Pfad/Titel/Tag/Sichtbarkeit,
 die echte Standardrevision2, einmalige Wiedergewinnung, erhaltene Altzeilen,
 Originalzeit und weiterhin gesperrte unbekannte Modell-/Schreibausgaenge.
 Kein Productionjob, Originalcache, Erfolgsbeleg, Budget oder Cron veraendert.
-Commit/PR/Pflicht-CI und regulaere Betriebswirkung stehen noch aus.
+Runtime-Evidence `260bc68e77bce44969c97171b7f0f901ffd5c11f`,PR1227;
+unabhaengiges CI-/Dokumentationsreview ebenfalls geschlossen. Der Pruefplan
+bindet genau vier Runtime-/Testblobs, Basis/Branch/PR und restlichen Baum;
+92CI-Vertragsgruppen gruen, keine Mengen-/Datenbankgesamttests ausgewaehlt.
+Der alte v1-Abrufkey `3a102fe6668cae9d5e5f463b10e30e9ef86c2c53f03743d4bd0a161cbd1d981e`
+existiert nicht; kein dortiger positiver/unklarer Altstand wird uebergangen.
+Exakte Pflicht-CI, Auslieferung und regulaere Betriebswirkung stehen noch aus.
 
 CELLAR-Lesbarkeit weiter konkretisiert, ausschliesslich amtliche Metadaten:
 die deutsche Expression des Rechtsakts32026D2505 verweist nachweislich auf

@@ -1,7 +1,11 @@
 # CURRENT STATE — Helmut
-**15.11.2026,20:50UTC: dauerhafte Quellenreparatur PR1225 gemergt und live; regulaerer Wirksamkeitsnachweis offen, Versorgung weiterpartial.**
+**15.11.2026,21:30UTC: BMG-Redenfehler aus vorhandenem Original belegt und PR1227 vorbereitet; Versorgung weiterpartial.**
 
 Quellenauftrag: vorhandene Retry-/Fallback-/Monitoringwege nutzen; keine neue Infrastruktur oder Zusatzverarbeitung.
+BMG/presse/reden fehlte im bestehenden strengen Artikelkopfleser;1Pfaderweiterung+gepruefteExtraktorrevision2 vorbereitet.
+GebundenesOriginale2a8665/Quelle7dfafd7:offline304ZeichenIntrostattFehler;5BMG/10Wiedergewinnungsgruppen gruen,RuntimeReviewgeschlossen.
+Zieljob633d9438bereitswartend2/max3/Revision1;keinReset/Neufetch/Modelstart,regulaererClaimkannArchiv-CAS-Reparaturerreichen.
+CELLARamtlicheDEUManifestationenfmx4/xhtml/pdfa2a21:29belegt;keineOriginaltexteabgerufen,keinTextrechte-/Lesepass.
 Drei reproduzierte Ursachen: Prozessledger ersetzt Queue-Retry nach Abruf-/Persistenzfehler durch skipped-shared;
 defekte RSS/HTML-Antwort erscheint als leerer Erfolg; echte RSS-Parserfehler werden unknown quittiert.
 Fix nur im Queuepfad: Ledgernull, bestehende Compiler-Idempotenz/Lease/Anbietergrenzen erhalten.
