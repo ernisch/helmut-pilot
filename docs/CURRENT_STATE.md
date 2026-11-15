@@ -1,36 +1,28 @@
 # CURRENT STATE — Helmut
-**15.11.2026,21:40UTC: BMG-Redenreparatur PR1227 gemergt und live; regulaerer Wirksamkeitsnachweis offen, Versorgung weiterpartial.**
+**15.11.2026,22:45UTC: Quellenreparaturen einschließlich amtlichem EUR-Lex-Originalauszug live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
 
-Quellenauftrag: vorhandene Retry-/Fallback-/Monitoringwege nutzen; keine neue Infrastruktur oder Zusatzverarbeitung.
-BMG/presse/reden fehlte im bestehenden strengen Artikelkopfleser;1Pfaderweiterung+gepruefteExtraktorrevision2 live.
-GebundenesOriginale2a8665/Quelle7dfafd7:offline304ZeichenIntrostattFehler;5BMG/10Wiedergewinnungsgruppen gruen,RuntimeReviewgeschlossen.
-Zieljob633d9438bereitswartend2/max3/Revision1;keinReset/Neufetch/Modelstart,regulaererClaimkannArchiv-CAS-Reparaturerreichen.
-PR1227Kopfe33954d1/CI43764658647,Merge224b0c97/MainCI43764849950:beidePflichtjobsgruen,Reviewsgeschlossen.
-Productiondpl_DM6XQ4NWyYujWgZZuYWb9HwR4zgaREADY;HTML21:40Version224b0c97;6Alt-Erfolge/Zieljob2Versuche/Kostengleich.
-CELLARamtlicheDEUManifestationenfmx4/xhtml/pdfa2a21:29belegt;keineOriginaltexteabgerufen,keinTextrechte-/Lesepass.
-Drei reproduzierte Ursachen: Prozessledger ersetzt Queue-Retry nach Abruf-/Persistenzfehler durch skipped-shared;
-defekte RSS/HTML-Antwort erscheint als leerer Erfolg; echte RSS-Parserfehler werden unknown quittiert.
-Fix nur im Queuepfad: Ledgernull, bestehende Compiler-Idempotenz/Lease/Anbietergrenzen erhalten.
-RSS1/RSS2/Atom/DOCTYPE geprueft, unbrauchbarer Homepageersatz verdeckt Feedfehler nicht; Parserfehler praezise klassifiziert.
-Offizielles CELLAR liefert drei echte OJ-L-Metadatensaetze vom13Nov; korrektes Publikationsdatum statt Beschluss-/Ingestionsdatum.
-EUR-Lex-Ersatz nur exakt bekannte Feedidentitaet, hoechstens1CELLARabruf/16Items/14UTCTage/256KiB, keine Anbietervertagung umgehen.
-Titel/Link/DatumCC0, HerkunftV2 bindet actualCELLAR/Werk/OJ-L/CELEX; kein neuer Volltext-/Bild-/Trainingsumfang.
-Evidenceae58b9b7:33Crawler/40Telemetry/8Queue/31Parlamentsdaten/11CELLAR-Gruppen gruen; bestehende160Health/58Google gruen.
-Unabhaengige Runtime-/CI-Reviews geschlossen; PR1225Kopfa6254664/CI43759893440 beidePflichtjobsgruen.
-Merge052650a3/MainCI43760131019 beidePflichtjobsgruen;Productiondpl_AX8PD18P3pewX1fMkkcbSFEjTizgREADY.
-HTML20:49:59HTTP200Version052650a3;Nachkontrolle20:50:19alle6Zielerfolge/Kostenunveraendert,0laufendeJobs.
-Lokaler Testauswahlfehler:2Bestandssuiten enthielten Mengenfaelle und liefen einmal;0Production/Model/APIKosten.
-CI-Auswahl korrigiert:kein erneuter source-demand-Lauf, Blobtest nur --gezielt; Vorfall im kanonischen Beleg dokumentiert.
-Production20:42:0laufendeJobs,6vorherigeZieljobs weitererledigt;0,711983USDTag/4,095017USDgesamt unveraendert.
-Vorheriger Abschlusslauf6a95d30419:14–19:18:12erledigt/53vertagt/0Endfehler;DIP2/ZDF/BMASvollstaendigverstanden.
-QuittungshookPR1217Productionbelegt:Destatis10/iRights15gefunden,je0neu,206/238ms;je1echteQuittung,minLaeufe3 bleibt.
-RSSrp-linksfraktion19:34genau1URLnach404→geprueftemfeed.rss korrigiert;regulaererneuerAbrufnachweisoffen.
-Lage19:37:6Vorgaenge/fromCachetrue/partialquellenversorgung-offen,0neueModellkosten;gueltigenCacheerhalten.
-Einmalkey15Nov verbraucht;9Fenster2700s16Originale,1USD/Tag30gesamt und alle alten Reserven unveraendert.
-Alte Fehler/Negative/Archive/Erfolge erhalten;privater12FelderProfilabgleich geschlossen,nichtwiederholen.
-Weitere Artikel ohne geprueften Original-/Nutzungsnachweis offen;kein Textlese- oder GesamtversorgungsPASS aus Metadaten.
-NaechsterSchritt:bestehendeKontrolle16Nov05:25UTCwertetregulaereQuittungenundRestblockeraus;keinneuerZusatzlauf.
-[DurableReparatur+offizielleBelege](betrieb/quellen-dauerbetrieb-20261115.md) · [vorherigerQuellenabschluss+SQL](betrieb/quellen-abschlussfenster-20261115.md) · [Altstaende](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md).
+PR1229 Kopf f263edce/PR-CI43770698296, Merge d3bbb9e9/Main-CI43770872884: beide Pflichtchecks grün, unabhängige Runtime-/CI-Reviews geschlossen.
+Production dpl_FoY3eZgAoTCCTv9jCAkAyzXCfFay READY; öffentlicher Alias22:44:45HTTP200/6118Bytes zeigt d3bbb9e9.
+Amtlicher CELLAR-Originalread21:54:48 belegt CELEX32026D2505/DEU/COM/OJ-L2026/2505, Publikation13Nov, erster ganzer operativer Absatz142Zeichen.
+Neuer enger Textvertrag:60–240Zeichen mit Fassung, Original-/Auszughash, Urheber, echtem Datum, Fundstelle, Nutzungs-/Bearbeitungshinweis.
+EUR-Lex-Rechtsdokument-Reuse ist primär belegt; CC0 bleibt nur Metadaten. Keine ungeprüften Fremdwerke/Bilder/Anhänge oder Volltextfreigabe.
+Vorhandener Transport+CAS-Cache, höchstens1neuer Originalabruf je regulärem Quellenauftrag innerhalb unveränderter16erTagesquote; keine Zusatzverarbeitung.
+Quittierter temporärer HTTP-Fehler erlaubt genau1späteren Versuch nach mind15Minuten/Retry-After; Timeout/UNKNOWN und alte Negative bleiben geschützt.
+SourceMode→Compiler→Handler und native60sDeadline gezielt geprüft; kanonische Hashes/JSONB, Qualitätsgates und komplette Quellenausgabe erhalten.
+Neue Fassung überschreibt keine Altzeile; gleiche CELEX-Fassungen zählen als1Beleg, alle Varianten bleiben sichtbar.
+13Original-/5Transport-/12Integrationsgruppen sowie bestehende Quellen-/Abdeckungs-/Identitätstests grün;108CI-Verträge+14Schnellkern-Suiten grün.
+BMG/presse/reden ist durch PR1227/Runtime224b0c97 dauerhaft im strengen Artikelkopfleser/Revision2; gespeichertes Original liefert offline304Zeichen Intro.
+BMG-Zieljob633d9438weiterwartend2/max3/Revision1; regulärer Claim kann Archiv-CAS erreichen, kein Reset/Neufetch/Modellstart.
+PR1225 repariert falsches skipped-shared beim Queue-Retry, RSS/HTML als Leer-Erfolg und Parserfehlerklassifikation; Compiler/Lease/Anbietergrenzen erhalten.
+Offizieller CELLAR-Metadatenersatz bleibt deutsch/OJ-L/echtes Datum/14UTC-Tage/max16Items/256KiB; blockierten Zugang nicht umgehen.
+Lesende Nachkontrolle22:44:49:0laufendeJobs,6vorherigeZieljobs weitererledigt/attempt1;0,711983USDTag/4,095017USDgesamt unverändert.
+Vorheriger Adminabschluss6a95d30419:14–19:18:12erledigt/53vertagt/0Endfehler;2DIP/ZDF/BMAS verstanden. Lage19:37:6Vorgänge aus gültigem Cache/partial/0Modellkosten.
+Destatis/iRights je1echteQuittung; minLaeufe3 bleibt. Linke-RSS19:34nach404genau1URL auf geprüftenfeed.rss korrigiert, regulärer Abrufnachweis offen.
+Einmalkey15Nov verbraucht;9Fenster2700s16Originale,1USD/UTC-Tag30gesamt und alle alten Reserven unverändert; keine alten Laufrechte wiederverwenden.
+Lokaler historischer Testauswahlfehler dokumentiert:keine Wiederholung von source-demand-Mengensuiten, Blobtest nur --gezielt;0Production/Modellkosten.
+Privater12FelderProfilabgleich geschlossen. Ungeklärte Medien-/Textrechte bleiben offen; kein Gesamtversorgungs- oder Verkaufs-PASS aus Offline-/Metadatenzahlen.
+Nächster Schritt: bestehende Kontrolle16Nov05:25UTC wertet reguläre Quittungen und Restblocker aus; kein neuer Zusatzlauf.
+[Reparaturen und Primärbelege](betrieb/quellen-dauerbetrieb-20261115.md) · [Vorheriger Quellenabschluss](betrieb/quellen-abschlussfenster-20261115.md) · [Altstände](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.

@@ -1,6 +1,10 @@
 # Dauerhafte Quellenfehlerbehandlung, 15.11.2026
 
-## Nachtrag: amtlicher EUR-Lex-Originalauszug vorbereitet
+## Nachtrag22:45UTC: amtlicher EUR-Lex-Originalauszug gemergt und live
+
+Dieser Nachtrag ersetzt die frueheren Aussagen unten zum ausschliesslichen
+Metadatenumfang fuer den nun geschlossenen engen COM-Originaltextvertrag.
+Alte Belege und ungepruefte Dokumente erhalten dadurch keine Textfreigabe.
 
 Die zusaetzliche Primaerpruefung ist ein kostenloser oeffentlicher Quellenread,
 kein Production-/Kundenlauf. CELLAR13.11.2026: CELEX32026D2505, OJ-L2026/2505,
@@ -42,8 +46,33 @@ Zwei anfaengliche lokale Sandboxfehler (localhost/Kindprozessausgabe) wurden
 mit erlaubtem lokalen Netz behoben; kein externer Abruf in Tests.
 Zwei unabhaengige OpenAI-Reviews: Compilerflag, Datums-Satzgrenze, CELEX-Doppel-
 beleg und60s-Restzeit/Antwortabbruch korrigiert, keine offenen P1/P2.
-Runtime-/Pflicht-CI/Rollout noch offen. Weiterhin kein Gesamtversorgungs-PASS;
-regulaere Kontrolle16.11.,05:25UTC bleibt unveraendert.
+Evidence `02d057fb8333383eea244635bab786d7af35f586`;18Runtime-/Testblobs,
+Restbaum, Repository/Branch/PR/Basis und echter Merge sind im CI-Plan gebunden.
+108CI-Vertragsgruppen,20betroffeneSyntaxpruefungen und14Schnellkern-Suiten gruen.
+PR1229Kopf `f263edce90236482f4a354fd9b532e76fe59c5f6`:
+[PR-CI43770698296](https://github.com/ernisch/helmut-pilot/actions/runs/43770698296)
+beide Pflichtchecks erfolgreich;13gezielte Quellen-/Ausgabesuiten im Log,
+Browser bewusst nicht erforderlich, kein Mengen-/Modelltest.
+Merge `d3bbb9e9ce003f7311acca9e8183f29033a9191d`:
+[Main-CI43770872884](https://github.com/ernisch/helmut-pilot/actions/runs/43770872884)
+ebenfalls beide Pflichtchecks erfolgreich. Unabhaengige Runtime-/CI-Reviews
+geschlossen, keine offenen P1/P2. Production
+`dpl_FoY3eZgAoTCCTv9jCAkAyzXCfFay` READY, Projekt/Commit/Alias bestaetigt.
+Oeffentliches HTML22:44:45UTC HTTP200/6118Bytes zeigt d3bbb9e9, SHA256
+`ae1809dea55132c744c26dde4004714ad96b2f790c41eb27afa5369ed5efd737`.
+Lesende Nachkontrolle22:44:49UTC:0laufendeJobs, alle6Alt-Zieljobsweitererledigt
+mitattempt1, BMGweiterwartend/attempt2;0,711983USDTag/4,095017USDgesamt
+unveraendert. Kein manueller Job-/Cache-/Katalogschreibvorgang oder Zusatzlauf.
+
+Verbleibender Abnahmeblocker ist der regulaere Wirksamkeitsnachweis nach dem
+Rollout: neue CELLAR-Textfassung mit geschlossenem Beleg, BMG-Archivwiedergewinnung,
+Linke-Feedquittung und ausreichende echte Laufhistorie der zwei neuen Feeds.
+Nicht lizenzierte Medien-/Textfaelle bleiben einmal dokumentierte externe
+Rechtehindernisse; erlaubte amtliche/Destatis-/artikelweiseiRights-Auszuege sind
+vorhandene Alternativen. Kein pauschaler Volltext-/Gesamtversorgungs-PASS und
+noch kein ausreichend belegter Quellenabschluss fuer den ersten Kunden.
+Genau ein naechster Schritt: die bereits eingerichtete Kontrolle16.11.,05:25UTC
+wertet ohnehin regulaere Abschluesse lesend aus; Zeitplan/COUNT1 unveraendert.
 
 ## Auftrag und Iststand
 
