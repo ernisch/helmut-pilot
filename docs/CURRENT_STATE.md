@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
-**15.11.2026,08:20UTC: weiterer belegter Leserfall repariert, Tagesversorgung offen.**
+**15.11.2026,08:34UTC: neuer Leser live, eine Quellenbindung inaktiv vorbereitet.**
 
-Live-Stand unveraendert:main d8b1cecb, Runtime5f3875e1 READY nach PR1203/1204;
-PR1205 dokumentiert die Nachweise, sein Build wurde bewusst ausgelassen.
+PR1206 exakt gruen gemergt:c16ce6bc; Runtimec16ce6bc READY, vier Fix-/Nachweismerges.
+CI43694487220 am Kopfe49f4c86 erfolgreich; PR1205-Dokubuild bewusst ausgelassen.
 Regulaerer Morgen15Nov05:15:partial,67Eintraege/2neuegepruefteAbsätze;
 PaketHashd778e3b6, Quellenstandoffen, kein belegter Tagesanlass, kein Gesamt-PASS.
 Letzte Quellenabdeckung04:34:4Fehler/95Warnungen/13Konfigdrift,9Bedarfspakete.
@@ -17,15 +17,18 @@ Konkreter wartender Ad-hoc-Auftrag:Original HTTP200, nativer Leser vorher negati
 Jetzt eng gebundener vollstaendiger Headerteaser lokal positiv:135Zeichen,v2,
 keine Volltextbehauptung; Titel/URL/Originalsekunde/sichtbareRedaktion bleiben gebunden.
 Neue5Testgruppen gruen; vorhandene Originalbytes und alte Ergebnisse unveraendert.
-Neue Pflicht-CI und regulaere Integration stehen aus; nicht als live behauptet.
+Neuer Leser regulaer ausgerollt; kein historischer Job dadurch als Erfolg umgewertet.
 Hostfreigabe unveraendert:18Hosts,Ad-hoc nicht freigegeben. Keine Envmutation,
 kein Zusatzfenster/Jobreset/Budgeteingriff oder zusaetzlicher bezahlter Modelllauf.
-Amtlicher Destatis-Direktfeed fuer eine Rollenluecke konkret geprueft, noch nicht
-installiert/aktiviert. Beide Digital-Luecken und Quellen-/Nutzungsfreigaben bleiben offen.
+Amtlicher Destatis-Direktfeed konkret geprueft und INAKTIV im Code vorbereitet;
+vorhandener Herausgeber, genau eine Wirtschaftsbindung, keine Digital-Doppelbindung.
+Nicht installiert/aktiviert; neue exakte Pflicht-CI folgt. Beide Digital-Luecken bleiben.
+Heise-Direktfeed geeignet, Originalbedingungen behalten kommerzielles TDM vor;
+keine passende bestehende Lizenz in gezielter Drive-Suche gefunden.
 Nachtkontrollen03:07–07:07beendet; keine weitere Hintergrundausfuehrung behaupten.
 Regulaere Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
-Naechster Schritt: geprueften Leser exakt gruen integrieren und die kleinsten
-belegten Katalog-/Freigabeeingriffe konkret zur Betriebsentscheidung vorlegen.
+Naechster Schritt: inaktive Quellenbindung exakt gruen integrieren und konkrete
+kleinste Katalog-/Freigabeeingriffe mit Vorwert und Rueckweg vorlegen.
 [Neuer Originalnachweis und Reparaturgrenzen](betrieb/adhoc-einstieg-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
