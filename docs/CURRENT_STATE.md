@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,18:48UTC: Quellenaltstände repariert; nach erneutem BetreiberGO einmaliges heutiges Abschlussfenster vorbereitet.**
+**15.11.2026,19:08UTC: einmaliges heutiges Abschlussfenster live; sechs Aufträge bereit, echter Adminstart noch offen.**
 
 **Betreiberziel15Nov: heute fertig werden; jetzt pruefen und vollautonom Quellen reparieren.**
 Destatis/iRights unterPR1214/1215 eng begrenzt aktiv;6Katalogzeilen/2Paketstatus,5Altwege erhalten.
@@ -11,7 +11,7 @@ Lage13:11frisch6Vorgaenge/fromCachefalse/partial;Morgen13:11available/partialmit
 FehlenderQueue-AbrufquittungswriterdurchPR1217repariert;keinhistorischerBackfillodererfundeneMessungen.
 Kopf9f9e4dea/PRCI43720003288undMerge528a9fc9/MainCI43720218065beidePflichtjobsgruen.
 Gezielte14Kern/47Plan/8Hook/37Telemetrie/9Konfliktgruppen+bestehendeQueuevertraege;unabhaengigesReviewgeschlossen.
-Runtime528a9fc9/dpl_61DGW51cAvxbHpnGSfySZxqt7CTRREADY;ersterneuerProductionabrufmitHookweiterunbelegt.
+Quittungsruntime528a9fc9durch33894975/dpl_HWV1GYKiPCVzXKBYY5bWTmkeTbyMREADYabgeloest;ersterneuerHookabrufweiterunbelegt.
 2DIPFundstellenNULL→rp-dipatomarkorrigiert;Readback15:18,erneut17:57beideJobswartend/attempts0/hashgleich.
 ZDF:167Originalzeichenmanuellbelegt,neuerRohstand54b80885/nativeJobb7ab8d16,Readback17:36bestaetigt.
 BMASOpferentschaedigung:188Originalzeichenmanuellbelegt,neuerRohstandbcd9ff8b/nativeJob1f22fa3a,Readback17:57bestaetigt.
@@ -26,9 +26,12 @@ Kosten17:56:0,636184USDTag/4,019218USDgesamtgebunden/8Altreserven;Grenzen1USD/UT
 KeineneuenModell-/HTTP-/VerarbeitungspostsbeiAltstandkorrektur;keineProfil-/Cron-/Secret-/Budget-/Quotenaenderung.
 14echteMetadatenkonflikte/1unbekannterCAS-Ausganggeschuetzt;privater12FelderAbgleichabgeschlossen,nichtwiederholen.
 EchteKunden-/Rechtsabnahmeweiterunbelegt,keinGesamtPASS;Teilversorgungbleibtpartial.
-ErneutesBetreiberGO18:43:genaueinAdminfenster15Novbis9/2700vorbereitet,Originale16/Geldgrenzenunveraendert;nochkeinStart.
+ErneutesBetreiberGO18:43:genaueinAdminfenster15Novbis9/2700live,Originale16/Geldgrenzenunveraendert;nochkeinStart.
 10Einmal/8Echtlauf/21Fenster/9Routen/16Admingruppen+60CI-Gegenfaellegruen;unabhaengigesCodereviewgeschlossen.
-NaechsterSchritt:engenCI-Vertragpruefen,beidePflichtjobsamKopfgruenmergen,DeploymentlesenundkonkretenAdmin-Einzelstartvorbereiten.
+PR1223Kopf31702663/PRCI43749687091undMerge33894975/MainCI43749913915beidePflichtjobsgruen;HTML19:04HTTP200Version33894975.
+19:08atomar4wartendeZieljobsPrioritaet80→70+2nativeRSSjobs13bc9e90/83a52d69ergänzt;unabhaengigesSQLReview/P2geschlossen.
+Readback6/6wartend/attempts0/jetztfaellig,7alteErfolgeerhalten,Kosten/Quotenunveraendert;keinVerarbeitungsstart.
+NaechsterSchritt:echterAdmin-EinzelstartüberbestehendenKnopf,danach6Jobabschluesse/Quittungen/Kostengezieltlesen.
 [HeutigesAbschlussfenster](betrieb/quellen-abschlussfenster-20261115.md);16Nov05:25UTCbleibtbestehendeRueckfallkontrolle,keinneuerTermin.
 [NeueAltstandbelege+SQL/Rueckwege](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP-Korrektur](betrieb/dip-fundstellen-korrektur-20261115.md) · [Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md) · [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md).
 
