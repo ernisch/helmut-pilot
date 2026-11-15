@@ -1,30 +1,34 @@
 # CURRENT STATE — Helmut
-**15.11.2026,09:31UTC: Leser und Attribution live; Tagesversorgung bleibt teilweise.**
+**15.11.2026,11:14UTC: Zusatzlauf abgeschlossen; Quellenvorbereitung live, Versorgung weiter teilweise.**
 
-Runtime236ced65 READY nach PR1209; exakt gepruefter Kopf79ce8984, fuenfter Merge.
-CI43699045427:14/14Kern,235/235Fach,echterDesktop-/Mobil-Chromium gruen;
-gezielter Plan, keine DB-/pauschalen500er-Laeufe. PR1206-Leser zuvor regulaer ausgerollt.
-Regulaerer Morgen15Nov05:15:partial,67Eintraege/2neuegepruefteAbsaetze;
-PaketHashd778e3b6,Quellenoffen,keinbelegterTagesanlass,keinGesamt-PASS.
-Letzte Quellenabdeckung04:34:4Fehler/95Warnungen/13Drift,9Bedarfspakete.
-Einmal genehmigter privater12Felder-Abgleich abgeschlossen, keine Werte abgelegt;
-keine Paketzuordnungsluecke. Vier Befunde betreffen drei Rollen-/Klassenbindungen.
-Nachkontrolle09:31:alle5geprueftenErfolgsjobs erledigt,Payload-MD5 vor/nach identisch.
-Ad-hoc-Einstieg:derselbe Originalteaser135Zeichen lokal+CI positiv,keineVolltextbehauptung.
-Host weiterhin nicht freigegeben;18Hosts unveraendert,keinEnv-/Jobreset/Budgeteingriff.
-NDR-Einzelfall:Textvergleich negativ und Originaldatum abweichend;keinbewiesenerLeserfix.
-Neue iRights-Attribution bindet Autor,Original,Datum,Lizenz und encoded-Satzpraefix;
-3belegteArtikel erhalten,16nurTitel/Link,keineBilder/spaetereVolltextnachladung.
-QuellenPR1207:2Direktwege/3begruendeteBindungen inaktiv vorbereitet,6neueSQL-Zeilen.
-LokaleFach-/Driftpruefung gruen; CI43696614891wegenpauschaler500er-Laeufe gestoppt.
-Betreiberentscheidung:keineMassentests,PRbleibtDraft/ungemergt;keineSchutzregelumgangen.
-KeineSourceinstallation/-aktivierung,keineProduction-Daten-/Profil-/Cronmutation,
-keinezusaetzlichenbezahltenModelle. Nutzungsumfang und Betrieb bleiben offen.
-EchteKundenabnahme und rechtlicheVerkaufsfreigabe unbelegt;UI-PR1208 separat offen.
-AlteNachtkontrollen beendet; neueEINMALIGElesendeKontrolle16Nov05:25UTC bestaetigt.
-Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
-NaechsterSchritt:den naechsten ohnehin regulaeren Morgenabschluss lesend pruefen.
-[Abschlussnachweise, Grenzen und drei Verkaufsblocker](betrieb/versorgung-folgeabschluss-20261115.md).
+Runtime37d62160 READY nach PR1207; oeffentliche ShellHTTP200 mit exakt dieserVersion.
+QuellenPR1207:2inaktiveDirektwege/3begruendeteBindungen/6neueSeedzeilen gemergt,
+keineLiveinstallation/-aktivierung. ExakterKopf93accafb,CI43707311442beidePflichtjobsgruen:
+39Plan-/87Quellen-/14Kerngruppen,gezielteAuswahl,keinDB-/500er-/bezahlterTest.
+MainCI43707520208gruen mit echterMerge-/Treebindung;unabhaengigesReview ohneRestbefund.
+FruehererKopf7fa06CI43706873018zusaetzlich1074synthetischeInfrastrukturUnitfaelle;
+imEndplan wieaufMain bewusstnichtwiederholt. Erstfehler/Abbrueche bleiben dokumentiert.
+BisherigeLeserPR1203/1204/1206 undAttributionPR1209 erhalten;UI-PR1208 separatgemergt.
+BetreiberhatgenaueinAdminquellenlauf gestartet:10:45:32–10:49:22UTC,
+15erledigt/15Wiedervorlagen/72Vertagungen,0endgueltigeFehler,0Leaseverluste.
+Quellenabdeckungdanach weiterpartial:4Fehler/95Warnungen/13Drift,9Bedarfspakete,
+keineZuordnungsluecke. FehlendeRollen-/Klassenbindungen bleibenBetriebsblocker.
+14Wiedervorlagen habenechteMetadatenkonflikte;keineOriginale/Bindungenumgeschrieben.
+EinunbekannterModellausgang bleibtCASgesperrt;keinblinderRetry/Reserveabbau.
+Lage10:57 bestaetigtCache/7Vorgaenge/quellenversorgung-offen;Morgen10:58partial,
+reasonmorgenversorgung-unvollstaendig. BeideAbschlussquittungengespeichert,keinGesamtPASS.
+Kostenbuch11:12:0,536289USDheute,3,919323USDgesamtgebunden,8alteReservenoffen;
+Zusatzgegenvorher0,083777USD. Grenzen1USD/Tag/30USDgesamt unveraendert.
+5gepruefteErfolgsjobs nachZusatzlaufundMerge weitererledigt,PayloadMD5identisch.
+Adminsessiongrenze erhalten;Nutzerstart,keineSecretumgehung,keinQuoten-/Host-/Cronreset.
+AutomatischeFreigabepruefung lehnteNutzungsflagweitungfuer2Feeds mangelskonkretemGOab;
+keineFlag-/ProductionKatalogaenderung ausgefuehrt. KonkreteVorlage samtRueckweg liegtvor.
+Einmaligerprivater12FelderAbgleichbleibtabgeschlossen;keineerneuteProfilabfrage.
+EchteKundenabnahme/rechtlicheVerkaufsfreigabe weiterunbelegt. KeineBehauptungheuteverkaufsbereit.
+EinmaligelesendeKontrolle16Nov05:25UTCbleibt;Produktcronsunveraendert03:00–05:15UTC.
+NaechsterSchritt:genauebegrenzteNutzungs-/ProductionEinbindungder2Feedsfreigeben.
+[Abschlussnachweise](betrieb/versorgung-folgeabschluss-20261115.md) ·
+[PrueffaehigeFreigabevorlage](betrieb/quellen-einbindung-freigabe-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
