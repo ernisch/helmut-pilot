@@ -99,7 +99,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.match(w.diagnosen()[0].last_error, /artikel-eingangsfehler: quellenstand-versionskonflikt/);
     const stand = await V.lese({ mandat: "synthetisches-mandat", jetztMs: now, env,
       deps: { planungsrest: { lesen: async () => ({ zustand: "fertig" }) }, offeneVorbedingungen: w.q.offeneVorbedingungen } });
-    A.deepEqual(stand, { version: 1, zustand: "offen" }); A.deepEqual(w.forbidden, []);
+    A.deepEqual(stand, { version: 1, zustand: "offen", verarbeitungBeendet: true }); A.deepEqual(w.forbidden, []);
   });
   await test("Fehlende Canonical Lesung Archivbindung oder gefaelschter Konflikt bleiben UNKNOWN", async () => {
     for (const art of ["missing", "read", "archive", "hash", "duplicate", "columns", "title-null", "title-empty", "date", "fake", "text", "fake-persist"]) {
