@@ -59,6 +59,17 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     }
     assert(items[0].title.length > 300, "Kuerzung bleibt der bestehenden Ausgabeprojektion vorbehalten");
   });
+  await test("OJ-L-Kollektion entscheidet den Umfang statt einer unvollstaendigen CELEX-Sektorliste", () => {
+    assert(!C.buildQuery(now).includes("REGEX(STR(?celex)"));
+    for (const celex of ["42026D2505", "E2026D0001", "32026R2505R(01)"]) {
+      const x = row(); x.celex.value = celex;
+      const [item] = parse([x]); assert.equal(item.cellar.celex, celex);
+      assert(C.validiereHerkunft(item.cellar, item.url, item.publishedAt));
+    }
+    for (const celex of ["X".repeat(81), "32026D2505&x=1", "32026D2505#text", "32026D2505 "]) {
+      const x = row(); x.celex.value = celex; assert.throws(() => parse([x]), /metadaten/);
+    }
+  });
   await test("Echte Leere bleibt leer, identische Dublette wird nicht vervielfacht", () => {
     assert.deepEqual(parse([]), []); assert.equal(parse([row(), row()]).length, 1);
     const shuffled = fixtures.map(row).reverse(); assert.equal(parse(shuffled)[0].cellar.celex, fixtures[0][1]);

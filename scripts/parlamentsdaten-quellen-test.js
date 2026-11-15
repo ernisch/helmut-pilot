@@ -27,6 +27,11 @@ const { PARLAMENTSDATEN_QUELLEN: sources } = require("../lib/helmut/quellenarchi
 const [eurlex, bundespuls] = sources;
 const catalog = buildCatalog();
 const read = name => fs.readFileSync(path.join(__dirname, "fixtures/parlamentsdaten-20261106", name), "utf8");
+function pruefeFehlerwege(calls, source) {
+  assert.equal(calls[0], source.url);
+  assert.equal(calls.length, source.id === "eurlex-amtsblatt-l-rss" ? 2 : 1);
+  if (calls.length === 2) assert(calls[1].startsWith("https://publications.europa.eu/webapi/rdf/sparql?"));
+}
 const feeds = [read("eurlex-amtsblatt-l.xml"), read("bundespuls-vorgaenge.xml")];
 const irights = { id: "fach-irights-rss", name: "iRights.info", type: "media", priority: 80,
   url: "https://irights.info/feed", crawlMethod: "rss", active: false };
@@ -67,6 +72,38 @@ async function transport(body, status, fn) {
 }
 
 (async () => {
+  await test("EUR-Lex-Challenge nutzt einmal CELLAR mit echtem Amtsblattdatum und nachvollziehbarer Metadatenherkunft", async () => {
+    let cellarCalls = 0;
+    await transport("<html>Javascript required</html>", 202, async calls => {
+      const items = await C.crawlSource(eurlex, { now: new Date("2026-11-15T12:00:00Z"), fetchUrl: async (url, depth, opts) => {
+        cellarCalls++; assert(url.startsWith("https://publications.europa.eu/webapi/rdf/sparql?"));
+        assert.equal(depth, 0); assert.equal(opts.allowedHost, "publications.europa.eu");
+        return { status: 200, body: read("cellar-oj-l-metadaten.json"), finalUrl: url };
+      } });
+      assert.equal(cellarCalls, 1); assert.deepEqual(calls, [eurlex.url]); assert.equal(items.length, 3);
+      for (const item of items) {
+        assert.equal(item.publishedAt, "2026-11-13T00:00:00.000Z");
+        assert.equal(item.content, item.title);
+        const doc = D.toRawDocumentRow(item), origin = H.leseParlamentsdatenHerkunft(doc);
+        assert(origin); assert.equal(origin.version, 2); assert.equal(origin.retrieval.method, "cellar-sparql");
+        assert.equal(origin.retrieval.publicationDate, "2026-11-13"); assert.equal(doc.summary, null);
+        assert(H.parlamentsdatenQuellenhinweis(doc).text.includes(origin.identifier.value));
+        assert.equal((await K.beschaffeArtikelkontext(doc, { versuch: true })).reason, "quelle-nur-metadaten");
+        const changed = structuredClone(doc); changed.raw.parlamentsdatenHerkunft.retrieval.publicationDate = "2026-11-12";
+        assert.equal(H.leseParlamentsdatenHerkunft(changed), null);
+      }
+    });
+  });
+  await test("Funktionierendes EUR-Lex-RSS benoetigt keinen Ersatz; fehlgeschlagener Ersatz bleibt Fehler", async () => {
+    let calls = 0;
+    const fetchUrl = async () => { calls++; throw Error("cellar-timeout"); };
+    await transport(feeds[0], 200, async () => assert((await C.crawlSource(eurlex, { fetchUrl })).length));
+    assert.equal(calls, 0);
+    await transport("<html>Challenge</html>", 202, async () => {
+      await assert.rejects(C.crawlSource(eurlex, { fetchUrl }), /cellar-timeout/);
+    });
+    assert.equal(calls, 1);
+  });
   await test("iRights-Textlizenz wird je RSS-Item aus ausdruecklichem Text-/Autoren-/OERinfo-Beleg gebunden", async () => {
     await transport(irightsXml(), 200, async calls => {
       const [raw] = await C.crawlSource(irights);
@@ -255,7 +292,7 @@ async function transport(body, status, fn) {
         assert.deepEqual(await C.crawlSource(source), []); assert.deepEqual(calls, [source.url]);
       });
       await transport("nicht erreichbar", 503, async calls => {
-        await assert.rejects(C.crawlSource(source), /HTTP 503/); assert.deepEqual(calls, [source.url]);
+        await assert.rejects(C.crawlSource(source), /HTTP 503/); pruefeFehlerwege(calls, source);
       });
     }
   });
@@ -266,7 +303,7 @@ async function transport(body, status, fn) {
       "<rss><channel><item><title>Unvollständig</title></channel></rss>",
       "<rss><channel><item><title>Kein Link</title></item></channel></rss>"
     ]) await transport(body, 200, async calls => {
-      await assert.rejects(C.crawlSource(source), /RSS/); assert.deepEqual(calls, [source.url]);
+      await assert.rejects(C.crawlSource(source), /RSS/); pruefeFehlerwege(calls, source);
     });
   });
   await test("Neue lange Feedbeschreibungen erweitern die Titelmetadatenübernahme nicht", () => {
