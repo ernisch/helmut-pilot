@@ -109,6 +109,30 @@ function context({ rows = new Map(), quota = true, finishUnknown = false, manife
       assert.equal(c.calls.rdf + c.calls.zip + c.calls.reserve + c.calls.quota, 0);
     }
   });
+  await test("Nativer Lesealias erhaelt den vollstaendig validierten240Zeichen-Originalabsatz exakt", () => {
+    // Synthetischer Grenzfall im bestehenden FORMEX-Fixture; kein neuer
+    // amtlicher Inhalt und kein Quellenabruf. Der echte Ausgangsabsatz hat142Z.
+    const files = F.fragments();
+    const prefix = "Die folgende Regelung betrifft die zeitliche Geltung des Anhangs im bereits erlassenen Beschluss: ";
+    files[0].text = files[0].text.replace("<ALINEA><P>", "<ALINEA><P>" + prefix);
+    const synthetic = O.extractPackage(F.zip(files), F.options);
+    assert.equal(synthetic.text.length, 240);
+    const raw = C.normalizeRawItem({ ...input, content: synthetic.text,
+      cellarExcerpt: { proof: synthetic.proof, readAt } }, source);
+    const doc = D.toRawDocumentRow(raw);
+    const { raw: data, ...fields } = doc;
+    const projected = { ...fields, parlamentsdatenHerkunft: data.parlamentsdatenHerkunft, quellenauszug_beleg: null };
+    assert(Q.read(projected)); assert.equal(E.satzpraefix(synthetic.text), "");
+    const result = E.geleseneQuelle(projected);
+    assert.equal(result.summary, synthetic.text); assert(Q.read(result));
+    assert.equal(Object.hasOwn(result, "quellenauszug_beleg"), false);
+    assert.equal(require("../lib/helmut/briefingContract").buildSources({}, [result])[0].summary, synthetic.text);
+    assert.equal(projected.summary, synthetic.text, "Eingabe unveraendert");
+    for (const changed of [{ ...projected, summary: synthetic.text.slice(0, -1) + "X" },
+      { ...projected, parlamentsdatenHerkunft: null, source_id: "generic" }]) {
+      assert.equal(Q.read(changed), null); assert.equal(E.geleseneQuelle(changed).summary, null);
+    }
+  });
   await test("SourceMode-Flag ueberlebt echten Compiler und nativen Quellenhandler mit60s Standardlease", async () => {
     const demand = await require("../lib/helmut/source-demand").kompiliereQuellenbedarf({
       profile: [{ id: "synthetischer-einzelbedarf" }], quellenFuerProfil: async () => [source], jetztMs: Date.parse(readAt), env });
