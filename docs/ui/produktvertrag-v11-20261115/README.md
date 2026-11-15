@@ -73,6 +73,17 @@ auf zusätzliche UI-Bereichssuiten begrenzte Lauf bestand11/12: ausschließlich
 `ical.js`; keine Kalenderdatei geändert. Die erforderliche CI installiert regulär
 Dependencies und muss vollständig grün sein. Keine neue Vollsuite lokal.
 
+## Erster Pflicht-CI-Befund
+
+CI43696525538 auf `2df50b6d`: Browsercheck stoppt am alten direkten Zugriff auf
+`desktop-scroll-8` (neunter Lagevorgang), der nach der neuen Fünfergrenze korrekt
+noch nicht angezeigt wird. Der Test klickt nun zuerst den sichtbaren Aufklapper
+und prüft zusätzlich fünf vor / zwölf nach dem Aufklappen; alle ursprünglichen
+Scroll-/Detail-/Historyprüfungen bleiben erhalten. Seine spätere Du-Erwartung
+für die Orientierungsmeldung ist ebenfalls auf den neuen Sie-Text aktualisiert.
+Kein Runtimefix, keine Lockerung einer Sicherheitsprüfung. Neuer Kopf braucht
+neue vollständige Pflicht-CI.
+
 ## Risiko und Rückweg
 
 Nur Darstellung und Formatangebot ändern sich; die Datenmotor-Fachabnahme bleibt

@@ -1100,6 +1100,11 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         uiLageDetailOpen = false; currentView = 'briefing'; render();
         document.querySelector('.ui-page').scrollTo({ top: 0, behavior: 'instant' });
       }, memberFixture[0]);
+      check(`${label}: Lage zeigt zunaechst fuenf von zwoelf vorhandenen Vorgaengen`,
+        await page.locator('[data-ui-lage-select]').count() === 5);
+      await page.locator('[data-ui-lage-expand]').click();
+      check(`${label}: Lage macht alle zwoelf Vorgaenge ueber den sichtbaren Bedienweg erreichbar`,
+        await page.locator('[data-ui-lage-select]').count() === 12);
       const detail = page.locator('.ui-lage-detail');
       if (!isMobile) {
         const panelInside = () => page.evaluate(() => {
@@ -1335,7 +1340,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
       if (device.expectLocked) {
         const text = await page.evaluate(`document.getElementById("orientationLock").textContent`).catch(() => "");
         check(`${device.label}: Sperrtext enthaelt die geforderte Aufforderung`,
-          text.includes("Bitte drehe dein Gerät ins Hochformat."));
+          text.includes("Bitte drehen Sie Ihr Gerät ins Hochformat."));
       }
 
       await context.close();
