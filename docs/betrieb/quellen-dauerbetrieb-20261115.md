@@ -1,6 +1,6 @@
 # Dauerhafte Quellenfehlerbehandlung, 15.11.2026
 
-## Nachtrag: weiterer belegter Lesergrenzfehler
+## Nachtrag23:04UTC: weiterer Lesergrenzfehler repariert und live
 
 Isolierte Probe mit vorhandenem nativem Speicher-/Archiv-/JSONB-Testharness:
 Cache-CAS, alter Metadatensatz, neue142Zeichen-Textfassung, Archivbindung und
@@ -12,13 +12,30 @@ beim nativen Lesealias `quellenauszug_beleg:null` von der alten generischen
 240Zeichen-Satzpraefixreparatur auf `summary:null` gesetzt. Der erlaubte ganze
 Absatz und sein Beleg verschwinden fuer nachgelagerte Verbraucher.
 
-Kleinster Fix im Review: nur der bereits vollstaendig validierte amtliche
+Kleinster Fix: nur der bereits vollstaendig validierte amtliche
 EUR-Lex-Originalbeleg ueberspringt diese generische Kuerzung. Keine Lockerung
 der Satzgrenzenerkennung, keine Ausweitung des Rechts-/Abrufumfangs.
 Bestehende Integrationssuite um eine gezielte Grenzfallgruppe erweitert:
 13/13gruen, manipulierte und fremde240Zeichen-Texte bleiben geschlossen.
 Native EUR-Lex-Probe nachFix auch240→240/Beleggueltig, bisheriger142Absatz
-unveraendert; bestehende native Datums-/Archivregression3/3gruen.
+unveraendert; bestehende native Datums-/Archivregression3/3 und allgemeine
+Quellenauszugssuite14/14gruen. Zwei unabhaengige Runtime-/CI-Reviews geschlossen.
+Evidence `0f968bea48812729499eff85b638e2ad8d1b550a`; CI-Plan bindet genau
+zwei Runtime-/Testblobs und den restlichen Baum.124CI-Vertragsfaelle und
+4betroffeneSyntaxpruefungen gruen, keine Mengen-/bezahlten Modelltests.
+PR1231Kopf `88670481375129e9877a09695014f60438bc0b23`:
+[PR-CI43772362977](https://github.com/ernisch/helmut-pilot/actions/runs/43772362977)
+beide Pflichtchecks erfolgreich;3gezielteSuiten und14Schnellkern-Suiten,
+Browser bewusst nicht erforderlich. Merge
+`dc9bd6ea2c13be28dc0eb2c5089a67c8a9a650cf`:
+[Main-CI43772591998](https://github.com/ernisch/helmut-pilot/actions/runs/43772591998)
+beide Pflichtchecks erfolgreich. Deployment `dpl_J6dnMp5cu5EB9o3wsCkSAez75LPu`
+READY; regulaerer Alias23:03:44HTTP200/6118Bytes zeigt dc9bd6ea, SHA256
+`21074114510e29ad64361f2fd04afdc15334f53601504f86a5a3603007114d1b`.
+Lesende Nachkontrolle23:03:49UTC:0laufendeJobs,6alteZieljobsweitererledigt/attempt1,
+BMGweiterwartend/attempt2,0,711983USDTag/4,095017USDgesamt unveraendert.
+Vorcheck23:00:32:0laufendeOriginalprozesse;9Fenster/2700Sekunden/16Originale
+unveraendert. Kein Original-, Kosten-, Katalog-, Cache- oder Jobschreibvorgang.
 Keine Productiondaten-/Quota-/Laufrechtsaenderung; regulaerer Nachweis und
 Kontrolle16Nov05:25UTC bleiben offen beziehungsweise unveraendert.
 

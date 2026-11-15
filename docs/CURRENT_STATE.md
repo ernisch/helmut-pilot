@@ -1,8 +1,11 @@
 # CURRENT STATE — Helmut
-**15.11.2026,22:45UTC: Quellenreparaturen einschließlich amtlichem EUR-Lex-Originalauszug live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
+**15.11.2026,23:04UTC: Quellenreparaturen einschließlich EUR-Lex-Lesergrenze live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
 
-PR1229 Kopf f263edce/PR-CI43770698296, Merge d3bbb9e9/Main-CI43770872884: beide Pflichtchecks grün, unabhängige Runtime-/CI-Reviews geschlossen.
-Production dpl_FoY3eZgAoTCCTv9jCAkAyzXCfFay READY; öffentlicher Alias22:44:45HTTP200/6118Bytes zeigt d3bbb9e9.
+PR1231 Kopf88670481/PR-CI43772362977, Merge dc9bd6ea/Main-CI43772591998: beide Pflichtchecks grün, unabhängige Runtime-/CI-Reviews geschlossen.
+Production dpl_J6dnMp5cu5EB9o3wsCkSAez75LPu READY; Alias23:03:44HTTP200/6118Bytes zeigt dc9bd6ea.
+Nativer Speicher-/Archiv-/JSONB-Replay bestätigt142Zeichen bis Briefing. Neuer synthetischer240Zeichen-Grenzfall: vorher gültiger Auszug→null; jetzt exakt erhalten.
+Nur vollständig validierter Legalbeleg umgeht alte Schnittgrenzenreparatur.13Integration/14Auszug/3nativeGruppen,124CI-Verträge+14Schnellkern grün.
+EUR-Lex-Grundanbindung PR1229/d3bbb9e9 mit beiden grünen Pflichtchecks und amtlichem Primärbeleg bleibt unverändert.
 Amtlicher CELLAR-Originalread21:54:48 belegt CELEX32026D2505/DEU/COM/OJ-L2026/2505, Publikation13Nov, erster ganzer operativer Absatz142Zeichen.
 Neuer enger Textvertrag:60–240Zeichen mit Fassung, Original-/Auszughash, Urheber, echtem Datum, Fundstelle, Nutzungs-/Bearbeitungshinweis.
 EUR-Lex-Rechtsdokument-Reuse ist primär belegt; CC0 bleibt nur Metadaten. Keine ungeprüften Fremdwerke/Bilder/Anhänge oder Volltextfreigabe.
@@ -10,12 +13,12 @@ Vorhandener Transport+CAS-Cache, höchstens1neuer Originalabruf je regulärem Qu
 Quittierter temporärer HTTP-Fehler erlaubt genau1späteren Versuch nach mind15Minuten/Retry-After; Timeout/UNKNOWN und alte Negative bleiben geschützt.
 SourceMode→Compiler→Handler und native60sDeadline gezielt geprüft; kanonische Hashes/JSONB, Qualitätsgates und komplette Quellenausgabe erhalten.
 Neue Fassung überschreibt keine Altzeile; gleiche CELEX-Fassungen zählen als1Beleg, alle Varianten bleiben sichtbar.
-13Original-/5Transport-/12Integrationsgruppen sowie bestehende Quellen-/Abdeckungs-/Identitätstests grün;108CI-Verträge+14Schnellkern-Suiten grün.
+Grundabnahme13Original-/5Transport-/12Integrationsgruppen sowie Quellen-/Abdeckungs-/Identitätstests und108CI-Verträge bleiben gültige frühere Belege.
 BMG/presse/reden ist durch PR1227/Runtime224b0c97 dauerhaft im strengen Artikelkopfleser/Revision2; gespeichertes Original liefert offline304Zeichen Intro.
 BMG-Zieljob633d9438weiterwartend2/max3/Revision1; regulärer Claim kann Archiv-CAS erreichen, kein Reset/Neufetch/Modellstart.
 PR1225 repariert falsches skipped-shared beim Queue-Retry, RSS/HTML als Leer-Erfolg und Parserfehlerklassifikation; Compiler/Lease/Anbietergrenzen erhalten.
 Offizieller CELLAR-Metadatenersatz bleibt deutsch/OJ-L/echtes Datum/14UTC-Tage/max16Items/256KiB; blockierten Zugang nicht umgehen.
-Lesende Nachkontrolle22:44:49:0laufendeJobs,6vorherigeZieljobs weitererledigt/attempt1;0,711983USDTag/4,095017USDgesamt unverändert.
+Lesende Nachkontrolle23:03:49:0laufendeJobs,6vorherigeZieljobs weitererledigt/attempt1;0,711983USDTag/4,095017USDgesamt unverändert.
 Vorheriger Adminabschluss6a95d30419:14–19:18:12erledigt/53vertagt/0Endfehler;2DIP/ZDF/BMAS verstanden. Lage19:37:6Vorgänge aus gültigem Cache/partial/0Modellkosten.
 Destatis/iRights je1echteQuittung; minLaeufe3 bleibt. Linke-RSS19:34nach404genau1URL auf geprüftenfeed.rss korrigiert, regulärer Abrufnachweis offen.
 Einmalkey15Nov verbraucht;9Fenster2700s16Originale,1USD/UTC-Tag30gesamt und alle alten Reserven unverändert; keine alten Laufrechte wiederverwenden.
