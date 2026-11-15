@@ -8,11 +8,12 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1217;
 const BRANCH = "codex/quellenquittung-integration-20261115";
 const BASE = "9ff4416b7b8bb7eacda8f045f77b26fe1fd98f90";
-const EVIDENCE = "9c0c593976b4bc5efc4b99b43bab148e82058019";
+const EVIDENCE = "2c1b765d4577bb84ee8d27de25ae223528ebbc13";
 const MERGE_TITLE = "fix(quellen): native Abrufquittungen im Warteschlangenpfad erhalten (#1217)";
 const BLOBS = Object.freeze({
   "lib/helmut/scalable-pipeline.js": "ff69613e013b7acac214b245969ec280d843370b",
-  "scripts/source-queue-telemetry-test.js": "7f5d9ab8723ceb1a43d5c10977941f30b18a8a63"
+  "scripts/source-queue-telemetry-test.js": "7f5d9ab8723ceb1a43d5c10977941f30b18a8a63",
+  "scripts/artikel-versionskonflikt-test.js": "e80d734aa8dc4bf5b3403985bd1cf9cbe55b7638"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-quellenquittung-plan.js", "scripts/ci-pruefplan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/versorgung-sofortpruefung-20261115.md",

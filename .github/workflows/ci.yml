@@ -116,7 +116,7 @@ jobs:
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
               && { [ "$(git log -1 --format=%s)" = 'fix(quellen): native Abrufquittungen im Warteschlangenpfad erhalten (#1217)' ] \
                 || { [ "$(git rev-parse HEAD^1)" = 9ff4416b7b8bb7eacda8f045f77b26fe1fd98f90 ] \
-                  && git merge-base --is-ancestor 9c0c593976b4bc5efc4b99b43bab148e82058019 HEAD; }; }; }; then
+                  && git merge-base --is-ancestor 2c1b765d4577bb84ee8d27de25ae223528ebbc13 HEAD; }; }; }; then
             node scripts/ci-quellenquittung-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -841,7 +841,7 @@ jobs:
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
               && { [ "$(git log -1 --format=%s)" = 'fix(quellen): native Abrufquittungen im Warteschlangenpfad erhalten (#1217)' ] \
                 || { [ "$(git rev-parse HEAD^1)" = 9ff4416b7b8bb7eacda8f045f77b26fe1fd98f90 ] \
-                  && git merge-base --is-ancestor 9c0c593976b4bc5efc4b99b43bab148e82058019 HEAD; }; }; }; then
+                  && git merge-base --is-ancestor 2c1b765d4577bb84ee8d27de25ae223528ebbc13 HEAD; }; }; }; then
             node scripts/ci-quellenquittung-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi

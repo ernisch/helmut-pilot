@@ -102,3 +102,12 @@ Auch ein falscher Mergetitel erreicht den Guard und wird dort abgelehnt.
 Ein Merge/Deployment ersetzt weder den nächsten tatsächlich gemessenen Abruf
 noch die vollständige Kunden-/Rechtsabnahme. Das heutige Ziel bleibt gespeichert;
 ein unbekannter Zustand wird unter Zeitdruck nicht in einen Erfolg umgewertet.
+
+Erster PR-Kopf`bff6a4dd`,CI43719247865:Browserpflichtjob erfolgreich;
+Syntaxjob stoppte an der bereits auf unverändertem Main9ff4416b reproduzierten
+veralteten Erwartung in`artikel-versionskonflikt-test.js:102`. Der native
+Versorgungsstand bleibt absichtlich`offen`, kennzeichnet die terminal beendete
+Verarbeitung aber bereits mit`verarbeitungBeendet:true`. Nur diese Erwartung
+angepasst;keine Produktionslogik geändert. Bestehende9/9Gruppen danach grün.
+Neuer Belegbaum`2c1b765d4577bb84ee8d27de25ae223528ebbc13`bindet zusätzlich
+diesen einen Testblob;beide ursprünglichen Runtime-/Regressionstestblobs unverändert.
