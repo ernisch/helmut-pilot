@@ -1,0 +1,68 @@
+[
+  {
+    "documentId": "rd-373e2d5f876ea3257735e0450db9fc34033f5d028ce23bdbfa45f22aa5a45b03",
+    "url": "https://www.bundesgesundheitsministerium.de/ministerium/meldungen/deutscher-pflegetag-2026",
+    "sha256": "ff41c52750e9e7d6d491bc3ff8ccbdd4265dedc61527d2b7a3326e79a05960b1",
+    "readAt": "2026-11-14T23:35:29.032346+00:00",
+    "before": "strukturierter-artikel-mehrdeutig-oder-fehlend",
+    "after": "artikel-einstieg-v2",
+    "structure": "bmg",
+    "characters": 362,
+    "paragraphs": 1
+  },
+  {
+    "documentId": "rd-177e7952541e986c5224eaee1316bca1c4e3f9e9c748d8fdc66a05e070e8930d",
+    "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1232222",
+    "sha256": "d962ab0c969c80ca8a81cb2d853acc57492827337cf2a8f613e6e9f521843892",
+    "readAt": "2026-11-15T00:05:54.612Z",
+    "before": "artikeltitel-abweichend",
+    "after": "artikeltext-v3",
+    "structure": "bundestag",
+    "characters": 971,
+    "paragraphs": 3
+  },
+  {
+    "documentId": "rd-8ea6c8554591d9942c82b59e1d2864174bd5b0c68ec96a042bf39d4e5c92be79",
+    "url": "https://www.bmas.de/DE/Service/Presse/Pressemitteilungen/2026/digitalisierung-und-ki-bieten-grosse-chancen.html",
+    "sha256": "aebdd4006f6c18d6d135c982295d44b812e71a53c7ad8090b43f23222b2303bc",
+    "readAt": "2026-11-15T00:05:53.200Z",
+    "before": "artikeltitel-abweichend",
+    "after": "artikel-einstieg-v2",
+    "structure": "bmas",
+    "characters": 93,
+    "paragraphs": 1
+  },
+  {
+    "documentId": "rd-ad863bad8d337cb09d1c46ea0ed3b5d0d7dfe9b67fce107e7991699d20f75125",
+    "url": "https://www.bmas.de/DE/Service/Presse/Meldungen/2026/50-jahre-opferentschaedigung.html",
+    "sha256": "a77a5e50f308e2618d4b44cb976890749432023127789abd55d06abb349cc5f4",
+    "readAt": "2026-11-15T00:11:23.843Z",
+    "before": "artikeltitel-abweichend",
+    "after": "artikel-einstieg-v2",
+    "structure": "bmas",
+    "characters": 84,
+    "paragraphs": 1
+  },
+  {
+    "documentId": "rd-6ac9b0e6cd5e252547d837041dffe6582a9b7088f2c4bfb32e3207a397677666",
+    "url": "https://www.zdfheute.de/politik/deutschland/startchancengesetz-kita-bundestag-100.html",
+    "sha256": "4482188dd9d77924981042dc1959849206e3a6d283283db449afedc5ba657df3",
+    "readAt": "2026-11-14T23:35:26.388469+00:00",
+    "before": "artikelbereich-mehrdeutig-oder-fehlend",
+    "after": "artikel-einstieg-v2",
+    "structure": "zdf",
+    "characters": 167,
+    "paragraphs": 1
+  },
+  {
+    "documentId": "rd-a47735fd1b2747e106f872e95fb587c08d64ca9c0205f91e5f0720d3099b5552",
+    "url": "https://www.bundesgesundheitsministerium.de/presse/pressemitteilungen/bundesweite-impf-aktionswoche-gestartet",
+    "sha256": "fc6366428a601295992f79c66d9b9393aa02f1d2d6ff3d46ccdc42a263868441",
+    "readAt": "2026-11-15T00:05:51.435Z",
+    "before": "strukturierter-artikel-mehrdeutig-oder-fehlend",
+    "after": "artikel-einstieg-v2",
+    "structure": "bmg-presse",
+    "characters": 224,
+    "paragraphs": 1
+  }
+]
