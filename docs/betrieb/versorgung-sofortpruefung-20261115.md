@@ -197,3 +197,34 @@ genau1lesenderGET,max128KiB/20s,keineWeiterleitung/Modelle/Jobs/DBänderung,
 kein Reset und keine Limiterhöhung. Vorbereiteter Ablauf verwendet Einmalmarker
 und erzeugt keine native Erfolgsquittung. Freigabe steht noch aus.
 Kein Code geändert,kein Test wiederholt,kein weiterer Modelllauf gestartet.
+
+## Fortsetzung nach erneutem Betreiber-GO,15:19UTC
+
+Die konkrete Diagnosefreigabe ist durch„Du hast jede Freigabe. Arbeite weiter“
+erteilt und umgesetzt;keine weitere gleiche Frage. Insgesamt4begrenzte öffentliche
+GETs,native Budgets/Quoten unverändert:zweimal ursprüngliche Feedadresse302/110Bytes,
+dann das bekannte Ziel`https://eur-lex.europa.eu/TodayOJ/index.html?rssId=222`
+14:58:28UTC HTTP202/text-html/2035Bytes/SHA256
+`6d795213b4337db12acac0779220c1ac179ea4ff54ada9c6ddbe3079b8e24724`.
+Auch die bekannte offizielle RSS-Hilfeseite15:00:10UTC liefert202/dieselbe
+Art JavaScript-WAF-Challenge,SHA256
+`bd5f460a59b590dbced46cbc730c8559683bf3ec214e3c91860fe6b81574ad81`.
+Die erste Weiterleitung enthält lediglich den HTTPS-Standardport443;die
+Diagnosefolge wurde deshalb auf die identische kanonische Domainadresse begrenzt.
+Keine Challenge ausgeführt,keine Cookies oder Schutzumgehung,kein Fremdhost.
+Challenge-Tokens/Rohseiten werden nicht in Git übernommen,nur Antwortmerkmale/Hashes.
+
+Die echte native CrawlSource-Kette reproduziert mit diesen gespeicherten
+Antworten offline exakt den Productionfehler`Ungültige RSS-Antwort des Metadatenfeeds`.
+Der Parser weist Nicht-RSS korrekt zurück. Kein Parserpatch oder vermeintlicher
+Leerabruf-Erfolg. Die Quelle bleibt wegen einer externen Botprüfung gestört.
+
+Weitere gezielte Bestandsprüfung fand zwei alte DIP-Fundstellen ohne Pfadbindung,
+bei gleichzeitig gültigen amtlichen Quellenfeldern. Vollarchivexport automatisch
+als zu breit abgelehnt/nicht ausgeführt;die bereits genehmigte öffentliche
+Feldprojektion reichte für den nativen Funktionsvergleich. Kein weiterer
+Profilabgleich. [Ursache,konkrete2Zeilenreparatur,29gezieltePrüfungen,Review,
+getrennteNachkontrolleundRückweg](dip-fundstellen-korrektur-20261115.md).
+Die Zuordnung ist tatsächlich korrigiert,beide Jobs wurden nicht zurückgesetzt
+oder künstlich abgeschlossen. EUR-Lex,weitere fehlende Originalbelege sowie
+vollständige Kunden-/Rechtsabnahme bleiben echte Grenzen. Kein Gesamt-PASS.
