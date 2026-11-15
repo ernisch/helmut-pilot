@@ -148,3 +148,52 @@ bleiben separat offen. **Genau ein nächster Schritt:** die bestehende einmalige
 Kontrolle16Nov05:25UTC prüft die ohnehin regulären Quellen-/Lage-/Morgenabschlüsse
 gezielt auf echte neue Abrufquittungen und verbleibende Versorgungslücken.
 Sie startet keine zusätzlichen Verarbeitungsläufe und plant sich nicht neu.
+
+## Fortsetzung auf erneuten Sofortauftrag,14:04UTC
+
+Das ausgeschöpfte Quellenkontingent sperrt neue Abrufe,keine rein lesende
+Bestandsdiagnose oder gezielte lokale Reparatur eines bewiesenen Codefehlers.
+Die Aussage „nur morgen weiter“ gilt nicht für den gesamten Entwicklungsauftrag.
+
+Native Nachkontrolle:Alle elf eingereihten Inhaltsaufträge der neuen Quellen
+sind erledigt(Destatis10,iRights1). Die25Quelldokumente sind damit nicht mit
+25zu erstellenden Modellanalysen gleichzusetzen;Titel/Link-Einträge und nicht
+neu eingereihte historische Artikel dürfen keinen künstlichen Auftrag erhalten.
+
+Für den tatsächlichen Tagesrest ist nach bestehendem`helmut_jobs_tagesstand`
+`coalesce(last_seen_window,freshness_window)` maßgeblich. Daraus folgen36offene
+globale Inhaltsjobs:21heuteangelegt,15heutewiedergefunden. Keine laufenden Jobs.
+Historische Bestandszähler aus anderen Ursprungsfenstern sind kein pauschaler
+Nachweis heutiger Fehler;keine Wiedereröffnung oder Bereinigung des Altbestands.
+
+Die Zuordnung der früher belegten14Metadatenkonflikte zu den heutigen21Jobs
+war eine falsche Annahme und wurde im Gespräch korrigiert. Enger SQL-Vergleich
+aller36aktuell offenen Bindungen:Archive vorhanden,Titel/Herausgeber/
+Publikationsdatum gegenüber kanonischer Zeile jeweils0Abweichungen. Dies ist
+keine Lockerung der vorhandenen Versionswache und kein neuer Volltextnachweis.
+
+Nur das relevante Production-Hostflag lesend geprüft,keine Secrets ausgegeben.
+Unter36offenen Jobs sind33Webartikel auf nicht freigegebenen exakten Hosts,
+2DIP-Dokumentziele(die separat ihrem amtlichen Quellfeldvertrag unterliegen) und
+1NDR-Artikel auf freigegebenem Host. „general-koalition“ oder eine Ausschuss-
+Quell-ID beweist keinen amtlichen Herausgeber:Ein konkret gelesener gebundener
+Metadatensatz zeigt beispielsweise ein SZ-Artikelziel. Keine pauschale Host-
+oder Nutzungsfreigabe aus einer Suchquelle ableiten.
+Für die sieben zunächst eingegrenzten Medien-/Verbandsartikel existiert unter
+den beiden nativen Verfahrensschlüsseln kein gespeicherter Artikelkontext;
+alle fünf betroffenen Hosts sind derzeit nicht freigegeben. Daraus wird keine
+Lizenzbehauptung,kein Quotenreset und keine nachträgliche Artikelquittung.
+NDR-Negativbeleg und unbekannter CAS-Ausgang bleiben wie zuvor gesichert.
+
+Ein zusätzlicher konkreter Fehler ist nativ belegt:EUR-Lex-Sourcejob
+`db0829c6-f0d9-4185-984d-fbf1db0f8323`,5Versuche,fehlgeschlagen mit
+`Ungültige RSS-Antwort des Metadatenfeeds` an
+`https://eur-lex.europa.eu/DE/display-feed.rss?rssId=222`.
+Die vorhandene Parserwache weist Nicht-RSS-Antworten korrekt zurück;ohne echte
+Antwort ist ein Parserfehler nicht belegt. Die automatische Freigabeprüfung
+lehnte einen weiteren GET wegen ausgeschöpftem Quellenkontingent/Verbot weiterer
+Abrufe ab;er wurde nicht ausgeführt. Separate konkrete Ausnahme angefragt:
+genau1lesenderGET,max128KiB/20s,keineWeiterleitung/Modelle/Jobs/DBänderung,
+kein Reset und keine Limiterhöhung. Vorbereiteter Ablauf verwendet Einmalmarker
+und erzeugt keine native Erfolgsquittung. Freigabe steht noch aus.
+Kein Code geändert,kein Test wiederholt,kein weiterer Modelllauf gestartet.
