@@ -73,20 +73,28 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         calls.push(o); A.equal(o.tagesplan, plan); A.equal(o.deps.klassen, w.klassen);
         A.equal(o.stapel, 1); w.weiter(o.budgetMs); return bilanz({ dauerMs: o.budgetMs });
       }, { grenzen: { budgetMs, parallel: 8, stapel: 200 }, tagesplan: plan });
-      A.equal(calls.length, 2); A.equal(calls[0].budgetMs, Math.min(45000, budgetMs / 5));
+      A.equal(calls.length, 3); A.equal(calls[0].budgetMs, Math.min(45000, budgetMs / 5));
       A.deepEqual(calls[0].types, ["mandate_projection", "briefing_materialization"]);
-      A.equal(calls[1].budgetMs, budgetMs - calls[0].budgetMs); A(calls[1].budgetMs >= budgetMs * 0.8);
-      A.equal(calls[0].owner, calls[1].owner); A.equal(calls[0].deps.blobSpiegel, calls[1].deps.blobSpiegel);
+      A.deepEqual(calls[1].types, ["source_fetch"]);
+      A.equal(calls[1].budgetMs, Math.min(90000, Math.floor(budgetMs / 3)));
+      A.equal(calls[2].budgetMs, budgetMs - calls[0].budgetMs - calls[1].budgetMs);
+      A(calls[1].budgetMs + calls[2].budgetMs >= budgetMs * 0.8);
+      A.equal(calls.reduce((sum, o) => sum + o.budgetMs, 0), budgetMs);
+      for (const next of calls.slice(1)) {
+        A.equal(calls[0].owner, next.owner); A.equal(calls[0].deps.blobSpiegel, next.deps.blobSpiegel);
+      }
       A.equal(r.bilanzen.length, 1); A.equal(r.bilanzen[0].dauerMs, budgetMs);
     }
   });
   await test("Unvollstaendiger Plan schraenkt Typen weiter strikt ein und kleine Budgets erhalten Quellenarbeit", async () => {
     const w = welt(), calls = [];
     await stub(w, async o => { calls.push(o); return bilanz(); }, { typen: ["source_fetch", "document_understanding"] });
-    A.equal(calls.length, 1); A.deepEqual(calls[0].types, ["source_fetch", "document_understanding"]);
+    A.equal(calls.length, 2); A.deepEqual(calls[0].types, ["source_fetch"]);
+    A.deepEqual(calls[1].types, ["source_fetch", "document_understanding"]);
     const klein = welt(), k = [];
     await stub(klein, async o => { k.push(o); return bilanz(); }, { grenzen: { budgetMs: 24999 } });
-    A.equal(k.length, 1); A.equal(k[0].budgetMs, 24999); A.equal(k[0].types, null);
+    A.equal(k.length, 2); A.equal(k[0].budgetMs, 8333); A.deepEqual(k[0].types, ["source_fetch"]);
+    A.equal(k[1].budgetMs, 24999); A.equal(k[1].types, null); // Leere Vorphase verbraucht keine virtuelle Zeit.
     const nurPaket = welt(), p = [];
     await stub(nurPaket, async o => { p.push(o); return bilanz(); }, { typen: ["briefing_materialization"] });
     A(p.every(o => o.types.length === 1 && o.types[0] === "briefing_materialization"));
@@ -113,12 +121,12 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         zurueckstellGruende: { klassengrenze: 1 } })
         : bilanz({ reserviert: 1, erledigt: 1, nachTyp: { source_fetch: { erledigt: 1, fehler: 0 } } });
     });
-    A.equal(n, 2); A.equal(r.reserviert, 5); A.equal(r.erledigt, 2); A.equal(r.endgueltigFehlgeschlagen, 1);
-    A.equal(r.zurueckgestellt, 1); A.equal(r.bilanzen.length, 1); A.equal(r.bilanzen[0].phasen.length, 2);
+    A.equal(n, 3); A.equal(r.reserviert, 6); A.equal(r.erledigt, 3); A.equal(r.endgueltigFehlgeschlagen, 1);
+    A.equal(r.zurueckgestellt, 1); A.equal(r.bilanzen.length, 1); A.equal(r.bilanzen[0].phasen.length, 3);
     A.equal(r.bilanzen[0].nachTyp.mandate_projection.fehler, 1);
     A.equal(r.bilanzen[0].stapelrestZurueckgegeben, 1);
     A.equal(r.bilanzen[0].zurueckstellGruende.klassengrenze, 1);
-    A.equal(w.writes.length, 1); A.equal(w.writes[0].length, 2); A.equal(r.blobSpiegel.gesammelt, 2);
+    A.equal(w.writes.length, 1); A.equal(w.writes[0].length, 3); A.equal(r.blobSpiegel.gesammelt, 3);
   });
   await test("Ungeklaerte Mandatsphase Claimfehler oder Leaseverlust starten keine Quellenphase", async () => {
     for (const extra of [{ verfuegbar: false, grund: "warteschlange-nicht-verfuegbar" }, { leaseVerloren: 1 },
@@ -149,7 +157,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.q.hole(projection.id).status, "wartend"); A.equal(w.q.hole(projection.id).attempts, 1);
     A.equal(w.q.hole(quelle.id).status, "erledigt");
     A.equal(r.wiederholt, 1); A.equal(r.erledigt, 1); A.equal(r.bilanzen[0].verfuegbar, true);
-    A.equal(r.bilanzen[0].phasen.length, 2);
+    A.equal(r.bilanzen[0].phasen.length, 3);
   });
   await test("Spaeter Quellen-Claimfehler bleibt trotz vorher bestaetigter Mandatsarbeit unverfuegbar", async () => {
     const w = welt(); let n = 0;

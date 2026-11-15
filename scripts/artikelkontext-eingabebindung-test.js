@@ -291,11 +291,13 @@ async function main() {
       assert.deepEqual(s.p.schritte, [], "Keine Reservierung, Modellattrappe oder Speicherung bei falscher Bindung");
     }
   });
-  await test("Singlepromptbytes aus main e8a4b08b bleiben auch mit einteiligem Belegarray exakt erhalten", async () => {
+  await test("Singlepromptbytes aus main 6763dc8e bleiben auch mit einteiligem Belegarray exakt erhalten", async () => {
     const f = fixture(), sha = s => crypto.createHash("sha256").update(s).digest("hex");
-    assert.equal(sha(U.buildUnderstandingPrompt(f.cluster)), "f0eb1dae2543d9e3a8dfda9f65e20015a20dd4aac264c5e72b2eebf69d834304");
+    // Die bereits gemergten Fachthemen-/Quellenregeln veraenderten den Prompt.
+    // Beide Pins stammen aus main vor der vorliegenden Parserkorrektur.
+    assert.equal(sha(U.buildUnderstandingPrompt(f.cluster)), "5aa5cfb6be34bacb06a6727cac9ebfcc389e7ae96772a5048ebba05750f7a016");
     const single = U.buildUnderstandingPrompt(f.cluster, { artikelkontextVersuch: f.beleg });
-    assert.equal(sha(single), "d844632ab3f18e2b2a7b2e38751ae7a229ff65ba94fada3fd4607c55039d80f1");
+    assert.equal(sha(single), "32c33d3ce48818dfddec64f0f8f8ef6ce14363bccce97528e32e4b53db153461");
     assert.equal(U.buildUnderstandingPrompt(f.cluster, { artikelkontextBelege: [f.beleg] }), single);
     const s = pruefstand();
     await run(f, s);

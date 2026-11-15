@@ -23,15 +23,13 @@ let passed = 0;
       politicianId: "local-start-test", previewMode: false, response: { setHeader() {} },
       handleAsync: (_res, work) => work(),
       activeProfile: async id => ({ id }),
-      latestBriefingPayload: async () => ({ available: true }),
-      withTimeout: promise => promise,
-      buildLageBriefing: async (_profile, opts) => {
-        calls.push(opts);
-        if (!opts.cacheOnly) { liveCalls++; return lage; }
-        cacheCalls++;
-        if (state === "error") throw new Error("synthetischer Lesefehler");
-        return structuredClone(lage);
+      latestBriefingPayload: async opts => {
+        calls.push(opts); cacheCalls++;
+        return { available: true, lageBriefing: state === "error"
+          ? { available: false, reason: "error" } : structuredClone(lage) };
       },
+      withTimeout: promise => promise,
+      buildLageBriefing: async () => { liveCalls++; A.fail("Appstart darf keinen separaten Lagebau starten"); },
       getTasks: async () => [], getUserNotes: async () => [],
       getLatestCompleteKnowledgeObjectAt: async () => "2026-09-24T07:00:00Z",
       validateProfile: () => ({}), isAiEnabled: () => true, activeModelName: () => "gpt-5-mini",
@@ -40,7 +38,7 @@ let passed = 0;
     const out = await vm.runInNewContext(code, sandbox);
     await new Promise(resolve => setImmediate(resolve));
     A.equal(cacheCalls, 1); A.equal(liveCalls, 0);
-    A(calls.every(o => o.politicianId === "local-start-test" && o.cacheOnly === true));
+    A(calls.every(o => o.politicianId === "local-start-test" && o.compact === true));
     A.equal(out.profile.id, "local-start-test");
     if (state === "error") {
       A.equal(out.briefing.lageBriefing.available, false);
@@ -64,26 +62,26 @@ let passed = 0;
       politicianId: "isolated-tenant", previewMode: false,
       response: { setHeader: (name, value) => { headers[name] = value; } },
       handleAsync: (_res, work) => work(), activeProfile: () => hold("profile", { id: "isolated-tenant" }),
-      latestBriefingPayload: ({ politicianId }) => { A.equal(politicianId, "isolated-tenant"); return hold("briefing", { available: true }); },
-      buildLageBriefing: (_profile, opts) => { A.equal(opts.cacheOnly, true); return hold("lage", { available: true }); },
+      latestBriefingPayload: ({ politicianId }) => { A.equal(politicianId, "isolated-tenant"); return hold("briefing", { available: true, lageBriefing: { available: true, latestUpdatedAt: "2026-11-06T05:00:00Z" } }); },
+      buildLageBriefing: () => A.fail("Kein zweiter Lageabruf im Appstart"),
       withTimeout: promise => promise,
       getTasks: id => { A.equal(id, "isolated-tenant"); return hold("tasks", [{ id: "task" }]); },
       getUserNotes: id => { A.equal(id, "isolated-tenant"); return hold("notes", [{ id: "note" }]); },
-      getLatestCompleteKnowledgeObjectAt: () => hold("freshness", "2026-11-06T05:00:00Z"),
+      getLatestCompleteKnowledgeObjectAt: () => A.fail("Kein unabhaengiger Frischestand neben dem gespeicherten Paket"),
       validateProfile: () => ({}), isAiEnabled: () => false, activeModelName: () => "", ASSET_VERSION: "test", Date, console
     };
     const result = vm.runInNewContext(code, sandbox);
     A.deepEqual(calls, ["profile"]); gates.profile();
     await new Promise(resolve => setImmediate(resolve));
-    A.deepEqual(calls, ["profile", "briefing", "lage", "tasks", "notes", "freshness"]);
+    A.deepEqual(calls, ["profile", "briefing", "tasks", "notes"]);
     const observed = failTasks ? A.rejects(result, /tasks-unavailable/) : result;
-    for (const name of ["notes", "tasks", "freshness", "lage", "briefing"]) gates[name]();
+    for (const name of ["notes", "tasks", "briefing"]) gates[name]();
     const out = await observed;
     if (!failTasks) {
       A.equal(out.tasks[0].id, "task"); A.equal(out.notes[0].id, "note");
       A.equal(out.briefing.lageBriefing.latestUpdatedAt, "2026-11-06T05:00:00Z");
       A.match(headers["Server-Timing"], /start;dur=\d+/);
-      A(headers["Server-Timing"].split(", ").every(v => /^(profile|briefing|lage|tasks|notes|freshness|start);dur=\d+$/.test(v)));
+      A(headers["Server-Timing"].split(", ").every(v => /^(profile|briefing|tasks|notes|start);dur=\d+$/.test(v)));
     } else A.equal(headers["Server-Timing"], undefined);
     console.log(`PASS paralleler Start: Profilgrenze, Mandat und ${failTasks ? "Fehler" : "vollstaendige Antwort und sichere Zeitmessung"}`); passed++;
   }

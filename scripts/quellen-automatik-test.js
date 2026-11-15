@@ -21,9 +21,9 @@ function welt() {
       if (url.startsWith("/rest/v1/helmut_anbieter_fenster?")) return w.konten || (w.verbraucht ? [
         { schluessel: "quellenarbeit|fenster", verbraucht: w.verbraucht },
         ...Array.from({ length: Math.max(0, w.verbraucht) }, (_, i) => ({ schluessel: `quellenarbeit|slot|${i}`, verbraucht: 1 }))] : []);
-      assert.ok(url.startsWith("/rest/v1/helmut_jobs?")); assert.match(url, /limit=1/);
+      assert.ok(url.startsWith("/rest/v1/helmut_jobs?")); assert.match(url, url.includes("job_type=in.") ? /limit=101/ : /limit=1/);
       if (url.includes("status=eq.fehlgeschlagen")) return w.fehlgeschlagen;
-      return url.includes("&or=") ? w.faellig : w.offen;
+      return url.includes("job_type=in.") ? w.faellig : w.offen;
     }
   };
   w.pruefe = () => pruefe({ env: ENV, now: w.now, deps: w.deps });
@@ -59,10 +59,12 @@ async function main() {
   });
   await check("echte Planreste und faellige Queueauftraege erlauben Fortsetzung", async () => {
     const w = welt(); w.fertig(); w.alt = [{ zustand: "offen" }];
-    assert.equal((await w.pruefe()).grund, "automatik-restarbeit");
+    assert.equal((await w.pruefe()).grund, "automatik-erledigt", "Historische Planreste oeffnen kein heutiges Fenster");
+    w.plan = { zustand: "offen", cursor: 0, auftraege: [{}] };
+    assert.equal((await w.pruefe()).grund, "automatik-restarbeit"); w.plan.zustand = "fertig"; w.plan.cursor = 1;
     w.alt = []; w.offen = w.faellig = [{ id: "synthetischer-auftrag", attempts: 0, max_attempts: 3 }];
     assert.equal((await w.pruefe()).grund, "automatik-restarbeit");
-    assert.match(decodeURIComponent(w.reads.at(-1)), /status.eq.laeuft,lease_expires_at.lt./);
+    assert.match(decodeURIComponent(w.reads.find(url => url.includes("job_type=in."))), /status.eq.laeuft,lease_expires_at.lt./);
   });
   await check("noch nicht faellige und aktive geleaste Auftraege verbrauchen kein Leerfenster", async () => {
     const w = welt(); w.fertig(); w.offen = [{ id: "wartet" }];
@@ -74,7 +76,8 @@ async function main() {
       const w = welt(); w.fertig(); w.alt = [{}]; w.laeufe = [w.run(status)];
       assert.equal((await w.pruefe()).erlaubt, false);
     }
-    const w = welt(); w.fertig(); w.alt = [{}]; w.laeufe = [{ ...w.run("partial", "planung-zeitbudget-fortsetzbar"), fehlerklasse: "planung-zeitbudget" }];
+    const w = welt(); w.fertig(); w.plan = { zustand: "offen", cursor: 0, auftraege: [{}] };
+    w.laeufe = [{ ...w.run("partial", "planung-zeitbudget-fortsetzbar"), fehlerklasse: "planung-zeitbudget" }];
     assert.equal((await w.pruefe()).erlaubt, true);
   });
   await check("verlorene Start-/Endquittung und Teilreserve bleiben gesperrt und werden nicht erstattet", async () => {
@@ -108,7 +111,7 @@ async function main() {
       if (part === "alt") w.deps.journal.offene = async () => null;
       if (part === "queue") w.offen = null;
       if (part === "widerspruch") w.faellig = [{ id: "unbelegt", attempts: 0, max_attempts: 3 }];
-      assert.equal((await w.pruefe()).grund, "automatik-unbekannt", part);
+      assert.equal((await w.pruefe()).grund, part === "alt" ? "automatik-erledigt" : "automatik-unbekannt", part);
     }
     const w = welt(); w.deps.request = async () => { throw Error("Leseausfall"); };
     assert.equal((await w.pruefe()).grund, "automatik-unbekannt");
@@ -123,7 +126,7 @@ async function main() {
     const w = welt(); w.fertig(); w.offen = [{ id: "wartet" }];
     w.faellig = [{ id: "erschoepft", attempts: 3, max_attempts: 3 }];
     assert.equal((await w.pruefe()).grund, "automatik-wartet");
-    const query = w.reads.find(q => q.includes("&or="));
+    const query = w.reads.find(q => q.includes("job_type=in."));
     assert.match(query, /job_type=in\.\(document_understanding/); assert.ok(!query.includes("source_fetch"));
     w.faellig = Array.from({ length: 101 }, (_, i) => ({ id: `x${i}`, attempts: 3, max_attempts: 3 }));
     assert.equal((await w.pruefe()).grund, "automatik-unbekannt");
@@ -132,7 +135,8 @@ async function main() {
     const w = welt(); w.fertig(); w.fehlgeschlagen = [{ id: "heutiger-fehler" }];
     assert.equal((await w.pruefe()).grund, "automatik-startfehler");
     const query = w.reads.find(r => r.includes("status=eq.fehlgeschlagen"));
-    assert.match(decodeURIComponent(query), /finished_at=gte.2026-11-11T00:00:00Z/);
+    assert.match(decodeURIComponent(query), /last_seen_window.gte.2026-11-11/);
+    assert.match(decodeURIComponent(query), /freshness_window.gte.2026-11-11/);
   });
   console.log(`PASS ${pass}/${pass} Quellenautomatik; nur lokale Ersatzantworten`);
 }

@@ -1,9 +1,11 @@
 "use strict";
 
-// Nur neue Layout-/Folgecachefaelle. Synthetische Seitenstruktur, keine echten
+// Layout-, Provenienz- und Cachefaelle. Synthetische Seitenstruktur, keine echten
 // Originaltexte im Git, kein Netz, Modell oder Produktionsspeicher.
 const T = require("node:assert/strict");
-if (process.argv.length !== 2) throw Error("Unbekannte Testauswahl");
+const bmgOnly = process.argv.length === 3 && process.argv[2] === "--bmg";
+const cacheOnly = process.argv.length === 3 && process.argv[2] === "--cache";
+if (process.argv.length !== 2 && !bmgOnly && !cacheOnly) throw Error("Unbekannte Testauswahl");
 const forbidden = [], fail = name => () => { forbidden.push(name); throw Error(name + " verboten"); };
 global.fetch = fail("fetch"); require("node:https").request = fail("HTTPS"); require("node:http").request = fail("HTTP");
 const G = require("../lib/helmut/artikelkontext-gewinnung"), A = require("../lib/helmut/artikelkontext"),
@@ -17,6 +19,7 @@ const attribution = "Eine fiktive Pressestelle teilt zum synthetischen Beratungs
   detail = "Die beteiligten Stellen beraten ueber moegliche Aenderungen. Der neue Vorschlag ist noch nicht beschlossen und ersetzt keine bestehende Regel.",
   correction = "Die fiktive Beratung wurde nicht abgesagt. Ueber den weiteren Zeitplan liegen in diesem Beispiel keine bestaetigten Angaben vor.";
 function document(kind) {
+  if (kind === "bmg") return bmgDocument();
   const breg = kind === "breg", title = "Synthetische Beratung zur Tarifbindung";
   const url = breg ? "https://www.bundesregierung.de/breg-de/aktuelles/synthetische-beratung-1234567"
     : "https://www.deutschlandfunk.de/synthetische-beratung-zur-tarifbindung-100.html";
@@ -25,6 +28,7 @@ function document(kind) {
     published_at: "2026-11-13T08:00:00+00:00", retrieved_at: "2026-11-14T03:00:00+00:00", link_type: "direct" };
 }
 function response(kind, d = document(kind)) {
+  if (kind === "bmg") return bmgResponse(d);
   const breg = kind === "breg", title = "Synthetische Beratung zur Tarifbindung", og = breg ? title : "Synthetische Meldung - " + title;
   const head = `<head><link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
     + `<meta property="og:title" content="${og}"><meta property="og:url" content="${d.url}"></head>`;
@@ -52,6 +56,23 @@ function response(kind, d = document(kind)) {
     + `<div class="article-details-text u-text-italic">Diese Nachricht wurde am 13.11.2026 im Programm Deutschlandfunk gesendet.</div>`
     + `</section></div></article><article><p>TEASER NICHT LESEN</p></article></section></main>`;
   return { finalUrl: d.url, body: `<html>${head}<body>${body}<footer><p>FOOTER NICHT LESEN</p></footer></body></html>`, gelesenAm: now.toISOString() };
+}
+function bmgDocument() {
+  const url = "https://www.bundesgesundheitsministerium.de/ministerium/meldungen/synthetische-beratung";
+  return { id: "rd-synthetisches-layout-bmg", title: "Synthetische Beratung - Bundesministerium für Gesundheit (BMG)",
+    source_name: "Bundesministerium für Gesundheit (BMG)", url, canonical_url: url.replace("www.", ""),
+    published_at: "2026-11-13T08:00:00Z", summary: null, link_type: "direct" };
+}
+function bmgResponse(d = bmgDocument()) {
+  return { finalUrl: d.url, gelesenAm: now.toISOString(), body: `<html><head>`
+    + `<link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
+    + `<meta property="og:title" content="Synthetische Beratung"><meta property="og:url" content="${d.url}"></head>`
+    + `<body><nav><p>NAVIGATION NICHT LESEN</p></nav><main class="c-main" id="main">`
+    + `<article class="c-article" id="article"><div class="article" itemscope="itemscope" itemtype="http://schema.org/Article">`
+    + `<div class="c-page-title"><h1>Synthetische Beratung</h1><p>${intro}</p></div>`
+    + `<div class="c-component c-component--page-date"><div><span>13. November 2026</span></div></div>`
+    + `<figure><blockquote><p>ZITAT NICHT MITGEPRUEFT</p></blockquote><figcaption>Ungeprüfte Person</figcaption></figure>`
+    + `<div class="c-text"><p>${correction}</p></div></div></article></main><footer><p>FOOTER NICHT LESEN</p></footer></body></html>` };
 }
 const opts = { versuch: true, kontext: "einstieg" };
 const negative = key => ({ version: 1, schluessel: key, versuchId: "00000000-0000-4000-8000-000000000001",
@@ -87,8 +108,82 @@ function environment(kind = "breg") {
     failRead: fn => { fault = fn; }, lostInsert: () => { loseInsert = true; }, lostFinish: () => { loseFinish = true; },
     quota: value => { quota = value; } };
 }
-let count = 0; async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
+let count = 0; async function test(name, fn) {
+  if (bmgOnly && !name.startsWith("BMG ")) return;
+  if (cacheOnly && !/^(?:Frischer Basisstand|Reserviert kaputt|Alte positive|Unbekannte Folgelesung|Originalquota)/.test(name)) return;
+  await fn(); count++; console.log("PASS " + name);
+}
 (async () => {
+  await test("BMG ohne JSON-LD bestaetigt nur den ersten ganzen Absatz und den sichtbaren Tag", () => {
+    const d = bmgDocument(), r = bmgResponse(d), before = clone({ d, r });
+    for (const options of [{}, { abschnittsweise: true }]) {
+      const out = G.gewinneArtikeltext(d, r, options);
+      T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro);
+      T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+      T.equal(out.beleg.gewinnung.struktur, "bmg"); T.equal(out.beleg.gewinnung.positionsbasis, "html-article-p");
+      T.equal(out.beleg.gewinnung.originalDatum, "13. November 2026");
+      T.equal(out.beleg.gewinnung.artikelAbsatzZahl, 3); T.deepEqual(out.beleg.gewinnung.absaetze, [intro]);
+      T.equal(out.beleg.quellenHash, A.quellenstandHash(d)); T.deepEqual(A.pruefeArtikelkontext([d], out.beleg), out.beleg);
+      T.equal(out.beleg.text.includes(correction), false); T.equal(out.beleg.text.includes("NICHT"), false);
+    }
+    T.deepEqual({ d, r }, before);
+  });
+  await test("BMG Gegenquellen doppelte Datumsfelder unsichtbare Einleitungen und Gegenbelege im Vorspann bleiben gesperrt", () => {
+    const changes = [
+      r => { r.finalUrl = r.finalUrl.replace("ministerium/meldungen", "ministerium/anderes"); },
+      r => { r.body = r.body.replace('rel="canonical"', 'rel="alternate"'); },
+      r => { r.body = r.body.replace('property="og:url"', 'property="other"'); },
+      r => { r.body = r.body.replace('property="og:title" content="Synthetische Beratung"', 'property="og:title" content="Fremder Titel"'); },
+      r => { r.body = r.body.replace('<h1>Synthetische Beratung', '<h1>Fremder Titel'); },
+      r => { r.body = r.body.replace('13. November 2026', '14. November 2026'); },
+      r => { r.body = r.body.replace('</span>', '</span><span>13. November 2026</span>'); },
+      r => { r.body = r.body.replace('<main class=', '<main hidden class='); },
+      r => { r.body = r.body.replace('<article class=', '<article hidden class='); },
+      r => { r.body = r.body.replace('<div class="c-page-title">', '<div hidden class="c-page-title">'); },
+      r => { r.body = r.body.replace('<span>13.', '<span hidden>13.'); },
+      r => { r.body = r.body.replace('<p>' + intro, '<p style="display:none">' + intro); },
+      r => { r.body = r.body.replace(intro, '<span hidden>' + intro + '</span>'); },
+      r => { r.body = r.body.replace('</h1>', '</h1><p>Ein Gegenbeleg darf nicht uebergangen werden.</p>'); },
+      r => { r.body = r.body.replace('<div class="c-page-title">', '<p>Frueher Gegenbeleg.</p><div class="c-page-title">'); },
+      r => { r.body = r.body.replace('</article>', '</article><article class="c-article" id="article"></article>'); },
+      r => { r.body = r.body.replace('</head>', '<meta name="robots" content="nosnippet"></head>'); },
+      r => { r.body = r.body.replace('</head>', '<script type="application/ld+json">{"@type":"Article","headline":"Fremd"}</script></head>'); }
+    ];
+    for (const change of changes) {
+      const r = bmgResponse(); change(r); T.equal(G.gewinneArtikeltext(bmgDocument(), r).ok, false);
+    }
+  });
+  await test("BMG Provenienz erlaubt weder Volltextbehauptung noch fremden Tag Host oder Layoutversion", () => {
+    const d = bmgDocument(), good = G.gewinneArtikeltext(d, bmgResponse()).beleg;
+    for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
+      b => { b.gewinnung.originalDatum = "14. November 2026"; },
+      b => { b.gewinnung.layoutVersion = 2; }, b => { b.gewinnung.datumsFeld = "datetime"; },
+      b => { b.gewinnung.positionsbasis = "html-article-div"; }]) {
+      const b = clone(good); change(b); T.throws(() => A.pruefeArtikelkontext([d], b), /artikelkontext-/);
+    }
+    for (const url of [d.url.replace("www.bundesgesundheitsministerium.de", "evil.example"), d.url + "?fremd=1"]) {
+      T.equal(L.kennung(url), null);
+    }
+  });
+  await test("BMG frischer Stand wird einmal gebunden; positive Negative und UNKNOWN werden nicht neu abgerufen", async () => {
+    const fresh = environment("bmg"); fresh.rows.clear();
+    const out = await fresh.run(); T.equal(out.ok, true, out.reason);
+    T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2"); T.equal(fresh.net.length, 1);
+    const before = clone([...fresh.rows]);
+    T.deepEqual(await fresh.run(), out); T.deepEqual([...fresh.rows], before); T.equal(fresh.net.length, 1);
+    const stored = await S.leseArtikelkontext(fresh.d, { speicher: fresh.deps.speicher });
+    T.deepEqual(stored, out); T.deepEqual([...fresh.rows], before);
+    for (const state of [null, "reserviert"]) {
+      const old = environment("bmg"), row = clone(old.oldData);
+      if (state) { delete row.reason; delete row.abgeschlossenAm; row.zustand = state; }
+      old.rows.set(old.rowId(old.old.key), row);
+      const original = clone([...old.rows]);
+      T.equal((await old.run()).ok, false); T.deepEqual([...old.rows], original);
+      T.equal(old.net.length, 0); T.equal(old.limits.length, 0); T.ok(old.calls.every(c => c.method === "GET"));
+    }
+    const quota = environment("bmg"); quota.rows.clear(); quota.quota(false);
+    T.equal((await quota.run()).reason, "original-tagesgrenze"); T.equal(quota.net.length, 0); T.equal(quota.rows.size, 0);
+  });
   await test("BReg bindet echte Mainstruktur Datum Titel und kompletten Inhalt ohne Cookie oder Bedienleisten", () => {
     const d = document("breg"), r = response("breg"), before = clone({ d, r }), out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
     T.equal(out.ok, true); T.equal(out.beleg.gewinnung.struktur, "breg"); T.equal(out.beleg.gewinnung.layoutVersion, 1);
@@ -151,10 +246,13 @@ let count = 0; async function test(name, fn) { await fn(); count++; console.log(
       T.equal(G.gewinneArtikeltext(document(kind), robots).ok, false);
     }
   });
-  await test("Nur bestaetigter Layoutnegativbeleg oeffnet genau eine globale Folgerevision am nativen CAS", async () => {
+  await test("Frischer Basisstand wird einmal gespeichert; ein alter Layoutnegativbeleg bleibt ohne zweiten Abruf erhalten", async () => {
     for (const kind of ["breg", "dlf"]) {
-      const f = environment(kind), before = clone(f.oldData), out = await f.run(), follow = S.bereiteQuellenlayoutFolge(f.old, before, opts);
-      T.equal(out.ok, true); T.notEqual(follow.key, f.old.key); T.deepEqual(f.rows.get(f.rowId(f.old.key)), before);
+      const old = environment(kind), before = clone([...old.rows]);
+      T.equal((await old.run()).reason, "quellenlayout-folge-fehlt"); T.deepEqual([...old.rows], before);
+      T.equal(old.net.length, 0); T.equal(old.limits.length, 0); T.ok(old.calls.every(c => c.method === "GET"));
+      const f = environment(kind); f.rows.clear(); const out = await f.run();
+      T.equal(out.ok, true, out.reason);
       T.equal(f.net.length, 1); T.equal(f.calls.filter(c => c.method === "POST").length, 1);
       T.equal(f.calls.filter(c => c.method === "PATCH").length, 1); T.equal(f.limits.length, 1);
       T.equal(f.limits[0].schluessel, "quellenarbeit|originalabrufe"); T.equal(f.limits[0].grenzeTag, 100);
@@ -187,24 +285,23 @@ let count = 0; async function test(name, fn) { await fn(); count++; console.log(
   await test("Unbekannte Folgelesung oder Reservierung blockiert IO; verlorene bestaetigte Antworten werden nur nachgelesen", async () => {
     const f = environment(), follow = S.bereiteQuellenlayoutFolge(f.old, f.oldData, opts);
     f.failRead(id => id === f.rowId(follow.key)); T.equal((await f.run()).reason, "belegstand-nicht-lesbar"); T.equal(f.net.length, 0);
-    const lost = environment(), next = S.bereiteQuellenlayoutFolge(lost.old, lost.oldData, opts);
-    lost.failRead((id, rows) => id === lost.rowId(next.key) && rows.has(id));
+    const lost = environment(); lost.rows.clear();
+    lost.failRead((id, rows) => id === lost.rowId(lost.old.key) && rows.has(id));
     T.equal((await lost.run()).reason, "reservierung-nicht-bestaetigt"); T.equal(lost.net.length, 0);
     lost.failRead(null); T.equal((await lost.run()).reason, "abruf-ausgang-offen"); T.equal(lost.net.length, 0);
-    for (const mode of ["lostInsert", "lostFinish"]) { const a = environment(); a[mode](); T.equal((await a.run()).ok, true);
+    for (const mode of ["lostInsert", "lostFinish"]) { const a = environment(); a.rows.clear(); a[mode](); T.equal((await a.run()).ok, true);
       T.equal((await a.run()).ok, true); T.equal(a.net.length, 1); }
   });
   await test("Originalquota Anbieter und Hostgrenzen bleiben vor dem Abruf und unveraenderte Altbelege erhalten", async () => {
-    const quota = environment(); quota.quota(false); const follow = S.bereiteQuellenlayoutFolge(quota.old, quota.oldData, opts);
-    T.equal((await quota.run()).reason, "original-tagesgrenze"); T.equal(quota.net.length, 0); T.equal(quota.rows.has(quota.rowId(follow.key)), false);
-    T.deepEqual(quota.rows.get(quota.rowId(quota.old.key)), quota.oldData);
-    const provider = environment(); T.equal((await provider.run({ env: { ...provider.deps.env, HELMUT_ANBIETER_STEUERUNG: "off" } })).reason, "anbietersteuerung-nicht-aktiv");
+    const quota = environment(); quota.rows.clear(); quota.quota(false);
+    T.equal((await quota.run()).reason, "original-tagesgrenze"); T.equal(quota.net.length, 0); T.equal(quota.rows.size, 0);
+    const provider = environment(); provider.rows.clear(); T.equal((await provider.run({ env: { ...provider.deps.env, HELMUT_ANBIETER_STEUERUNG: "off" } })).reason, "anbietersteuerung-nicht-aktiv");
     T.equal(provider.net.length, 0); T.ok(provider.calls.every(c => c.method === "GET"));
-    const host = environment(); T.equal((await host.run({ erlaubeNeuenAbruf: () => "herausgeber-nicht-freigegeben" })).reason, "herausgeber-nicht-freigegeben");
+    const host = environment(); host.rows.clear(); T.equal((await host.run({ erlaubeNeuenAbruf: () => "herausgeber-nicht-freigegeben" })).reason, "herausgeber-nicht-freigegeben");
     T.equal(host.net.length, 0); T.ok(host.calls.every(c => c.method === "GET"));
   });
-  T.equal(count, 9); T.deepEqual(forbidden, []);
-  console.log("9/9 neue Quellenlayoutgruppen bestanden; keine alten Gruppen, Modelle oder Produktionszugriffe.");
+  T.equal(count, bmgOnly ? 4 : cacheOnly ? 5 : 13); T.deepEqual(forbidden, []);
+  console.log(`${count}/${count} ausgefuehrte Quellenlayoutgruppen bestanden; keine Modelle oder Produktionszugriffe.`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   for (const [name, value] of Object.entries(originals)) { if (value === undefined) delete process.env[name]; else process.env[name] = value; }
 });

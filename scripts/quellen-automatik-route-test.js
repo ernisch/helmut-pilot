@@ -18,7 +18,7 @@ async function main() {
   replace(Date, "now", () => now);
   replace(globalThis, "fetch", async () => assert.fail("kein externer Fachaufruf"));
   replace(require("../lib/helmut/tenant-context"), "resolveActiveTenant", async () => assert.fail("kein Profilread vor Zulassung"));
-  replace(pipeline, "betriebsstatus", async () => ({ verfuegbar: true, zustand: "bereit" }));
+  replace(require("../lib/helmut/worker-betrieb"), "readiness", async () => ({ bereit: true }));
   replace(pipeline, "klassenAdapter", () => ({ belege: async (_, o) => {
     if (leaseBis > now) return { erlaubt: false }; leaseBis = now + o.ttlMs; return { erlaubt: true, slot: "local" };
   }, gebeFrei: async () => { leaseBis = 0; } }));
@@ -49,8 +49,11 @@ async function main() {
     ok: !fail && !zeitrest, neuGeplant: plans === 1, ausstehend: fail || zeitrest ? 1 : 0, geplant: 0, neu: zeitrest ? 1 : 0,
     grund: fail ? "planung-einreihung-nicht-bestaetigt" : zeitrest ? "planung-zeitbudget" : null, tagesplan: { plaetze: 1 } }; });
   replace(pipeline, "wiedervorlage", async () => ({ wiedervorgelegt: 0 }));
-  replace(pipeline, "arbeite", async () => { workers++; return { verfuegbar: true, erledigt: 0, reserviert: 0,
-    nichtUebernommen: workerUnbekannt ? 1 : 0, zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 }; });
+  replace(pipeline, "arbeite", async o => {
+    const content = o.types?.includes("document_understanding"); if (content) workers++;
+    return { verfuegbar: true, erledigt: 0, reserviert: 0, wiederholt: 0, zurueckgestellt: 0, stapelrestZurueckgegeben: 0,
+    endgueltigFehlgeschlagen: 0, leaseVerloren: 0,
+    nichtUebernommen: content && workerUnbekannt ? 1 : 0, zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 }; });
   replace(require("../lib/helmut/quellenarchitektur/cron-abdeckung"), "runQuellenCronMitAbdeckung", async fn => fn());
   const server = http.createServer(handler);
   await new Promise(r => server.listen(0, "127.0.0.1", r));

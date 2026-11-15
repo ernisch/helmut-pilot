@@ -59,7 +59,14 @@ const surfaces = {
   "Entscheidungen": "decisions.js"
 };
 for (const [label, file] of Object.entries(surfaces)) {
-  const closure = requireClosure(path.join(libDir, file));
+  // Der Quellscanner verfolgt auch lazy require-Aufrufe in unbenutzten
+  // Schreibfunktionen. Fuer Leser zaehlen die tatsaechlich geladenen Module.
+  const probe = require("node:child_process").spawnSync(process.execPath,
+    ["--require", path.join(__dirname, "run-offline-tests.js"), "-e",
+      `require(${JSON.stringify(path.join(libDir, file))}); process.stdout.write(JSON.stringify(Object.keys(require.cache)));`],
+    { encoding: "utf8", env: process.env });
+  if (probe.status !== 0) throw Error("Leser-Importprobe fehlgeschlagen: " + label);
+  const closure = JSON.parse(probe.stdout);
   const touchesPardok = [...closure].some((f) => /pardok-(dispatch|parser)/.test(f));
   check(`A ${label}: require-Graph beruehrt KEIN pardok-dispatch/pardok-parser`, !touchesPardok);
 }

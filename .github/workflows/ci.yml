@@ -772,7 +772,8 @@ jobs:
   browser-smoke:
     if: inputs.mode != 'mock100'
     name: Browser-/Mobile-Smoke (Chromium)
-    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}
+    # Playwright1.56.1 unterstuetzt Ubuntu26 nicht; beide Pflichtjobs bleiben erhalten.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

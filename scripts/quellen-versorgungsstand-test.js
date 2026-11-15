@@ -134,7 +134,9 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
   });
   await test("Historisch vollstaendiges Quiet bekommt kein breiteres Schreibrecht", async () => {
     const id = `bf-${profile.id}-mandatsbriefing-${tag}`, row = structuredClone(rows.get(id));
-    row.payload.briefing = make(null); row.payload.inhaltHash = B.hash({ briefing: row.payload.briefing, lage: row.payload.lage });
+    row.payload.briefing = make(null);
+    row.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(row.payload, row.payload.quellenStand.sicherheitsHash);
+    row.payload.inhaltHash = B.inhaltHash(row.payload);
     row.payload.pruefung.strukturellVollstaendig = true; rows.set(id, row);
     const before = structuredClone(row);
     await A.rejects(B.materialisiere({ profile, userId: profile.id, briefing: make(signal("unbekannt")), storage, now }),
@@ -147,7 +149,8 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       vorgang_id: ko.vorgang_id, decision: "Reagieren", priority_type: "risk", score: 90, matched_features: [] }],
       kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [{ ...doc, published_at: "2026-11-09T03:00:00Z" }] }, now });
     A(positive.currentHelmutState.primaryItem); row.payload.briefing = positive;
-    row.payload.inhaltHash = B.hash({ briefing: positive, lage: row.payload.lage }); rows.set(id, row);
+    row.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(row.payload, row.payload.quellenStand.sicherheitsHash);
+    row.payload.inhaltHash = B.inhaltHash(row.payload); rows.set(id, row);
     const before = structuredClone(row);
     const result = await M.speicherePaket({ profile, userId: profile.id,
       briefing: { ...positive, currentHelmutState: { ...positive.currentHelmutState, versorgung: signal("offen") } }, storage, now, tag });
@@ -203,7 +206,8 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
         vorgang_id: k.vorgang_id, decision: "Reagieren", priority_type: "risk", score: 90, matched_features: [] })),
         kosById: Object.fromEntries(kos.map(k => [k.id, k])), sourcesByVorgang: sources, now, versorgung: signal(zustand) });
       const entries = kos.map((k, i) => ({ vorgang_id: k.vorgang_id, quellenbelege: [{
-        quelle_id: `q-positive-${i}`, titel: documents[i].title, auszug: documents[i].summary, url: documents[i].url }] }));
+        quelle_id: `q-positive-${i}`, quelle: "Synthetisches Testmedium", veroeffentlichtAm: documents[i].published_at,
+        titel: documents[i].title, auszug: documents[i].summary, url: documents[i].url }] }));
       const bezug = Q.mandatsbezugAuswahl(profile).find(b => b.wert === "Pflege");
       const paragraphs = entries.map(e => ({ text: e.quellenbelege[0].titel + ".", vorgang_ids: [e.vorgang_id],
         quelle_id: e.quellenbelege[0].quelle_id, mandatsbezug: bezug }));
@@ -217,20 +221,21 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       const lage = { koSetHash: "a".repeat(32), quellenVersion: L.VERSION, quellenHash: L.hashEingabe(entries),
         quellen: entries, paragraphs: checked.paragraphs, qualitaet: checked.qualitaet };
       A.equal(L.gespeicherterTextGueltig(lage), true);
-      return { briefing, lage };
+      return { briefing, lage, lageAnsicht: JSON.parse(JSON.stringify(B.lageAusgabe(lage))) };
     }
     for (const zustand of ["offen", "unbekannt"]) {
       rows.clear(); const vorherUpdates = updates;
       const erstes = paket("Erster Stand", zustand), lageId = `bf-${profile.id}-lage-${tag}`;
       rows.set(lageId, { id: lageId, user_id: profile.id, slot: "lage", payload: erstes.lage });
-      const first = await B.materialisiere({ profile, userId: profile.id, briefing: erstes.briefing, storage, now });
+      const first = await B.materialisiere({ profile, userId: profile.id, briefing: erstes.briefing,
+        lageAnsicht: erstes.lageAnsicht, storage, now });
       A.equal(first.vollstaendig, false); A.equal(erstes.briefing.available, true);
       const before = await B.lese({ userId: profile.id, day: tag, profile, storage });
       A.deepEqual(before.payload.pruefung.fehler, ["quellenversorgung-unvollstaendig"]);
       A.equal(render(before.payload.briefing, now.toISOString()).fachinhalt.briefing, true, JSON.stringify(before.payload.briefing.currentHelmutState));
       const neu = paket("Aktualisierte Pflegereform", "kein-bekannter-rueckstand");
       rows.set(lageId, { id: lageId, user_id: profile.id, slot: "lage", payload: neu.lage });
-      const result = await M.speicherePaket({ profile, userId: profile.id, briefing: neu.briefing, storage,
+      const result = await M.speicherePaket({ profile, userId: profile.id, briefing: neu.briefing, lageAnsicht: neu.lageAnsicht, storage,
         now: new Date(now.getTime() + 60000), tag });
       const after = await B.lese({ userId: profile.id, day: tag, profile, storage });
       A.equal(updates, vorherUpdates + 1); A.deepEqual(after.payload.vorherigerStand, before);

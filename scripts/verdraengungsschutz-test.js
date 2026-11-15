@@ -170,8 +170,12 @@ async function main() {
   // ── C2 · Der abgeschnittene Planungslauf ──────────────────────────────────
   console.log("\nC2 · Wer überlebt einen abgeschnittenen Planungslauf?");
   const pipelineQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/scalable-pipeline.js"), "utf8");
-  check("C2a globale Pendingaufnahme trennt die gemeinsame Profilgruppe nicht auf",
-    /const alle = \[\.\.\.pendingAuftraege, \.\.\.profilArbeit, \.\.\.geteilteArbeit\];/.test(pipelineQuelle));
+  // Der Tagesplan nimmt seit der Quellenreparatur nur heutigen Bedarf auf;
+  // historische Pendingauftraege laufen separat in ihrer bestehenden Queue.
+  // Der Gleichbehandlungsvertrag bleibt fuer Planmanifest UND Enqueuegruppen gleich.
+  check("C2a Tagesplanung trennt die gemeinsame Profilgruppe weder im Manifest noch bei der Einreihung auf",
+    /const alle = \[\.\.\.profilArbeit, \.\.\.geteilteArbeit\];/.test(pipelineQuelle)
+      && /for \(const gruppe of \[profilArbeit, geteilteArbeit\]\)/.test(pipelineQuelle));
   check("C2b es gibt keine Klassenpriorisierung bei der Einreihung",
     !/mandatsklasse\.istSynthetischeKennung\(tenant\)/.test(pipelineQuelle));
   check("C2c Der relationale Crawlplan wird je Lauf EINMAL gebaut, nicht je Profil",
