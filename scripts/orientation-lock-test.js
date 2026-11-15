@@ -32,7 +32,7 @@ function check(name, cond, detail = "") {
   else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
 }
 
-const LOCK_TEXT = "Bitte drehe dein Smartphone ins Hochformat, um Helmut zu verwenden.";
+const LOCK_TEXT = "Bitte drehen Sie Ihr Smartphone ins Hochformat, um Helmut zu verwenden.";
 
 // --- Markup vorhanden (index.html + tatsaechliche Production-Shell) --------
 console.log("Markup");

@@ -615,6 +615,18 @@ api.setBriefing({ ...radarColumnBriefing, currentRadarState: {
 check("Technische Nichtverfügbarkeit unterdrückt auch eine vorhandene Radarprojektion",
   !api.render().includes(projectedRadarSummary.line1));
 
+// Product contract v1.1: one primary plus two, shared across freshness groups.
+const bounded = { ...fullState, primaryItem: { ...fullState.primaryItem, id: "limit-primary" },
+  items: ["neu", "weiterhin_relevant", "hintergrund", "undatiert"].flatMap((frischeKlasse, g) =>
+    Array.from({ length: 3 }, (_, i) => ({ id: `limit-${g}-${i}`, title: `Prioritaet ${g}-${i}`, frischeKlasse }))) };
+api.setBriefing({ currentHelmutState: bounded });
+const limitedHtml = api.render();
+check("Produktvertrag: Hero plus zwei Folgeprioritaeten insgesamt", (limitedHtml.match(/class="hstand-rel(?: |")/g) || []).length === 2);
+check("Produktvertrag: nicht zwei pro Frischegruppe", limitedHtml.includes("Prioritaet 0-0") && limitedHtml.includes("Prioritaet 0-1") && !limitedHtml.includes("Prioritaet 1-0"));
+api.setBriefing({ currentHelmutState: { ...bounded, items: [bounded.primaryItem, bounded.items[0]] } });
+check("Produktvertrag: Primaervorgang wird nicht doppelt gezaehlt oder aufgefuellt", (api.render().match(/class="hstand-rel(?: |")/g) || []).length === 1);
+check("Sie Form auch bei invertierter persoenlicher Ansprache", api.sie("Was kannst du tun? Bist du vorbereitet?") === "Was können Sie tun? Sind Sie vorbereitet?");
+
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
 

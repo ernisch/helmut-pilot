@@ -13,6 +13,7 @@ const bindingCases = contractCases || (process.argv.includes("--office-binding")
 const root = path.resolve(__dirname, "..");
 const baselineIndex = process.argv.indexOf("--baseline-ref");
 const baselineRef = baselineIndex < 0 ? "" : process.argv[baselineIndex + 1];
+const productContract = process.argv.includes("--produktvertrag");
 const readingFollowup = process.argv.includes("--reading-followup");
 assert(!readingFollowup || (!baselineRef && !bindingCases), "Follow-up uses current fixture UI only");
 assert(!baselineRef || /^[a-f0-9]{40}$/.test(baselineRef), "Baseline must be an exact local commit");
@@ -53,7 +54,7 @@ const fixtureBootstrap = `
     officeDrafts = {}; officeDraftErrors = {}; selectedOfficeDraft = null;
     for (const f of activeOfficeFormats()) officeDrafts[officeDraftKey(decisions[0], f)] = {text:'Synthetischer UI Testentwurf ohne fachliche Aussage. '.repeat(12),source:'ki',binding:officeDraftBinding(decisions[0],f),createdAt:Date.now()};
     onboardingActive = false; helmutThinking = false;
-    uiLageDetailOpen = false; radarFilter = 'all'; radarSegment = 'party';
+    uiLageDetailOpen = false; uiLageExpanded = false; radarSignalsExpanded = false; radarFilter = 'all'; radarSegment = 'party';
     radarMentionsExpanded = radarEnvExpanded = radarDynamicsExpanded = radarArticlesExpanded = false;
     document.querySelector('#toast')?.classList.remove('visible');
   }
@@ -256,6 +257,58 @@ async function main() {
         if(moved) await screenshot(name+'-bottom');
         await cdp.evaluate(s,"document.querySelector('#uiPage').scrollTop=0");
       };
+      if (productContract) {
+      // Product contract v1.1: shared limits, real navigation, no request or text rewriting.
+      const callsBeforeContract = requests.filter(r => r.method && r.method !== "GET").length;
+      await cdp.evaluate(s, `(()=>{
+        __uiPreview.reset();
+        const base=briefing.lageBriefing.vorgaenge[0];
+        briefing.lageBriefing.vorgaenge=Array.from({length:7},(_,i)=>({...base,id:'v11-'+i,vorgangId:'v11-'+i,displayTitle:'Vorgang '+i}));
+        currentView='briefing';render();
+      })()`);
+      check(label+': v1.1 Lage initially five of seven',await cdp.evaluate(s,"document.querySelectorAll('[data-ui-lage-select]').length===5 && document.querySelector('[data-ui-lage-expand]').textContent.includes('(7)')"));
+      await click('[data-ui-lage-expand]');
+      check(label+': v1.1 all seven Lage items reachable',await cdp.evaluate(s,"document.querySelectorAll('[data-ui-lage-select]').length===7"));
+      await click('[data-ui-lage-select="v11-6"]');
+      check(label+': v1.1 seventh Lage detail opens with source',await cdp.evaluate(s,"uiLageSelectedId==='v11-6' && !!document.querySelector('.ui-lage-detail .vsheet-src[href]')"));
+      await cdp.evaluate(s,"uiLageDetailOpen=false;render()");
+      await click('[data-ui-lage-expand]');
+      check(label+': v1.1 Lage collapses and retains keyboard focus',await cdp.evaluate(s,"document.querySelectorAll('[data-ui-lage-select]').length===5 && document.activeElement.matches('[data-ui-lage-expand]')"));
+      await cdp.evaluate(s, `(()=>{
+        const state=briefing.currentHelmutState,base=state.primaryItem;
+        state.items=[base,...Array.from({length:8},(_,i)=>({...base,id:'priority-'+i,title:'Prioritaet '+i,displayTitle:'Prioritaet '+i,frischeKlasse:['neu','weiterhin_relevant','hintergrund','undatiert'][i%4]}))];
+        currentView='helmut';render();
+      })()`);
+      check(label+': v1.1 Briefing maximum three across groups including hero',await cdp.evaluate(s,"document.querySelectorAll('.ui-briefing-hero,.hstand-rel').length===3"));
+      await cdp.evaluate(s,"briefing.currentHelmutState.items=[];render()");
+      check(label+': v1.1 Briefing never pads missing priorities',await cdp.evaluate(s,"document.querySelectorAll('.ui-briefing-hero,.hstand-rel').length===1"));
+      await cdp.evaluate(s, `(()=>{
+        __uiPreview.reset();const r=briefing.currentRadarState,m=r.mentions[0];
+        r.mentions=Array.from({length:4},(_,i)=>({...m,id:'mention-'+i,title:i?'Erwaehnung '+i:'Du und die Demokratie',sourceUrl:'https://example.test/mention/'+i}));
+        currentView='radar';render();
+      })()`);
+      const signalCount="document.querySelectorAll('.radar2-card,.radar2-row').length";
+      check(label+': v1.1 Radar initially three total',await cdp.evaluate(s,signalCount+'===3'));
+      check(label+': v1.1 quoted source title stays byte-for-byte',await cdp.evaluate(s,"document.querySelector('.radar2-card-title').textContent==='Du und die Demokratie'"));
+      check(label+': v1.1 hidden environment is not called empty',await cdp.evaluate(s,"document.querySelector('.radar2-list').textContent.includes('Weitere belegte Hinweise')"));
+      await click('[data-radar-expand="all"]');
+      check(label+': v1.1 all eight current-segment signals available',await cdp.evaluate(s,signalCount+'===8'));
+      await click('[data-radar-segment="constituency"]');
+      check(label+': v1.1 other Radar segments remain reachable',await cdp.evaluate(s,"document.querySelector('.radar2-list').textContent.includes('Wahlkreisumfeld')"));
+      await click('[data-radar-expand="all"]');
+      check(label+': v1.1 Radar collapses to three with keyboard focus',await cdp.evaluate(s,signalCount+"===3 && document.activeElement.matches('[data-radar-expand=all]')"));
+      for(const view of ['settings','profile-settings','profile-topics','profile-style']) {
+        await cdp.evaluate(s,`__uiPreview.view('${view}')`);
+        check(label+': v1.1 Sie form in '+view,await cdp.evaluate(s,"! /\\b(?:[Dd]ein(?:e[rmns]?)?|[Dd]ich|[Dd]ir|[Dd]u)\\b/.test(document.querySelector('#uiPage').textContent)"));
+      }
+      await cdp.evaluate(s,"__uiPreview.reset();currentView='office';profile.parliamentType='Bundestag';profile.committees=['Testausschuss'];render();openOfficeFormatChoice(officeTopicPool[0]);render()");
+      check(label+': v1.1 exactly six agreed formats with jurisdiction',await cdp.evaluate(s,"[...document.querySelectorAll('[data-office-create]')].map(e=>e.dataset.officeCreate).sort().join(',')==='anfrage,buergerbrief,instagram,linkedin,presse,x'"));
+      check(label+': v1.1 source/profile address never rewrites third-party drafts',await cdp.evaluate(s,"(()=>{const d=officeTopicPool[0],f=activeOfficeFormats()[0],text='Du bist eingeladen. Deine Meinung zählt.';officeDrafts[officeDraftKey(d,f)]={text,source:'ki',binding:officeDraftBinding(d,f),createdAt:Date.now()};officeFormatTarget=null;selectedOfficeDraft=uiOfficeSelection(d,f);return renderOfficeDraftDetail().includes(text);})()"));
+      check(label+': v1.1 navigation and format choice create no requests',requests.filter(r => r.method && r.method !== "GET").length===callsBeforeContract);
+      await layout('v1.1 format choice'); await screenshot('v11-format-choice');
+      await cdp.send("Target.closeTarget",{targetId});
+      continue;
+      }
       for(const view of ["helmut","briefing","radar","office"]) {
         // Exercise the real navigation handlers, not just the fixture view setter.
         await click(`${mobile?".mobile-dock":".sidebar .nav-list"} [data-view="${view}"]`);
@@ -285,6 +338,7 @@ async function main() {
             await click(`[data-radar-segment="${segment}"]`);
             check(label+": Radar environment filter "+segment,await cdp.evaluate(s,`radarSegment==='${segment}' && document.querySelector('.radar2-list').textContent.includes('${word}')`));
           }
+          if (await cdp.evaluate(s, "!!document.querySelector('[data-radar-expand=all]')")) await click('[data-radar-expand="all"]');
           const filter=await cdp.evaluate(s,"document.querySelector('[data-radar-filter]:not([data-radar-filter=all])')?.dataset.radarFilter");
           check(label+": Radar article filter exists",!!filter);
           await click(`[data-radar-filter="${filter}"]`);

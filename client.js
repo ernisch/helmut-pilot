@@ -70,6 +70,7 @@ let radarArchiveLoaded = false;
 // aktiver Artikelfilter und Aufklapp-Zustände.
 let radarSegment = "party";
 let radarFilter = "all";
+let radarSignalsExpanded = false;
 let radarMentionsExpanded = false;
 let radarDynamicsExpanded = false;
 let radarArticlesExpanded = false;
@@ -277,7 +278,7 @@ const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 // Hydrate existing boot markup without changing the server's HTML generator.
 const orientationMessage = document.querySelector(".orientation-lock-text");
-if (orientationMessage) orientationMessage.textContent = "Bitte drehe dein Gerät ins Hochformat.";
+if (orientationMessage) orientationMessage.textContent = "Bitte drehen Sie Ihr Gerät ins Hochformat.";
 
 function fmtCost(n) {
   if (typeof n !== "number") return "—";
@@ -752,14 +753,14 @@ const ONBOARDING_STEPS = 6;
 function renderOnboarding() {
   if (!onboardingActive) return "";
   const d = onboardingDraft;
-  const mandateName = profile?.fullName || allowedProfiles.find((p) => p.id === activePoliticianId)?.name || "dein Mandat";
+  const mandateName = profile?.fullName || allowedProfiles.find((p) => p.id === activePoliticianId)?.name || "Ihr Mandat";
   let body = "";
   if (onboardingStep === 0) {
     body = `
       <h2>Willkommen bei Helmut.</h2>
-      <p class="onboarding-lead">Lass uns dein Mandatsprofil einrichten. Das dauert etwa zwei Minuten.</p>
+      <p class="onboarding-lead">Richten Sie Ihr Mandatsprofil ein. Das dauert etwa zwei Minuten.</p>
       <dl class="ui-onboarding-mandate"><dt>Mandat</dt><dd>${escapeHtml(mandateName)}</dd></dl>
-      <p class="onboarding-note">Das Mandat ist deinem Zugang fest zugeordnet. Deine Angaben nutzt Helmut zur persönlichen Einordnung. Alle Felder sind freiwillig und lassen sich später im Profil ändern.</p>`;
+      <p class="onboarding-note">Das Mandat ist Ihrem Zugang fest zugeordnet. Ihre Angaben nutzt Helmut zur persönlichen Einordnung. Alle Felder sind freiwillig und lassen sich später im Profil ändern.</p>`;
   } else if (onboardingStep === 1) {
     body = `
       <h2>Partei & Fraktion</h2>
@@ -768,7 +769,7 @@ function renderOnboarding() {
   } else if (onboardingStep === 2) {
     body = `
       <h2>Ausschuss</h2>
-      <label>Dein (Haupt-)Ausschuss
+      <label>Ihr (Haupt-)Ausschuss
         <input name="committee" type="text" list="onboardingCommittees" value="${escapeAttribute(d.committee || "")}" placeholder="z. B. Gesundheit" />
       </label>
       <datalist id="onboardingCommittees">${committeeOptions.map((c) => `<option value="${escapeAttribute(c)}"></option>`).join("")}</datalist>`;
@@ -776,7 +777,7 @@ function renderOnboarding() {
     const selected = new Set(d.focusTopics || []);
     body = `
       <h2>Schwerpunktthemen</h2>
-      <p class="onboarding-note">Wähle aus, was für dein Mandat zählt — das steuert deine Top-Themen.</p>
+      <p class="onboarding-note">Wählen Sie aus, was für Ihr Mandat zählt — das steuert Ihre Top-Themen.</p>
       <div class="onboarding-chips">
         ${priorityTopics.map((t) => `<label class="onboarding-chip"><input type="checkbox" name="focusTopic" value="${escapeAttribute(t)}" ${selected.has(t) ? "checked" : ""}/> ${escapeHtml(t)}</label>`).join("")}
       </div>
@@ -794,7 +795,7 @@ function renderOnboarding() {
       <h2>Risiken & Chancen (optional)</h2>
       <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
       <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
-      <p class="onboarding-note">Mit „Fertig & speichern“ wird dein Profil gespeichert. Alles lässt sich später im Profil ändern.</p>`;
+      <p class="onboarding-note">Mit „Fertig & speichern“ wird Ihr Profil gespeichert. Alles lässt sich später im Profil ändern.</p>`;
   }
   const isFirst = onboardingStep === 0;
   const isLast = onboardingStep === ONBOARDING_STEPS - 1;
@@ -858,10 +859,10 @@ async function finishOnboarding(skip) {
     if (!res.ok || !res.json || res.json.ok === false) throw new Error("Profile save not confirmed");
     profile = res.json;
     onboardingActive = false;
-    showToast(skip ? "Du kannst dein Profil jederzeit ergänzen." : "Profil gespeichert");
+    showToast(skip ? "Sie können Ihr Profil jederzeit ergänzen." : "Profil gespeichert");
   } catch (error) {
     console.warn("Onboarding speichern fehlgeschlagen", error);
-    showToast("Profil konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+    showToast("Profil konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten.");
   } finally {
     onboardingSaving = false;
   }
@@ -1070,7 +1071,7 @@ function renderMandateSelection(mandates = []) {
       <div class="loading-logo"><span>H</span></div>
       <p>Helmut</p>
       <h1>Mandat wählen.</h1>
-      <p class="pilot-access-copy">Wähle das Mandat, dessen politische Lage du öffnen möchtest.</p>
+      <p class="pilot-access-copy">Wählen Sie das Mandat, dessen politische Lage Sie öffnen möchten.</p>
       <div class="pilot-access-form">${buttons}</div>
     </section>`;
   app.querySelectorAll("[data-mandate-pick]").forEach((btn) => {
@@ -4679,6 +4680,7 @@ function hideStartupSplash() {
 // they never load data, start the motor or write to a backend.
 let uiLageSelectedId = "";
 let uiLageDetailOpen = false;
+let uiLageExpanded = false;
 
 // Nur lokale Lage-Navigation: History ist keine Daten- oder Zugriffsquelle.
 // Pro Seitenlauf/Privatkontext gebunden; alte Mandats- und Login-Eintraege bleiben inert.
@@ -4702,7 +4704,8 @@ function writeLageHistory(entry, push = false) {
   } catch (_) { return false; } // Die normale Detailbedienung bleibt bei gesperrter History nutzbar.
 }
 function clearLageHistory() {
-  ++uiLageHistoryEpoch; uiLageHistoryPending = false; uiLageSelectedId = ""; uiLageDetailOpen = false;
+  ++uiLageHistoryEpoch; uiLageHistoryPending = false; uiLageSelectedId = ""; uiLageDetailOpen = false; uiLageExpanded = false;
+  radarSignalsExpanded = false;
   writeLageHistory(null);
 }
 function rememberLageHistory(id) {
@@ -4728,6 +4731,7 @@ function restoreLageHistory(state) {
     const found = lageVisibleVorgaenge(lageData()).some(v => lageAnzeigeId(v) === entry.id);
     currentView = "briefing"; uiLageDetailOpen = entry.kind === "detail" && found;
     uiLageSelectedId = found ? entry.id : "";
+    if (found && lageVisibleVorgaenge(lageData()).findIndex(v => lageAnzeigeId(v) === entry.id) >= 5) uiLageExpanded = true;
     if (entry.kind === "detail" && !found) writeLageHistory({ kind: "list", scrollTop });
   } else return false;
   navOpen = false; updatesOpen = false; persistView(currentView); render();
@@ -4766,6 +4770,10 @@ function uiSieText(value) {
     .replace(/\b[Dd]u musst\b/g, "Sie müssen")
     .replace(/\b[Dd]u wurdest\b/g, "Sie wurden")
     .replace(/\bwurdest du\b/g, "wurden Sie")
+    .replace(/\b(kannst|solltest|musst|hast|bist) du\b/gi, (match, verb) => {
+      const form = { kannst: "können", solltest: "sollten", musst: "müssen", hast: "haben", bist: "sind" }[verb.toLowerCase()];
+      return `${verb[0] === verb[0].toUpperCase() ? form[0].toUpperCase() + form.slice(1) : form} Sie`;
+    })
     .replace(/\b[Dd]u wirst\b/g, "Sie werden")
     .replace(/\b[Dd]u hast\b/g, "Sie haben")
     .replace(/\b[Dd]u bist\b/g, "Sie sind")
@@ -4818,10 +4826,10 @@ function renderUiEmpty(title, detail) {
 
 function renderUiFooter(variant = "") {
   const label = currentView === "settings" || isProfileEditorView()
-    ? "Dein Mandatsprofil steuert die persönliche Einordnung."
+    ? "Ihr Mandatsprofil steuert die persönliche Einordnung."
     : ["helmut", "briefing", "radar", "office", "office-detail", "tasks"].includes(currentView)
       ? "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten."
-      : "Quellen und Stand findest du direkt bei den angezeigten Inhalten.";
+      : "Quellen und Stand finden Sie direkt bei den angezeigten Inhalten.";
   // Zwei Platzierungen derselben Zeile: Desktop am Fensterrand, mobil am
   // Inhaltsende (Design). Per CSS ist je Breite genau eine sichtbar.
   return `<footer class="ui-footer ${variant}">${uiIcon("source")}<span>${escapeHtml(label)}</span>${previewMode ? '<span class="ui-preview-label">Vorschau · Beispieldaten</span>' : ""}</footer>`;
@@ -5548,6 +5556,7 @@ function renderLageView() {
   }
   const selected = items.find(v => lageAnzeigeId(v) === uiLageSelectedId) || items[0];
   const selectedId = lageAnzeigeId(selected);
+  const shownItems = uiLageExpanded ? items : items.slice(0, 5);
   const historyEntry = lageHistoryEntry();
   const backLabel = historyEntry?.kind === "detail" && historyEntry.origin !== "briefing" ? "Zurück" : "Zurück zur Lage";
   const checked = lageCheckedLabel(data && data.latestUpdatedAt);
@@ -5563,7 +5572,7 @@ function renderLageView() {
       <section class="ui-master" aria-label="Politische Vorgänge">
         <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${stand ? `<span data-lage-stand>${escapeHtml(stand)}</span>` : `${items.length} Vorgänge`}${checked && freshness ? `<br><span data-lage-source-recency>${escapeHtml(freshness)}</span>` : ""}</span></div>
         <div class="ui-vorgang-list">
-          ${items.map((v, index) => {
+          ${shownItems.map((v, index) => {
             const id = lageAnzeigeId(v);
             const title = lageField(v.displayTitle) || lageField(v.title) || "Vorgang";
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
@@ -5574,6 +5583,7 @@ function renderLageView() {
             </button>`;
           }).join("")}
         </div>
+        ${items.length > 5 ? `<button class="secondary-button" type="button" data-ui-lage-expand aria-expanded="${uiLageExpanded}">${uiLageExpanded ? "Weniger anzeigen" : `Alle Vorgänge anzeigen (${items.length})`}</button>` : ""}
       </section>
       <article class="ui-detail ui-lage-detail" tabindex="0" aria-labelledby="ui-lage-detail-title">
         <button class="ui-mobile-back" type="button" data-ui-lage-back>${uiIcon("back")} ${backLabel}</button>
@@ -6801,7 +6811,7 @@ function renderHstandItems(state) {
     if (i.id && gesehen.has(String(i.id))) return false;
     if (i.id) gesehen.add(String(i.id));
     return true;
-  });
+  }).slice(0, state.primaryItem ? 2 : 3);
   if (!items.length) return "";
   // Kompakte Liste: Titel + EIN kurzer Relevanzsatz + Dringlichkeit. Bewusst KEINE
   // Chipwolke und keine langen Sammeltexte (Beleg, nicht Hauptscreen).
@@ -6979,7 +6989,7 @@ function renderHstandStateCard(state, kind) {
   const sub = disruption ? disruption.sub
     : isError
       ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
-      : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
+      : (es && es.detail ? es.detail : "Für Ihr Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
   // Ruhiger Tag: das Briefing bleibt ehrlich leer. Laufende Themen gehoeren in die
   // Lage; hier steht nur, wie viele es dort gibt, und ein Weg dorthin.
@@ -7119,8 +7129,8 @@ function renderCarouselInner() {
   const safeIndex = Math.min(helmutCarouselIndex, Math.max(0, items.length - 1));
   const card = items[safeIndex];
   const bucket = helmutStatusBucket(card.priorityType || "watch");
-  const why = helmutDeckWhy(card);
-  const risk = helmutDeckRisk(card);
+  const why = uiSieText(helmutDeckWhy(card));
+  const risk = uiSieText(helmutDeckRisk(card));
   const time = helmutDeckTime(card);
   const pct = helmutConfidencePercent(card);
   const subtitle = card.summary && card.summary !== why ? compactText(card.summary, 80) : "";
@@ -7145,7 +7155,7 @@ function renderCarouselInner() {
         <h3 class="helmut-deck-title">${escapeHtml(card.title || "Thema")}</h3>
         ${subtitle ? `<p class="helmut-deck-subtitle">${escapeHtml(subtitle)}</p>` : ""}
         <dl class="helmut-deck-bullets">
-          ${why ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Warum betrifft dich das?</dt><dd>${escapeHtml(why)}</dd></div>` : ""}
+          ${why ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Warum betrifft Sie das?</dt><dd>${escapeHtml(why)}</dd></div>` : ""}
           ${risk ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Risiko bei Nichtreaktion</dt><dd>${escapeHtml(risk)}</dd></div>` : ""}
           ${time ? `<div class="helmut-deck-line"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_CLOCK}</span>Zeitaufwand</dt><dd>${escapeHtml(time)}</dd></div>` : ""}
           ${pct != null ? `<div class="helmut-deck-line helmut-deck-score"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_SPARK}</span>Vertrauensscore</dt><dd><span class="helmut-score-bar"><span class="helmut-score-fill" style="width:${pct}%"></span></span><span class="helmut-score-val">${pct} %</span></dd></div>` : ""}
@@ -7153,7 +7163,7 @@ function renderCarouselInner() {
         ${renderDeckActions(card)}
       </article>
     </div>
-    <p class="helmut-deck-hint">Wische nach links, um dir in Ruhe das nächste Thema anzusehen.</p>
+    <p class="helmut-deck-hint">Wischen Sie nach links, um sich in Ruhe das nächste Thema anzusehen.</p>
     ${dots}
     ${nav}`;
 }
@@ -7332,7 +7342,7 @@ function prepareMeeting(input, index = 0) {
   return {
     ...input,
     id: input.id || `meeting-${index}-${slugify(input.terminTitel || topic)}`,
-    kurzbriefing: `Dieser Termin ist relevant, weil er direkt an deinen Ausschuss ${committee} und deine Schwerpunkte ${topProfileTopicsForView().slice(0, 3).join(", ")} anschließt.`,
+    kurzbriefing: `Dieser Termin ist relevant, weil er direkt an Ihren Ausschuss ${committee} und Ihre Schwerpunkte ${topProfileTopicsForView().slice(0, 3).join(", ")} anschließt.`,
     kernlinie: coreLine,
     entscheidungsfrage: meetingDecisionQuestion(input, sourceDecision),
     politischerKontext: context,
@@ -7343,7 +7353,7 @@ function prepareMeeting(input, index = 0) {
     kritischeFragen: meetingCriticalQuestions(input, sourceDecision),
     chancen: meetingChances(input, sourceDecision),
     risiken: meetingRisks(input, sourceDecision),
-    moeglicheAnschlussaktion: `Nach dem Termin kurze Linie festhalten: Was kannst du öffentlich aufgreifen, was geht ans Büro, was bleibt intern?`,
+    moeglicheAnschlussaktion: `Nach dem Termin kurze Linie festhalten: Was können Sie öffentlich aufgreifen, was geht ans Büro, was bleibt intern?`,
     optionalRedeentwurf: `Redeimpuls: Gute Arbeit und soziale Sicherheit müssen im Alltag der Menschen ankommen. Genau daran messen wir politische Vorhaben.`,
     optionalSocialStatement: `${topic}: Entscheidend ist, dass soziale Politik konkret wirkt - bei Arbeit, Sicherheit und Respekt im Alltag.`,
     optionalPressezitat: coreLine
@@ -7417,7 +7427,7 @@ function meetingTalkingPoints(input, decision = {}) {
   const topic = input.thema || input.terminTitel || "das Thema";
   return [
     `Welche konkrete Wirkung hat ${topic} für Beschäftigte und Menschen mit niedrigen Einkommen?`,
-    `Welche rote Linie solltest du bei Finanzierung, Kontrolle oder Umsetzung setzen?`,
+    `Welche rote Linie sollten Sie bei Finanzierung, Kontrolle oder Umsetzung setzen?`,
     decision.title ? `Aktuelle Quelle ansprechen: ${decision.title}.` : "Nach belastbaren Beispielen und Zahlen fragen."
   ];
 }
@@ -7425,7 +7435,7 @@ function meetingTalkingPoints(input, decision = {}) {
 function meetingCoreLine(input, decision = {}) {
   const topic = input.thema || input.terminTitel || "das Thema";
   if (decision.title) {
-    return `Deine Linie sollte sein: ${compactText(chiefRecommendationText(decision), 145)}`;
+    return `Ihre Linie sollte sein: ${compactText(chiefRecommendationText(decision), 145)}`;
   }
   if (String(topic).toLowerCase().includes("tarif")) {
     return "Tarifbindung muss im Alltag kontrollierbar und durchsetzbar sein, nicht nur als politisches Versprechen auftauchen.";
@@ -7442,7 +7452,7 @@ function meetingCoreLine(input, decision = {}) {
 function meetingDecisionQuestion(input, decision = {}) {
   const topic = input.thema || input.terminTitel || "das Thema";
   if (decision.title) {
-    return `Musst du aus dem Termin heraus zu "${decision.title}" öffentlich reagieren oder reicht eine interne Nachbereitung?`;
+    return `Müssen Sie aus dem Termin heraus zu "${decision.title}" öffentlich reagieren oder reicht eine interne Nachbereitung?`;
   }
   return `Entsteht aus ${topic} eine öffentliche Position, eine Ausschussfrage oder nur eine interne Notiz?`;
 }
@@ -7452,13 +7462,13 @@ function meetingCriticalQuestions(input) {
   return [
     `Welche Zusage braucht ihr konkret von Politik zu ${topic}?`,
     "Wo ist die Bundesregierung bisher zu unkonkret?",
-    "Welche Zahl oder welches Beispiel solltest du öffentlich nutzen?"
+    "Welche Zahl oder welches Beispiel sollten Sie öffentlich nutzen?"
   ];
 }
 
 function meetingChances(input, decision = {}) {
   return [
-    decision.opportunity || "Du kannst fachliche Nähe zeigen und eine konkrete soziale Forderung mitnehmen.",
+    decision.opportunity || "Sie können fachliche Nähe zeigen und eine konkrete soziale Forderung mitnehmen.",
     "Der Termin kann Stoff für Statement, Ausschussfrage oder Büroauftrag liefern."
   ];
 }
@@ -7498,7 +7508,7 @@ function slugify(value) {
 function chiefRecommendationText(decision) {
   const action = polishReferentText(decision.action || decision.summary || "");
   if (decision.priorityType === "watch") {
-    return `${action} Du musst nicht sofort groß veröffentlichen, aber du solltest heute sprechfähig sein.`;
+    return `${action} Sie müssen nicht sofort groß veröffentlichen, aber Sie sollten heute sprechfähig sein.`;
   }
   return action;
 }
@@ -7531,7 +7541,7 @@ function renderDecisionBlock(decision) {
 
 function renderDetailView() {
   const decision = selectedDecision();
-  const action = polishReferentText(decision.action);
+  const action = uiSieText(polishReferentText(decision.action));
   const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
     <article class="detail-page">
@@ -7558,7 +7568,7 @@ function renderDetailView() {
           <p>${escapeHtml(decision.whyItMatters)}</p>
         </div>
         <div>
-          <h2>Wenn du nicht reagierst</h2>
+          <h2>Wenn Sie nicht reagieren</h2>
           <p>${escapeHtml(decision.inaction)}</p>
         </div>
       </section>
@@ -7592,7 +7602,7 @@ function renderUserFeedbackWidget(decision) {
   return `
     <section class="article-section feedback-widget" data-feedback-widget>
       <h2>War diese Einschätzung hilfreich?</h2>
-      <p class="feedback-widget-hint">Dein Feedback verbessert Helmuts Relevanz-Einschätzung.</p>
+      <p class="feedback-widget-hint">Ihr Feedback verbessert Helmuts Relevanz-Einschätzung.</p>
       <div class="feedback-widget-buttons">
         ${buttons.map(([type, label]) => `<button class="feedback-chip" type="button" data-feedback-type="${type}" data-feedback-area="Lage" data-feedback-topic="${escapeAttribute(topic)}">${escapeHtml(label)}</button>`).join("")}
       </div>
@@ -7852,7 +7862,7 @@ function renderOfficeFormatSheet() {
     return "";
   }
   const formats = activeOfficeFormats();
-  const primary = ["presse", "x", "intern"].map((id) => formats.find((f) => f.id === id)).filter(Boolean);
+  const primary = ["presse", "x"].map((id) => formats.find((f) => f.id === id)).filter(Boolean);
   const more = formats.filter((f) => !primary.includes(f));
   const ready = officeCreationReady(decision);
   const row = (format) => {
@@ -8118,7 +8128,7 @@ function renderTopicsView() {
   return `
     <section class="page-intro compact topics-intro">
       <h1 class="${headlineClass("Belege.")}">Belege.</h1>
-      <p>Die Quellenbasis hinter der Empfehlung. Hier prüfst du, woher Helmut seine Lage nimmt.</p>
+      <p>Die Quellenbasis hinter der Empfehlung. Hier prüfen Sie, woher Helmut seine Lage nimmt.</p>
     </section>
 
     <section class="topic-board" aria-label="Themen">
@@ -8292,16 +8302,34 @@ function renderRadarInner(state) {
     quality: state.quality || state.anzeige.quality,
     emptyState: state.emptyState || state.anzeige.emptyState
   } : state;
-  const body = (!state || !radarStateHasContent(state))
+  const fullState = state;
+  const active = RADAR_SEGMENTS.some(s => s.key === radarSegment) ? radarSegment : "party";
+  const visibleCount = radarOpenableItems(state?.mentions).length
+    + radarOpenableItems(state?.environment?.[active]).length
+    + radarOpenableItems(state?.dynamics).length + radarOpenableItems(state?.articles).length;
+  if (state && !radarSignalsExpanded) {
+    let remaining = 3;
+    const take = values => {
+      const result = radarOpenableItems(values).slice(0, remaining);
+      remaining -= result.length;
+      return result;
+    };
+    state = { ...state, mentions: take(state.mentions),
+      environment: { ...state.environment, [active]: take(state.environment?.[active]) },
+      environmentPreviewHidden: radarOpenableItems(state.environment?.[active]).length > 0 && remaining === 0,
+      dynamics: take(state.dynamics), articles: take(state.articles) };
+  }
+  const body = (!fullState || !radarStateHasContent(fullState))
     ? renderRadarEmpty(state)
     : `
-        ${renderRadarSummary(state)}
-        ${renderRadarAboutYou(state)}
+        ${renderRadarSummary(fullState)}
+        ${state.mentions?.length || !radarOpenableItems(fullState.mentions).length ? renderRadarAboutYou(state) : ""}
         ${renderRadarEnvironment(state)}
-        ${renderRadarDynamics(state)}
+        ${state.dynamics?.length || !radarOpenableItems(fullState.dynamics).length ? renderRadarDynamics(state) : ""}
         ${state.articles?.length ? renderRadarArticles(state) : ""}
       `;
-  return `${renderRadarHeader(state)}${body}`;
+  const more = visibleCount > 3 ? `<button class="secondary-button" type="button" data-radar-expand="all" aria-expanded="${radarSignalsExpanded}">${radarSignalsExpanded ? "Weniger anzeigen" : `Alle Signale anzeigen (${visibleCount})`}</button>` : "";
+  return `${renderRadarHeader(fullState)}${body}${more}`;
 }
 
 function radarStateHasContent(state) {
@@ -8351,10 +8379,10 @@ function renderRadarSummary(state) {
   const dynamics = radarOpenableItems(state.dynamics).length;
   const environment = ["party", "constituency", "committees"]
     .reduce((sum, key) => sum + radarOpenableItems(state.environment?.[key]).length, 0);
-  const line2 = dynamics === 1 ? "In deinem politischen Umfeld wird eine Entwicklung beobachtet."
-    : dynamics > 1 ? `In deinem politischen Umfeld werden ${dynamics} Entwicklungen beobachtet.`
-      : environment === 1 ? "Eine Entwicklung aus deinem politischen Umfeld ist relevant."
-        : environment > 1 ? `${environment} Entwicklungen aus deinem politischen Umfeld sind relevant.` : "";
+  const line2 = dynamics === 1 ? "In Ihrem politischen Umfeld wird eine Entwicklung beobachtet."
+    : dynamics > 1 ? `In Ihrem politischen Umfeld werden ${dynamics} Entwicklungen beobachtet.`
+      : environment === 1 ? "Eine Entwicklung aus Ihrem politischen Umfeld ist relevant."
+        : environment > 1 ? `${environment} Entwicklungen aus Ihrem politischen Umfeld sind relevant.` : "";
   const lines = [s.line1, line2].filter(Boolean);
   if (!lines.length) return "";
   const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(uiSieText(ln))}</span>`).join("");
@@ -8374,14 +8402,14 @@ function radarHighlight(text) {
 // --- Über dich (direkte Erwähnungen) ----------------------------------------
 function renderRadarAboutYou(state) {
   const all = radarOpenableItems(state.mentions);
-  const expanded = radarMentionsExpanded;
+  const expanded = radarSignalsExpanded || radarMentionsExpanded;
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarMentionCard).join("")
     : radarEmptyHint(radarSectionEmptyText(state, "direkten Erwähnungen"));
   return `
     <section class="radar2-section">
-      ${radarSectionHead("person", "Über Sie", "mentions", expanded, all.length > 3)}
+      ${radarSectionHead("person", "Über Sie", "mentions", expanded, !radarSignalsExpanded && all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
   `;
@@ -8390,6 +8418,7 @@ function renderRadarAboutYou(state) {
 function zeigeLageVorgang(id) {
   rememberLageHistory(id);
   uiLageSelectedId = id;
+  if (lageVisibleVorgaenge(lageData()).findIndex(v => lageAnzeigeId(v) === id) >= 5) uiLageExpanded = true;
   uiLageDetailOpen = true;
   currentView = "briefing";
   navOpen = false;
@@ -8440,9 +8469,9 @@ function renderRadarEnvironment(state) {
   // Kuratierte Auswahl statt Feed: standardmäßig max. 3 pro Segment; der Rest ist eine
   // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
   const RADAR_ENV_PREVIEW = 3;
-  const shown = radarEnvExpanded ? items : items.slice(0, RADAR_ENV_PREVIEW);
-  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
-  const more = items.length > RADAR_ENV_PREVIEW
+  const shown = (radarSignalsExpanded || radarEnvExpanded) ? items : items.slice(0, RADAR_ENV_PREVIEW);
+  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(state.environmentPreviewHidden ? "Weitere belegte Hinweise finden Sie unter „Alle Signale anzeigen“." : radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
+  const more = !radarSignalsExpanded && items.length > RADAR_ENV_PREVIEW
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="environment">${radarEnvExpanded ? "Weniger anzeigen" : `${escapeHtml(seg.more)} (${items.length})`} <span aria-hidden="true">›</span></button>`
     : "";
   return `
@@ -8475,14 +8504,14 @@ function renderRadarEnvRow(e) {
 // --- Neue Dynamiken ---------------------------------------------------------
 function renderRadarDynamics(state) {
   const all = radarOpenableItems(state.dynamics);
-  const expanded = radarDynamicsExpanded;
+  const expanded = radarSignalsExpanded || radarDynamicsExpanded;
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarDynamicCard).join("")
     : radarEmptyHint(radarSectionEmptyText(state, "Dynamikhinweise"));
   return `
     <section class="radar2-section">
-      ${radarSectionHead("activity", "Beobachtete Entwicklungen", "dynamics", expanded, all.length > 3)}
+      ${radarSectionHead("activity", "Beobachtete Entwicklungen", "dynamics", expanded, !radarSignalsExpanded && all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
   `;
@@ -8518,9 +8547,9 @@ function renderRadarArticles(state) {
   // Premium-Überblick statt Medienmonitoring: standardmäßig max. 5 Artikel; der Rest
   // ist eine ECHTE erweiterte Liste (die Daten liegen vor) hinter "Alle anzeigen".
   const RADAR_ARTICLE_PREVIEW = 5;
-  const shown = radarArticlesExpanded ? filtered : filtered.slice(0, RADAR_ARTICLE_PREVIEW);
+  const shown = (radarSignalsExpanded || radarArticlesExpanded) ? filtered : filtered.slice(0, RADAR_ARTICLE_PREVIEW);
   const list = shown.length ? shown.map(renderRadarArticleRow).join("") : radarEmptyHint("Keine passenden Artikel im gewählten Filter.");
-  const more = filtered.length > RADAR_ARTICLE_PREVIEW
+  const more = !radarSignalsExpanded && filtered.length > RADAR_ARTICLE_PREVIEW
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="articles">${radarArticlesExpanded ? "Weniger anzeigen" : `Alle anzeigen (${filtered.length})`} <span aria-hidden="true">›</span></button>`
     : "";
   return `
@@ -8758,11 +8787,16 @@ function bindRadarActions() {
   root.querySelectorAll("[data-radar-expand]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const k = btn.dataset.radarExpand;
-      if (k === "mentions") radarMentionsExpanded = !radarMentionsExpanded;
+      if (k === "all") {
+        radarSignalsExpanded = !radarSignalsExpanded;
+        radarMentionsExpanded = radarEnvExpanded = radarDynamicsExpanded = radarArticlesExpanded = false;
+      }
+      else if (k === "mentions") radarMentionsExpanded = !radarMentionsExpanded;
       else if (k === "dynamics") radarDynamicsExpanded = !radarDynamicsExpanded;
       else if (k === "articles") radarArticlesExpanded = !radarArticlesExpanded;
       else if (k === "environment") radarEnvExpanded = !radarEnvExpanded;
       rerenderRadar();
+      document.querySelector(`[data-radar-expand="${k}"]`)?.focus({ preventScroll: true });
     });
   });
 }
@@ -8895,7 +8929,7 @@ function renderSettingsView() {
       : `<span class="stg-system-badge stg-system-badge--warn">${escapeHtml(ops.readiness?.issues?.[0] || "Prüfen")}</span>`;
 
   return `
-    ${renderUiPageHeader("Profil & Einstellungen", "Dein Mandatsprofil und wie Helmut für dich formuliert.")}
+    ${renderUiPageHeader("Profil & Einstellungen", "Ihr Mandatsprofil und wie Helmut für Sie formuliert.")}
     ${renderUiAccountTools()}
 
     <div class="stg-section profile-settings-overview">
@@ -9317,7 +9351,7 @@ function profileEditorHasChanges() {
     && JSON.stringify(profileEditorDraft.values) !== profileEditorDraft.baseline);
 }
 function allowProfileEditorLeave() {
-  if (profileEditorSaving) { showToast("Dein Profil wird gerade gespeichert."); return false; }
+  if (profileEditorSaving) { showToast("Ihr Profil wird gerade gespeichert."); return false; }
   if (profileEditorHasChanges() && !window.confirm("Ungespeicherte Änderungen verwerfen?")) return false;
   profileEditorDraft = null;
   return true;
@@ -9373,7 +9407,7 @@ function renderProfileMandateEditor(d) {
     + profileEditorRow("constituency", "Wahlkreis", d.constituency, profileConstituencyOptions(d.parliamentType, d.state, d.constituency), 'data-constituency-select')
     + profileEditorRow("location", "Ort", d.location, locationOptionsForState(d.state), 'data-location-select');
   const committees = profileCommitteeOptions(d.committees).map(value => `<label class="profile-editor-check"><input type="checkbox" name="committees" value="${escapeAttribute(value)}" ${d.committees.includes(value) ? "checked" : ""}><span>${escapeHtml(value)}</span></label>`).join("");
-  return profileEditorGroup("Über dich", personal) + profileEditorGroup("Region", region)
+  return profileEditorGroup("Über Sie", personal) + profileEditorGroup("Region", region)
     + profileEditorGroup("Fachliche Arbeit", profileEditorDisclosure("Ausschüsse", committees,
       `<span data-committee-count>${d.committees.length ? `${d.committees.length} ausgewählt` : "Auswählen"}</span>`))
     + '<p class="profile-editor-help" data-profile-catalog-status role="status"></p>';
@@ -9390,7 +9424,7 @@ function renderProfileTopicsEditor(d) {
   }).join("");
   const available = uniqueViewList([...priorityTopics, ...Object.keys(profile.topicPriorities || {}), ...(profile.focusTopics || []), ...(profile.reportingTopics || [])]).filter(topic => !d.focusTopics.includes(topic));
   const picker = available.map(topic => `<button type="button" data-profile-add-topic="${escapeAttribute(topic)}">${escapeHtml(topic)}<span aria-hidden="true">＋</span></button>`).join("");
-  return `<div class="profile-editor-lead"><h2>Was ist dir wichtig?</h2><p>Wähle deine wichtigsten Themen.</p></div>
+  return `<div class="profile-editor-lead"><h2>Was ist Ihnen wichtig?</h2><p>Wählen Sie Ihre wichtigsten Themen.</p></div>
     ${rows ? `<div class="profile-editor-group">${rows}</div>` : '<p class="profile-editor-empty">Noch keine Schwerpunkte ausgewählt.</p>'}
     ${available.length ? `<details class="profile-topic-picker"><summary>＋ Thema hinzufügen</summary><div>${picker}</div></details>` : ""}
     <p class="profile-editor-note">Für Themenauswahl und Briefings.</p>
@@ -9790,7 +9824,7 @@ function bindAccountActions() {
         aiBudgetMonthlyCents: eurToCent(getField("aiBudgetMonthlyEur") && getField("aiBudgetMonthlyEur").value),
         onboardingStatus: getField("onboardingStatus") && getField("onboardingStatus").value
       };
-      if (msg) msg.textContent = "Speichere …";
+      if (msg) msg.textContent = "Wird gespeichert …";
       const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}?${apiScopeQuery()}`, body);
       if (res.ok) {
         await admAfterMutation();
@@ -10007,6 +10041,14 @@ function bindActions() {
       }
     });
   });
+  app.querySelectorAll("[data-ui-lage-expand]").forEach(button => {
+    button.addEventListener("click", () => {
+      uiLageExpanded = !uiLageExpanded;
+      if (!uiLageExpanded) uiLageSelectedId = "";
+      render();
+      app.querySelector("[data-ui-lage-expand]")?.focus({ preventScroll: true });
+    });
+  });
   // Master/detail selection is purely local; both viewport sizes use the same data.
   app.querySelectorAll("[data-ui-lage-select]").forEach(button => {
     button.addEventListener("click", () => {
@@ -10171,8 +10213,8 @@ function bindActions() {
       try {
         const res = await apiSend("POST", `/api/feedback?${apiScopeQuery()}`, body);
         if (res.ok) {
-          if (widget) widget.innerHTML = `<p class="feedback-widget-thanks">Danke für dein Feedback.</p>`;
-          showToast("Danke für dein Feedback");
+          if (widget) widget.innerHTML = `<p class="feedback-widget-thanks">Danke für Ihr Feedback.</p>`;
+          showToast("Danke für Ihr Feedback");
         } else {
           if (widget) widget.querySelectorAll(".feedback-chip").forEach((b) => { b.disabled = false; });
           showToast("Feedback nicht gespeichert");
@@ -10951,7 +10993,7 @@ async function saveProfileFromForm(form) {
     const retry = app.querySelector("#profileForm");
     if (retry) {
       retry.querySelector('[type="submit"]').textContent = "Erneut speichern";
-      retry.querySelector("[data-profile-save-error]").textContent = "Profil konnte nicht gespeichert werden. Deine Änderungen bleiben erhalten.";
+      retry.querySelector("[data-profile-save-error]").textContent = "Profil konnte nicht gespeichert werden. Ihre Änderungen bleiben erhalten.";
     }
     showToast("Profil konnte nicht gespeichert werden");
   }
@@ -11337,7 +11379,7 @@ function activeOfficeFormats() {
     .filter(v => typeof v === "string").map(v => v.trim().toLowerCase())
     .filter(v => ["bundestag", "landtag"].includes(v)));
   const parliamentType = levels.size === 1 ? (levels.has("landtag") ? "Landtag" : "Bundestag") : "";
-  return OFFICE_FORMATS.filter((f) => f.id !== "rede" && (f.id !== "anfrage" || Boolean(parliamentType
+  return OFFICE_FORMATS.filter((f) => !["rede", "intern"].includes(f.id) && (f.id !== "anfrage" || Boolean(parliamentType
     && (parliamentType !== "Landtag" || String(profile?.state || profile?.bundesland || "").trim())
     && [profile?.committee, ...(Array.isArray(profile?.committees) ? profile.committees : [])].some((value) => typeof value === "string" && value.trim()))));
 }
@@ -11560,7 +11602,7 @@ function directArticleHref(source) {
 
 function teamBenefitText(task) {
   const benefit = String(task.politicalBenefit || "").trim();
-  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob du dazu heute sprechfähig sein solltest.";
+  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob Sie dazu heute sprechfähig sein sollten.";
   return benefit
     .replace(/^Du kannst\b/i, "Wir können")
     .replace(/^Du hältst\b/i, "Wir halten")
@@ -11616,7 +11658,7 @@ function taskBriefQuestions(task) {
   }
   return [
     "Was ist der konkrete politische Anlass?",
-    "Warum betrifft das deinen Ausschuss oder dein Profil?",
+    "Warum betrifft das Ihren Ausschuss oder Ihr Profil?",
     "Welche Linie sollten wir vorbereiten?",
     "Reaktion heute ja oder nein?"
   ];
@@ -12266,7 +12308,7 @@ function renderStartFailure(error) {
         <section class="loading-card offline-card">
           <div class="loading-logo"><span>H</span></div>
           <h1>Ich hab gerade keine Verbindung</h1>
-          <p>Ohne Netz komme ich nicht an deine aktuelle Lage. Sobald du wieder online bist, bin ich sofort für dich da.</p>
+          <p>Ohne Netz ist Ihre aktuelle Lage nicht erreichbar. Sobald Sie wieder online sind, ist Helmut wieder für Sie da.</p>
           <button class="primary-button" type="button" onclick="window.location.reload()">Nochmal versuchen</button>
         </section>
       `;

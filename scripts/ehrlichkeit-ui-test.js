@@ -142,7 +142,7 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
   for (const [name, reply] of [["HTTP Fehler", response(false, {})], ["Netzfehler", networkError], ["leere Antwort", response(true, null)]]) {
     await test(`Onboarding ${name}: keine Erfolgsmeldung`, async () => {
       const ui = client(); ui.reply(reply); await ui.finish(false);
-      assert.equal(ui.toast.textContent, "Profil konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.");
+      assert.equal(ui.toast.textContent, "Profil konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten.");
       assert.equal(ui.state().profile.id, "ui-profile");
     });
   }
@@ -150,7 +150,7 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     await test(`Onboarding ${skip ? "Später" : "Fertig"}: Serverbestätigung`, async () => {
       const ui = client(); ui.reply(response(true, { id: "ui-profile", saved: true }));
       await ui.finish(skip); assert.equal(ui.state().profile.saved, true);
-      assert.equal(ui.toast.textContent, skip ? "Du kannst dein Profil jederzeit ergänzen." : "Profil gespeichert");
+      assert.equal(ui.toast.textContent, skip ? "Sie können Ihr Profil jederzeit ergänzen." : "Profil gespeichert");
     });
   }
   for (const [name, reply] of [["HTTP Fehler", response(false, {})], ["Netzfehler", networkError], ["fehlende ID", response(true, {})]]) {
@@ -227,7 +227,7 @@ async function test(name, fn) { await fn(); passed++; console.log(`PASS  ${name}
     assert.match(last, /Risiken & Chancen/);
     assert.match(last, /name="riskTopics"/);
     assert.match(last, /name="opportunityTopics"/);
-    assert.match(last, /wird dein Profil gespeichert/);
+    assert.match(last, /wird Ihr Profil gespeichert/);
     assert.match(last, /data-onboard-finish/);
     assert.match(last, /Fertig & speichern/);
     assert.ok(!last.includes("data-onboard-next"));

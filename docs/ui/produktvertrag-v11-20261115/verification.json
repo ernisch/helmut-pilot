@@ -1,0 +1,128 @@
+{
+  "checkedAtUtc": "2026-11-15T08:51:45.006949+00:00",
+  "base": "c16ce6bc713aa9486080c36f811ab3b6fcac4bd0",
+  "runtimeSha256": {
+    "client.js": "b2553c48013b420d224f9b06b123bf86ce154ca1db13d54312a838e7ab868bf5",
+    "server.js": "9b77868eea109d2bd8a3303ba36979d73a5d2e9837cf87025e3a7f290aa9efe4",
+    "index.html": "b692dd29ae33067f3615fc73ea41d480554e774176824746f1e39861935286ef"
+  },
+  "browser": {
+    "produktvertrag": {
+      "status": "PASS",
+      "baselineRef": null,
+      "externalRequestsFulfilled": 0,
+      "errors": [],
+      "browserVersion": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/151.0.7922.173",
+        "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+        "jsVersion": "15.1.206.23"
+      },
+      "testedFiles": {
+        "assets/favicon.ico": "2226ad7caec775e6a01196af34bbd8cbf5c497ce5ae6e06c5c1ba563cf517caf",
+        "assets/helmut_logo.svg": "16d6d5ab1df18fab90c2588affc2ed13540fc466259d2752e805cf25d5aaea6e",
+        "assets/profil-orte-20260930.json": "fa8dc1359095102be62e1b97ec6ee48ed285ca607a9614da60847ba2c2f7e682",
+        "assets/profil-wahlkreise.json": "5a51999b9f4a57952d107fd69c2ad88a7f6f074ef2adb3418a4044311711df05",
+        "assets/ui/fonts/HankenGrotesk-var.woff2": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+        "assets/ui/fonts/IBMPlexMono-Medium.woff2": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+        "assets/ui/fonts/IBMPlexMono-Regular.woff2": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+        "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+        "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+        "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+        "client.js": "b2553c48013b420d224f9b06b123bf86ce154ca1db13d54312a838e7ab868bf5",
+        "index.html": "b692dd29ae33067f3615fc73ea41d480554e774176824746f1e39861935286ef",
+        "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+        "scripts/ui-preview-browser-check.js": "cfa09e1ebe6c5eda1cab7cd363faf260055a22ce3883f57b53f18e8e96f018d0",
+        "scripts/ui-preview-isolated.py": "ca17f47fb6e3e269d1cfbaaf4d7807dda613273e14c3ab2295da8f9d4b8651f5",
+        "site.webmanifest": "a09ca1eb86f648106c7007f1c9bdb2d597e6b4f1619c1a77ca6180614a1b0575",
+        "styles.css": "00d149eb03f541ccd85d8ebd79802cc09299441ab06aaddf052e4788b19929ed"
+      },
+      "assertionsPassed": 87,
+      "viewports": [
+        "1440x900",
+        "390x844",
+        "360x780"
+      ]
+    },
+    "officeBinding": {
+      "status": "PASS",
+      "baselineRef": null,
+      "externalRequestsFulfilled": 0,
+      "errors": [],
+      "browserVersion": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/151.0.7922.173",
+        "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+        "jsVersion": "15.1.206.23"
+      },
+      "testedFiles": {
+        "assets/favicon.ico": "2226ad7caec775e6a01196af34bbd8cbf5c497ce5ae6e06c5c1ba563cf517caf",
+        "assets/helmut_logo.svg": "16d6d5ab1df18fab90c2588affc2ed13540fc466259d2752e805cf25d5aaea6e",
+        "assets/ui/fonts/HankenGrotesk-var.woff2": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+        "assets/ui/fonts/IBMPlexMono-Medium.woff2": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+        "assets/ui/fonts/IBMPlexMono-Regular.woff2": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+        "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+        "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+        "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+        "client.js": "b2553c48013b420d224f9b06b123bf86ce154ca1db13d54312a838e7ab868bf5",
+        "index.html": "b692dd29ae33067f3615fc73ea41d480554e774176824746f1e39861935286ef",
+        "scripts/fixtures/ui-office-binding.js": "01b36037972d585f3e022dc699b02c05e712c7615c4d009ad84174d27d59f513",
+        "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+        "scripts/ui-office-binding-browser-cases.js": "a013b85af69be9951bacc474f65afae1899a7a82508df8c4a56da3088c6ef7b1",
+        "scripts/ui-office-binding-browser-test.js": "4c92c80e6b31b06135d3c5155b55772f74a5ccff01ec500dff1d6f560d4a9384",
+        "scripts/ui-preview-browser-check.js": "cfa09e1ebe6c5eda1cab7cd363faf260055a22ce3883f57b53f18e8e96f018d0",
+        "scripts/ui-preview-isolated.py": "ca17f47fb6e3e269d1cfbaaf4d7807dda613273e14c3ab2295da8f9d4b8651f5",
+        "styles.css": "00d149eb03f541ccd85d8ebd79802cc09299441ab06aaddf052e4788b19929ed"
+      },
+      "assertionsPassed": 300,
+      "viewports": [
+        "1440x900",
+        "390x844",
+        "360x780"
+      ]
+    },
+    "unmodifiedMainGeneralRunner": {
+      "status": "FAIL",
+      "baselineRef": "c16ce6bc713aa9486080c36f811ab3b6fcac4bd0",
+      "externalRequestsFulfilled": 0,
+      "errors": [],
+      "browserVersion": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/151.0.7922.173",
+        "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+        "jsVersion": "15.1.206.23"
+      },
+      "testedFiles": {
+        "assets/favicon.ico": "2226ad7caec775e6a01196af34bbd8cbf5c497ce5ae6e06c5c1ba563cf517caf",
+        "assets/helmut_logo.svg": "16d6d5ab1df18fab90c2588affc2ed13540fc466259d2752e805cf25d5aaea6e",
+        "assets/ui/fonts/HankenGrotesk-var.woff2": "186ca66826fac19d1736a7ebb840516de7f142bc5aeb0ce02eb6e1c3520d487e",
+        "assets/ui/fonts/IBMPlexMono-Medium.woff2": "3187905c507d452050e496d66c896eaf8f732a04055d04b117af8523fbc1a9e0",
+        "assets/ui/fonts/IBMPlexMono-Regular.woff2": "1acb708e5286bd1979de2f117ce7b7eb2ab2f7325cf7ce9791329c06d9c5f222",
+        "assets/ui/fonts/Spectral-Medium.woff2": "5effe60debf770566d79d9050b9a073a21e6148f3912a4d372d1ed935ed6ac52",
+        "assets/ui/fonts/Spectral-Regular.woff2": "61cd5cc9b19fc3590368e03f630cc8d736653a70d7ad51f9bb588488b1327f5f",
+        "assets/ui/reichstag.jpg": "06d4dc796dbb47631f4ed2c7b9b5137bc0c9f43d7080fddb707c512fbecbe5c7",
+        "client.js": "52391d87e4c8b4c7d9aabff1653fef7b4e3d411e6f2a540e492c9149609511f7",
+        "index.html": "44bd39523405d5651bd1f0328b921a41a595895dd0ed80caee9bf5b89211a21b",
+        "scripts/fixtures/ui-preview.js": "3a54b4d27ad7bd213033253015e21eb642ce6883c61a038b41ad0537df6429e0",
+        "scripts/ui-preview-browser-check.js": "cfa09e1ebe6c5eda1cab7cd363faf260055a22ce3883f57b53f18e8e96f018d0",
+        "scripts/ui-preview-isolated.py": "ca17f47fb6e3e269d1cfbaaf4d7807dda613273e14c3ab2295da8f9d4b8651f5",
+        "site.webmanifest": "a09ca1eb86f648106c7007f1c9bdb2d597e6b4f1619c1a77ca6180614a1b0575",
+        "styles.css": "00d149eb03f541ccd85d8ebd79802cc09299441ab06aaddf052e4788b19929ed"
+      },
+      "assertionsPassed": 59,
+      "viewports": [
+        "1440x900 (stopped at existing failure)"
+      ]
+    }
+  },
+  "targetedSuites": {
+    "helmutTabUi": 130,
+    "radarUi": 54,
+    "bueroEhrlichkeit": 76,
+    "officeAntwortzeitGroups": 13,
+    "ehrlichkeitUi": 34
+  }
+}
