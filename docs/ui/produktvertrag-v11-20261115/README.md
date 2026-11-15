@@ -123,6 +123,16 @@ kombinierter Baum `cbc038244fc209728f2aa171b104e34633035cdf` separat geprüft:
 Browserprüfungen bestanden. Danach main regulär in den eigenen Branch integriert;
 Quellenänderungen bleiben erhalten. Neue Pflicht-CI für diesen Kopf erforderlich.
 
+## Bereichs-CI auf dem integrierten Stand
+
+CI43700280257 auf `b047031a`: Browser und Standard-Offlinesuite grün.
+Bereichssuiten389/390; allein `briefing-vollstaendigkeit-test.js` bricht im
+isoliert geladenen Radar-Renderer mit `RADAR_SEGMENTS is not defined` ab.
+Der Testkontext erhält die benötigten Anzeigezustände und den Array-Filter;
+alle fachlichen Assertions und Rohbelegprüfungen bleiben unverändert.
+Gezielt24/24 Vollständigkeitsprüfungen bestanden. Kein Runtimefix. Jüngster main `3734927f` enthält nur Dokumentation (PR1210),
+wurde vor der neuen CI regulär integriert; keine geänderten Runtimebytes.
+
 ## Risiko und Rückweg
 
 Nur Darstellung und Formatangebot ändern sich; die Datenmotor-Fachabnahme bleibt

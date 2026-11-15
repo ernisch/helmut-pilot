@@ -129,9 +129,10 @@
     "ehrlichkeitUi": 37,
     "pwaIcons": 70,
     "serviceWorkerStartGroups": 10,
-    "quellenpflichtVertrag": 59
+    "quellenpflichtVertrag": 59,
+    "briefingVollstaendigkeit": 24
   },
-  "integratedMain": "236ced6534ce9537eee9f6942e7b892a3dab2c08",
+  "integratedMain": "3734927ffe5734ab04f527cd49980f7861edf41f",
   "mainIntegration": {
     "tree": "cbc038244fc209728f2aa171b104e34633035cdf",
     "helmutTabUi": 130,
