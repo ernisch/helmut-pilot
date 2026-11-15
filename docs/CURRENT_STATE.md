@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,00:31UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
+**15.11.2026,00:41UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
 
 Betreiber hat auftragsbezogene gruene Merges bis maximal20 freigegeben; bisher0.
 Kein zusaetzlicher bezahlter Modelllauf, Datenreset, Cron-/Env-/Budgeteingriff.
@@ -10,6 +10,11 @@ Lokale Belege: 13Layoutgruppen inTeilmengen,21Kontextgruppen,19Vertragschecks,
 Statusgroesse und veralteter Pending-Quellanker. Historie jetzt verlustfrei archiviert;
 Anker auf heutige gemeinsame Plan-/Einreihungsgruppe aktualisiert, keine Runtimeaenderung.
 Neue Pflicht-CI folgt; kein Merge oder Production-Erfolg behauptet.
+PR1204-CI43658418026:79/87Quellensuiten gruen, alle8roten Suiten auf unveraendertem
+main6763dc8e reproduziert. Ausschliesslich veraltete Fixtures/Promptpins angepasst;
+Versionen, Workerabschluss, Tagesbezug und Paketansicht bleiben streng gebunden.
+Betroffene8Suiten lokal24+8+16+9+5+15+29+14=120Gruppen gruen, kein Modell/Production.
+Pflicht-CI wird am aktualisierten Kopf erneut vollstaendig bestaetigt.
 PR1204 gestapelt auf1203: hib-Suffix, BMAS-/ZDF-/BMG-Presseabsatz eng gebunden.
 6gespeicherte echte Originale lokal vorhernegativ/nachherpositiv,25Layoutgruppen,
 17Bundestagsgruppen und11generische Gewinnungsgruppen gruen. Keine Modellantwort.

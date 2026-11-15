@@ -47,7 +47,11 @@ function welt(docs = [dokument(990010, true), dokument(990011), dokument(990012)
       return { ok: true, neuIds, bestaetigteIds: rows.map(r => r.id),
         quellenstaende: Object.fromEntries(rows.map(r => [r.id, R.standHash(r)])), fundstellenBestaetigt: true };
     },
-    enqueue: q.enqueue, ladeRohdokumente: fail("Rohdaten"), ladeRohdokumentStaende: fail("Quellenstand"),
+    enqueue: q.enqueue, ladeRohdokumente: fail("Rohdaten"),
+    ladeRohdokumentStaende: async (ids, staende) => ids.map(id => {
+      const row = w.persisted.get(id); A(row, "Nur bestaetigte Einzelversion nachlesen");
+      A.equal(R.standHash(row), staende[id]); return structuredClone(row);
+    }),
     eagerUnderstanding: fail("Modell"), budget: { reserviere: fail("Reservierung") }
   };
   w.run = () => P.HANDLER.source_fetch(source, w.deps, { auftragsDeadlineMs: now + 120000 });

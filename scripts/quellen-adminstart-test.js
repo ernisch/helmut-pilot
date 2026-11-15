@@ -41,14 +41,19 @@ async function main() {
       leaseBis = now + o.ttlMs; return { erlaubt: true, slot: "synthetic-lease" }; },
     gebeFrei: async () => { leaseBis = 0; }
   }));
-  replace(pipeline, "betriebsstatus", async () => ({ verfuegbar: ready, zustand: "bereit" }));
+  replace(require("../lib/helmut/worker-betrieb"), "readiness", async () => ({ bereit: ready }));
   replace(pipeline, "planeArbeit", async () => assert.fail("kein alternativer Planpfad"));
   replace(pipeline, "setzePlanungFort", async o => { assert.equal(o.darfNeuPlanen, true); plans++;
     return { ok: true, neuGeplant: plans === 1, ausstehend: 0, geplant: 3, profile: 1, tagesplan: { plaetze: 1 } }; });
   replace(pipeline, "wiedervorlage", async () => { retries++; return { wiedervorgelegt: 0 }; });
-  replace(pipeline, "arbeite", async o => { workers++; assert.equal(o.stapel, 1); if (hold) await hold;
+  replace(pipeline, "arbeite", async o => {
+    const empty = { verfuegbar: true, erledigt: 0, reserviert: 0, endgueltigFehlgeschlagen: 0,
+      wiederholt: 0, zurueckgestellt: 0, stapelrestZurueckgegeben: 0,
+      leaseVerloren: 0, nichtUebernommen: 0, zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 };
+    if (!o.types?.includes("document_understanding")) return empty;
+    workers++; assert.equal(o.stapel, 1); if (hold) await hold;
     assert.ok(!o.types?.includes("source_fetch"), "Quellenmodus off bleibt wirksam");
-    return { verfuegbar: true, erledigt: 3, reserviert: 3 }; });
+    return { ...empty, erledigt: 3, reserviert: 3 }; });
   replace(storage, "schreibeWarteschlangenLaufquittung", async r => { receipts.set(r.runId, r); return { ok: true }; });
   replace(storage, "listProcessRunsRelational", async () => [...receipts.values()]);
   replace(require("../lib/helmut/quellenarchitektur/cron-abdeckung"), "runQuellenCronMitAbdeckung", async fn => fn());
