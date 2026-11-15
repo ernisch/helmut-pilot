@@ -148,24 +148,24 @@ check("Leere Dateiliste ist fail closed", () => {
 // Ein exakter inaktiver Quellenstand darf ohne fremde DB-/Mengenpruefungen
 // geprueft werden. Jede abweichende Runtime, SQL oder Mergebindung stoppt.
 const Q = require("./ci-inaktive-quellen-plan");
-function sourceFixture(push = false) {
+function sourceFixture(push = false, profile = Q) {
   const row = oid => ({ mode: "100644", type: "blob", oid });
   const baseTree = new Map([["server.js", row("a".repeat(40))], ["client.js", row("b".repeat(40))],
     ["supabase/migrations/unveraendert.sql", row("c".repeat(40))]]);
-  for (const file of Object.keys(Q.BLOBS)) baseTree.set(file, row("d".repeat(40)));
+  for (const file of Object.keys(profile.BLOBS)) baseTree.set(file, row("d".repeat(40)));
   const evidenceTree = new Map(baseTree);
-  for (const [file, hash] of Object.entries(Q.BLOBS)) evidenceTree.set(file, row(hash));
+  for (const [file, hash] of Object.entries(profile.BLOBS)) evidenceTree.set(file, row(hash));
   const headTree = new Map(evidenceTree);
-  for (const file of Q.CI_FILES) headTree.set(file, row("e".repeat(40)));
+  for (const file of profile.CI_FILES) headTree.set(file, row("e".repeat(40)));
   const branchHead = "f".repeat(40), head = push ? "9".repeat(40) : branchHead;
-  return { event: push ? "push" : "pull_request", repository: Q.REPOSITORY,
-    ref: push ? "refs/heads/main" : `refs/pull/${Q.PR}/merge`, headRef: push ? undefined : Q.BRANCH,
-    head, before: Q.BASE, message: Q.MERGE_TITLE,
-    pr: { number: Q.PR, state: push ? "closed" : "open", draft: false, merged: push,
+  return { event: push ? "push" : "pull_request", repository: profile.REPOSITORY,
+    ref: push ? "refs/heads/main" : `refs/pull/${profile.PR}/merge`, headRef: push ? undefined : profile.BRANCH,
+    head, before: profile.BASE, message: profile.MERGE_TITLE,
+    pr: { number: profile.PR, state: push ? "closed" : "open", draft: false, merged: push,
       merge_commit_sha: push ? head : null,
-      base: { sha: Q.BASE, ref: "main", repo: { full_name: Q.REPOSITORY } },
-      head: { sha: branchHead, ref: Q.BRANCH, repo: { full_name: Q.REPOSITORY } } },
-    parents: push ? [Q.BASE, branchHead] : [Q.EVIDENCE], baseTree, evidenceTree, headTree,
+      base: { sha: profile.BASE, ref: "main", repo: { full_name: profile.REPOSITORY } },
+      head: { sha: branchHead, ref: profile.BRANCH, repo: { full_name: profile.REPOSITORY } } },
+    parents: push ? [profile.BASE, branchHead] : [profile.EVIDENCE], baseTree, evidenceTree, headTree,
     prHeadTree: push ? new Map(headTree) : undefined };
 }
 function sourceDenied(change, push = false) {
@@ -243,6 +243,43 @@ check("Inaktive Quellen: echter Workflow-Selektor faengt falschen Mainmergetitel
   assert.equal(unrelated.status, 0, unrelated.stderr); assert.equal(unrelated.stdout, "BROAD");
   const later = run("Spaeterer Maincommit", "8".repeat(40), 0);
   assert.equal(later.status, 0, later.stderr); assert.equal(later.stdout, "BROAD");
+});
+
+
+const T = require("./ci-quellenquittung-plan");
+check("Quellenquittung: nur gebundener Hook und seine Regression ohne Mengen-/DBlauf", () => {
+  const p = T.validate(sourceFixture(false, T));
+  assert.equal(p.mode, "quellenquittung"); assert.equal(p.quellenquittung, true); assert.equal(p.core, true);
+  for (const key of ["standard", "area", "database", "browser"]) assert.equal(p[key], false);
+});
+for (const [name, mutate] of [
+  ["fremder Kopf", f => { f.head = "2".repeat(40); }],
+  ["andere Basis", f => { f.pr.base.sha = "3".repeat(40); }],
+  ["abweichender zentraler Hook", f => { f.headTree.set("lib/helmut/scalable-pipeline.js", { mode: "100644", type: "blob", oid: "4".repeat(40) }); }],
+  ["fremde Runtime", f => { f.headTree.delete("server.js"); }],
+  ["fremde Migration", f => { f.headTree.delete("supabase/migrations/unveraendert.sql"); }]
+]) check("Quellenquittung: " + name + " stoppt fail closed", () => {
+  const f = sourceFixture(false, T); mutate(f); assert.throws(() => T.validate(f), /quellenquittung-ci:/);
+});
+check("Quellenquittung: echter identischer Mainmerge erlaubt, falscher Titel abgelehnt", () => {
+  const f=sourceFixture(true,T); assert.equal(T.validate(f).mode,"quellenquittung");
+  f.message="Merge pull request #1217";assert.throws(()=>T.validate(f),/quellenquittung-ci:/);
+});
+check("Quellenquittung: Workflowselektor sperrt falschen Titel vor pauschaler CI", () => {
+  const workflow=require("node:fs").readFileSync(require("node:path").join(__dirname,"../.github/workflows/ci.yml"),"utf8");
+  const blocks=[...workflow.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1217 \][\s\S]*?\n          fi/g)].map(m=>m[0]);
+  assert.equal(blocks.length,2);assert.equal(blocks[0],blocks[1]);
+  const script=`set -e
+    git() { case "$1" in log) printf '%s' "$TEST_MESSAGE";;rev-parse) printf '%s' "$TEST_PARENT";;merge-base) return "$TEST_EVIDENCE_EXIT";;*) return 99;;esac; }
+    node() { printf 'GUARD';return 23; }
+    ${blocks[0]}
+    printf 'BROAD'`;
+  for(const message of [T.MERGE_TITLE,"Merge pull request #1217"]){
+    const r=require("node:child_process").spawnSync("bash",["-c",script],{encoding:"utf8",env:{PATH:process.env.PATH,GITHUB_EVENT_NAME:"push",GITHUB_REF:"refs/heads/main",GITHUB_OUTPUT:"/dev/null",TEST_MESSAGE:message,TEST_PARENT:T.BASE,TEST_EVIDENCE_EXIT:"0"}});
+    assert.equal(r.status,23,r.stderr);assert.equal(r.stdout,"GUARD");
+  }
+  assert.match(workflow,/name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.quellenquittung != 'true'/);
+  for(const file of ["source-queue-telemetry-test.js","source-telemetry-test.js","artikel-versionskonflikt-test.js","warteschlange-blob-entkopplung-test.js"]) assert(workflow.includes(file));
 });
 
 console.log("\n" + pass + " PASS / 0 FAIL");

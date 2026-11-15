@@ -110,6 +110,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Exakt gebundene native Quellenquittung, PR1217; Abweichung stoppt.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1217 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenquittung-integration-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): native Abrufquittungen im Warteschlangenpfad erhalten (#1217)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = 9ff4416b7b8bb7eacda8f045f77b26fe1fd98f90 ] \
+                  && git merge-base --is-ancestor 9c0c593976b4bc5efc4b99b43bab148e82058019 HEAD; }; }; }; then
+            node scripts/ci-quellenquittung-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Nur der unveraenderte, hashgebundene inaktive Quellenstand aus PR1207.
           # Ein unbekannter Baum stoppt; kein Rueckfall auf pauschale Mengenlaeufe.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1207 ] \
@@ -412,7 +422,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -699,6 +709,17 @@ jobs:
           docker exec "$HELMUT_STARTTOR_PG_CONTAINER" pg_isready -U postgres
           node scripts/lokal.js -- node scripts/starttor-native-reader-datenbank-test.js
 
+      - name: Quellenquittung - native Verbindung und bestehende Queuevertraege
+        if: steps.plan.outputs.quellenquittung == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/ci-pruefplan-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-queue-telemetry-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-telemetry-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikel-versionskonflikt-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/warteschlange-blob-entkopplung-test.js
+
       - name: Inaktive Quellen - gebundener Pruefplan und Quellenbereich
         if: steps.plan.outputs.inaktivequellen == 'true'
         env:
@@ -814,6 +835,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Exakt gebundene native Quellenquittung, PR1217; Abweichung stoppt.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1217 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenquittung-integration-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): native Abrufquittungen im Warteschlangenpfad erhalten (#1217)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = 9ff4416b7b8bb7eacda8f045f77b26fe1fd98f90 ] \
+                  && git merge-base --is-ancestor 9c0c593976b4bc5efc4b99b43bab148e82058019 HEAD; }; }; }; then
+            node scripts/ci-quellenquittung-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Nur der unveraenderte, hashgebundene inaktive Quellenstand aus PR1207.
           # Ein unbekannter Baum stoppt; kein Rueckfall auf pauschale Mengenlaeufe.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1207 ] \
