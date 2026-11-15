@@ -14,6 +14,7 @@ const S = require("../lib/helmut/sourceSafety");
 const { buildCatalog } = require("../lib/helmut/quellenarchitektur/catalog");
 const { toCrawlerSource, buildRelationalCrawlPlan } = require("../lib/helmut/quellenarchitektur/source-mode");
 const H = require("../lib/helmut/parlamentsdaten-herkunft");
+const Q = require("../lib/helmut/quellen-hinweis");
 const L = require("../lib/helmut/lage");
 const B = require("../lib/helmut/briefingContract");
 const R = require("../lib/helmut/radarState");
@@ -27,6 +28,17 @@ const [eurlex, bundespuls] = sources;
 const catalog = buildCatalog();
 const read = name => fs.readFileSync(path.join(__dirname, "fixtures/parlamentsdaten-20261106", name), "utf8");
 const feeds = [read("eurlex-amtsblatt-l.xml"), read("bundespuls-vorgaenge.xml")];
+const irights = { id: "fach-irights-rss", name: "iRights.info", type: "media", priority: 80,
+  url: "https://irights.info/feed", crawlMethod: "rss", active: false };
+const irightsUrl = "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946";
+const irightsTitle = "KI und Offenheit vereinen: Open Source LLMs im Bildungsbereich";
+// Begrenzte oeffentliche Originalpassage aus der CC-BY-Textprobe vom 15.11.;
+// kein Volltextfixture und keine Bildfreigabe aus einer Bildunterschrift.
+const irightsText = "Große Sprachmodelle, die sogenannten Large Language Models (LLMs), sind durch Anwendungen wie ChatGPT, Claude und Gemini in kurzer Zeit bekannt geworden. Die genannten Modelle sind kommerziell und bergen sowohl ethische als auch rechtliche Probleme, insbesondere bei Fragen des Datenschutzes und des Urheberrechts.";
+const irightsGrant = '<p><em>Hinweis: Dieser Beitrag ist Teil einer Kooperation von </em><a href="https://irights.info/schlagwort/oerinfo"><em>iRights.info</em></a><em>, dem </em><a href="https://www.bildungsserver.de/"><em>Deutschen Bildungsserver</em></a><em> und <a href="https://open-educational-resources.de/">OERinfo</a>. Der Text stammt von Jens Crueger, steht unter der Lizenz <a href="https://creativecommons.org/licenses/by/4.0/deed.de">CC BY 4.0</a> und wurde zunächst bei <a href="https://open-educational-resources.de/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/">OERinfo</a> veröffentlicht.</em></p>';
+function irightsXml(grant = irightsGrant, author = "Jens Crueger") {
+  return `<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><title>${irightsTitle}</title><link>${irightsUrl}</link><pubDate>Wed, 11 Nov 2026 12:07:37 +0000</pubDate><dc:creator>${author}</dc:creator><description><![CDATA[<p>${irightsText}</p>]]></description><content:encoded><![CDATA[<p>${irightsText}</p>${grant}]]></content:encoded></item></channel></rss>`;
+}
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 
@@ -55,6 +67,97 @@ async function transport(body, status, fn) {
 }
 
 (async () => {
+  await test("iRights-Textlizenz wird je RSS-Item aus ausdruecklichem Text-/Autoren-/OERinfo-Beleg gebunden", async () => {
+    await transport(irightsXml(), 200, async calls => {
+      const [raw] = await C.crawlSource(irights);
+      assert(raw); assert.equal(raw.imageUrl, null);
+      const doc = D.toRawDocumentRow(raw);
+      assert(doc.summary.includes("Große Sprachmodelle"));
+      const notice = Q.quellenhinweis(doc);
+      assert.equal(notice.scope, "licensed_rss_excerpt");
+      assert(notice.text.includes("Jens Crueger")); assert(notice.text.includes(irightsTitle));
+      assert(notice.text.includes("zuerst OERinfo")); assert(notice.text.includes("CC BY 4.0"));
+      assert.equal(notice.licenseUrl, "https://creativecommons.org/licenses/by/4.0/deed.de");
+      assert(notice.changes.includes("Gekürzter RSS-Textauszug"));
+      assert.deepEqual(calls, [irights.url]);
+    });
+  });
+  await test("Bild-CC, fehlende/abweichende Textlizenz und fremde Autoren legitimieren keinen iRights-Text", () => {
+    for (const [grant, author] of [["", "Jens Crueger"],
+      ['<p>Bild: <a href="https://creativecommons.org/licenses/by/4.0/deed.de">CC BY 4.0</a></p>', "Jens Crueger"],
+      [irightsGrant.replaceAll("CC BY 4.0", "CC BY-NC 4.0"), "Jens Crueger"],
+      [irightsGrant, "Andere Autorin"], [irightsGrant + irightsGrant, "Jens Crueger"],
+      [irightsGrant.replace("https://open-educational-resources.de/ki-", "https://example.org/ki-"), "Jens Crueger"]]) {
+      const entry = C.parseRssItems(irightsXml(grant, author))[0];
+      const raw = C.normalizeRawItem({ ...entry, imageUrl: "https://irights.info/bild.jpg" }, irights);
+      assert.equal(raw.content, irightsTitle); assert.equal(raw.imageUrl, null);
+      assert.equal(raw.author, "iRights.info", "Kein ungepruefter Autorenname im Legacy-Rohitem");
+      const doc = D.toRawDocumentRow(raw), notice = Q.quellenhinweis(doc);
+      assert.equal(doc.summary, null); assert.equal(notice.licenseUrl, null);
+      assert(notice.text.includes("Textnutzungsbeleg")); assert(notice.changes.includes("kein Artikeltext"));
+      assert(!Object.hasOwn(doc.raw.parlamentsdatenHerkunft, "author"));
+    }
+  });
+  await test("iRights-Herkunft weist Feed-, Artikel-, Titel-, Datums- und Textvertauschungen zurueck", () => {
+    const entry = C.parseRssItems(irightsXml())[0];
+    for (const source of [{ ...irights, url: "https://example.org/feed" },
+      { ...irights, rssUrl: "https://example.org/feed" }, { ...irights, rssUrls: [irights.url, "https://example.org/feed"] }])
+      assert.equal(C.normalizeRawItem(entry, source), null);
+    for (const altered of [{ ...entry, content: "Eine andere, nicht zu dieser Lizenz gehörende Textaussage." },
+      { ...entry, title: "Anderer Artikel" }, { ...entry, publishedAt: "2026-11-12T12:07:37Z" }])
+      assert.equal(D.toRawDocumentRow(C.normalizeRawItem(altered, irights)).summary, null);
+    const raw = C.normalizeRawItem(entry, irights);
+    for (const altered of [{ ...raw, sourceId: "fremde-quelle" }, { ...raw, url: irightsUrl.replace("32946", "32947") },
+      { ...raw, title: "Anderer Titel" }, { ...raw, publishedAt: "2026-11-12T12:07:37Z" },
+      { ...raw, content: "Ein fremder Text mit einer anderen Aussage und einem anderen Inhalt." },
+      { ...raw, parlamentsdatenHerkunft: { ...raw.parlamentsdatenHerkunft, privateEmail: "nicht-uebernehmen" } }]) {
+      assert.equal(Q.quellenhinweis(altered), null);
+      assert.throws(() => D.toRawDocumentRow(altered), /herkunft/);
+    }
+  });
+  await test("iRights-Attribution uebersteht beide Speicherwege, bestehenden Lesealias und kompakte Kundenausgabe", () => {
+    const raw = C.normalizeRawItem(C.parseRssItems(irightsXml())[0], irights);
+    for (const value of [D.toRawDocumentRow(raw), G.planDedupWrites([raw], []).persists[0]]) {
+      const doc = JSON.parse(JSON.stringify(value));
+      assert(!Object.hasOwn(doc, "author")); assert(!Object.hasOwn(doc.raw, "author"));
+      assert.equal(doc.raw.parlamentsdatenHerkunft.author, "Jens Crueger");
+      const projected = { ...doc, parlamentsdatenHerkunft: doc.raw.parlamentsdatenHerkunft }; delete projected.raw;
+      for (const source of [L.mapSource(projected), B.buildSources({}, [projected])[0],
+        R.pickPrimarySource({}, [projected]), B.oeffnendeHelmutQuelle({}, [projected])]) {
+        assert(source.sourceNotice.text.includes("Jens Crueger"));
+        assert.equal(source.sourceNotice.articleUrl, source.url);
+        const item = { id: "irights-attribution", title: doc.title, url: doc.url, sourceName: doc.source_name,
+          sources: [source], primarySource: source, sourceNotice: source.sourceNotice };
+        const wire = JSON.parse(JSON.stringify(require("../server").__prepareBriefingResponse({
+          items: [item], homeSections: { topTasks: [item] }
+        }, { compact: true })));
+        assert.deepEqual(wire.items[0].primarySource.sourceNotice, source.sourceNotice);
+        assert.deepEqual(wire.homeSections.topTasks[0].sources[0].sourceNotice, source.sourceNotice);
+      }
+    }
+  });
+  await test("iRights erlaubt keine ungepruefte Volltextnachladung oder HTML-Fallback", async () => {
+    for (const grant of [irightsGrant, ""]) {
+      const doc = D.toRawDocumentRow(C.normalizeRawItem(C.parseRssItems(irightsXml(grant))[0], irights));
+      assert.equal(H.istParlamentsdatenDokument(doc), false, "iRights ist keine Parlamentsquelle");
+      assert.equal(Q.istNurFeedDokument(doc), true);
+      let io = 0;
+      const forbidden = () => { io++; throw Error("Kein Nachladen"); };
+      assert.deepEqual(await K.beschaffeArtikelkontext(doc, { versuch: true }, {
+        fetchUrl: forbidden, speicher: { lesen: forbidden, reservieren: forbidden, abschliessen: forbidden }
+      }), { ok: false, reason: "quelle-nur-metadaten" });
+      assert.equal(io, 0);
+      assert.throws(() => A.pruefeArtikelkontext([doc], { version: 1, herkunft: "manueller-originalvergleich", dokumentId: doc.id }), /quelle-nur-metadaten/);
+      assert.deepEqual(E.fromHtml(doc, { body: "<article>Ungeprüfter Artikeltext</article>", finalUrl: doc.url }), { ok: false, reason: "quelle-nur-metadaten" });
+      assert.deepEqual(E.fromMirror(doc, [{ ...doc, content: "Ungeprüfter Spiegeltext" }]), { ok: false, reason: "quelle-nur-metadaten" });
+    }
+    await transport("<rss><channel></channel></rss>", 200, async calls => {
+      assert.deepEqual(await C.crawlSource(irights), []); assert.deepEqual(calls, [irights.url]);
+    });
+    await transport("<html>Kein RSS, sondern eine Zugangsseite.</html>", 200, async calls => {
+      await assert.rejects(C.crawlSource(irights), /Ungültige RSS/); assert.deepEqual(calls, [irights.url]);
+    });
+  });
   await test("Ein ueberlanger gewoehnlicher Titel verliert nicht den gueltigen Nachbarn desselben Feeds", async () => {
     const s={id:"test-titelgrenze",name:"Synthetische Quelle",type:"media",crawlMethod:"rss",url:"https://example.org/feed",rssUrl:"https://example.org/feed"};
     const text="Der Ausschuss berät die Finanzierung der kommunalen Pflegeberatung mit den beteiligten Verbänden.";

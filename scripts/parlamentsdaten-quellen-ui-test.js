@@ -90,6 +90,24 @@ function loadClient() {
 }
 
 const api = loadClient();
+const ih = require("../lib/helmut/quellen-irights-text-herkunft");
+const ihHash = value => require("node:crypto").createHash("sha256").update(value).digest("hex");
+const ihTitle = "KI und Offenheit vereinen: Open Source LLMs im Bildungsbereich";
+const ihUrl = "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946";
+const ihDate = "2026-11-11T12:07:37.000Z", ihSummary = "Der öffentliche Fachbeitrag erläutert offene KI-Modelle und deren Einsatz im Bildungsbereich.";
+const ihBase = { version: 1, sourceId: ih.SOURCE_ID, feedUrl: ih.FEED_URL, articleUrl: ihUrl,
+  titleHash: ihHash(ihTitle), publishedAt: ihDate };
+function irightsDto(licensed = true) {
+  const doc = { source_id: ih.SOURCE_ID, title: ihTitle, url: ihUrl, published_at: ihDate,
+    summary: licensed ? ihSummary : null,
+    parlamentsdatenHerkunft: licensed ? { ...ihBase, scope: "licensed_rss_excerpt", author: "Jens Crueger",
+      originalUrl: "https://open-educational-resources.de/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/",
+      licenseUrl: ih.LICENSE_URL, excerptHash: ihHash(ihSummary) }
+      : { ...ihBase, scope: "title_link_metadata", rightsReviewRequired: true } };
+  return { ...doc, sourceId: ih.SOURCE_ID, name: "iRights.info", sourceName: "iRights.info", publishedAt: ihDate,
+    sourceNotice: ih.hinweis(doc), sourceUrl: ih.FEED_URL, itemUrl: ihUrl, href: ihUrl, linkType: "direct",
+    excerpt: doc.summary, confidence: "medium", relationTypes: ["media"], qualityStatus: "partial" };
+}
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log("PASS " + name); }
 function dto(source, url, title, truncated = false) {
@@ -115,6 +133,34 @@ const renderers = {
   Helmut: s => api.renderHstandPrimary({ primaryItem: { ...s, sourceUrl: s.url } }),
   Ereignisrollen: s => api.renderEreignisRollen({ ereignisKontexte: [{ title: "Synthetischer Ereigniskontext", summary: "", sources: [s] }] })
 };
+
+test("iRights zeigt Autor, Originaltitel, Erstveroeffentlichung, CC-BY-Link und Bearbeitung in allen bestehenden Ansichten", () => {
+  for (const [name, render] of Object.entries(renderers)) {
+    const html = render(irightsDto());
+    for (const text of ["Jens Crueger", ihTitle, "zuerst OERinfo", "CC BY 4.0", "Gekürzter RSS-Textauszug", "Keine Bilder übernommen"])
+      assert(html.includes(text), `${name}: ${text}`);
+    assert(html.includes('href="https://creativecommons.org/licenses/by/4.0/deed.de"'), name);
+    assert(html.includes('href="https://open-educational-resources.de/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/"'), name);
+  }
+});
+test("iRights ohne individuellen Textbeleg bleibt sichtbar offen und ohne CC-Textfreigabe", () => {
+  const dto = irightsDto(false);
+  for (const [name, render] of Object.entries(renderers)) {
+    const html = render(dto);
+    assert(html.includes("Textnutzungsbeleg"), name); assert(html.includes("kein Artikeltext"), name);
+    assert(!html.includes("CC BY 4.0"), name); assert(!html.includes("Jens Crueger"), name);
+  }
+});
+test("iRights weist vertauschte Artikel, Quellenkennungen, Daten, Lizenz- und Originalziele zurueck", () => {
+  const dto = irightsDto();
+  for (const bad of [
+    { ...dto, itemUrl: ihUrl.replace("32946", "32947") }, { ...dto, sourceId: "fremde-quelle" },
+    { ...dto, publishedAt: "2026-11-12T12:07:37Z" },
+    { ...dto, sourceNotice: { ...dto.sourceNotice, licenseUrl: "https://creativecommons.org/licenses/by-nc/4.0/" } },
+    { ...dto, sourceNotice: { ...dto.sourceNotice, originalUrl: "https://open-educational-resources.de.example.org/text/" } },
+    { ...dto, sourceNotice: { ...dto.sourceNotice, articleUrl: "https://example.org/artikel/32946" } }
+  ]) assert.equal(api.renderSourceNotice(bad), "");
+});
 
 test("Alle vorhandenen Quellenansichten zeigen DIP-Ursprung, Aufbereitung, kostenlosen Link und Änderung", () => {
   for (const [name, render] of Object.entries(renderers)) {

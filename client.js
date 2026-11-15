@@ -11707,9 +11707,34 @@ function sourceNoticeHref(value) {
   } catch (_) { return ""; }
 }
 
+function irightsSourceNoticeUrl(value, original = false) {
+  if (typeof value !== "string" || value.length > 600) return "";
+  try {
+    const url = new URL(String(value || ""));
+    const host = original ? "open-educational-resources.de" : "irights.info";
+    const path = original ? /^\/[a-z0-9-]+\/$/ : /^\/artikel\/[a-z0-9-]+\/[1-9][0-9]*$/;
+    return url.protocol === "https:" && url.hostname === host && !url.username && !url.password
+      && !url.port && !url.search && !url.hash && path.test(url.pathname) ? url.href : "";
+  } catch (_) { return ""; }
+}
+
 function boundSourceNotice(source, articleHref) {
   const notice = source && source.sourceNotice;
   if (!notice || typeof notice !== "object" || typeof notice.text !== "string" || !notice.text.trim()) return null;
+  if (notice.sourceId === "fach-irights-rss") {
+    const article = irightsSourceNoticeUrl(notice.articleUrl);
+    const licensed = notice.scope === "licensed_rss_excerpt";
+    if (!article || article !== articleHref || (source.sourceId && source.sourceId !== notice.sourceId)
+      || typeof notice.articleTitle !== "string" || !notice.articleTitle || notice.articleTitle.length > 300
+      || !["licensed_rss_excerpt", "title_link_metadata"].includes(notice.scope)
+      || (licensed ? !irightsSourceNoticeUrl(notice.originalUrl, true)
+        || notice.licenseUrl !== "https://creativecommons.org/licenses/by/4.0/deed.de"
+        || !Number.isFinite(Date.parse(notice.publishedAt))
+        : notice.originalUrl !== article || notice.licenseUrl != null)
+      || [source.publishedAt, source.published_at].filter(v => v != null)
+        .some(v => Date.parse(v) !== Date.parse(notice.publishedAt))) return null;
+    return notice;
+  }
   const host = { "bundespuls-vorgaenge-rss": "bundespuls.de", "eurlex-amtsblatt-l-rss": "eur-lex.europa.eu" }[notice.sourceId];
   // Die Quellenangabe gehört nur zum angezeigten Artikel; ein kopierter Hinweis
   // darf weder eine andere Quelle noch einen bloßen Feedlink umetikettieren.
@@ -11730,7 +11755,9 @@ function bundespulsPublicationUnknown(source, articleHref) {
 function renderSourceNotice(source, articleHref = source && (source.itemUrl || source.url || source.sourceUrl || source.href)) {
   const notice = boundSourceNotice(source, articleHref);
   if (!notice) return "";
-  const original = sourceNoticeHref(notice.originalUrl);
+  const original = notice.sourceId === "fach-irights-rss"
+    ? irightsSourceNoticeUrl(notice.originalUrl, notice.scope === "licensed_rss_excerpt")
+    : sourceNoticeHref(notice.originalUrl);
   const license = sourceNoticeHref(notice.licenseUrl);
   const changes = typeof notice.changes === "string" ? notice.changes.trim() : "";
   const originalLabel = typeof notice.originalLabel === "string" && notice.originalLabel.trim() ? notice.originalLabel : "Originalquelle";
