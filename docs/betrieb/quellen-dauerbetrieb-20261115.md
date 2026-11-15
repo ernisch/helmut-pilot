@@ -1,5 +1,27 @@
 # Dauerhafte Quellenfehlerbehandlung, 15.11.2026
 
+## Nachtrag: weiterer belegter Lesergrenzfehler
+
+Isolierte Probe mit vorhandenem nativem Speicher-/Archiv-/JSONB-Testharness:
+Cache-CAS, alter Metadatensatz, neue142Zeichen-Textfassung, Archivbindung und
+echte PostgREST-Leseprojektion bis Briefingausgabe funktionieren unveraendert.
+Kein Netzwerk, Modell, Productionzugriff oder neues Original. Ein zusaetzlicher,
+ausdruecklich synthetischer240Zeichen-Grenzfall reproduziert dagegen einen
+Fehler: der gueltige geschlossene Legalbeleg passiert die Neuanlage, wird aber
+beim nativen Lesealias `quellenauszug_beleg:null` von der alten generischen
+240Zeichen-Satzpraefixreparatur auf `summary:null` gesetzt. Der erlaubte ganze
+Absatz und sein Beleg verschwinden fuer nachgelagerte Verbraucher.
+
+Kleinster Fix im Review: nur der bereits vollstaendig validierte amtliche
+EUR-Lex-Originalbeleg ueberspringt diese generische Kuerzung. Keine Lockerung
+der Satzgrenzenerkennung, keine Ausweitung des Rechts-/Abrufumfangs.
+Bestehende Integrationssuite um eine gezielte Grenzfallgruppe erweitert:
+13/13gruen, manipulierte und fremde240Zeichen-Texte bleiben geschlossen.
+Native EUR-Lex-Probe nachFix auch240→240/Beleggueltig, bisheriger142Absatz
+unveraendert; bestehende native Datums-/Archivregression3/3gruen.
+Keine Productiondaten-/Quota-/Laufrechtsaenderung; regulaerer Nachweis und
+Kontrolle16Nov05:25UTC bleiben offen beziehungsweise unveraendert.
+
 ## Nachtrag22:45UTC: amtlicher EUR-Lex-Originalauszug gemergt und live
 
 Dieser Nachtrag ersetzt die frueheren Aussagen unten zum ausschliesslichen
