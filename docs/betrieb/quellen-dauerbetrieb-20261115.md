@@ -72,8 +72,39 @@ Keine Modellaufrufe, Originalvolltexte oder Production-Schreibaktionen.
 Kleinster Ersatz: ausschliesslich fuer die exakt bekannte EUR-Lex-Identitaet
 einen begrenzten CELLAR-Metadatenweg verwenden, wenn der RSS wirklich fehlschlaegt.
 Keine Erweiterung der Textrechte: nur Titel, CELEX-Link, echtes Publikationsdatum
-und ausdruecklicher CELLAR-Herkunftsbeleg. Adapter/Integration noch in Bearbeitung;
-erst gezielte Tests, unabhaengiges Review und beide Pflichtchecks erlauben Merge.
+und ausdruecklicher CELLAR-Herkunftsbeleg. Adapter und Integration vorhanden:
+14UTC-Tage, maximal16Metadatensaetze, 256KiB JSON, fester HTTPS-Host,
+einmaliger Ersatzversuch ohne eigene Retries. Anbietervertagung verhindert den
+Ersatzabruf. HerkunftV2 bindet den konfigurierten RSS und den tatsaechlichen
+CELLAR-Endpunkt/Werk/OJ-L/CELEX/Publikationsdatum; bestehende V1-Belege bleiben.
+300Zeichen-Titelgrenze und Kennzeichnung der Kuerzung bleiben erhalten.
+Keine unvollstaendige CELEX-Sektorliste; die amtliche OJ-L-Kollektion bestimmt
+den Umfang. Kein automatisches HTML-/Textnachladen fuer diese Metadatenquelle.
+
+## Gezielte Pruefungen und Review
+
+Runtime-Evidence-Commit ae58b9b7bb070018437be523cea4beb9bcd11111:
+33Crawler-,40Telemetrie-,8Queuequittungs-,31Parlamentsdaten- und11CELLAR-Gruppen
+gruen; Quellenstoerungen160/Googlehaertung58 bestehende Pruefungen gruen.
+Der unabhaengige Review hat Homepageersatz ohne Datum, einfache DOCTYPE-Huelle
+und stillen CELEX-Sektorausschluss gefunden; alle drei korrigiert und geprueft.
+Der CI-Plan bindet PR1225, Branch/Basis/Evidence und alle zehn Runtime-/Testblobs,
+den uebrigen Baum sowie echten Merge und identischen PR-Kopf. Beide Pflichtjobs
+bleiben erforderlich; keine Auth-/Budget-/Quoten-/Schema-/Cron-/Profilmutation.
+Vor Merge: exakte Pflicht-CI und abschliessendes unabhaengiges CI-Review.
+
+Fehler bei der lokalen Testauswahl: die vorhandenen Suites source-demand und
+warteschlange-blob-entkopplung wurden einmal ohne Mengenfilter ausgefuehrt.
+Sie enthielten synthetische200/700Profil- und450/5002Dokumentfaelle. Das lag
+ausserhalb der ausdruecklichen Grenze, obwohl keine Production-Zugriffe,
+Modellaufrufe oder API-Kosten entstanden. Nach Review sofort korrigiert:
+source-demand nicht erneut starten, Blobentkopplung ausschliesslich mit dem
+bereits vorhandenen `--gezielt`; die Pflicht-CI uebernimmt diese Begrenzung.
+Keinen historischen Mengenfall als erforderliche neue Abnahme ausgeben.
+
+Rein lesende Production-Kontrolle20:42:48UTC:0laufendeJobs, alle6vorherigen
+Zieljobs weiter erledigt, Tagesbindung0,711983USD/Gesamtbindung4,095017USD
+unveraendert. Keine neue Verarbeitung oder Datenkorrektur ausgefuehrt.
 
 ## Abnahmegrenzen
 

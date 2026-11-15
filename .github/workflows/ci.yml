@@ -110,6 +110,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur exakt gebundene Quellenfehlerbehandlung in PR1225.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1225 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-dauerhaft-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Wiederholungen und offiziellen EUR-Lex-Ersatz dauerhaft absichern (#1225)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = dfe311b6c75cb1e2d21f416ea4afa76c08dc74e2 ] \
+                  && git merge-base --is-ancestor ae58b9b7bb070018437be523cea4beb9bcd11111 HEAD; }; }; }; then
+            node scripts/ci-quellendauerbetrieb-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Exakt geprueftes einmaliges Quellen-Abschlussfenster, PR1223.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1223 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-abschlussfenster-20261115 ] \
@@ -432,7 +442,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true' && steps.plan.outputs.quellendauerbetrieb != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -719,6 +729,21 @@ jobs:
           docker exec "$HELMUT_STARTTOR_PG_CONTAINER" pg_isready -U postgres
           node scripts/lokal.js -- node scripts/starttor-native-reader-datenbank-test.js
 
+      - name: Quellen-Dauerbetrieb - gezielte Fehler- und Herkunftsvertraege
+        if: steps.plan.outputs.quellendauerbetrieb == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/ci-pruefplan-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-hardening-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-queue-telemetry-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-telemetry-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-cellar-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/parlamentsdaten-quellen-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-failure-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/google-news-hardening-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/warteschlange-blob-entkopplung-test.js --gezielt
+
       - name: Quellenabschluss - Einmalbindung und bestehende Adminvertraege
         if: steps.plan.outputs.quellenabschluss == 'true'
         env:
@@ -857,6 +882,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur exakt gebundene Quellenfehlerbehandlung in PR1225.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1225 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-dauerhaft-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Wiederholungen und offiziellen EUR-Lex-Ersatz dauerhaft absichern (#1225)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = dfe311b6c75cb1e2d21f416ea4afa76c08dc74e2 ] \
+                  && git merge-base --is-ancestor ae58b9b7bb070018437be523cea4beb9bcd11111 HEAD; }; }; }; then
+            node scripts/ci-quellendauerbetrieb-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Exakt geprueftes einmaliges Quellen-Abschlussfenster, PR1223.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1223 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-abschlussfenster-20261115 ] \
