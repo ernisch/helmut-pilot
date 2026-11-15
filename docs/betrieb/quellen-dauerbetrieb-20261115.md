@@ -1,5 +1,50 @@
 # Dauerhafte Quellenfehlerbehandlung, 15.11.2026
 
+## Nachtrag: amtlicher EUR-Lex-Originalauszug vorbereitet
+
+Die zusaetzliche Primaerpruefung ist ein kostenloser oeffentlicher Quellenread,
+kein Production-/Kundenlauf. CELLAR13.11.2026: CELEX32026D2505, OJ-L2026/2505,
+deutscher Originalrechtsakt der Europaeischen Kommission. RDF21:53:38UTC
+HTTP200/2876Bytes, SHA256
+`61d1530252a4ef1b5c50037c53ef2cb723eab96cab4b5e0836947f02ec61d54b`;
+Default-Accept `application/rdf+xml`, Version13.11.,02:32:06.372UTC.
+Amtliches FMX4-ZIP21:54:48UTC HTTP200/4338Bytes, SHA256
+`9691ec92a616f569def7ae7176910e7eea8041db032925ba3bef31949a1d48bb`.
+Werk `http://publications.europa.eu/resource/cellar/da8055db-df05-11f1-ba80-01aa75ed71a1`,
+Manifestation `http://publications.europa.eu/resource/oj/L_202602505.DEU.fmx4`,
+Item `https://publications.europa.eu/resource/cellar/da8055db-df05-11f1-ba80-01aa75ed71a1.0004.02/DOC_1`.
+ACT-XML SHA256 `435bd85a47dd0d5a0f97dbfb8ee023a135a71ac83ff548b4b32e2c68b8367023`.
+Erster ganzer operativer Absatz142Zeichen, Artikel1/Absatz1, SHA256
+`2cb4eaa254a46b98c62546bb2ae4e39fe6d24300d84ae0607180e80d2ba2ee5a`.
+Publikation13.11. ist in DOC/PUBLICATION belegt; Beschluss12.11. und die im
+Absatz genannte Wirkung fuer AnhangI Nr1 ab04.03.2028 sind andere Daten.
+Kein allgemeiner Inkrafttretensnachweis. Keine Sonderrechts-/Bild-/Anhangsignale
+in den drei vollstaendigen XML-Dateien des geprueften kleinen Originalpakets.
+
+[Primaerer EUR-Lex-Reusehinweis](https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en):
+Rechtsdokumente duerfen grundsaetzlich kommerziell/nichtkommerziell wiederverwendet
+werden, soweit keine besonderen Bedingungen genannt sind; Grundlage2011/833/EU.
+Dies ist kein CC0-Textrecht. CC0 bleibt Metadaten; Fremdwerke, Bilder/Logos,
+Sonderrechte und ungepruefte Dokumente werden nicht freigegeben.
+
+Reparatur im Review: enger nativer CELLAR-FMX4-Weg mit Fassungscache/CAS,
+maximal1neuer Originalabruf je regulaerem Auftrag innerhalb unveraenderter
+16erTagesquote. Nur COM/DEU/OJ-L, erster ganzer operativer Absatz60–240Zeichen,
+Urheber/Datum/Fundstelle/Original-/Lizenz-/Bearbeitungshinweis gebunden.
+Quittierte temporaere HTTP-Fehler: genau1spaetere getrennte Wiederholung,
+mindestens15Minuten und Retry-After; keine Resets, Timeouts/UNKNOWN bleiben.
+Alte Metadaten-/Ergebniszeilen bleiben erhalten; neue belegte Fassung hat eigene
+Kennung, gleiche CELEX-Fassungen zaehlen in der Ausgabe/Bewertung einmal.
+Lokale gezielte Pruefgruppen: Original13, Integration12, Transport5,
+Parlamentsdaten31, Abdeckung32, CELLAR11, Crawler33, Quellenpflicht50,
+Dedupkontext10/Dedupfindings39/Quellendedup13, WELT11/FR6 gruen.
+Zwei anfaengliche lokale Sandboxfehler (localhost/Kindprozessausgabe) wurden
+mit erlaubtem lokalen Netz behoben; kein externer Abruf in Tests.
+Zwei unabhaengige OpenAI-Reviews: Compilerflag, Datums-Satzgrenze, CELEX-Doppel-
+beleg und60s-Restzeit/Antwortabbruch korrigiert, keine offenen P1/P2.
+Runtime-/Pflicht-CI/Rollout noch offen. Weiterhin kein Gesamtversorgungs-PASS;
+regulaere Kontrolle16.11.,05:25UTC bleibt unveraendert.
+
 ## Auftrag und Iststand
 
 Quellen innerhalb der bestehenden Architektur dauerhaft behandeln; keine neuen
