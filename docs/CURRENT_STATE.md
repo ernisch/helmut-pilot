@@ -1,32 +1,30 @@
 # CURRENT STATE — Helmut
-**15.11.2026,08:20UTC: weiterer belegter Leserfall repariert, Tagesversorgung offen.**
+**15.11.2026,09:31UTC: Leser und Attribution live; Tagesversorgung bleibt teilweise.**
 
-Live-Stand unveraendert:main d8b1cecb, Runtime5f3875e1 READY nach PR1203/1204;
-PR1205 dokumentiert die Nachweise, sein Build wurde bewusst ausgelassen.
-Regulaerer Morgen15Nov05:15:partial,67Eintraege/2neuegepruefteAbsätze;
-PaketHashd778e3b6, Quellenstandoffen, kein belegter Tagesanlass, kein Gesamt-PASS.
-Letzte Quellenabdeckung04:34:4Fehler/95Warnungen/13Konfigdrift,9Bedarfspakete.
-Privat genehmigter12Felder-Profilabgleich abgeschlossen, keine Werte gespeichert:
-keine Zuordnungsluecke. Vier Befunde betreffen2vorbereitete Quellenpakete;
-insgesamt fehlen2Daten/Forschung- und1Journalismusbindung mit passenden Klassen.
-Eine gezielte sichere Fuenf-Wege-Gegenpruefung bestaetigt den Umfang;
-Vollkatalogvergleich blieb nach automatischer Ablehnung unausgefuehrt.
-Nachkontrolle07:32:alle5altenErfolgsjobs erledigt/Payload-MD5 unveraendert;
-Altbriefing weiter17fbead5/77Eintraege/2Absaetze, heutiger Paketbeleg bleibt erhalten.
-Konkreter wartender Ad-hoc-Auftrag:Original HTTP200, nativer Leser vorher negativ.
-Jetzt eng gebundener vollstaendiger Headerteaser lokal positiv:135Zeichen,v2,
-keine Volltextbehauptung; Titel/URL/Originalsekunde/sichtbareRedaktion bleiben gebunden.
-Neue5Testgruppen gruen; vorhandene Originalbytes und alte Ergebnisse unveraendert.
-Neue Pflicht-CI und regulaere Integration stehen aus; nicht als live behauptet.
-Hostfreigabe unveraendert:18Hosts,Ad-hoc nicht freigegeben. Keine Envmutation,
-kein Zusatzfenster/Jobreset/Budgeteingriff oder zusaetzlicher bezahlter Modelllauf.
-Amtlicher Destatis-Direktfeed fuer eine Rollenluecke konkret geprueft, noch nicht
-installiert/aktiviert. Beide Digital-Luecken und Quellen-/Nutzungsfreigaben bleiben offen.
-Nachtkontrollen03:07–07:07beendet; keine weitere Hintergrundausfuehrung behaupten.
-Regulaere Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
-Naechster Schritt: geprueften Leser exakt gruen integrieren und die kleinsten
-belegten Katalog-/Freigabeeingriffe konkret zur Betriebsentscheidung vorlegen.
-[Neuer Originalnachweis und Reparaturgrenzen](betrieb/adhoc-einstieg-20261115.md).
+Runtime236ced65 READY nach PR1209; exakt gepruefter Kopf79ce8984, fuenfter Merge.
+CI43699045427:14/14Kern,235/235Fach,echterDesktop-/Mobil-Chromium gruen;
+gezielter Plan, keine DB-/pauschalen500er-Laeufe. PR1206-Leser zuvor regulaer ausgerollt.
+Regulaerer Morgen15Nov05:15:partial,67Eintraege/2neuegepruefteAbsaetze;
+PaketHashd778e3b6,Quellenoffen,keinbelegterTagesanlass,keinGesamt-PASS.
+Letzte Quellenabdeckung04:34:4Fehler/95Warnungen/13Drift,9Bedarfspakete.
+Einmal genehmigter privater12Felder-Abgleich abgeschlossen, keine Werte abgelegt;
+keine Paketzuordnungsluecke. Vier Befunde betreffen drei Rollen-/Klassenbindungen.
+Nachkontrolle09:31:alle5geprueftenErfolgsjobs erledigt,Payload-MD5 vor/nach identisch.
+Ad-hoc-Einstieg:derselbe Originalteaser135Zeichen lokal+CI positiv,keineVolltextbehauptung.
+Host weiterhin nicht freigegeben;18Hosts unveraendert,keinEnv-/Jobreset/Budgeteingriff.
+NDR-Einzelfall:Textvergleich negativ und Originaldatum abweichend;keinbewiesenerLeserfix.
+Neue iRights-Attribution bindet Autor,Original,Datum,Lizenz und encoded-Satzpraefix;
+3belegteArtikel erhalten,16nurTitel/Link,keineBilder/spaetereVolltextnachladung.
+QuellenPR1207:2Direktwege/3begruendeteBindungen inaktiv vorbereitet,6neueSQL-Zeilen.
+LokaleFach-/Driftpruefung gruen; CI43696614891wegenpauschaler500er-Laeufe gestoppt.
+Betreiberentscheidung:keineMassentests,PRbleibtDraft/ungemergt;keineSchutzregelumgangen.
+KeineSourceinstallation/-aktivierung,keineProduction-Daten-/Profil-/Cronmutation,
+keinezusaetzlichenbezahltenModelle. Nutzungsumfang und Betrieb bleiben offen.
+EchteKundenabnahme und rechtlicheVerkaufsfreigabe unbelegt;UI-PR1208 separat offen.
+AlteNachtkontrollen beendet; neueEINMALIGElesendeKontrolle16Nov05:25UTC bestaetigt.
+Produktcrons unveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
+NaechsterSchritt:den naechsten ohnehin regulaeren Morgenabschluss lesend pruefen.
+[Abschlussnachweise, Grenzen und drei Verkaufsblocker](betrieb/versorgung-folgeabschluss-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
