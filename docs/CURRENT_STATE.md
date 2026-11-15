@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,14:04UTC: Quittungsfixlive;11neueInhaltsjobserledigt,Altrueckstandgezieltdifferenziert.**
+**15.11.2026,15:19UTC: zwei DIP-Wegzuordnungen repariert;EUR-Lex-WAF belegt,Versorgung weiterpartial.**
 
 **Betreiberziel15Nov: heute fertig werden; jetzt pruefen statt Aufschub auf morgen.**
 NativeSofortquelle12:54:50–12:58:35,Adminlauf1671232c:success,13erledigt/65vertagt/0endgueltigeFehler.
@@ -32,9 +32,12 @@ EchteKundenabnahmeundrechtlicheGesamtverkaufsfreigabeweiterunbelegt;keineFertigb
 Produktcronsunveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC;heute8/8Fenster2400/2400s16/16Originale.
 NeuerSofortauftrag:QuellenlimitblockiertkeineBestandsanalyse;36heutigeoffeneInhaltsjobs(21neu/15wiedergefunden).
 11InhaltsjobsderbeidenneuenFeedserledigt;RueckstandandereQuellen,keineMetadatenkonflikteausQuell-IDerraten.
-NaechsterSchritt:belegtenEUR-Lex-Fehlabrufmitgenau1beantragtem128KiB-DiagnoseGETklaeren;Freigabenochoffen.
+ErneutesBetreiberGOumgesetzt:EUR-Lex302→202HTML/AWSWAFstattRSS;ParserweistAntwortkorrektzurueck.
+2DIPFundstellenNULL→rp-dipatomarkorrigiert,unabhaengigesReviewgeschlossen;getrennterReadback15:18bestaetigt.
+BeideJobszeilenhashgleichweiterwartend,5Erfolgsjobs/Payloadserhalten;Kosten0,636184USDund8Altreservenunveraendert.
+NaechsterSchritt:naechstenregulaerenAbschlussderzweiDIPJobs/Lage/Morgenam16Novgezieltpruefen.
 RegulaereRueckfallkontrolle16Nov05:25UTCbesteht,keinezusaetzlichenVerarbeitungspostsoderQuotenresets.
-[Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md) · [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md) · [Aktivierung](betrieb/quellen-einbindung-freigabe-20261115.md).
+[DIP-Korrektur](betrieb/dip-fundstellen-korrektur-20261115.md) · [Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md) · [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md) · [Aktivierung](betrieb/quellen-einbindung-freigabe-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
