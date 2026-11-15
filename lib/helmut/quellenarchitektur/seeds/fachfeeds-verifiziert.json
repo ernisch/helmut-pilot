@@ -476,6 +476,28 @@
     ]
   },
   {
+    "id": "irights",
+    "rssUrl": "https://irights.info/feed",
+    "discoveredOn": "https://irights.info/",
+    "fachgebietKeys": [
+      "digitales-staatsmodernisierung"
+    ],
+    "nutzungsgrenze": "iRights.info lizenziert originäre Websiteinhalte, soweit nicht anders vermerkt, unter CC BY 4.0. Der geprüfte aktuelle Text von Jens Crueger ist zusätzlich ausdrücklich unter CC BY 4.0 freigegeben; Kooperation mit Deutschem Bildungsserver/OERinfo und Erstveröffentlichung bei OERinfo sind offengelegt. CC BY 4.0 erlaubt Weitergabe und Bearbeitung auch kommerziell unter Namensnennung, Lizenzlink und Kennzeichnung von Änderungen. Bei Nutzung Autor:in, Titel, Originaladresse, CC-BY-4.0-Link und Kürzung/Bearbeitung nennen; offengelegte Erstveröffentlichung erhalten. Geprüfte Attribution: Jens Crueger, KI und Offenheit vereinen: Open Source LLMs im Bildungsbereich, iRights.info / zuerst OERinfo, 11.11.2026, CC BY 4.0. Abweichende Einzelkennzeichnungen beachten; Bilder werden nicht mitfreigegeben. Positive Textlizenz belegt, interne Nutzungsentscheidung und Aktivierung bleiben offen.",
+    "checkedAt": "2026-11-15T08:36:00.009Z",
+    "httpStatus": 200,
+    "feedParsed": true,
+    "itemCount": 20,
+    "sampleArticleUrl": "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946",
+    "latestPublishedAt": "2026-11-11T12:07:37Z",
+    "latestPublishedAgeDays": 3.85,
+    "freshnessStatus": "dated_items_observed",
+    "usageDocumentation": [
+      "https://irights.info/",
+      "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946",
+      "https://creativecommons.org/licenses/by/4.0/deed.de"
+    ]
+  },
+  {
     "id": "dlf-wirtschaft",
     "rssUrl": "https://www.deutschlandfunk.de/wirtschaft-106.rss",
     "discoveredOn": "https://www.deutschlandfunk.de/rss-angebot-102.html",

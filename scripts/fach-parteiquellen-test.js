@@ -166,8 +166,69 @@ for (const sources of [[soziales, destatis], [destatis, soziales]]) {
 for (const [id, role] of [["swp", "data_source"], ["dji", "data_source"], ["rki", "data_source"],
   ["dlf-wirtschaft", "journalistic"], ["dlf-wissen", "journalistic"], ["g-ba", "official_primary"], ["uba", "official_primary"]])
   assert.equal(S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === `fach-${id}-rss`).evidenceRole, role);
+// Positiv belegte CC-BY-Textlizenz, aber weiterhin nur ein inaktiver Direktweg.
+// Kein pauschales KI-Verbot und keine erfundene taegliche Frequenz.
+const irights = S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === "fach-irights-rss");
+assert(irights);
+assert.equal(irights.name, "iRights.info");
+assert.equal(irights.url, "https://irights.info/feed");
+assert.equal(irights.type, "media");
+assert.deepEqual(irights.packageKeys, ["fach-digitales-staatsmodernisierung"]);
+assert.deepEqual(irights.fachgebietKeys, ["digitales-staatsmodernisierung"]);
+assert.equal(irights.evidenceRole, "journalistic");
+assert.deepEqual(irights.coverageClasses, ["fachmedien"]);
+assert.equal(irights.active, false);
+assert.equal(irights.preparedOnly, true);
+assert.equal(irights.rightsReviewRequired, true);
+assert.equal(irights.usagePolicy.status, "review_required");
+assert.equal(irights.usagePolicy.commercialUseApproved, false);
+assert.equal(irights.usagePolicy.fullTextAllowed, false);
+assert(irights.usagePolicy.note.includes("CC BY 4.0 erlaubt Weitergabe und Bearbeitung auch kommerziell"));
+for (const attribution of ["Jens Crueger", "KI und Offenheit vereinen: Open Source LLMs im Bildungsbereich", "OERinfo", "Lizenzlink", "Kennzeichnung von Änderungen", "Bilder werden nicht mitfreigegeben"])
+  assert(irights.usagePolicy.note.includes(attribution), attribution);
+assert.deepEqual(irights.usagePolicy.evidenceUrls, [
+  "https://irights.info/",
+  "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946",
+  "https://creativecommons.org/licenses/by/4.0/deed.de"
+]);
+assert.equal(irights.verification.feedParsed, true);
+assert.equal(irights.verification.httpStatus, 200);
+assert.equal(irights.verification.itemCount, 20);
+assert.equal(irights.verification.latestPublishedAt, "2026-11-11T12:07:37Z");
+assert.equal(irights.verification.freshnessStatus, "dated_items_observed");
+const beforeIrights = C.buildCatalog({ sources: [] });
+const digitalCatalog = C.buildCatalog({ sources: [irights] });
+assert.equal(digitalCatalog.publishers.length, beforeIrights.publishers.length + 1);
+const irightsPublisher = digitalCatalog.publishers.find((p) => p.canonical_domain === "irights.info");
+assert.equal(irightsPublisher.id, "publisher-irights.info");
+assert.equal(irightsPublisher.name, "iRights.info");
+assert.equal(irightsPublisher.canonical_domain, "irights.info");
+assert.equal(irightsPublisher.publisher_type, "media");
+assert.equal(irightsPublisher.evidence_role, "journalistic");
+const irightsPath = digitalCatalog.retrievalPaths.find((p) => p.id === "rp-fach-irights-rss");
+assert.equal(digitalCatalog.retrievalPaths.length, beforeIrights.retrievalPaths.length + 1);
+assert.equal(irightsPath.id, "rp-fach-irights-rss");
+assert.equal(irightsPath.publisher_id, irightsPublisher.id);
+assert.equal(irightsPath.url, "https://irights.info/feed");
+assert.equal(irightsPath.method, "rss");
+assert.equal(irightsPath.parser, "rss-regex");
+assert.equal(irightsPath.status, "paused");
+assert.equal(irightsPath.activation_mode, "manual");
+assert.equal(irightsPath.expected_frequency, null);
+assert.equal(irightsPath.prepared_only, true);
+assert.equal(irightsPath.rights_review_required, true);
+assert.equal(irightsPath.evidence_role, "journalistic");
+assert.deepEqual(irightsPath.coverage_classes, ["fachmedien"]);
+assert.deepEqual(irightsPath.usage_policy, irights.usagePolicy);
+assert.equal(model.isPathActive(irightsPath, ["pkg-fach-digitales-staatsmodernisierung"]), false);
+assert.deepEqual(digitalCatalog.packagePaths.filter((p) => p.retrieval_path_id === irightsPath.id),
+  [{ package_id: "pkg-fach-digitales-staatsmodernisierung", retrieval_path_id: irightsPath.id }]);
+assert.deepEqual(digitalCatalog.publishers.filter((p) => p.id !== irightsPublisher.id), beforeIrights.publishers);
+assert.deepEqual(digitalCatalog.retrievalPaths.filter((p) => p.id !== irightsPath.id), beforeIrights.retrievalPaths);
+assert.deepEqual(digitalCatalog.packagePaths.filter((p) => p.retrieval_path_id !== irightsPath.id), beforeIrights.packagePaths);
+assert.equal(digitalCatalog.packages.find((p) => p.key === "fach-digitales-staatsmodernisierung").status, "prepared");
 assert(!S.ZUSAETZLICHE_QUELLEN.some((s) => s.packageKeys.includes("fach-digitales-staatsmodernisierung")
-  && ["data_source", "journalistic"].includes(s.evidenceRole)), "Beide Digitalrollen bleiben ohne belegte neue Quelle offen");
+  && s.evidenceRole === "data_source"), "Digital-Datenrolle bleibt ohne belegte neue Quelle offen");
 
 for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordrhein-westfalen"]]) {
   const r = R.resolveProfilePackages({ parliamentType: "Bundestag", state });
@@ -175,4 +236,4 @@ for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordr
   assert(!r.required.includes(`${key}-basis`), "Landesmandatsgate nicht durch Regionalbedarf umgehen");
 }
 assert(R.resolveProfilePackages({ parliamentType: "Bundestag", state: "NI" }).optional.includes("regional-niedersachsen"));
-console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische10Parteizuordnungen,16Länder, Fraktionslosigkeit, inaktiver Destatis-Wirtschaftsweg, Rechte-/Aktivierungsschranken");
+console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische10Parteizuordnungen,16Länder, Fraktionslosigkeit, inaktive Destatis-/iRights-Wege, Textlizenz-/Attributionsbeleg, Rechte-/Aktivierungsschranken");
