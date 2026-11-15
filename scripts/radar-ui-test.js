@@ -308,7 +308,7 @@ const staleEmpty = { ...confirmedEmpty, emptyState: { kind: "stale" } };
 api.setBriefing({ currentRadarState: staleEmpty });
 const staleEmptyHtml = api.render();
 check("Veralteter Leerstand bleibt trotz geladener Quellen von bestaetigter Leere unterscheidbar",
-  staleEmptyHtml.includes('data-empty-kind="stale"') && staleEmptyHtml.includes("Radarstand veraltet")
+  staleEmptyHtml.includes('data-empty-kind="stale"') && staleEmptyHtml.includes("Keine belegten Hinweise in diesem älteren Stand")
   && !staleEmptyHtml.includes("Keine zugeordneten Signale in dieser Ansicht"));
 api.setBriefing({ currentRadarState: { ...staleEmpty, available: false, status: "error" } });
 check("Technischer Fehler hat auch gegenueber veraltetem Leerstand Vorrang",

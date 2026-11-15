@@ -23,7 +23,12 @@ const script = new vm.Script(source.slice(ws, we) + "\n(async () => {\n" + sourc
 const clone = value => structuredClone(value);
 const clean = value => JSON.parse(JSON.stringify(value));
 const profile = { id: "local-a", committees: ["Bildung"] };
-const briefing = { available: true, items: [{ title: "Kita Beratung" }], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} };
+const primaryItem = { id: "vg-test", sourceIds: ["rd-fixture"], sourceUrl: "https://example.org/kita" };
+const briefing = { available: true, items: [{ title: "Kita Beratung" }],
+  currentHelmutState: { profileId: profile.id, status: "fresh", qualityStatus: "valid",
+    items: [primaryItem], primaryVorgangId: primaryItem.id, primaryItem,
+    tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"],
+      text: "Synthetischer Tagesanlass nur für den Speichertest." } }, currentRadarState: {} };
 function lage(id) {
   const quellen = [{ vorgang_id: "vg-test", quellenbelege: [
     { quelle_id: "q-test", titel: "Das Kabinett beraet ueber Kita Standards.", auszug: "", url: "https://example.org/kita" },
@@ -46,6 +51,11 @@ async function run(profiles = [profile], options = {}) {
   const saved = options.saved || state(); let now = options.nowMs || startMs; const calls = [];
   const st = {
     assertTenant: S.assertTenant,
+    getBriefingFenstergrundlage: async (id, tag) => {
+      const row = saved.rows.get(`bf-${id}-${B.SLOT}-${tag}`);
+      return row ? { id: row.id, user_id: row.user_id, slot: row.slot,
+        generated_at: row.generated_at, briefing: clone(row.payload.briefing) } : null;
+    },
     getRenderedBriefingV3: async (id, slot, tag) => {
       if (options.readError && slot === B.SLOT) throw new Error("offline-read-error");
       const row = saved.rows.get(`bf-${id}-${slot}-${tag}`);
@@ -83,7 +93,8 @@ async function run(profiles = [profile], options = {}) {
     activeProfile: async id => options.currentProfiles?.[id] || profiles.find(p => p.id === id),
     validateProfile: p => ({ disabled: !T.isActiveMandate(p) }),
     buildV3Briefing: async p => { calls.push(p.id); now += options.advanceMs || 0;
-      if (options.buildError) throw new Error("offline-build-error"); return clone(options.briefing || briefing); },
+      if (options.buildError) throw new Error("offline-build-error");
+      const b = clone(options.briefing || briefing); b.currentHelmutState.profileId = p.id; return b; },
     buildLageBriefing: async (p, opts) => {
       assert.equal(opts.cacheOnly, true);
       return B.lageAusgabe(saved.rows.get(`bf-${p.id}-lage-${day}`)?.payload)
@@ -158,18 +169,20 @@ async function test(name, fn) {
     assert.equal(second.response.frischevertrag.wiederholungen, 1);
     assert.equal(saved.pushes.length, 1);
     assert.equal(second.response.versorgung.versorgt, 1);
-    assert.equal(saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`).payload.briefing.currentHelmutState.primaryVorgangId, undefined);
+    assert.equal(saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`).payload.briefing.currentHelmutState.primaryVorgangId, "vg-test");
   });
-  await test("Alte Quittung erhaelt den Inhaltsbeleg ohne zweiten Push", async () => {
+  await test("Alte Quittung ohne Inhaltsbindung bleibt unbekannt und unveraendert", async () => {
     const first = await run(), id = L.laufId(profile.id, day);
     delete first.saved.rows.get(id).payload.ausgabeBeleg;
+    const before = clone(first.saved.rows.get(id)), writes = first.saved.writes.length;
     const second = await run([profile], { saved: first.saved, nowMs: startMs + 3600000, runId: "beleg-upgrade" });
-    const q = second.saved.rows.get(id).payload;
-    assert(require("../lib/helmut/briefing-ausgabebeleg").passt(q.ausgabeBeleg,
-      second.saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`)));
+    assert.deepEqual(second.saved.rows.get(id), before);
+    assert.equal(second.saved.writes.length, writes);
     assert.equal(second.saved.pushes.length, 1);
-    assert.equal(second.saved.writes.filter(s => s === L.SLOT_ERFOLG).length, 2);
-    assert.equal(second.response.results[0].frischeBeleg.verifiziert, true);
+    assert.equal(second.calls.length, 0);
+    assert.equal(second.response.results[0].error, "briefing-fenstergrundlage-unbekannt");
+    assert.equal(second.response.frischevertrag.belegt, 0);
+    assert.equal(second.response.status, "failed");
   });
   for (const mode of ["writeError", "readError", "noReadback", "foreignReadback"]) {
     await test("Paketfehler ist weder Erfolgsquittung noch Zustellung: " + mode, async () => {

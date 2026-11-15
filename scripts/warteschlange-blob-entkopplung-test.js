@@ -264,6 +264,7 @@ async function main() {
     const eingereiht = [];
     let enqueueVersuche = 0;
     const deps = SP.workerDeps({
+      now: () => Date.parse("2026-08-19T07:00:00Z"),
       env: { HELMUT_SCALABLE_PIPELINE: "on" }, klassen: klassenAttrappe(),
       hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
       createGate: () => null, sharedLedger: () => null,
@@ -279,7 +280,7 @@ async function main() {
       }
     });
     const ergebnis = await SP.HANDLER.source_fetch(
-      { id: "j-b1", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
+      { id: "j-b1", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "2026-08-19T00Z" },
       deps);
     check("2.1 Der Auftrag ist erfolgreich und meldet 3 neue Rohdokumente",
       ergebnis.ok === true && ergebnis.gespeichert === 3 && ergebnis.rohitems === 3,
@@ -304,7 +305,7 @@ async function main() {
     // Wiederholung bestaetigt denselben idempotenten Auftrag. So heilt sie einen
     // frueheren Enqueuefehler, erzeugt aber keinen zweiten Verstehensauftrag.
     const zweite = await SP.HANDLER.source_fetch(
-      { id: "j-b2", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
+      { id: "j-b2", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "2026-08-19T00Z" },
       deps);
     check("2.7 Ein zweiter Abruf derselben Items erzeugt 0 neue Zeilen und 0 neue Verstehensauftraege",
       zweite.ok === true && zweite.gespeichert === 0 && zweite.bereitsVorhanden === 3

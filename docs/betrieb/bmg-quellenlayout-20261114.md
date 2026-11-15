@@ -1,5 +1,24 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+15.11.2026,01:21UTC, aktueller CI-Nachtrag: Folgestand #1204/8956819c besteht
+beide Pflichtchecks (43659496575), 14 Kern- und 87 Quellensuiten. #1203/9979f613
+besteht native Kernschritte und alle 189 Standardsuiten; 13 von 391 Bereichssuiten
+scheitern noch und wurden einzeln auf unveraendertem main6763dc8e reproduziert.
+Korrigiert werden ausschliesslich alte Testannahmen: gespeicherter Appstart statt
+Lage-Neubau, explizite Klassenfreigaben, drei Workerphasen mit gemeinsamem Budget,
+gebundene Morgen-Checkpoints, heutige Leerhinweise, aktuelle Kostenfehlerklasse,
+wirklich geladene Lesermodule statt unbenutzter lazy Schreibimporte und zur
+synthetischen Publikation passende Uhr. Alte Quittung ohne Inhaltsbindung bleibt
+UNKNOWN/fehlgeschlagen und unveraendert. Historische Prosa-Offlinefaelle laden
+jetzt das originale Schema samt Validator aus Commit05feca37, gzip/sha256 gebunden;
+realer Prosa-Aufrufer lehnt heutiges Paket weiterhin ab. Keine Modelle gestartet.
+Die isolierte PostgreSQL-Claimsuite war faelschlich in der Offline-Sammlung. Sie
+bleibt unveraendert im eigenen bereits vorhandenen netzlosen PG17-Pflichtschritt;
+nur die falsche Offline-Klassifizierung entfaellt, mit Auswahl-Gegenprobe.
+Alle betroffenen Einzelpruefungen lokal gruen; keine Runtime-Schutzregel entfernt.
+Neue Pflicht-CI am aktualisierten Kopf steht aus. Nachfolgende datierte Angaben
+sind erhaltene Zwischenstaende, keine aktuelle Merge- oder Production-Bestaetigung.
+
 15.11.2026,00:41UTC: Die Quellen-Bereichs-CI des Folgestands #1204 besteht 79/87
 Suiten. Alle acht Fehler wurden auch auf unveraendertem `main6763dc8e`
 reproduziert. Ihre bestehenden Tests verwenden jetzt die bereits geltenden

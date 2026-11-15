@@ -387,6 +387,7 @@ async function simuliereMorgen({
 
   const deps = {
     now: uhr.jetzt,
+    klassen: { belege: async () => ({ erlaubt: true, slot: "historische-simulation" }), gebeFrei: async () => {} },
     // Das Leerlaufwarten des Workers muss die VIRTUELLE Uhr bewegen, sonst waere es im Test
     // ein echtes `setTimeout` und die Simulation liefe in Wanduhrzeit.
     schlafe: (ms) => uhr.warte(ms),

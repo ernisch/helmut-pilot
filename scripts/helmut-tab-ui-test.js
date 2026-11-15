@@ -40,7 +40,7 @@ function loadClient() {
     lageView: () => renderLageView(),
     legacyHeadline: (s) => lageDisplayHeadline(s),
     mandateContext: () => renderUiMandateContext(),
-    setProfile: (p) => { profile = p; },
+    setProfile: (p, activeId) => { profile = p; if (activeId !== undefined) activePoliticianId = activeId; },
     setBriefing: (b) => { briefing = b; },
     sie: (s) => uiSieText(s),
     esc: (s) => escapeHtml(s)
@@ -500,10 +500,11 @@ for (const [label, wert] of [["Fachzuständigkeit", "Pflegeberichterstattung"],
 api.setProfile({});
 check("Mandatskontext kennzeichnet fehlende Fachzustaendigkeit ausdruecklich",
   api.mandateContext().includes('<dt>Fachzuständigkeit</dt><dd>Nicht hinterlegt</dd>'));
-api.setProfile(profile);
+api.setProfile(profile, profile.id);
 
-api.setBriefing({ lageBriefing: { available: true, vorgaenge: [pflegeVorgang], paragraphs: [
-  { text: "Zugeordneter gespeicherter Lageabsatz.", vorgangIds: [pflegeVorgang.id], sources: pflegeVorgang.sources },
+api.setBriefing({ lageBriefing: { available: true, fromCache: true, qualitaet: { version: 1 }, vorgaenge: [pflegeVorgang], paragraphs: [
+  { text: "Zugeordneter gespeicherter Lageabsatz.", vorgangIds: [pflegeVorgang.id],
+    sources: pflegeVorgang.sources.map((s,i) => ({ ...s, quelleId: "q-geprueft-" + i })) },
   { text: "FREMDER_ABSATZ", vorgangIds: ["vg-fremd"], sources: [] }
 ] } });
 const quellenDetail = api.lageSheet({ ...pflegeVorgang, whyRelevant: "Zusaetzliche politische Bedeutung." });

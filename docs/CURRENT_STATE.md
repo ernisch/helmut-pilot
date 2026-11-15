@@ -1,20 +1,21 @@
 # CURRENT STATE — Helmut
-**15.11.2026,00:41UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
+**15.11.2026,01:21UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
 
 Betreiber hat auftragsbezogene gruene Merges bis maximal20 freigegeben; bisher0.
 Kein zusaetzlicher bezahlter Modelllauf, Datenreset, Cron-/Env-/Budgeteingriff.
 Aktueller main6763dc8e (Produktvertrag1.1), Productionruntime80bd6c87/PR1200 READY.
 PR1203: BMG-Einstieg und zwei fehlende Lage-Leervertragsfelder repariert.
-Lokale Belege: 13Layoutgruppen inTeilmengen,21Kontextgruppen,19Vertragschecks,
-1Leerpaketgruppe gruen. CI43656753720:187/189Standardgruppen gruen; rot nur
-Statusgroesse und veralteter Pending-Quellanker. Historie jetzt verlustfrei archiviert;
-Anker auf heutige gemeinsame Plan-/Einreihungsgruppe aktualisiert, keine Runtimeaenderung.
-Neue Pflicht-CI folgt; kein Merge oder Production-Erfolg behauptet.
-PR1204-CI43658418026:79/87Quellensuiten gruen, alle8roten Suiten auf unveraendertem
-main6763dc8e reproduziert. Ausschliesslich veraltete Fixtures/Promptpins angepasst;
-Versionen, Workerabschluss, Tagesbezug und Paketansicht bleiben streng gebunden.
-Betroffene8Suiten lokal24+8+16+9+5+15+29+14=120Gruppen gruen, kein Modell/Production.
-Pflicht-CI wird am aktualisierten Kopf erneut vollstaendig bestaetigt.
+CI43659471955: native Kernschritte und189/189Standard gruen;378/391Bereich gruen.
+Alle13weiteren Fehler auf unveraendertem main reproduziert. Bestehende Fixtures
+an heutige Mandats-/Quellen-/Checkpoint-/Appstartvertraege angepasst; Prosa nutzt
+hashgebundenes Originalschema nur im historischen Offlinehelfer. Echte Riegel bleiben.
+Ein nativer PG17-Claimtest war faelschlich als offline klassifiziert; jetzt nur sein
+unveraenderter eigener netzloser CI-Schritt. Auswahlvertrag prueft dessen Erhalt.
+Betroffene Einzelpruefungen lokal gruen; Pflicht-CI am neuen Kopf voll erforderlich.
+PR1204 Kopf8956819c: beide Pflichtchecks gruen,14/14Kern und87/87Quellensuiten
+(CI43659496575); nach Integration des neuen Vorgaengers erneut bestaetigen.
+Fruehere8Quellenfixturefehler ebenfalls auf main reproduziert und gezielt120Gruppen
+geprueft. Statushistorie verlustfrei archiviert; kein Laufnachweis umgewertet.
 PR1204 gestapelt auf1203: hib-Suffix, BMAS-/ZDF-/BMG-Presseabsatz eng gebunden.
 6gespeicherte echte Originale lokal vorhernegativ/nachherpositiv,25Layoutgruppen,
 17Bundestagsgruppen und11generische Gewinnungsgruppen gruen. Keine Modellantwort.

@@ -171,6 +171,13 @@ function main() {
   check("B4 Der erweiterte Lauf enthaelt die bereichsspezifischen Suiten",
     NICHT_PFLICHT_BEISPIELE.every((f) => erweitert.suiten.has(f)),
     NICHT_PFLICHT_BEISPIELE.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
+  const nativeSuite = "verarbeitungskern-claim-datenbank-test.js";
+  const ci = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
+  check("B4a Nativer Claim-Nachtrag bleibt im eigenen netzlosen PG17-Schritt statt Offline-Sammlung",
+    !erweitert.suiten.has(nativeSuite) && fs.existsSync(path.join(ROOT, "scripts", nativeSuite))
+      && ci.includes("HELMUT_TEST_CORE_CONTAINER: helmut-core-pg")
+      && ci.includes(`node scripts/lokal.js scripts/${nativeSuite} --production-kommentarstand`)
+      && ci.includes('docker run -d --network none --name "$HELMUT_TEST_CORE_CONTAINER"'));
   const mehr = [...erweitert.suiten].filter((f) => !standard.suiten.has(f));
   check("B5 Der Standardlauf ist eine klare Minderheit der vollstaendigen Regression",
     standard.suiten.size > 0 && standard.suiten.size * 2 < erweitert.suiten.size
