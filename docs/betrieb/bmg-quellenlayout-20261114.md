@@ -1,5 +1,14 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+Zweiter CI-Lauf `43656753720`: 187/189 Standardgruppen gruen. Zwei weitere
+vorbestehende Befunde: Statusdokument ueber seiner verbindlichen Groessengrenze
+und ein Testanker, der noch historische Pendingauftraege im heutigen Tagesplan
+erwartete. Der Status ist bytegleich archiviert und auf 27644 Zeichen/334 Zeilen
+verdichtet. Der Test prueft nun die vorhandene gemeinsame Profilgruppe im Manifest
+UND in der Enqueueschleife. Keine Planungs-/Budgetruntime geaendert. Gezielte
+bestehende Pruefungen danach 4/4 Groessenchecks und 42/42 Gleichbehandlungschecks.
+Alle roten Erstbefunde bleiben in der CI-Historie erhalten.
+
 Fortsetzung 15.11.2026: Betreiber hat die bestehende Pflicht-CI und bis zu 20
 auftragsbezogene gruene Merges ausdruecklich freigegeben. PR #1203 ist offen.
 Erster CI-Lauf scheitert im Schnellkern am bereits bestehenden App-Start-Vertrag:
