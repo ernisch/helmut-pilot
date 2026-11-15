@@ -5,7 +5,10 @@
 const T = require("node:assert/strict");
 const bmgOnly = process.argv.length === 3 && process.argv[2] === "--bmg";
 const cacheOnly = process.argv.length === 3 && process.argv[2] === "--cache";
-if (process.argv.length !== 2 && !bmgOnly && !cacheOnly) throw Error("Unbekannte Testauswahl");
+const bmasOnly = process.argv.length === 3 && process.argv[2] === "--bmas";
+const zdfOnly = process.argv.length === 3 && process.argv[2] === "--zdf";
+const presseOnly = process.argv.length === 3 && process.argv[2] === "--bmg-presse";
+if (process.argv.length !== 2 && !bmgOnly && !cacheOnly && !bmasOnly && !zdfOnly && !presseOnly) throw Error("Unbekannte Testauswahl");
 const forbidden = [], fail = name => () => { forbidden.push(name); throw Error(name + " verboten"); };
 global.fetch = fail("fetch"); require("node:https").request = fail("HTTPS"); require("node:http").request = fail("HTTP");
 const G = require("../lib/helmut/artikelkontext-gewinnung"), A = require("../lib/helmut/artikelkontext"),
@@ -19,6 +22,9 @@ const attribution = "Eine fiktive Pressestelle teilt zum synthetischen Beratungs
   detail = "Die beteiligten Stellen beraten ueber moegliche Aenderungen. Der neue Vorschlag ist noch nicht beschlossen und ersetzt keine bestehende Regel.",
   correction = "Die fiktive Beratung wurde nicht abgesagt. Ueber den weiteren Zeitplan liegen in diesem Beispiel keine bestaetigten Angaben vor.";
 function document(kind) {
+  if (kind === "bmg-presse") return presseDocument();
+  if (kind === "zdf") return zdfDocument();
+  if (kind === "bmas") return bmasDocument();
   if (kind === "bmg") return bmgDocument();
   const breg = kind === "breg", title = "Synthetische Beratung zur Tarifbindung";
   const url = breg ? "https://www.bundesregierung.de/breg-de/aktuelles/synthetische-beratung-1234567"
@@ -28,6 +34,9 @@ function document(kind) {
     published_at: "2026-11-13T08:00:00+00:00", retrieved_at: "2026-11-14T03:00:00+00:00", link_type: "direct" };
 }
 function response(kind, d = document(kind)) {
+  if (kind === "bmg-presse") return presseResponse(d);
+  if (kind === "zdf") return zdfResponse(d);
+  if (kind === "bmas") return bmasResponse(d);
   if (kind === "bmg") return bmgResponse(d);
   const breg = kind === "breg", title = "Synthetische Beratung zur Tarifbindung", og = breg ? title : "Synthetische Meldung - " + title;
   const head = `<head><link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
@@ -75,6 +84,48 @@ function bmgResponse(d = bmgDocument()) {
     + `<div class="c-text"><p>${correction}</p></div></div></article></main><footer><p>FOOTER NICHT LESEN</p></footer></body></html>` };
 }
 const opts = { versuch: true, kontext: "einstieg" };
+function bmasDocument() {
+  const url = "https://www.bmas.de/DE/Service/Presse/Pressemitteilungen/2026/synthetische-beratung.html";
+  return { id: "rd-synthetisches-layout-bmas", title: "Synthetische Beratung", source_name: "BMAS",
+    url, canonical_url: url.replace("www.", ""), published_at: "2026-11-03T10:07:00Z", summary: null, link_type: "direct" };
+}
+function bmasResponse(d = bmasDocument()) {
+  return { finalUrl: d.url, gelesenAm: now.toISOString(), body: `<html><head>`
+    + `<link rel="canonical" href="${d.url}"><meta property="og:type" content="website">`
+    + `<meta property="og:title" content="BMAS - Synthetische Beratung"><meta property="og:url" content="${d.url}"></head>`
+    + `<body><main class="relative"><article class="container"><time datetime="2026-11-03">03. November 2026</time>`
+    + `<h1 data-slot="pp-headline">Synthetische Beratung</h1>`
+    + `<div class="s-introduction"><div data-slot="pp-text"><p>${intro}</p></div></div>`
+    + `<div class="body-text"><p>${correction}</p></div></article></main></body></html>` };
+}
+function zdfDocument() {
+  const url = "https://www.zdfheute.de/politik/deutschland/synthetische-beratung-100.html";
+  return { id: "rd-synthetisches-layout-zdf", title: "Synthetische Beratung - ZDFheute", source_name: "ZDFheute",
+    url, canonical_url: url.replace("www.", ""), published_at: "2026-11-13T12:52:00Z", summary: null, link_type: "direct" };
+}
+function zdfResponse(d = zdfDocument()) {
+  const declared = { "@type": "NewsArticle", mainEntityOfPage: d.url, headline: "Synthetische Beratung",
+    description: intro, datePublished: "2026-11-13T13:52:45.131+01:00" };
+  return { finalUrl: d.url, gelesenAm: now.toISOString(), body: `<html><head>`
+    + `<link rel="canonical" href="${d.url}"><meta property="og:type" content="article">`
+    + `<meta property="og:title" content="Synthetische Beratung"><meta property="og:url" content="${d.url}">`
+    + `<script type="application/ld+json">${JSON.stringify(declared)}</script></head><body><div style="height:100%"><main>`
+    + `<div class="c10o8fzf" style="--c10o8fzf-0:16px;--c10o8fzf-1:var(--vertical-content-padding) max(var(--horizontal-content-padding), env(safe-area-inset-left), env(safe-area-inset-right));--c10o8fzf-2:720px;--c10o8fzf-3:unset">`
+    + `<div class="mz5q5zg" style="--mz5q5zg-0:space-between;--mz5q5zg-1:100%"><time datetime="2026-11-13T13:52:00.000+01:00">13.11.2026 | 13:52</time></div>`
+    + `<p>${intro}</p></div><div><p>${correction}</p></div></main></div></body></html>` };
+}
+function presseDocument() {
+  const d = bmgDocument(); d.id += "-presse";
+  d.url = d.url.replace("ministerium/meldungen", "presse/pressemitteilungen"); d.canonical_url = d.url.replace("www.", "");
+  return d;
+}
+function presseResponse(d = presseDocument()) {
+  const r = bmgResponse(d);
+  r.body = r.body.replace(`<p>${intro}</p>`, "").replace('<figure>',
+    `<div class="c-download" data-module-identifier="download"><p>Faktenblatt als PDF herunterladen</p></div>`
+    + `<div class="c-text-media__text"><p>${intro}</p></div><figure>`);
+  return r;
+}
 const negative = key => ({ version: 1, schluessel: key, versuchId: "00000000-0000-4000-8000-000000000001",
   reserviertAm: "2026-11-14T04:15:00.000Z", zustand: "luecke", abgeschlossenAm: "2026-11-14T04:15:02.000Z", reason: L.NEGATIVGRUND });
 function environment(kind = "breg") {
@@ -110,10 +161,138 @@ function environment(kind = "breg") {
 }
 let count = 0; async function test(name, fn) {
   if (bmgOnly && !name.startsWith("BMG ")) return;
+  if (bmasOnly && !name.startsWith("BMAS ")) return;
+  if (zdfOnly && !name.startsWith("ZDF ")) return;
+  if (presseOnly && !name.startsWith("BMG-Presse ")) return;
   if (cacheOnly && !/^(?:Frischer Basisstand|Reserviert kaputt|Alte positive|Unbekannte Folgelesung|Originalquota)/.test(name)) return;
   await fn(); count++; console.log("PASS " + name);
 }
 (async () => {
+  await test("BMG-Presse bindet ersten Textabschnitt statt PDF-Widget oder ungeprueftem Zitat", () => {
+    const d = presseDocument(), r = presseResponse(d), before = clone({ d, r }), out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
+    T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro); T.equal(out.beleg.gewinnung.struktur, "bmg-presse");
+    T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2"); T.equal(out.beleg.gewinnung.positionsbasis, "html-content-p");
+    T.equal(out.beleg.gewinnung.artikelAbsatzZahl, 1); T.deepEqual(A.pruefeArtikelkontext([d], out.beleg), out.beleg);
+    T.deepEqual({ d, r }, before);
+  });
+  await test("BMG-Presse ueberspringt keine fruehe Aussage und liest keine versteckten oder ungebundenen Abschnitte", () => {
+    for (const change of [r => { r.body = r.body.replace('data-module-identifier="download"', 'data-module-identifier="anderes"'); },
+      r => { r.body = r.body.replace('<div class="c-text-media__text">', '<p>Abgesagt.</p><div class="c-text-media__text">'); },
+      r => { r.body = r.body.replace('class="c-text-media__text"', 'hidden class="c-text-media__text"'); },
+      r => { r.body = r.body.replace('class="c-text-media__text"', 'class="c-text-media__text" style="display:none"'); },
+      r => { r.body = r.body.replace('13. November', '14. November'); },
+      r => { r.body = r.body.replace('rel="canonical"', 'rel="alternate"'); },
+      r => { r.body = r.body.replace('<h1>Synthetische', '<h1>Fremde'); },
+      r => { r.body = r.body.replace('<p>' + intro, '<p><span hidden>' + intro + '</span>'); }]) {
+      const r = presseResponse(); change(r); T.equal(G.gewinneArtikeltext(presseDocument(), r).ok, false);
+    }
+  });
+  await test("BMG-Presse Provenienz behauptet weder Volltext noch Artikelanfang oder fremdes Datum", () => {
+    const d = presseDocument(), good = G.gewinneArtikeltext(d, presseResponse()).beleg;
+    for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
+      b => { b.gewinnung.originalDatum = "14. November 2026"; },
+      b => { b.gewinnung.positionsbasis = "html-article-p"; }]) {
+      const b = clone(good); change(b); T.throws(() => A.pruefeArtikelkontext([d], b), /artikelkontext-/);
+    }
+  });
+  await test("BMG-Presse frischer Cache bestaetigt einmal und erhaelt vorhandene positive und negative Belege", async () => {
+    const f = environment("bmg-presse"); f.rows.clear(); const out = await f.run(); T.equal(out.ok, true, out.reason);
+    const before = clone([...f.rows]); T.deepEqual(await f.run(), out); T.deepEqual([...f.rows], before); T.equal(f.net.length, 1);
+    const old = environment("bmg-presse"), snapshot = clone([...old.rows]); T.equal((await old.run()).ok, false);
+    T.deepEqual([...old.rows], snapshot); T.equal(old.net.length, 0); T.equal(old.limits.length, 0);
+  });
+  await test("ZDF bindet sichtbare Minute und identischen ersten Originalabsatz ohne Volltextbehauptung", () => {
+    const d = zdfDocument(), r = zdfResponse(d), before = clone({ d, r }), out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
+    T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro);
+    T.equal(out.beleg.gewinnung.struktur, "zdf"); T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+    T.equal(out.beleg.gewinnung.originalDatum, "2026-11-13T13:52:00.000+01:00");
+    T.equal(out.beleg.gewinnung.antwortHash, require("node:crypto").createHash("sha256").update(r.body).digest("hex"));
+    T.deepEqual(out.beleg.gewinnung.absaetze, [intro]); T.equal(out.beleg.gewinnung.artikelAbsatzZahl, 2);
+    T.deepEqual(A.pruefeArtikelkontext([d], out.beleg), out.beleg); T.deepEqual({ d, r }, before);
+  });
+  await test("ZDF Fremdtitel Gegenziel andere Minute nichtdeklarierte Erstabschnitte und versteckte Stile sperren", () => {
+    for (const change of [r => { r.body = r.body.replace('content="Synthetische Beratung"', 'content="Fremder Titel"'); },
+      r => { r.body = r.body.replace('"headline":"Synthetische Beratung"', '"headline":"Fremder Titel"'); },
+      r => { r.body = r.body.replace('rel="canonical"', 'rel="alternate"'); },
+      r => { r.body = r.body.replace('"mainEntityOfPage":"' + r.finalUrl, '"mainEntityOfPage":"https://evil.example/fremd'); },
+      r => { r.body = r.body.replace('13:52:45.131', '13:53:45.131'); },
+      r => { r.body = r.body.replace('13:52:00.000', '13:53:00.000'); },
+      r => { r.body = r.body.replace('>13.11.2026 | 13:52', '>14.11.2026 | 13:52'); },
+      r => { r.body = r.body.replace('<main>', '<main hidden>'); },
+      r => { r.body = r.body.replace('height:100%', 'height:0'); },
+      r => { r.body = r.body.replace('--c10o8fzf-2:720px', '--c10o8fzf-2:0px'); },
+      r => { r.body = r.body.replace('--mz5q5zg-1:100%', '--mz5q5zg-1:0%'); },
+      r => { r.body = r.body.replace('<p>' + intro, '<p style="display:none">' + intro); },
+      r => { r.body = r.body.replace('<p>' + intro, '<p>Abgesagt.</p><p>' + intro); },
+      r => { r.body = r.body.replace('"description":', '"articleBody":"Gegenbeleg", "description":'); },
+      r => { r.body = r.body.replace('</head>', '<meta name="robots" content="nosnippet"></head>'); }]) {
+      const r = zdfResponse(); change(r); T.equal(G.gewinneArtikeltext(zdfDocument(), r).ok, false);
+    }
+    for (const url of [zdfDocument().url.replace("www.zdfheute.de", "evil.example"), zdfDocument().url + "?neu=1"])
+      T.equal(L.kennung(url), null);
+  });
+  await test("ZDF Provenienz erlaubt keinen Volltext fremde Minute oder Artikelpositionsbasis", () => {
+    const d = zdfDocument(), good = G.gewinneArtikeltext(d, zdfResponse()).beleg;
+    for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
+      b => { b.gewinnung.originalDatum = "2026-11-13T13:53:00.000+01:00"; },
+      b => { b.gewinnung.positionsbasis = "html-article-p"; }]) {
+      const b = clone(good); change(b); T.throws(() => A.pruefeArtikelkontext([d], b), /artikelkontext-/);
+    }
+  });
+  await test("ZDF frischer Cache bestaetigt einmal und erhaelt vorhandene positive und negative Belege", async () => {
+    const f = environment("zdf"); f.rows.clear(); const out = await f.run(); T.equal(out.ok, true, out.reason);
+    const before = clone([...f.rows]); T.deepEqual(await f.run(), out); T.deepEqual([...f.rows], before); T.equal(f.net.length, 1);
+    const old = environment("zdf"), snapshot = clone([...old.rows]); T.equal((await old.run()).ok, false);
+    T.deepEqual([...old.rows], snapshot); T.equal(old.net.length, 0); T.equal(old.limits.length, 0);
+  });
+  await test("BMAS bindet nur amtlichen Einleitungsabsatz Titelpraefix und sichtbaren Tag", () => {
+    const d = bmasDocument(), r = bmasResponse(d), before = clone({ d, r });
+    const out = G.gewinneArtikeltext(d, r, { abschnittsweise: true });
+    T.equal(out.ok, true, out.reason); T.equal(out.beleg.text, intro);
+    T.equal(out.beleg.gewinnung.struktur, "bmas"); T.equal(out.beleg.gewinnung.verfahren, "artikel-einstieg-v2");
+    T.equal(out.beleg.gewinnung.originalDatum, "03. November 2026");
+    T.equal(out.beleg.gewinnung.artikelAbsatzZahl, 2); T.deepEqual(out.beleg.gewinnung.absaetze, [intro]);
+    T.deepEqual(A.pruefeArtikelkontext([d], out.beleg), out.beleg); T.deepEqual({ d, r }, before);
+    const bmg = bmgDocument(); bmg.published_at = d.published_at;
+    const page = bmgResponse(bmg); page.body = page.body.replace("13. November", "03. November");
+    T.equal(G.gewinneArtikeltext(bmg, page).ok, true);
+    page.body = page.body.replace("03. November", "3. November");
+    T.equal(G.gewinneArtikeltext(bmg, page).ok, true);
+  });
+  await test("BMAS fremde Identitaet versteckte oder uebersprungene Texte und abweichende Tage sperren", () => {
+    for (const change of [r => { r.body = r.body.replace('BMAS - Synthetische Beratung', 'Fremd - Synthetische Beratung'); },
+      r => { r.body = r.body.replace('<h1 data-slot="pp-headline">Synthetische', '<h1 data-slot="pp-headline">Fremde'); },
+      r => { r.body = r.body.replace('rel="canonical"', 'rel="alternate"'); },
+      r => { r.body = r.body.replace('property="og:url"', 'property="fremd"'); },
+      r => { r.body = r.body.replace('datetime="2026-11-03"', 'datetime="2026-11-04"'); },
+      r => { r.body = r.body.replace('03. November', '04. November'); },
+      r => { r.body = r.body.replace('<time ', '<time hidden '); },
+      r => { r.body = r.body.replace('<article ', '<article hidden '); },
+      r => { r.body = r.body.replace('class="s-introduction"', 'class="s-introduction" style="display:none"'); },
+      r => { r.body = r.body.replace(intro, '<span hidden>' + intro + '</span>'); },
+      r => { r.body = r.body.replace('<h1 ', '<p>Abgesagt.</p><h1 '); },
+      r => { r.body = r.body.replace('</time>', '</time><time datetime="2026-11-03">03. November 2026</time>'); },
+      r => { r.body = r.body.replace('</head>', '<meta name="robots" content="noai"></head>'); },
+      r => { r.body = r.body.replace('</head>', '<script type="application/ld+json">{"@type":"Article","headline":"Fremd"}</script></head>'); }]) {
+      const r = bmasResponse(); change(r); T.equal(G.gewinneArtikeltext(bmasDocument(), r).ok, false);
+    }
+    for (const url of [bmasDocument().url.replace("www.bmas.de", "evil.example"), bmasDocument().url + "?neu=1"])
+      T.equal(L.kennung(url), null);
+  });
+  await test("BMAS Provenienz erlaubt keinen Volltext fremden Tag oder Positionsbasis", () => {
+    const d = bmasDocument(), good = G.gewinneArtikeltext(d, bmasResponse()).beleg;
+    for (const change of [b => { b.gewinnung.verfahren = "artikeltext-v3"; },
+      b => { b.gewinnung.originalDatum = "04. November 2026"; }, b => { b.gewinnung.layoutVersion = 2; },
+      b => { b.gewinnung.positionsbasis = "html-main-p"; }]) {
+      const b = clone(good); change(b); T.throws(() => A.pruefeArtikelkontext([d], b), /artikelkontext-/);
+    }
+  });
+  await test("BMAS frischer Cache bestaetigt einmal und erhaelt vorhandene positive und negative Belege", async () => {
+    const f = environment("bmas"); f.rows.clear(); const out = await f.run(); T.equal(out.ok, true, out.reason);
+    const before = clone([...f.rows]); T.deepEqual(await f.run(), out); T.deepEqual([...f.rows], before); T.equal(f.net.length, 1);
+    const old = environment("bmas"), snapshot = clone([...old.rows]); T.equal((await old.run()).ok, false);
+    T.deepEqual([...old.rows], snapshot); T.equal(old.net.length, 0); T.equal(old.limits.length, 0);
+  });
   await test("BMG ohne JSON-LD bestaetigt nur den ersten ganzen Absatz und den sichtbaren Tag", () => {
     const d = bmgDocument(), r = bmgResponse(d), before = clone({ d, r });
     for (const options of [{}, { abschnittsweise: true }]) {
@@ -300,7 +479,7 @@ let count = 0; async function test(name, fn) {
     const host = environment(); host.rows.clear(); T.equal((await host.run({ erlaubeNeuenAbruf: () => "herausgeber-nicht-freigegeben" })).reason, "herausgeber-nicht-freigegeben");
     T.equal(host.net.length, 0); T.ok(host.calls.every(c => c.method === "GET"));
   });
-  T.equal(count, bmgOnly ? 4 : cacheOnly ? 5 : 13); T.deepEqual(forbidden, []);
+  T.equal(count, bmgOnly || bmasOnly || zdfOnly || presseOnly ? 4 : cacheOnly ? 5 : 25); T.deepEqual(forbidden, []);
   console.log(`${count}/${count} ausgefuehrte Quellenlayoutgruppen bestanden; keine Modelle oder Produktionszugriffe.`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   for (const [name, value] of Object.entries(originals)) { if (value === undefined) delete process.env[name]; else process.env[name] = value; }

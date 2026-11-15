@@ -130,6 +130,18 @@ test("Echte hib-Meldung ohne Canonical/JSON-LD behaelt alle vier Absaetze und ih
   assert.equal(A.pruefeArtikelkontext([hibDoc], b).text, b.text);
   assert.equal(hibDoc.published_at, "2026-11-11T17:08:00.000Z");
 });
+test("hib RSS-Herausgebersuffix bleibt Metadatum und verdeckt keinen abweichenden Artikeltitel", () => {
+  const d = { ...hibDoc, title: hibDoc.title + " - Deutscher Bundestag" }, body = original("hib-20261111");
+  const before = structuredClone(d), r = full(d, body);
+  assert.equal(r.ok, true, r.reason); assert.equal(r.beleg.artikelTitel, d.title);
+  assert.equal(r.beleg.text, full(hibDoc, body).beleg.text); assert.deepEqual(d, before);
+  assert.equal(A.pruefeArtikelkontext([d], r.beleg).text, r.beleg.text);
+  for (const title of ["Fremder Titel - Deutscher Bundestag", hibDoc.title + " - Anderer Herausgeber",
+    hibDoc.title + " - Deutscher Bundestag Zusatz"])
+    assert.equal(full({ ...d, title }, body).ok, false);
+  assert.equal(full(d, body.replace('content="11.11.2026"', 'content="12.11.2026"')).ok, false);
+  assert.equal(full(d, body.replace('property="og:url" content="' + d.url, 'property="og:url" content="https://evil.example/fremd')).ok, false);
+});
 test("Echte Pressemitteilung behaelt Zeit, Ort und Zutrittshinweis vor und nach dem Meldungstext", () => {
   const r = full(presseDoc, original("presse-20261104")); assert.equal(r.ok, true, r.reason);
   assert(r.beleg.text.startsWith("Zeit: Donnerstag, 5. November 2026, 15.00 Uhr Ort: Reichstagsgebäude"));
