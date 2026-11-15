@@ -1,6 +1,12 @@
 # CURRENT STATE — Helmut
 **15.11.2026,12:15UTC: Destatis/iRights in Production aktiviert; Wirkungsnachweis der Tagesversorgung offen.**
 
+**Betreiberziel15Nov: heute fertig werden; Sofortpruefung jetzt statt Aufschub auf morgen.**
+Livefeeds12:43HTTP200;nativeisolierteLeseketteDestatis10Auszuege/iRights3lizenzierte+12TitelLink.
+HeutigerPlanfertig156/156unveraendert;2neueglobaleQuellenjobsaufSofortauftragidempotenteingereiht.
+DestatisJob8f94986c/iRightsJob7e17cdc7beideerledigt;Sofortlauf12:54–12:58erfolgreich.
+AktuelleAbdeckung4→0Fehler,95→88Warnungen,2WegeohneAbruftelemetrie;kleinsterVerdrahtungsfixinArbeit.
+
 BetreiberGO undgemergterPR1214 geben exakt2Feeds/6Katalogzeilen/2Paketaktivierungen frei.
 CodePR1215 gemergtalsc3648b08,Productiondpl_5Kyd8q4V9vcxteNsRwbM5kei2dU1READY;
 oeffentlicheShellHTTP200/Versionc3648b08. ExakterKopf30bd4da4,CI43712210903gruen:
@@ -26,7 +32,7 @@ Privater12FelderAbgleichbleibtabgeschlossen;keineerneuteProfilabfrage.
 LeserPR1203/1204/1206,Attribution1209,Quellenprep1207erhalten;UI-PR1208separatgemergt.
 EchteKundenabnahmeundrechtlicheGesamtverkaufsfreigabeweiterunbelegt;keinGesamtPASS.
 Produktcronsunveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
-NaechsterSchritt:naechstenregulaerenMorgenlaufam16NovautomatischpruefenundbelegteFehlerimfreigegebenenRahmenbearbeiten.
+NaechsterSchritt:jetztdenkleinstengezieltenProduktivnachweisvorziehen;Sperren/Erfolge/Restbudgeterhalten.
 [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md) · [Freigabe/Aktivierungsnachweis/Rueckweg](betrieb/quellen-einbindung-freigabe-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
