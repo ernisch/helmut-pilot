@@ -132,10 +132,10 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   await cdp.send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27},s);
   verify("Escape dismisses the sheet without spending",await waitFor("!document.querySelector('[data-office-format-sheet]')") && writes.length===0);
   await click(bSelector);
-  await click('[data-office-create="intern"]');
+  await click('[data-office-create="presse"]');
   verify("selected draft generated only when needed",await waitFor("!officeDraftsGenerating && document.querySelector('.ui-office-detail').textContent.includes('Entwurf für vorgang-b')"));
   verify("second occasion selected with explicit KO and record",await evaluate("selectedOfficeDraft.decision.vorgangId==='vorgang-b' && selectedOfficeDraft.decision.knowledgeObjectId==='ko-b'"));
-  verify("exactly the explicitly requested draft is generated",writes.length===1 && writes[0].body.decision.vorgang_id==='vorgang-b' && writes[0].body.channel==='internal_line',writes);
+  verify("exactly the explicitly requested draft is generated",writes.length===1 && writes[0].body.decision.vorgang_id==='vorgang-b' && writes[0].body.channel==='press',writes);
   verify("CSRF verified for the on-demand request",reads.includes("/api/security/csrf") && writes.every(r=>r.csrfVerified));
   verify("sources open original article securely",await evaluate("!!document.querySelector('.ui-office-detail a[href=\"https://example.test/ui/beleg\"][target=_blank][rel=\"noopener noreferrer\"]')"));
   await layout("draft detail"); await screenshot("office-detail");
@@ -144,7 +144,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   verify("Briefing after navigation ready",await waitFor("!!document.querySelector('[data-briefing-office]')"));
   await click("[data-briefing-office]");
   verify("Briefing handoff also requires format choice",await evaluate("document.querySelector('[data-office-format-sheet]').matches(':modal') && selectedOfficeDraft===null") && writes.length===1);
-  await click('[data-office-create="intern"]');
+  await click('[data-office-create="presse"]');
   verify("Briefing opens its own occasion, not previous selection",await waitFor("!officeDraftsGenerating && currentView==='office-detail' && selectedOfficeDraft.decision.vorgangId==='vorgang-a' && selectedOfficeDraft.decision.knowledgeObjectId==='ko-a' && document.querySelector('.ui-office-detail').textContent.includes('Entwurf für vorgang-a')"));
   let afterOpen=writes.length;
   await click(nav("helmut")); await click("[data-briefing-office]");
@@ -159,15 +159,15 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   await click('[data-office-create="linkedin"]');
   verify("explicit alternative generates exactly one new draft",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='linkedin' && !!document.querySelector('[data-office-share]')") && writes.length===afterOpen+1 && writes.at(-1).body.channel==='linkedin');
   await click("[data-office-choose]");
-  verify("saved format is clearly offered to open",await evaluate("document.querySelector('[data-office-create=intern]').textContent.includes('öffnen')"));
-  await click('[data-office-create="intern"]');
-  verify("return to existing format reuses its cache",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='intern'") && writes.length===afterOpen+1);
+  verify("saved format is clearly offered to open",await evaluate("document.querySelector('[data-office-create=presse]').textContent.includes('öffnen')"));
+  await click('[data-office-create="presse"]');
+  verify("return to existing format reuses its cache",await waitFor("!officeDraftsGenerating && selectedOfficeDraft.format.id==='presse'") && writes.length===afterOpen+1);
   await click("[data-office-back]");
   verify("overview counts actual drafts rather than topics",await evaluate("document.querySelector('[data-office-count]').textContent==='2 Themen · 3 Entwürfe'") && writes.length===afterOpen+1);
   await click("[data-office-open]");
   verify("opening a prepared topic never creates another draft",writes.length===afterOpen+1);
   await click("[data-office-choose]");
-  await click('[data-office-create="intern"]');
+  await click('[data-office-create="presse"]');
   afterOpen=writes.length;
 
   verify("same-day briefing read timestamp preserves valid cache",await evaluate("(()=>{const old=briefing.generatedAt;const d=new Date(old);d.setUTCSeconds((d.getUTCSeconds()+1)%60);briefing.generatedAt=d.toISOString();const valid=!!officeDraftEntry(selectedOfficeDraft.decision,selectedOfficeDraft.format);briefing.generatedAt=old;return valid;})()"));
@@ -231,7 +231,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
     await evaluate("officeDrafts={};officeDraftErrors={};officeBriefingTarget=null;selectedOfficeDraft=null;persistView('helmut');currentView='helmut';loadBriefing().then(()=>true)");
     holdNext=true;
     await click("[data-briefing-office]");
-    await click('[data-office-create="intern"]');
+    await click('[data-office-create="presse"]');
     for (let i=0;i<100 && !releaseResponse;i++) await new Promise(resolve=>setTimeout(resolve,20));
     verify("a pending draft response can be held",typeof releaseResponse==='function');
     scenario="ignored";
@@ -289,7 +289,7 @@ async function run({ cdp, session:s, label, mobile, check, screenshot }) {
   if (mobile) await click('[data-ui-lage-select="vorgang-f"]');
   await click('[data-lage-office="vorgang-f"]');
   verify("Lage opens its exact sixth topic without spending",await evaluate("officeFormatDecision().vorgangId==='vorgang-f' && officeFormatDecision().knowledgeObjectId==='ko-f' && document.querySelector('[data-office-format-sheet]').matches(':modal')") && writes.length===beforeMore);
-  await click('[data-office-create="intern"]');
+  await click('[data-office-create="presse"]');
   verify("only explicit creation sends one request for that topic",await waitFor("!officeDraftsGenerating && !!document.querySelector('[data-office-share]')") && writes.length===beforeMore+1 && writes.at(-1).body.decision.vorgang_id==='vorgang-f');
   await click("[data-office-back]");
   verify("total counts include drafts under additional topics",await evaluate("document.querySelector('[data-office-count]').textContent==='6 Themen · 1 Entwurf' && document.querySelector('[data-office-more]').open"));

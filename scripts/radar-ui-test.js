@@ -21,10 +21,9 @@ function loadClient(now) {
     additionalContext: (item) => radarAdditionalContext(item),
     topbar: () => { currentView = "radar"; return renderTopbar(); },
     setBriefing: (b) => { briefing = b; },
-    setArticlesExpanded: (v) => { radarArticlesExpanded = v; },
+    setSignalsExpanded: (v) => { radarSignalsExpanded = v; },
     setFilter: (v) => { radarFilter = v; },
     setSegment: (v) => { radarSegment = v; },
-    setEnvExpanded: (v) => { radarEnvExpanded = v; },
     sourceDate: (v) => radarTime(v),
     updatedLabel: (v) => radarUpdatedLabel(v),
     esc: (s) => escapeHtml(s)
@@ -149,18 +148,18 @@ check("Ganzer Radar zeigt Datum und heutigem Quellenstand ohne02:00",
 check("Über dich zeigt die übergebene Erwähnung", html.includes("Mustermann fordert Reform"));
 check("Über dich zeigt kein fremdes/erfundenes Item", !html.includes("Bremen führt Fußfesseln"));
 
-// 3) Artikelübersicht ist auf 5 begrenzt + echtes "Alle anzeigen (8)".
+// 3) Gemeinsame Erstansicht: drei Signale über die sichtbaren Bereiche.
 const shownDefault = [1,2,3,4,5,6,7,8].filter((i) => html.includes(`Testartikel-${i}`));
-check("Artikelübersicht zeigt genau 5 Artikel (Premium-Verdichtung)", shownDefault.length === 5, `sichtbar=${shownDefault.join(",")}`);
-check("'Alle anzeigen (8)' erscheint bei >5 Artikeln", /Alle anzeigen \(8\)/.test(html));
+check("Radar zeigt insgesamt drei Signale: eine Erwaehnung, ein Umfeldhinweis, ein Artikel", shownDefault.length === 1, `sichtbar=${shownDefault.join(",")}`);
+check("Gemeinsames Aufklappen macht alle zehn Signale erreichbar", /Alle Signale anzeigen \(10\)/.test(html));
 
 // 4) Aufgeklappt zeigt alle 8.
-api.setArticlesExpanded(true);
+api.setSignalsExpanded(true);
 const htmlAll = api.render();
 const shownAll = [1,2,3,4,5,6,7,8].filter((i) => htmlAll.includes(`Testartikel-${i}`));
 check("Aufgeklappt: alle 8 Artikel sichtbar (echte erweiterte Liste, kein Fake)", shownAll.length === 8);
 check("Aufgeklappt: 'Weniger anzeigen' erscheint", /Weniger anzeigen/.test(htmlAll));
-api.setArticlesExpanded(false);
+api.setSignalsExpanded(false);
 
 // 5) Dynamik-Leerzustand ist ehrlich (kein 'neu' erfunden).
 check("Dynamik leer -> ehrlicher Leerzustand statt erfundener Aktualität",
@@ -180,7 +179,7 @@ check("Quelleninitiale ist ein Monogramm (radar2-badge, kein Bild/Hotlink)",
   Boolean(badgeMatch) && !/<img/i.test(badgeMatch[0]) && !/style="[^"]*--radar-badge/i.test(blob));
 check("Kein bunter Per-Quelle-Avatar mehr (kein --radar-badge Inline-Style)", !/--radar-badge/.test(blob));
 
-// 9) Phase 2: Dein Umfeld zeigt max. 3 pro Segment + echter "Alle ... anzeigen (N)".
+// 9) Auch das gewählte Umfeldsegment teilt die drei Erstplätze.
 function envItem(i) {
   return { id: `radar-env-party-vP${i}`, vorgangId: `vP${i}`, title: `Parteisignal-${i}`, sourceName: "Quelle",
     sourceCategory: "Partei", sourceUrl: `https://q.de/p${i}`, linkType: null, publishedAt: "2026-07-11T05:00:00Z",
@@ -189,16 +188,16 @@ function envItem(i) {
 const envState = JSON.parse(JSON.stringify(state));
 envState.environment.party = Array.from({ length: 5 }, (_, i) => envItem(i + 1));
 api.setBriefing({ engine: "v3", currentRadarState: envState });
-api.setSegment("party"); api.setEnvExpanded(false);
+api.setSegment("party"); api.setSignalsExpanded(false);
 const envHtml = api.render();
 const envShown = [1,2,3,4,5].filter((i) => envHtml.includes(`Parteisignal-${i}`));
-check("Umfeld zeigt standardmäßig max. 3 Einträge pro Segment", envShown.length === 3, `sichtbar=${envShown.join(",")}`);
-check("Umfeld zeigt segmentspezifischen 'Alle Partei- und Fraktionssignale anzeigen (5)'", /Alle Partei- und Fraktionssignale anzeigen \(5\)/.test(envHtml));
-api.setEnvExpanded(true);
+check("Erwaehnung und zwei Umfeldhinweise teilen die Grenze von drei", envShown.length === 2, `sichtbar=${envShown.join(",")}`);
+check("Gemeinsames Aufklappen nennt die vierzehn vorhandenen Signale", /Alle Signale anzeigen \(14\)/.test(envHtml));
+api.setSignalsExpanded(true);
 const envHtmlAll = api.render();
 check("Umfeld aufgeklappt: alle 5 Einträge sichtbar (echte erweiterte Liste)",
   [1,2,3,4,5].every((i) => envHtmlAll.includes(`Parteisignal-${i}`)));
-api.setEnvExpanded(false);
+api.setSignalsExpanded(false);
 
 // 10) Ehrlicher Leerzustand pro Segment (nach dem Relations-Fix können Segmente leer
 //     sein, ohne dass die UI kaputt/leer wirkt): leeres Partei-Segment -> ehrlicher Hinweis.
@@ -334,6 +333,13 @@ check("Briefing verweist nicht auf einen Quellenhinweis ohne seinen Sachstand",
 api.setBriefing({ lageBriefing: { vorgaenge: [sourceHint, { ...sourceHint, anzeigeId: undefined, quellenhinweis: false }] } });
 check("Verweis bevorzugt den vorhandenen echten Sachstand", api.lageLink({ vorgangId: "vg-sammel" }).includes('data-radar-lage="vg-sammel"'));
 check("Ein alleiniger Fachbezug wird sichtbar benannt", api.additionalContext({ relationTypes: ["subject"] }).includes("Ihr Fachthema"));
+
+const immutableRadar = JSON.stringify(state);
+api.setBriefing({ currentRadarState: state }); api.setSignalsExpanded(false);
+check("Produktvertrag: hoechstens drei Karten ueber alle sichtbaren Radarbereiche", (api.render().match(/class="radar2-(?:card|row)(?: |")/g) || []).length === 3);
+api.setSignalsExpanded(true); api.render();
+check("Radar-Aufklappen aendert keine gelieferten Inhalte oder Quellen", JSON.stringify(state) === immutableRadar);
+api.setSignalsExpanded(false);
 
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }

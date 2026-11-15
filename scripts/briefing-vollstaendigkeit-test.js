@@ -215,6 +215,8 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const source = client.slice(client.indexOf("function renderRadarInner(state) {"), client.indexOf("function radarStateHasContent(state) {"));
     let rendered;
     const render = require("node:vm").runInNewContext(source + "; renderRadarInner", {
+      RADAR_SEGMENTS: [{ key: "party" }], radarSegment: "party", radarSignalsExpanded: false,
+      radarOpenableItems: values => Array.isArray(values) ? values : [],
       radarStateHasContent: () => false, renderRadarEmpty: () => "",
       renderRadarHeader: state => { rendered = state; return ""; }
     });

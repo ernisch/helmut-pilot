@@ -154,7 +154,7 @@ async function verify({ browser, baseUrl, storage, fixture, check }) {
           return route.continue();
         });
         await page.locator('.profile-editor-done').click();
-        await page.getByText("Profil konnte nicht gespeichert werden. Deine Änderungen bleiben erhalten.",{exact:true}).waitFor();
+        await page.getByText("Profil konnte nicht gespeichert werden. Ihre Änderungen bleiben erhalten.",{exact:true}).waitFor();
         check(`${label}: Speicherfehler bewahrt Eingaben und erlaubt Wiederholung`, await page.locator('[name="communicationStyle"][value="Sachlich"]').isChecked() && await page.locator('.profile-editor-done').isEnabled());
         await save();
         check(`${label}: Wiederholung speichert über echten Server`, (await storage.getProfile(seed.id)).communicationStyle === "Sachlich");
