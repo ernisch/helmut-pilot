@@ -282,4 +282,55 @@ check("Quellenquittung: Workflowselektor sperrt falschen Titel vor pauschaler CI
   for(const file of ["source-queue-telemetry-test.js","source-telemetry-test.js","artikel-versionskonflikt-test.js","warteschlange-blob-entkopplung-test.js"]) assert(workflow.includes(file));
 });
 
+const U = require("./ci-quellenabschluss-plan");
+check("Quellenabschluss: nur exakt gebundene Einmalfenstererweiterung ohne Mengenlauf", () => {
+  const p = U.validate(sourceFixture(false, U));
+  assert.equal(p.mode, "quellenabschluss"); assert.equal(p.quellenabschluss, true);
+  assert.equal(p.core, true);
+  for (const key of ["standard", "area", "database", "browser"]) assert.equal(p[key], false);
+});
+for (const [name, mutate] of [
+  ["anderes Repository", f => { f.repository = "fremd/repo"; }],
+  ["falscher PR", f => { f.pr.number++; }],
+  ["fremder Kopf", f => { f.head = "2".repeat(40); }],
+  ["andere Basis", f => { f.pr.base.sha = "3".repeat(40); }],
+  ["anderer Branch", f => { f.pr.head.ref = "fremd"; }],
+  ["abweichende Fensterlogik", f => { f.headTree.set("lib/helmut/quellen-arbeitsfenster.js", { mode: "100644", type: "blob", oid: "4".repeat(40) }); }],
+  ["fremde Runtime", f => { f.headTree.delete("server.js"); }],
+  ["fremde Migration", f => { f.headTree.delete("supabase/migrations/unveraendert.sql"); }],
+  ["neue unbekannte Datei", f => { f.headTree.set("fremd.js", { mode: "100644", type: "blob", oid: "5".repeat(40) }); }],
+  ["Symlink", f => { f.headTree.set("scripts/ci-quellenabschluss-plan.js", { mode: "120000", type: "blob", oid: "5".repeat(40) }); }]
+]) check("Quellenabschluss: " + name + " stoppt geschlossen", () => {
+  const f = sourceFixture(false, U); mutate(f); assert.throws(() => U.validate(f), /quellenabschluss-ci:/);
+});
+check("Quellenabschluss: Main braucht echten identischen PR-Merge und exakten Titel", () => {
+  const f = sourceFixture(true, U); assert.equal(U.validate(f).mode, "quellenabschluss");
+  for (const mutate of [x => { x.message = "Anderer Merge"; }, x => { x.parents.reverse(); },
+    x => { x.prHeadTree.delete("server.js"); }, x => { x.before = "1".repeat(40); }]) {
+    const invalid = sourceFixture(true, U); mutate(invalid);
+    assert.throws(() => U.validate(invalid), /quellenabschluss-ci:/);
+  }
+});
+check("Quellenabschluss: beide Workflowselektoren stoppen Drift vor pauschaler CI", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const blocks = [...workflow.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1223 \][\s\S]*?\n          fi/g)].map(m => m[0]);
+  assert.equal(blocks.length, 2); assert.equal(blocks[0], blocks[1]);
+  const script = `set -e
+    git() { case "$1" in log) printf '%s' "$TEST_MESSAGE";;rev-parse) printf '%s' "$TEST_PARENT";;merge-base) return "$TEST_EVIDENCE_EXIT";;*) return 99;;esac; }
+    node() { printf 'GUARD';return 23; }
+    ${blocks[0]}
+    printf 'BROAD'`;
+  const run = (message, parent, evidence) => require("node:child_process").spawnSync("bash", ["-c", script], {
+    encoding: "utf8", env: { PATH: process.env.PATH, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main",
+      GITHUB_OUTPUT: "/dev/null", TEST_MESSAGE: message, TEST_PARENT: parent, TEST_EVIDENCE_EXIT: String(evidence) }
+  });
+  for (const message of [U.MERGE_TITLE, "Merge pull request #1223", "Tippfehler"]) {
+    const r = run(message, U.BASE, 0); assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  const later = run("Spaeterer Maincommit", "8".repeat(40), 0);
+  assert.equal(later.status, 0, later.stderr); assert.equal(later.stdout, "BROAD");
+  assert.match(workflow, /name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.quellenabschluss != 'true'/);
+  for (const file of ["quellen-einmalfenster-test.js", "quellen-echtlauf-einmal-test.js", "quellen-arbeitsfenster-test.js", "quellen-arbeitsfenster-route-test.js", "quellen-adminstart-test.js"]) assert(workflow.includes(file));
+});
+
 console.log("\n" + pass + " PASS / 0 FAIL");

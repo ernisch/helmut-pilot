@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,17:58UTC: DIP-Zuordnungen und zwei Quellenaltstände repariert; Wirkung offen, Versorgung partial.**
+**15.11.2026,18:48UTC: Quellenaltstände repariert; nach erneutem BetreiberGO einmaliges heutiges Abschlussfenster vorbereitet.**
 
 **Betreiberziel15Nov: heute fertig werden; jetzt pruefen und vollautonom Quellen reparieren.**
 Destatis/iRights unterPR1214/1215 eng begrenzt aktiv;6Katalogzeilen/2Paketstatus,5Altwege erhalten.
@@ -26,7 +26,10 @@ Kosten17:56:0,636184USDTag/4,019218USDgesamtgebunden/8Altreserven;Grenzen1USD/UT
 KeineneuenModell-/HTTP-/VerarbeitungspostsbeiAltstandkorrektur;keineProfil-/Cron-/Secret-/Budget-/Quotenaenderung.
 14echteMetadatenkonflikte/1unbekannterCAS-Ausganggeschuetzt;privater12FelderAbgleichabgeschlossen,nichtwiederholen.
 EchteKunden-/Rechtsabnahmeweiterunbelegt,keinGesamtPASS;Teilversorgungbleibtpartial.
-NaechsterSchritt:bestehendeeinmaligeKontrolle16Nov05:25UTCprueftregulaereAbschluesse4betroffenerJobs/Quittungen/Ausgabenwirkung.
+ErneutesBetreiberGO18:43:genaueinAdminfenster15Novbis9/2700vorbereitet,Originale16/Geldgrenzenunveraendert;nochkeinStart.
+10Einmal/8Echtlauf/21Fenster/9Routen/16Admingruppen+60CI-Gegenfaellegruen;unabhaengigesCodereviewgeschlossen.
+NaechsterSchritt:engenCI-Vertragpruefen,beidePflichtjobsamKopfgruenmergen,DeploymentlesenundkonkretenAdmin-Einzelstartvorbereiten.
+[HeutigesAbschlussfenster](betrieb/quellen-abschlussfenster-20261115.md);16Nov05:25UTCbleibtbestehendeRueckfallkontrolle,keinneuerTermin.
 [NeueAltstandbelege+SQL/Rueckwege](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP-Korrektur](betrieb/dip-fundstellen-korrektur-20261115.md) · [Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md) · [Abschluss](betrieb/versorgung-folgeabschluss-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).

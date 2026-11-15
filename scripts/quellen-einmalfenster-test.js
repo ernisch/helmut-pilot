@@ -70,8 +70,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.calls.length, calls + 1); A.equal(w.stand(extraKey), 1);
     A.equal(w.stand(F.SCHLUESSEL.fenster), 9); A.equal(w.stand(F.SCHLUESSEL.sekunden), 2700);
   });
-  await test("UTC15November Cron andere Limits und ungueltige Adminauftraege erhalten keine Ausnahme", async () => {
-    for (const tag of ["2026-11-13", "2026-11-15"]) {
+  await test("Andere UTCTage Cron andere Limits und ungueltige Adminauftraege erhalten keine Ausnahme", async () => {
+    for (const tag of ["2026-11-13", "2026-11-16"]) {
       const w = welt(tag + "T12:00:00Z"), r = await w.run(auftrag(1, tag));
       A.equal(r.ok, false); A.equal(w.calls.some(c => c.schluessel === extraKey), false); A.equal(w.works.length, 0);
     }
@@ -185,6 +185,40 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(usual.arbeitsfenster.grenzen.sekunden, 2400); A.equal(usual.arbeitsfenster.einmalausnahme, undefined);
     A.equal(normal.calls.some(c => c.schluessel === extraKey), false);
   });
-  A.equal(count, 8); A.deepEqual(verboten, []);
-  console.log("8/8 neue Einmalfenstergruppen bestanden; keine Aktivierung, Modelle oder Produktionszugriffe.");
+  await test("15Nov Abschluss nach BetreiberGO genau einmal auf9/2700, ohne zusaetzliches Originalrecht", async () => {
+    const tag = "2026-11-15", key = "quellenarbeit|quellenabschluss-v1", w = welt(tag + "T18:43:00Z");
+    w.seed(F.SCHLUESSEL.originale, 16);
+    const r = await w.run(auftrag(1, tag), ENV, async ({ freigabe }) => {
+      A.equal(F.freigabeGueltig(freigabe, w.now()), true);
+      const original = await F.reserviereOriginal({ env: ENV, deps: w.deps });
+      A.equal(original.erlaubt, false); A.equal(w.calls.at(-1).grenzeTag, 16);
+      return { ok: true };
+    });
+    A.equal(r.ok, true); A.equal(r.arbeitsfenster.einmalausnahme.grund, "quellenabschluss-v1");
+    A.deepEqual(r.arbeitsfenster.grenzen, { gueltig: true, fenster: 9, sekunden: 2700, originale: 16 });
+    A.equal(w.stand(key), 1); A.equal(w.stand(F.SCHLUESSEL.fenster), 9);
+    A.equal(w.stand(F.SCHLUESSEL.sekunden), 2700); A.equal(w.stand(F.SCHLUESSEL.originale), 16);
+    A.equal(w.calls.some(c => c.schluessel === extraKey || c.grenzeTag === 32), false);
+    w.advance(361000); A.equal((await w.run(auftrag(2, tag))).ok, false);
+    A.equal(w.stand(key), 1); A.equal(w.stand(F.SCHLUESSEL.fenster), 9);
+    A.equal((await w.run(auftrag(1, tag))).ok, false);
+  });
+  await test("15Nov Abschluss nie vor GO, im Cron, bei UNKNOWN oder am Folgetag", async () => {
+    const key = "quellenarbeit|quellenabschluss-v1";
+    for (const start of ["2026-11-15T18:42:59Z", "2026-11-16T19:00:00Z"]) {
+      const w = welt(start), tag = start.slice(0, 10);
+      A.equal((await w.run(auftrag(1, tag))).ok, false); A.equal(w.stand(key), 0);
+    }
+    const cron = welt("2026-11-15T19:00:00Z");
+    A.equal((await cron.run(null)).ok, false); A.equal(cron.calls.length, 0);
+    const w = welt("2026-11-15T19:00:00Z"), reserve = w.deps.reserviere;
+    w.deps.reserviere = async o => { const r = await reserve(o);
+      return o.schluessel === key && r.erlaubt ? { verfuegbar: false } : r; };
+    A.equal((await w.run(auftrag(1, "2026-11-15"))).ok, false);
+    A.equal(w.stand(key), 1); A.equal(w.works.length, 0);
+    A.equal(w.stand(F.SCHLUESSEL.fenster), 8); A.equal(w.stand(F.SCHLUESSEL.sekunden), 2400);
+    A.equal((await w.run(auftrag(2, "2026-11-15"))).ok, false);
+  });
+  A.equal(count, 10); A.deepEqual(verboten, []);
+  console.log("10/10 Einmalfenstergruppen bestanden; keine Aktivierung, Modelle oder Produktionszugriffe.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
