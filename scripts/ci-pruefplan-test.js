@@ -211,6 +211,7 @@ check("Inaktive Quellen: Workflow benutzt dieselbe Bindung in beiden Pflichtjobs
   assert(workflow.includes("name: Syntax + Offline-Suiten"));
   assert(workflow.includes("name: Browser-/Mobile-Smoke (Chromium)"));
   assert(workflow.includes(Q.MERGE_TITLE));
+  assert.match(workflow, /name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.inaktivequellen != 'true'/);
 });
 
 

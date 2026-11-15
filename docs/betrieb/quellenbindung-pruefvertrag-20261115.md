@@ -54,3 +54,10 @@ Bei einem abweichenden Main wird die Bindung neu geprüft, nicht übergangen.
 Der begrenzte Plan gilt für keinen anderen PR. Ein Revert nur dieser CI-
 Auswahländerung stellt den bisherigen konservativen Plan wieder her; bereits
 gespeicherte Belege, Budgets, Reservierungen und Verarbeitungserfolge bleiben.
+
+Vorheriger Kopf7fa06ba8:CI43706873018grün,39Plan-/87Quellen-/14Kerngruppen.
+Zusätzlich lief dort unbeabsichtigt die bestehende rein synthetische native
+Infrastrukturqualifikation(1074Unitfälle), ohne Modelle/Originale/Production.
+Diese unveränderte Fremdprüfung wird im endgültigen engen Profil wie bei den
+bestehenden gebundenen Fachprofilen ausdrücklich ausgelassen, auch auf Main.
+Keine 500er-/Last-/bezahlten Läufe. Der neue Endkopf benötigt eigene grüne Pflichtjobs.
