@@ -1,6 +1,19 @@
 # Tägliche Versorgung: geprüfter Abschlussstand15.11.2026
 
-Stand15.11.2026,11:14UTC. Teilweise abgeschlossen, kein Gesamt-PASS.
+Stand15.11.2026,12:15UTC. Quellenreparatur aktiviert; Gesamtversorgung weiter teilweise.
+
+**Neuester Stand:** Betreiber-GO und PR1214 haben die begrenzte Quellenhandlung
+freigegeben. PR1215 am Kopf30bd4da4 mit beiden grünen Pflichtchecks/14Kern-/87Quellensuiten
+(CI43712210903) und unabhängig geschlossenem Review gemergt;Runtimec3648b08READY.
+Nach ebenfalls grünerMainCI43712532507 genau sechs neue Production-Katalogzeilen
+und zwei Paketstatus atomar geändert. Die getrennte lesende Kontrolle12:15 bestätigt
+beideexaktenFeeds`needs_review/auto`,dreiLinks,beideFachpakete`active`.
+Alle fünf Altwege und geprüften Erfolgsjobs unverändert;keine zusätzlichen Kosten
+oder Läufe. Beide Quellen haben noch keinen regulären Abrufbeleg;Teilversorgung
+wird nicht vor dem tatsächlichen nächsten regulären Abschluss als vollständig erklärt.
+[Freigabe, Ausführungsbefehl, Nachkontrolle und Rückweg](quellen-einbindung-freigabe-20261115.md).
+
+Die folgenden Laufdaten sind der erhaltene Vor-Aktivierungsnachweis.
 
 Die Leserreparaturen aus PR1203/1204/1206 und AttributionPR1209 bleiben erhalten.
 QuellenPR1207 ist nach gezielter Pflicht-CI und unabhängigem Review gemergt:
@@ -43,13 +56,11 @@ Kostenbuch11:12UTC:heute0,536289USD,gesamt3,919323USDgebunden,
 zusätzlich. Lage-/Morgenfolge verursachten keinen weiteren Budgetanstieg.
 Grenzen1USD/UTC-Tag/30USDgesamt undOriginalabrufkontingent bleiben unverändert.
 
-Die eng vorgeschlagene Nutzungsflagänderung für Destatis/iRights wurde von der
-**automatischen Freigabeprüfung abgelehnt**,weil konkrete Nutzerfreigabe für
-diesen Nutzungsumfang und die Wirkung fehlt. Sie wurde nicht ausgeführt oder
-umgangen; vorhandene Sourceflags und relationalerKatalog bleiben geschlossen.
-[Konkrete Freigabevorlage](quellen-einbindung-freigabe-20261115.md) nennt
-Textumfang,Flagwerte,sechs neueKatalogzeilen,zweiPaketaktivierungen,Schutzgrenzen
-undRückweg. Erforderliches Betreiber-GO ist angefragt und noch nicht belegt.
+Die frühere automatische Ablehnung der Nutzungsflagänderung wurde zunächst
+beachtet. Danach erteilten Betreiber und gemergter PR1214 ausdrücklich genau die
+vorbereitete Freigabe. Sie wurde über den geprüften CodePR1215 und die oben
+belegte atomare6+2Einbindung umgesetzt;keine erneute gleiche Freigabefrage nötig.
+Das ist keine rechtliche Gesamt-Verkaufsfreigabe und kein neuer Laufauftrag.
 
 ## Attributionsreparatur live
 
@@ -95,7 +106,7 @@ Das installiert/aktiviert keine Quelle und beweist keinen echten Kundendurchlauf
 
 | Beschlüsse | Status und echter Beleg | Exakt fehlendes Verhalten / kleinster Umfang |
 |---|---|---|
-|1–17,24–26: Versorgung und fachliche Qualität|Teilweise: [aktueller Betriebsbeleg](../CURRENT_STATE.md), reguläres Morgenpaket partial, vier strukturelle Abdeckungsbefunde; Quellenwege im Betrieb fehlen oder bleiben vorbereitet.|Geeignete Quellen samt Nutzungsumfang zulässig integrieren/aktivieren; danach nächsten regulären Lauf und tatsächliche Ausgaben gezielt abnehmen. Keine Massentests, kein künstlicher Tagesanlass.|
+|1–17,24–26: Versorgung und fachliche Qualität|Teilweise: [aktueller Betriebsbeleg](../CURRENT_STATE.md), reguläres Morgenpaket partial, vier Befunde in der letzten Vor-Aktivierungsquittung; Destatis/iRights sind inzwischen begrenzt aktiv, ihr regulärer Abruf und die vollständige Ausgabe bleiben unbestätigt.|Nächsten regulären Abruf-/Morgenabschluss und tatsächliche Ausgaben gezielt abnehmen; nur dann neu belegte Fehler im freigegebenen Umfang reparieren. Keine Massentests, kein künstlicher Tagesanlass.|
 |10,17–23,27 sowie Zugangsvertrag: echter Kundendurchlauf|Technisch teilweise belegt, vollständige reale Abnahme nicht geprüft. [ProduktvertragE](../produktvertrag-20261115.md#e-abnahmekriterien-für-den-ersten-zahlenden-kunden) verlangt echte Sitzung und Konto→Einladung→Posteingang→Passwort→Login/Reset. Der [Profilnachweis](../ui/profil-kompakt-20261111/README.md) schließt die authentifizierte Kundenabnahme ausdrücklich aus.|Einen autorisierten realen Kundendurchlauf anhand vorhandener Kriterien dokumentieren; technische Prüfungen wiederverwenden. Keine ungefragte Einladung oder kostenpflichtige Büroerstellung.|
 |Rechtsrahmen undE9: rechtlich tragfähiger Verkauf|Offen: [Rechtsunterlagen](../recht/anwaltsfragen-und-pilotvereinbarung-entwurf.md) ausdrücklich Entwürfe; keine aktuelle Freigabe für Rechtsgrundlage politischer Daten, DSFA, Verträge/AVV und Aufbewahrung belegt.|Vorhandene Unterlagen für den tatsächlichen Verarbeitungsumfang fachlich/rechtlich entscheiden. Keine erfundene Freigabe oder neue Infrastruktur.|
 
@@ -106,7 +117,8 @@ erfüllt; es beweist keinen späteren Kunden- oder Verkaufsabschluss.
 
 ## Genau ein nächster Schritt
 
-Den [genau begrenzten Nutzungs-/Productionumfang für Destatis/iRights](quellen-einbindung-freigabe-20261115.md)
-ausdrücklich freigeben. Bis dahin keine Nutzungsflagänderung oder Aktivierung.
-Die bereits bestätigte einmalige lesende Kontrolle16Nov05:25UTCbleibt bestehen;
-sie startet keine Verarbeitung,liest keine Profilinhalte und plant sich nicht neu.
+Die bestätigte einmalige Kontrolle am16Nov05:25UTC prüft die ohnehin regulären
+Quellen-/Lage-/Morgenabschlüsse nach der Aktivierung und bearbeitet neue konkret
+belegte auftragsbezogene Fehler innerhalb der geltenden Dauerfreigaben. Keine
+zusätzlichen Admin-/Modell-/Testläufe,keineProfilreads,Quoten-/Reserve-/Jobresets
+oder Selbst-Neuplanung. Unbelegter Erfolg bleibt offen;Rechts-/Kundenabnahme nicht erfinden.
