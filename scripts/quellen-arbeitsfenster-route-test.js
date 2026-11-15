@@ -53,9 +53,14 @@ async function main() {
     });
     ersetze(pipeline, "wiedervorlage", async () => { retry++; return { wiedervorgelegt: 0 }; });
     ersetze(pipeline, "arbeite", async o => {
-      workers++; assert.equal(o.stapel, 1); return { erledigt: 12, reserviert: 12, verfuegbar: true };
+      const empty = { erledigt: 0, reserviert: 0, verfuegbar: true,
+        wiederholt: 0, zurueckgestellt: 0, stapelrestZurueckgegeben: 0,
+        endgueltigFehlgeschlagen: 0, leaseVerloren: 0, nichtUebernommen: 0,
+        zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 };
+      if (!o.types?.includes("document_understanding")) return empty;
+      workers++; assert.equal(o.stapel, 1); return { ...empty, erledigt: 12, reserviert: 12 };
     });
-    ersetze(pipeline, "betriebsstatus", async () => ({ verfuegbar: queueReady, zustand: "bereit" }));
+    ersetze(require("../lib/helmut/worker-betrieb"), "readiness", async () => ({ bereit: queueReady }));
 
     await check("Fortsetzung Default AUS beendet vor jedem Speicherzugriff", async () => {
       const r = await request("/api/cron/crawl?arbeitsfenster=1");

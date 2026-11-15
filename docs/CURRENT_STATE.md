@@ -1,168 +1,39 @@
 # CURRENT STATE — Helmut
-**15.11.2026,00:10UTC: autonome Reparatur/regelgruene Merges bis20 freigegeben.**
-PR1203 offen; erster Schnellkern zeigt fehlende Lage-Leerzustandsfelder.
-Kleinste Vertragskorrektur lokal19/19+1Leerpaketgruppe gruen; neue Pflicht-CI folgt.
-Keine neuen Modelle, Datenresets oder geschuetzten Productionaktionen freigegeben.
+**15.11.2026,00:41UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
 
-**14.11.2026,23:52UTC: BMG-Parserluecke lokal behoben; Integration offen.**
-Main6763dc8e enthaelt PR1200/1201; Productionruntime80bd6c87. Quellenabschluss
-5verarbeitet/58fehlgeschlagen/78zurueckgestellt, Morgenversorgung weiterhin teilweise.
-Drei kostenfreie Einzeloriginale gelesen; BMG-Fehler am selben HTML reproduziert
-und auf genau einen gebundenen Einleitungsabsatz begrenzt repariert. 13Layoutgruppen
-in Teilmengen plus21bestehende Kontextgruppen gruen. Erfolgreiche Job-Payloads und
-Briefing17fbead5 lesend unveraendert; keine Modelle oder Production-Schreibvorgaenge.
-Kein PR/CI/Merge: unveraenderte PR-CI wuerde87Quellensuiten starten, breiter als
-die Nutzervorgabe. [Belege, Grenzen und naechster Schritt](betrieb/bmg-quellenlayout-20261114.md).
-Der fruehere21:30Vor-Merge-Stand bleibt in der Git-Historie erhalten.
+Betreiber hat auftragsbezogene gruene Merges bis maximal20 freigegeben; bisher0.
+Kein zusaetzlicher bezahlter Modelllauf, Datenreset, Cron-/Env-/Budgeteingriff.
+Aktueller main6763dc8e (Produktvertrag1.1), Productionruntime80bd6c87/PR1200 READY.
+PR1203: BMG-Einstieg und zwei fehlende Lage-Leervertragsfelder repariert.
+Lokale Belege: 13Layoutgruppen inTeilmengen,21Kontextgruppen,19Vertragschecks,
+1Leerpaketgruppe gruen. CI43656753720:187/189Standardgruppen gruen; rot nur
+Statusgroesse und veralteter Pending-Quellanker. Historie jetzt verlustfrei archiviert;
+Anker auf heutige gemeinsame Plan-/Einreihungsgruppe aktualisiert, keine Runtimeaenderung.
+Neue Pflicht-CI folgt; kein Merge oder Production-Erfolg behauptet.
+PR1204-CI43658418026:79/87Quellensuiten gruen, alle8roten Suiten auf unveraendertem
+main6763dc8e reproduziert. Ausschliesslich veraltete Fixtures/Promptpins angepasst;
+Versionen, Workerabschluss, Tagesbezug und Paketansicht bleiben streng gebunden.
+Betroffene8Suiten lokal24+8+16+9+5+15+29+14=120Gruppen gruen, kein Modell/Production.
+Pflicht-CI wird am aktualisierten Kopf erneut vollstaendig bestaetigt.
+PR1204 gestapelt auf1203: hib-Suffix, BMAS-/ZDF-/BMG-Presseabsatz eng gebunden.
+6gespeicherte echte Originale lokal vorhernegativ/nachherpositiv,25Layoutgruppen,
+17Bundestagsgruppen und11generische Gewinnungsgruppen gruen. Keine Modellantwort.
+[Parser-Belege und offene Quellenfaelle](betrieb/quellen-parser-folge-20261115.md).
+Quellenabschluss14Nov22:25:5verarbeitet/58fehlgeschlagen/78zurueckgestellt.
+Morgenquittung weiterteilweise; gespeichert17fbead5/77Items/2vorlaeufigeTexte.
+Alle5Erfolgsjob-Payloads und Briefing bei lesenderNachkontrolle23:51UTC unveraendert.
+38Fehljobs haben keinen bestaetigten Originalartikel; keine erfundenen Ersatzlinks.
+Mandatsabdeckung:4Fehler/111Warnungen/13Konfigurationsabweichungen; kein Voll-PASS.
+Historische Fehljobs/Negative/UNKNOWN bleiben erhalten. Regulaere Produktcrons
+03:00–04:45Quellen,05:00Lage,05:15Morgen UTC; Nachtfortsetzung03:07–07:07.
+Naechster Schritt: Pflicht-CI abschliessen, exakt gruene PRs nacheinander mergen und
+Deployment lesend bestaetigen; regulaeren echten Versorgungsabschluss nachpruefen.
 
-**14.11.2026,21:22UTC: neuer begrenzter Echtlauf ausdruecklich beauftragt.**
-Betreiber nach konkretem Vorschlag: "Dann mach das bitte beweise das auch noch
-sodass wir endlich fertig werden." Genau ein weiteres heutiges Quellenfenster,
-insgesamt maximal10Fenster/3000Sekunden, Originalgesamtcap32 bleibt unveraendert.
-Neuer taggebundener Once-Key briefing-echtnachweis-v1; alte9/2700/Key1 bleiben
-verbraucht, keinReset/UNKNOWN-Retry. Echte Adminsitzung+CSRF weiterpflichtig.
-Nur nach neuen bestaetigten Eingaben max1normaleLage+1Morgenabschluss; Geldvertrag
-unveraendert1USDUTC/30USDgesamt, nurCEM,8alteReserven erhalten. Keine Migration,
-Productionkorrektur, Cron-/Env-/Flag-/Kunden-/Gestaltungsaenderung.
-Vorflug21:21:29UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt/8alteoffene,
-0heuteoffen,nurCEMaktiv/0Leases. Quoten9Fenster/2700s/23Originale/alterKey1,
-neuerKeyfehlt. Noch kein neuer Quellen-/Modell-/Produktlauf gestartet.
-Isolierter Branchcodex/briefing-echtlauf-20261114 abmain/Productiona70efd1c.
-RootCI/Docs, separaterAgentnurFenstergate+neuerTest, unabhaengigerReview;
-max3inklRoot. Vorherige Offlinekette e5f4f488 und alle alten Erfolge erhalten.
-Production1199 ist seit18:15READY, Ausgabe b2cb2abd/77Items/2Teiltexte/Lage/Radar
-quittungsgebunden bestaetigt; die folgenden Vorrolloutnotizen sind historisch.
+[Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
+Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
+Die folgenden datierten Abschnitte sind erhaltener frueherer Betriebsstand;
+daraus entstehen keine neuen Laufrechte. Aktuelle Primaerbelege haben Vorrang.
 
-**14.11.2026, 18:10 UTC: PR1199 lokal integriert; 20 neue Gruppen belegt, Pflicht-CI noch offen.**
-Branch `codex/artikel-wiedergewinnung-20261114`, Basis/main/Production weiter
-`4d70c990` (PR1198). Neun Runtimepfade, zwei neue Regressionen; keine Appgestaltung,
-Authentifizierungs-, SQL-, Cron-, Budget- oder Kundenaktivierungsaenderung.
-Kuenftige technisch negative HTTP200-Originalantworten werden bei ausreichender
-Restzeit begrenzt und komprimiert separat gesichert: maximal 1 MiB Original und
-256 KiB gzip, Quellen-/Bytehash und urspruengliche Lesezeit gebunden. Die App liest
-keine Rohantworten. Erst eine spaetere ausdruecklich gepruefte Parserrevision kann
-dasselbe Original genau einmal ohne Abruf oder Modell neu extrahieren; Revision1
-hebt heute keine alten Sperren auf. Bodylose Altfaelle und UNKNOWN bleiben gesperrt.
-Originaljob-Fortschritt muss vor spaeterer regulaerer Modellarbeit bestaetigt sein.
-Fachstatus unterscheidet fehlende/teilweise/defekte Zuordnung von vollstaendig
-gebundenen Fachbelegen ohne Mandatstreffer. Letztere erlauben weiterhin den ehrlichen
-Zustand "Keine neue Tagesprioritaet"; daraus folgt keine allgemeine Entwarnung.
-Neue Nachweise: 9 Wiedergewinnungsgruppen im ersten Lauf und 11 Fachstatusgruppen
-(7 erster Lauf, 4 neue Gegenfaelle nach statischer Konzeptkorrektur; keine Wiederholung).
-Zwei unabhaengige Runtime-/Testreviews ohne offenen Befund. Geplant sind nur sechs
-neue CI-Plangruppen und 13 betroffene JS-Syntaxpruefungen, keine alten Tests/Browser.
-Gespeicherte Ausgabe weiter `b2cb2abd`, 77 Vorgaenge, zwei vorlaeufige Briefingtexte,
-Lage/Radar/Quittung vorhanden; KEIN neuer Tagesprioritaets- oder 100-Kunden-Nachweis.
-Naechster echter Producerbeleg benoetigt das regulaere Quellenfenster am 15.11.;
-heutiges Zusatzfenster und beide Folgeoperationen bleiben verbraucht. Autonome
-Nachkontrolle ist fuer 15.11.03:07 bis 07:07 UTC geplant; Produktcron unveraendert.
-
-**14.11.2026,17:22UTC: PR1198 normal gemergt/Production READY und lesend bestaetigt.**
-Merge4d70c990b12b1c7dc7872a9d53ee5c16aba819f0, gepruefterKopfa56ae56c,
-Evidence50a3315d/Treeffa9ccd9exaktgleich. CI43620326473beidePflichtchecksgruen,
-6NEUEPlangruppen+10Syntax,20lokaleFachgruppenbelegeuebernommen. KeinAltlauf.
-Git/Production/fra1dpl_Ax4JYCaVSTxXL5e8AEndyyUH2Wpc READY17:20:46.412UTC.
-Runtime/Hauptalias/Profil-/Kommunikationsschutz17:21:54bestaetigt;normalStoredGET200
-bewahrtPaketb2cb2abd/77Items/2Texte/Radar/Quittungwortgleich. Kostenweiter0,620841USD
-Tag/3,344318gesamt/258Calls/8alteReserven,nurCEM/0Leases. KeinSource-/Modellstart.
-NeueBetreiberfreigabe:1gruenerMerge1198bisher,kein10erNeulimit;Ressourcengrenzenbleiben.
-ProducerwirkungaufechteneuenArtikelstandOFFEN;keinTagesprioritaets-/100KundenPASS.
-Auftraglaeuftweiter:SichereOriginalantwort-WiedergewinnungundFachstatuspruefen,
-keineblindebezahlteWiederholung/Quotenaufhebung/zusätzlicheKunden.
-
-**14.11.2026,17:13UTC: PR1198 integriert,20neueGruppenbelegt, Pflicht-CI nochOFFEN.**
-Base/main/Production529d47f8 unveraendert; keine neue Produkt-/Modelloperation.
-Genau5Runtime-Dateien und3neueRegressionen,2Statusdocs+3gebundeneCI-Dateien.
-Artikel-Abseits: nurgebundeneNULL/NULL-Publisherziele odernativvollbestaetigte
-technischeExtraktionsnegative. Positiv/UNKNOWN/Store/Deadline habenVorrang.
-Abseitsmarker vorAbschlussperFortschrittCAS, nativeKostenfreiversuchemax3,
-spätereClaims/Wiedervorlagen quittierennurStatus. KeineParser-/Modellwiederöffnung.
-Fachbelege: gueltigeEinzelbelegebleiben trotzungueltigerNachbarn erhalten;
-privatev2Diagnose mitmax12Hash-/Boolbelegen,Annahmebedingungenunveraendertstreng.
-Quellenabschluss: beendetemitFehlern bleibenVersorgungoffen/GAP,neueErklaerung
-stattbehaupteterweiterlaufenderVerarbeitung; keinRuhe-/Vollversorgungspass.
-LokaleNEUEGruppen20belegt:8Fachisolierung(1Lauf),4Abschluss(1Lauf),8Abseits
-(3PASSimrotenErstlauf,5PASSimNachtrag;nurFremdstand-Testfixturekorrigiert).
-Erstfehlerunveraendertgesichert,keinebereitsgruenenFach/Browser/Mengenfaellewiederholt.
-Root+2unabhaengigeReviewsruntime/testohneoffenenBefund; finaleCI-Bindungnochfolgend.
-AlleKundenausgabenweiterb2cb2abd/77Vorgaenge/2vorlaeufigeTexte,keineTagesprioritaet.
-KeinevollstaendigeFunktions-/100KundenabnahmeausdieserlokalenPruefungableiten.
-
-**14.11.2026: neuer autonomer Umsetzungsauftrag nach erneuter Betreiberfreigabe.**
-Betreiber erlaubt weitere auftragsbezogene normale Merges bei exakt gruener Pflicht-CI
-und unabhaengiger Abnahme; die fruehere10erMergegrenze begrenzt diese neue Freigabe nicht.
-Produktziel: unlesbare Artikel nachvollziehbar abseits, brauchbare Nachbarn bis Briefing,
-Lage und Radar; sichere begrenzte Reparatur ohne Aufweichen von Belegen oder UNKNOWN.
-Isolierter Branch codex/autonome-artikelversorgung-20261114 abmain529d47f8.
-Root integriert; Fresh schreibt nur Artikel-Abseits/Pipeline, Delivery nur Fachbelege,
-je eigenerWorktree, maximal3Agenten. Historische Nachweise unveraendert behalten.
-NurCEM bleibt aktiv; Budgets1USDTag/30gesamt und8alteReserven unveraendert.
-Keine neuen Quellenfenster, Datenkorrekturen, Migrationen, Env/Cron/Flags oder Kunden
-allein aus Mergefreigabe ableiten; kein Designumbau, keine Mails/Kommunikation.
-Betriebsvorflug16:38UTC:258Calls/88heute/0,620841USDTag/3,344318gesamt/8offene/0Leases.
-Die folgenden datierten Ergebnisse sind bestehende Primaerbelege, kein neuer Voll-PASS.
-
-**14.11.2026,14:49UTC: echtes aktualisiertes Tagespaket gespeichert+ausgeliefert; Tagesprioritaet weiteroffen.**
-main/Production529d47f8(PR1197), Runtime/Schutzbindung13:22:26UTCbestaetigt.
-77Vorgaenge/Briefing2/Lage2/Radar2+Partei1 realgespeichert+normalgelesen; weiterhinvorlaeufig.
-[Architektur und Primaerbelege](betrieb/verarbeitungskern-100-20261113.md).
-Neu belegt: regulärer Understandingvertrag erzeugt/uebernimmt keineFachtags;
-Matcher erwartetFachtags/belegteAusschuesse.4gezielteLiveKOs besitzen alleFacharraysleer.
-PR1197: gleicherCall-Fachtags8/8neuPASS; Originalseitenlayoutfix9/9neuPASS+2echteFixpositive.
-Quellen-GAP ist kein pauschalesPrioritaetsverbot; gueltigeKandidaten bleibenzulaessig.
-Live11:44:78Udone/19failed/105wartend,Source150done/2failed/1wartend,0Leases,nurCEM.
-105Uattempts0:38ohneArtikelziel/67DirectohneText;2echteLayoutfehlerreproduziert.
-Tageskontingenteprimaerbestaetigt8/8Fenster,2400/2400s UND16/16Originalabrufeverbraucht.
-PR1197Kopfedae1493:25neueGruppen+2OriginalePASS,CI43596599597beidePflichtchecksgruen.
-Einmal9/2700/32:konkretesBetreiberGOerteilt; Merge529d47f8/Tree26d35517exaktwiegeprueft.
-Gitdeployment dpl_5DePBp7LkBbPmAXDMzW38kmCURyH Git/Production/fra1 READY13:21:22UTC.
-LesenderProduktreaderHTTP200: altesPaketd41c1c16/alleTexte/Quittung unveraendert.
-Adminlauf e86cbb54–883a–4e9b–a91f–072df072446a 14:33:47.102–14:37:33.629UTC:
-partial,5processed/167deferred/5failed;1Source+4neueKOsbestaetigt,0Leasesdanach.
-Alle4neuenFachtagsabgewiesen:fachthemen-originalpassage-fehlt; genaueUnterursacheUNKNOWN,
-Originalantwortwirdnichtarchiviert. KeinenfehlerhaftenEingangzumNeustartfreigegeben.
-Genau1freigegebenerZusatzlaufverbraucht;keinRootDuplikat/Reset/Bestandsreanalyse.
-NeuebezahlteUnderstandingcalls4einmal,keinealteGO-Wiederverwendung.
-Lage14:42:59fromCache/5Karten/2Absaetze;1Morgenabschluss14:44:05UTCtechnischbestaetigt.
-Paketb2cb2abd77Items/14:44:00.627UTC+Quittung,17neueAuslieferbedingungenalletrue.
-NormalerStoredHTTP200,Profil/Quellen/Policy/Berlintag/Quittunggebunden,privateReviewsfehlen.
-BeideAbsatzobjekte+Lagebindungwortgleich;keinCustomerAuthBrowserPASS/keinFachvollPASS.
-Budget0,620841USDTag/3,344318USDgesamt,258Calls/88heute/8alteReserven/0heuteoffen.
-Limits1USD/UTC-Tag/30gesamt,keineKunden/Dienste/Env/Cron/Migration/Datenkorrekturen.
-Bisherige33Fach/18Plan+1Nachtrag/10Browsererfolge erhalten,nichtwiederholt.
-NeuesPaketb2cb2abd/77Items/2Lageabsätze,Quittunggebunden;Original812d3b81 realarchiviert.
-EinzelngepruefteTexte sindkeinBelegfuerTageswichtigkeit; keinVoll-/100KundenPASS.
-EngeramtlicherAusweichpfadgeprueft:4exakteQuellenohnesachgebiet/sachgebiete/policy_field;
-kein0KI-Adapterfixbelegt. Typ/Urheber/RessortbelegenkeineFachprioritaet.
-Zusatzlauf+1Lage+1MorgenabschlusssindVERBRAUCHT;10/10Mergefreigabenverbraucht.
-MobilesMockup bereit,nurEntwurf;keineProduktdesignaenderungbeauftragtoderumgesetzt.
-Root+2CodexReviewsabgenommen;10/10Nachtmergesverbraucht,25PruefgruppenNICHTwiederholen.
-[PR1184](https://github.com/ernisch/helmut-pilot/pull/1184), Branch `codex/einprofil-lieferfaehigkeit-20261113`, Basis597d7876:
-JSONB-Feldreihenfolge liess den echten Paketleser gueltige Quellenschutzwerte ablehnen.
-Strikter Strukturvergleich behebt dies; echte Sperren bleiben verbindlich. Lesende
-Gegenprobe mit echten Profil-/Policy-/Quellenwerten: korrigierter Leser liefert65
-Eintraege, volle Lage und Quittung, unveraenderte Snapshots. Radar gespeichert, eine
-Dynamik08.11., ehrlich stale; sechs Kandidaten/22 Quellen reproduzieren exakt diese fachlich passende Auswahl.
-Quellenfortsetzung: alle155 wartenden Jobs heute faellig, erst3/8 Fenster und900/2400s
-verbraucht. Abgeschlossene Einzeljobfehler sperren uebrige Tagesarbeit nicht mehr;
-unklarer Ausgang/Leaseverlust bleibt gesperrt. Historische Reste loesen keine Slots aus.
-Explizite Ruhelage gilt bei sonst vollstaendigen Belegen als vollstaendig; Luecken nicht.
-Neue lokale Gruppen/Faelle24/24: Quellen7, Auslieferung7, JSONB7, Verwaltung3. Unabhaengige Reviews ohne Restbefund; alte Nachweise erhalten.
-Fruehere begrenzte CI43491668407 und Nachweisuebernahme43501971324 fuer PR1183 gruen;
-29 alte Browserpruefungen gebunden wiederverwendet. Kein erneuter Mock100/500/Lastlauf; versehentlicher lokaler500er Altfall im Bericht erhalten.
-CI43512468427:beide Pflichtchecks gruen; nur korrigierte Ankergruppe/2Ruhelageanzeigen und fehlende Syntax ausgefuehrt;11/13 Teilbelege aus erstem roten Lauf erhalten.
-Betreiberlauf21:58–22:02UTC:15erledigt/8Fehler/96zurueckgestellt. Danach69Eintraege/2Lageabsaetze/8Karten neu gespeichert und verifiziert; weiter Teilstand. Zusatzkosten0,065630USD, Tagesbindung0,382647USD.
-**Nachtauftrag14.11.:**10/10Merges verbraucht,0verbleibend; Grenzen unveraendert. Nachtfortsetzung03:07UTC stuendlich5Runs bis07:07 fuer regulaereQuellen-/Paketabnahme und belegteReparaturen; Quelle/Lage/Paket03–05:15UTC. Kein Voll-PASS.
-**Production-Ausgangsstand:** [PR1182](https://github.com/ernisch/helmut-pilot/pull/1182)
-gemergt und Production `fe94f3eb`, bestehende Nachweise bleiben gueltig.
-[PR1179](https://github.com/ernisch/helmut-pilot/pull/1179) offen/unmerged,
-SQL dennoch bereits aktiv; Migrationsregister rein lesend bestaetigt:
-`20261113094853_job_metrics_ohne_materialisierung`. Nicht erneut anwenden.
-[DB-Speicher/OOM und bestehende Belege](betrieb/db-speicherspitzen-20261113.md).
-Ausreichende RAM-Reserve und 100-Kunden-Zeit-/Kostenrahmen bleiben unbelegt.
-[Unveraenderter vorheriger Status mit Lage/Radar-, Buero-, Profil- und UX-Belegen](https://github.com/ernisch/helmut-pilot/blob/fe94f3eb9b2c959af7c0e2e9e554d676efbb8d6f/docs/CURRENT_STATE.md).
-Die folgenden datierten Abschnitte sind erhaltener vorheriger Betriebsstand;
-daraus entstehen keine neuen Laufrechte.
 ## Quellen: aktueller Stand und fruehere Belege
 
 **11.11., Einreihung live / Kontingentvorflug vorbereitet:** PR1124 erhält Planmanifest/Hash/Inhaltsschlüssel/Artikeldatum; Runtime bestätigt `4dee3255`. Historische Manifeste und Schutzkonfiguration beim Rollout unverändert, keine aktive Verarbeitung oder Sperre. Der neue enge Vorflug prüft nach exklusiver Lease die vorhandene Workerbereitschaft und dieselbe 60s-/Slotgrenze vor der ersten Quotenreservierung. Planung/Enqueue/Claim bleiben dahinter. Teilreservierung, unbekannte Schreibantwort und Abbruch bleiben konservativ verbraucht; kein historischer Reset. Gezielte Gruppen: Arbeitsfenster21, echte lokale Route9 bestanden. Lesebereitschaft garantiert keine späteren RPC-Schreibaufrufe; der separate Pflichtfeldfehler wurde durch PR1124 behoben. Keine neuen Termine, Limits, Migration oder Productionänderung. Diagnosebelege bleiben privat. Nächster Schritt nach grüner Pflicht-CI: konkrete Merge-/Rolloutfreigabe für den neuen Reparaturkopf.

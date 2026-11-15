@@ -1,5 +1,29 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+15.11.2026,00:41UTC: Die Quellen-Bereichs-CI des Folgestands #1204 besteht 79/87
+Suiten. Alle acht Fehler wurden auch auf unveraendertem `main6763dc8e`
+reproduziert. Ihre bestehenden Tests verwenden jetzt die bereits geltenden
+Vertraege: Promptpins nach den gemergten Fachthemenregeln; bestaetigte einzelne
+DIP-Versionslesung; Worker-Readiness statt altem Statusmock; vollstaendige
+Phasenabschlusszaehler und leere Mandatsvorphase; heutiger Plan-/Jobbezug statt
+historischem Pendingzwang; deklarierte Klassenfreigabe fuer isolierte Worker;
+vollstaendiger Paket-/Quellenhash und gebundene aktuelle Lageansicht.
+Keine Budget-/Planungs-/Worker-/Speicherruntime und kein CI-Plan geaendert.
+Die acht Suiten bestehen lokal mit 24+8+16+9+5+15+29+14=120 Gruppen. Negative
+Gates und Erhalt alter positiver Ergebnisse bleiben ausdruecklich geprueft.
+Die native/standardisierte Pflicht-CI bleibt fuer den neuen Kopf voll erforderlich;
+fruehere rote Laeufe und zwischenzeitlich sichtbar gewordene Folgefehler bleiben
+unveraendert im CI-Verlauf und den lokalen Diagnoseprotokollen erhalten.
+
+Zweiter CI-Lauf `43656753720`: 187/189 Standardgruppen gruen. Zwei weitere
+vorbestehende Befunde: Statusdokument ueber seiner verbindlichen Groessengrenze
+und ein Testanker, der noch historische Pendingauftraege im heutigen Tagesplan
+erwartete. Der Status ist bytegleich archiviert und auf 27644 Zeichen/334 Zeilen
+verdichtet. Der Test prueft nun die vorhandene gemeinsame Profilgruppe im Manifest
+UND in der Enqueueschleife. Keine Planungs-/Budgetruntime geaendert. Gezielte
+bestehende Pruefungen danach 4/4 Groessenchecks und 42/42 Gleichbehandlungschecks.
+Alle roten Erstbefunde bleiben in der CI-Historie erhalten.
+
 Fortsetzung 15.11.2026: Betreiber hat die bestehende Pflicht-CI und bis zu 20
 auftragsbezogene gruene Merges ausdruecklich freigegeben. PR #1203 ist offen.
 Erster CI-Lauf scheitert im Schnellkern am bereits bestehenden App-Start-Vertrag:

@@ -25,6 +25,7 @@ const job = { id: "queue-offline-job", idempotencyKey: "queue-offline-key", crea
   payload: { dokumentIds: docs.map(d => d.id) } };
 const understanding = P.HANDLER.document_understanding;
 function deps(extra = {}) { return { env, now: () => start, listFullProfiles: async () => [profile],
+  klassen: { belege: async () => ({ erlaubt: true, slot: "synthetische-klassengrenze" }), gebeFrei: async () => {} },
   ladeRohdokumente: async () => docs, verstehenKonkurrenz: () => false,
   ...extra }; }
 const result = (documents, offen = false) => ({ dokumente: documents, fortsetzungOffen: offen,
@@ -192,23 +193,21 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       finish: async () => { finish++; }, zurueckstellen: async () => { defer++; } } });
     assert.equal(r.ausgang, "fortschritt-nicht-uebernommen"); assert.equal(finish + defer, 0);
   });
-  await test("Regulaere Planung holt rotierenden Pendingbestand ohne frischen Feed vor Quellenplanung", async () => {
-    const offsets = [], jobs = [];
+  await test("Regulaere Tagesplanung liest keinen historischen Pendingbestand vor dem heutigen Quellenbedarf", async () => {
+    const jobs = [];
     for (const day of [start, start + 86400000]) {
       let enqueued = 0;
       const r = await P.planeArbeit({ jetztMs: day, env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps: {
-        listFullProfiles: async () => [profile], zaehlePendingVerarbeitbar: async () => 10,
-        listPendingKnowledgeObjects: async opts => { assert.equal(opts.limit, 5); offsets.push(opts.offset);
-          return [{ id: `pending-${opts.offset}` }]; },
-        listKoDocuments: async (_, limit) => { assert.equal(limit, 40); return docs; },
+        listFullProfiles: async () => [profile], zaehlePendingVerarbeitbar: async () => assert.fail("kein historischer Pendingzaehler"),
+        listPendingKnowledgeObjects: async () => assert.fail("kein historischer Pendingread"),
+        listKoDocuments: async () => assert.fail("kein historischer Dokumentread"),
         enqueue: async input => { enqueued++; jobs.push(input); return { verfuegbar: true, neu: true }; },
-        sourceDemand: { kompiliereQuellenbedarf: async () => { assert.equal(enqueued, 1); return { auftraege: [], statistik: {} }; },
+        sourceDemand: { kompiliereQuellenbedarf: async () => { assert.equal(enqueued, 0); return { auftraege: [], statistik: {} }; },
           planeMandatsarbeit: () => ({ auftraege: [] }) }
       } });
-      assert.equal(r.ok, true); assert.equal(r.pendingIngress.dokumente, 2);
+      assert.equal(r.ok, true); assert.equal(Object.hasOwn(r, "pendingIngress"), false);
     }
-    assert.notEqual(offsets[0], offsets[1]); assert.equal(jobs[0].idempotencyKey, jobs[1].idempotencyKey);
-    assert.equal(jobs[0].tenantId, null); assert.deepEqual(jobs[0].payload.dokumentIds, docs.map(d => d.id).sort());
+    assert.deepEqual(jobs, []);
   });
   await test("Bestehender Speicheradapter schreibt Fortschritt nur mit Payload-, Besitzer-, Status- und Lease-CAS", async () => {
     const S = require("../lib/helmut/storage");
@@ -291,6 +290,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const row = { id: "short-rest", job_type: "document_understanding", payload: {} };
     const r = await P.arbeite({ env: { HELMUT_SCALABLE_PIPELINE: "on" }, budgetMs: 35000, leaseMs: 300000,
       stapel: 1, leerlaufWarteMs: 10000, deps: { now: () => clock, budget: null,
+        klassen: { belege: async () => ({ erlaubt: true, slot: "synthetische-fortsetzung" }), gebeFrei: async () => {} },
         claim: async () => ({ verfuegbar: true, auftraege: !done && clock >= due ? [row] : [] }),
         handler: { document_understanding: async () => ++calls === 1
           ? { ok: false, zurueckgestellt: true, grund: "echte-restfortsetzung" } : { ok: true } },
