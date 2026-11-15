@@ -1,19 +1,55 @@
 # Tägliche Versorgung: geprüfter Abschlussstand15.11.2026
 
-Stand15.11.2026,09:31UTC. Teilweise abgeschlossen, kein Gesamt-PASS.
+Stand15.11.2026,11:14UTC. Teilweise abgeschlossen, kein Gesamt-PASS.
 
-Die Leserreparaturen aus PR1203/1204/1206 sind regulär ausgerollt. Zuletzt
-bestätigte Runtime:236ced65 nach zusätzlicher AttributionsreparaturPR1209,
-Productiondeployment`dpl_CrAiLtd6uSeC6vzfGb1KkPCedXJB`READY, öffentliche Shell
-HTTP200 mit exakt dieser Version. Gleiche Originalbytes belegen die Leser;
-keine zusätzlichen bezahlten Modellläufe, Backfills oder Jobresets.
+Die Leserreparaturen aus PR1203/1204/1206 und AttributionPR1209 bleiben erhalten.
+QuellenPR1207 ist nach gezielter Pflicht-CI und unabhängigem Review gemergt:
+Kopf`93accafb0199f83fb8ce90859cbee8075fbca24d`,Merge`37d621608f47f780ad83d5e0e16ffcd2cee11293`.
+[CI43707311442](https://github.com/ernisch/helmut-pilot/actions/runs/43707311442)
+beidePflichtjobsgrün,39Plan-/87Quellen-/14Kerngruppen;MainCI43707520208gleichfallsgrün.
+Der begrenzte Plan prüft Base,Quellenblobs,übrigenRuntimebaum und echten Mainmerge.
+Keine Datenbank-/500er-/bezahlten Tests; unbeabsichtigte1074synthetische native
+Infrastrukturunitfälle am Vorläuferkopf wurden im Endplan nicht wiederholt.
+NormalerProductionrollout`dpl_9juyckdfRqgwvbfozJbF4Q2dH17r`READY,
+Alias`helmut-pilot.vercel.app`,öffentlicheShellHTTP200mitVersion37d62160.
+Der getrennte UI-PR1208 ist inzwischen gemergt; seine Nachweise bleiben dort.
 
-Der reguläre Morgen15Nov05:15 blieb partial:67Einträge,2neue geprüfte Absätze,
-Quellenstand offen und kein belegter Tagesanlass. Fehlende Priorität allein
-ist kein neuer Codefehler; die unvollständige Versorgung bleibt sichtbar.
-Selektive Nachkontrolle vor und nach PR1209 bis09:31UTC:
-alle fünf geprüften Erfolgsjobs weiter erledigt, alle Payloadprüfsummen identisch.
-Keine Production-Daten, Quoten, Reserven, Hosts oder Zeitpläne verändert.
+Der Betreiber startete genau einmal den zusätzlichen Adminquellenlauf
+`admin-quellen-2026-11-15-d3eee3f0-5d33-4e92-b1a4-1faf62fab4c4`.
+NativeQuittung:10:45:32.909–10:49:22.070UTC,statussuccess,
+15erledigt,15Wiedervorlagen,72vertagt,0endgültigeFehler und0Leaseverluste.
+Die separate Quellenabdeckung desselben Laufs bleibtpartial/eingeschraenkt:
+4Fehler/95Warnungen/13Drift,9Bedarfspakete,keinefehlendenPaketzuordnungen.
+Vier strukturelle Befunde betreffen weiterhin drei Rollen-/Klassenbindungen.
+
+Gezielter Versionsabgleich der14Metadaten-Wiedervorlagen:gebundene Archive
+existieren,aber Titel/Herausgeber oder Publikationsdaten weichen tatsächlich ab.
+Das ist kein Beleg,die Versionswache zu lockern. Keine Originale,Archive oder
+Jobbindungen umgeschrieben. Ein unbekannter Modellausgang bleibt CAS-gesperrt.
+Die vorhandenen fünf Erfolgsjobs sind nach Zusatzlauf und Merge weiter erledigt,
+alle Payload-MD5 gegenüber dem Vorwert unverändert. Kein Reset oder Rückrollen
+bestätigter Verarbeitungsergebnisse.
+
+Lagefolge`briefing-lage-20261115105740-je0pm`:partial,7Vorgänge aus gültigemCache,
+reasonquellenversorgung-offen,Abschlussquittunggespeichert.
+Morgenfolge`briefing-morning-20261115105836-vko8h`:partial,
+reasonmorgenversorgung-unvollstaendig,1Ziel/0vollversorgt/1zurückgestellt,
+Abschlussquittunggespeichert. Kein künstlicher Tagesanlass und kein Gesamt-PASS.
+Die erste Zusatz-Lageprüfung10:35war ebenfalls ein bestätigter Cachecheck;
+keine erzwungene Neugenerierung oder weitere blinde Quellenwiederholung.
+
+Kostenbuch11:12UTC:heute0,536289USD,gesamt3,919323USDgebunden,
+8alteoffeneReserven unverändert. Gegenüber0,452512USDvorher entstehen0,083777USD
+zusätzlich. Lage-/Morgenfolge verursachten keinen weiteren Budgetanstieg.
+Grenzen1USD/UTC-Tag/30USDgesamt undOriginalabrufkontingent bleiben unverändert.
+
+Die eng vorgeschlagene Nutzungsflagänderung für Destatis/iRights wurde von der
+**automatischen Freigabeprüfung abgelehnt**,weil konkrete Nutzerfreigabe für
+diesen Nutzungsumfang und die Wirkung fehlt. Sie wurde nicht ausgeführt oder
+umgangen; vorhandene Sourceflags und relationalerKatalog bleiben geschlossen.
+[Konkrete Freigabevorlage](quellen-einbindung-freigabe-20261115.md) nennt
+Textumfang,Flagwerte,sechs neueKatalogzeilen,zweiPaketaktivierungen,Schutzgrenzen
+undRückweg. Erforderliches Betreiber-GO ist angefragt und noch nicht belegt.
 
 ## Attributionsreparatur live
 
@@ -49,13 +85,11 @@ Das installiert/aktiviert keine Quelle und beweist keinen echten Kundendurchlauf
 - Ad-hoc-Leser korrigiert; Host weiterhin nicht freigegeben. Der echte
   Zusatzdisclaimer nennt teilweise automatisierte KI-Erstellung und Prüfung,
   aber keine positive Weiterverwendungslizenz. Kein pauschales Host-GO abgeleitet.
-- PR1207bereitet Destatis/iRights mit zwei Wegen und drei fachlich begründeten
-  Bindungen inaktiv vor. Die generierte SQL-Ergänzung enthält genau sechs neue
-  Zeilen. Fachtest, Seeddrift und unabhängige Diffprüfung lokal bestanden.
-  CI-Erstlauf43695758471scheiterte am damals fehlenden generierten Seed;
-  Fehler lokal behoben. Folgelauf43696614891wegen pauschaler500er-Prüfungen
-  gestoppt. Betreiber bestätigte ausdrücklich:keine Massentests,PR bleibt
-  vorerst ungemergt. Keine Schutzprüfung abgeschaltet oder als grün umgewertet.
+- PR1207 hat Destatis/iRights mit zwei Wegen und drei fachlichen Bindungen
+  **inaktiv** integriert;sechs neueSQL-Seedzeilen,nicht aufProduction angewendet.
+  ErsterCISeeddrift behoben;pauschalerFolgelauf43696614891gestoppt,Betreibergrenze
+  gegenMassentestsbeibehalten. Der neue auf exaktenBaumgebundenePrüfvertrag
+  ermöglicht den oben belegten gezielten Merge ohneQuellenaktivierung.
 
 ## Höchstens drei verbleibende Verkaufsblocker
 
@@ -72,8 +106,7 @@ erfüllt; es beweist keinen späteren Kunden- oder Verkaufsabschluss.
 
 ## Genau ein nächster Schritt
 
-Einmalige automatische lesende Kontrolle des ohnehin regulären Morgenabschlusses
-am16Nov05:25UTC ist bestätigt eingerichtet. Sie startet keine Verarbeitung und
-plant sich nicht erneut. Die alten fünf Nachtkontrollen sind beendet. QuellenPR1207
-bleibt unabhängig davon wie ausdrücklich entschieden Draft/ungemergt.
-Parallel offener UI-PR1208 wird hier weder übernommen noch als erledigt ausgegeben.
+Den [genau begrenzten Nutzungs-/Productionumfang für Destatis/iRights](quellen-einbindung-freigabe-20261115.md)
+ausdrücklich freigeben. Bis dahin keine Nutzungsflagänderung oder Aktivierung.
+Die bereits bestätigte einmalige lesende Kontrolle16Nov05:25UTCbleibt bestehen;
+sie startet keine Verarbeitung,liest keine Profilinhalte und plant sich nicht neu.
