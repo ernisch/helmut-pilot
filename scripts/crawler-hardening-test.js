@@ -22,8 +22,10 @@
 process.env.CRAWLER_TIMEOUT_MS = "400"; // vor dem require lesen (Modul-Konstante)
 
 const http = require("http");
+const assert = require("node:assert/strict");
 const { crawlAllSources } = require("../lib/helmut/crawler");
-const { createGoogleNewsGate } = require("../lib/helmut/google-news-hardening");
+const { createGoogleNewsGate, createSharedFetchLedger } = require("../lib/helmut/google-news-hardening");
+const P = require("../lib/helmut/scalable-pipeline");
 const { classifyCrawlError } = require("../lib/helmut/source-telemetry");
 
 let passed = 0, failed = 0;
@@ -35,14 +37,35 @@ function check(name, cond, detail = "") {
 const RSS = (title) => `<?xml version="1.0"?><rss><channel><item><title>${title}</title><link>http://127.0.0.1:1/artikel/${encodeURIComponent(title)}</link><pubDate>Thu, 16 Jul 2026 10:00:00 GMT</pubDate><description>Testinhalt</description></item></channel></rss>`;
 
 let googleActive = 0, googleMaxActive = 0, google429Hits = 0;
+const hits = new Map();
 
 const server = http.createServer((req, res) => {
   const url = req.url || "";
+  hits.set(url, (hits.get(url) || 0) + 1);
+  if (url.startsWith("/feed-contract/")) {
+    const mode = url.split("/").pop();
+    const bodies = {
+      empty: '<rss><channel></channel></rss>', atom: '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
+      rdf: '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><channel/></rdf:RDF>',
+      challenge: '<html><head><title>Check your browser</title></head><body>Javascript required</body></html>',
+      truncated: '<rss><channel><item><title>Unvollstaendig</title></item>',
+      doctype: '<!DOCTYPE rss><rss><channel><item><title>Original</title><link>https://example.org/1</link></item></channel></rss>',
+      atomitem: '<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Amtliche Meldung</title><link href="https://example.org/original"/><published>2026-11-15T10:00:00Z</published></entry></feed>'
+    };
+    res.writeHead(mode === "missing" ? 404 : mode === "challenge" ? 202 : 200);
+    res.end(bodies[mode] || "not found"); return;
+  }
+  if (url.startsWith("/homepage")) {
+    res.writeHead(200); res.end(`<html><head><title>${url.endsWith("alias") ? "Bundesministerium fuer Arbeit und Soziales" : "Startseite"}</title></head><body></body></html>`); return;
+  }
   if (url.includes("news.google.")) {
     googleActive += 1;
     googleMaxActive = Math.max(googleMaxActive, googleActive);
     setTimeout(() => {
       googleActive -= 1;
+      if (url.includes("mode=flaky") && hits.get(url) === 1) {
+        res.writeHead(503); res.end("temporarily unavailable"); return;
+      }
       if (url.includes("mode=429")) {
         google429Hits += 1;
         res.writeHead(429, { "Retry-After": "0" });
@@ -174,6 +197,46 @@ function directSource(id) {
     check("ohne Gate: alle Quellen im Alt-Pfad erfolgreich, keine Skips",
       crawl.successfulSources === 2 && crawl.skippedSources === 0 && crawl.googleGate === null);
   }
+
+  // Derselbe echte Queue-Handler muss nach Abruf-/Persistenzfehler erneut arbeiten.
+  // Keine bezahlte Verarbeitung: ausschliesslich lokaler HTTP-Server + injizierte Ablage.
+  for (const mode of ["flaky", "persist"]) {
+    const source = googleSource(`queue-${mode}`, mode), ledger = createSharedFetchLedger();
+    let persistCalls = 0;
+    const deps = P.workerDeps({ env: {}, hardeningConfig: () => ({ ...hardening, retryMax: 0,
+      enabled: true, sharedPathDedup: true }), createGate: () => createGoogleNewsGate({
+      concurrency: 1, minSpacingMs: 0, breakerMinObservations: 999 }),
+      sharedLedger: () => ledger, crawlAllSources,
+      persistRohdokumente: async () => {
+        persistCalls++;
+        return mode === "persist" && persistCalls === 1 ? { ok: false, grund: "unknown" }
+          : { ok: true, neuIds: [], vorhandene: 1 };
+      }, sourceTelemetryEnabled: () => false });
+    const run = () => P.HANDLER.source_fetch({ id: `job-${mode}`, payload: { quelle: source } }, deps,
+      { auftragsDeadlineMs: Date.now() + 10000 });
+    await assert.rejects(run(), mode === "flaky" ? /503/ : /persistenz-fehlgeschlagen/);
+    assert.equal((await run()).ok, true);
+    const path = new URL(source.url).pathname + new URL(source.url).search;
+    check(`Queue ${mode}: echter zweiter Abruf und bestaetigte Ablage statt skipped-shared`,
+      hits.get(path) === 2 && persistCalls === (mode === "flaky" ? 1 : 2));
+    assert.equal(ledger.size(), 0, "Queue benutzt ausschliesslich ihre native Auftragsdeduplizierung");
+  }
+
+  for (const mode of ["empty", "atom", "rdf", "atomitem", "doctype", "missing", "challenge", "truncated"]) {
+    const source = { ...directSource(`contract-${mode}`), url: `http://127.0.0.1:${server.address().port}/homepage`,
+      rssUrl: `http://127.0.0.1:${server.address().port}/feed-contract/${mode}` };
+    const { results: [r] } = await crawlAllSources([source]);
+    if (["missing", "challenge", "truncated"].includes(mode)) {
+      check(`${mode}: unbrauchbarer Ersatz verschluckt den RSS-Fehler nicht`, !r.ok && r.status === "error");
+      check(`${mode}: Fehler bleibt gezielt klassifizierbar`, classifyCrawlError(r.error) === (mode === "missing" ? "http-4xx" : "parse"));
+    } else {
+      check(`${mode}: legitimer RSS-/Atom-Inhalt bleibt erfolgreich`, r.ok && r.itemCount === (["atomitem", "doctype"].includes(mode) ? 1 : 0));
+    }
+  }
+  const aliasSource = { ...directSource("BMAS"), name: "BMAS", url: `http://127.0.0.1:${server.address().port}/homepage/alias`,
+    rssUrl: `http://127.0.0.1:${server.address().port}/feed-contract/missing` };
+  const alias = (await crawlAllSources([aliasSource])).results[0];
+  check("Anderer Homepagetitel ohne Artikeldatum ersetzt den defekten RSS nicht", !alias.ok && alias.itemCount === 0);
 
   server.close();
   console.log(`\n${passed}/${passed + failed} Crawler-Härtung-Assertions erfolgreich.`);

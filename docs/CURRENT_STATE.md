@@ -1,34 +1,28 @@
 # CURRENT STATE — Helmut
-**15.11.2026,19:41UTC: sechs Quellenzieljobs erfolgreich abgeschlossen; vier Analysen komplett, zwei echte Abrufquittungen; Versorgung weiterpartial.**
+**15.11.2026,20:42UTC: dauerhafte Quellenreparatur in PR1225 vorbereitet; regulaere Betriebsabnahme noch offen, Versorgung weiterpartial.**
 
-**Betreiberziel15Nov: heute fertig werden; jetzt pruefen und vollautonom Quellen reparieren.**
-Destatis/iRights unterPR1214/1215 eng begrenzt aktiv;6Katalogzeilen/2Paketstatus,5Altwege erhalten.
-ErsterAdminlauf1671232c12:54–12:58:13erledigt/65vertagt/0Fehler;25Dokumente,11Inhaltsjobserledigt.
-3CC-BY-AttributionendurchechteLage-/BriefingDTOsgeprueft;12iRightsEintraegenurTitelLink.
-DIP2FundstellenNULL→rp-dip,ZDF167/BMAS188OriginalzeichenalsneueAltstands-Versionenrepariert;alteFehlerbelegeerhalten.
-ErneutesBetreiberGO18:43:genaueinAdminabschlussfenster15Novbis9/2700,Originale16/Geldgrenzenunveraendert.
-PR1223Kopf31702663/PRCI43749687091undMerge33894975/MainCI43749913915beidePflichtjobsgruen;unabhaengigesApp-/CIReviewgeschlossen.
-10Einmal/8Echtlauf/21Fenster/9Routen/16Admin+60CI-Gegenfaellegruen;keineMassen-/bezahltenTests.
-Runtime33894975/dpl_HWV1GYKiPCVzXKBYY5bWTmkeTbyMREADY;HTML19:04HTTP200Version33894975.
-19:08atomar4wartendeZieljobsPrioritaet80→70+2nativeRSSjobs13bc9e90/83a52d69ergänzt;SQLReview/RueckwegP2geschlossen.
-Betreiberstart6a95d30419:14:13–19:18:04UTC:success,12erledigt/53vertagt/0endgueltigeFehler.
-Alle6ZieljobsbeimerstenVersucherledigt;DIP2/ZDF/BMASje1vollstaendigverstandeneverknuepfteAnalyse.
-QuittungshookausPR1217jetztProductionbelegt:Destatis10/iRights15gefunden,je0neu,Statusok,206/238ms.
-KeinehistorischenMessungenerfundenoderErfolgsjobszurueckgesetzt;5gebundeneAltjobPayloadhashs19:41gleich,7Alt-Erfolgeweitererledigt.
-Abdeckung19:18:0Fehler/88Warnungen/2unbekannteWege/13Drift,9Bedarfspakete;partial.
-2unknownserklaert:neueFeedsje1echteQuittung,RegelminLaeufe3unveraendert;2weitereechteBeobachtungenjeFeednoetig.
-13Katalogabweichungeneinzelnabgeglichen:2reparierteLandeswege/2manuelleXMLMethoden/8Suchabfragen/1defekterRSSpfad.
-RSSrp-linksfraktion:alterPfad404,Code-Sollfeed.rss200/15datierteItems;genau1URL19:34vorwertgebundenkorrigiert/readbackbestaetigt.
-Herausgeber/Rechte/Status/Parserunveraendert,keinweitererProduktionscrawl;keinpauschalerAbgleichderanderen12Wege.
-Lage19:37einmalHTTP200/gespeichert,6Vorgaenge/fromCachetrue/partialquellenversorgung-offen;gueltigenCacheerhalten,0neueModellkosten.
-ErsterDirektzugriffvorHTTPverweigert;keinLauf/Kostenbestaetigt,dannproxyfaehigerZugriff;keinblinderRetry/keinMorgenpush.
-Kosten19:41:0,711983USDTag/4,095017USDgesamtgebunden/8Altreserven;Quellenabschlusszusaetzlich0,075799USD.
-Grenzen1USD/UTC-Tag30gesamtunveraendert;Einmalkey1verbraucht,9Fenster2700s16Originale;keinReset/keineweiterenLaufrechte.
-EUR-Lex202HTML/AWSWAFstattRSSundweitereArtikelohnegeprueftenOriginal-/Nutzungsnachweisbleibenoffen.
-14echteMetadatenkonflikte/1unbekannterCAS-Ausganggeschuetzt;privater12FelderAbgleichabgeschlossen,nichtwiederholen.
-EchteKunden-/Rechtsgesamtfreigabeweiterunbelegt,keinGesamtPASS;Teilversorgungbleibtpartial.
-NaechsterSchritt:bestehendeKontrolle16Nov05:25UTCprueftregulaereQuittungen/StabilitaetundkonkreteRestbefunde;keinneuerZusatzlauf.
-[HeutigerQuellenabschluss+SQL/Rueckwege](betrieb/quellen-abschlussfenster-20261115.md) · [Altstandbelege](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md) · [Sofortbeleg](betrieb/versorgung-sofortpruefung-20261115.md).
+Quellenauftrag: vorhandene Retry-/Fallback-/Monitoringwege nutzen; keine neue Infrastruktur oder Zusatzverarbeitung.
+Drei reproduzierte Ursachen: Prozessledger ersetzt Queue-Retry nach Abruf-/Persistenzfehler durch skipped-shared;
+defekte RSS/HTML-Antwort erscheint als leerer Erfolg; echte RSS-Parserfehler werden unknown quittiert.
+Fix nur im Queuepfad: Ledgernull, bestehende Compiler-Idempotenz/Lease/Anbietergrenzen erhalten.
+RSS1/RSS2/Atom/DOCTYPE geprueft, unbrauchbarer Homepageersatz verdeckt Feedfehler nicht; Parserfehler praezise klassifiziert.
+Offizielles CELLAR liefert drei echte OJ-L-Metadatensaetze vom13Nov; korrektes Publikationsdatum statt Beschluss-/Ingestionsdatum.
+EUR-Lex-Ersatz nur exakt bekannte Feedidentitaet, hoechstens1CELLARabruf/16Items/14UTCTage/256KiB, keine Anbietervertagung umgehen.
+Titel/Link/DatumCC0, HerkunftV2 bindet actualCELLAR/Werk/OJ-L/CELEX; kein neuer Volltext-/Bild-/Trainingsumfang.
+Evidenceae58b9b7:33Crawler/40Telemetry/8Queue/31Parlamentsdaten/11CELLAR-Gruppen gruen; bestehende160Health/58Google gruen.
+Unabhaengiges Runtime-Review:3P2 korrigiert; exakte Pflicht-CI und CI-Endreview vor Merge erforderlich.
+Lokaler Testauswahlfehler:2Bestandssuiten enthielten Mengenfaelle und liefen einmal;0Production/Model/APIKosten.
+CI-Auswahl korrigiert:kein erneuter source-demand-Lauf, Blobtest nur --gezielt; Vorfall im kanonischen Beleg dokumentiert.
+Production20:42:0laufendeJobs,6vorherigeZieljobs weitererledigt;0,711983USDTag/4,095017USDgesamt unveraendert.
+Vorheriger Abschlusslauf6a95d30419:14–19:18:12erledigt/53vertagt/0Endfehler;DIP2/ZDF/BMASvollstaendigverstanden.
+QuittungshookPR1217Productionbelegt:Destatis10/iRights15gefunden,je0neu,206/238ms;je1echteQuittung,minLaeufe3 bleibt.
+RSSrp-linksfraktion19:34genau1URLnach404→geprueftemfeed.rss korrigiert;regulaererneuerAbrufnachweisoffen.
+Lage19:37:6Vorgaenge/fromCachetrue/partialquellenversorgung-offen,0neueModellkosten;gueltigenCacheerhalten.
+Einmalkey15Nov verbraucht;9Fenster2700s16Originale,1USD/Tag30gesamt und alle alten Reserven unveraendert.
+Alte Fehler/Negative/Archive/Erfolge erhalten;privater12FelderProfilabgleich geschlossen,nichtwiederholen.
+Weitere Artikel ohne geprueften Original-/Nutzungsnachweis offen;kein Textlese- oder GesamtversorgungsPASS aus Metadaten.
+NaechsterSchritt:bestehendeKontrolle16Nov05:25UTCwertetregulaereQuittungenundRestblockeraus;keinneuerZusatzlauf.
+[DurableReparatur+offizielleBelege](betrieb/quellen-dauerbetrieb-20261115.md) · [vorherigerQuellenabschluss+SQL](betrieb/quellen-abschlussfenster-20261115.md) · [Altstaende](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.

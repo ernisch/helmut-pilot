@@ -33,6 +33,9 @@ check("Fehlercode http-429", classifyCrawlError("429 Too Many Requests") === "ht
 check("Fehlercode http-4xx", classifyCrawlError("404 Not Found") === "http-4xx");
 check("Fehlercode dns", classifyCrawlError("getaddrinfo ENOTFOUND example.org") === "dns");
 check("Fehlercode unknown", classifyCrawlError("irgendein seltsamer zustand") === "unknown");
+check("Echter RSS-Huellenfehler wird als Parserfehler erkannt", classifyCrawlError("Ungültige RSS-Antwort des Metadatenfeeds") === "parse");
+check("Unlesbare RSS-Eintraege werden als Parserfehler erkannt", classifyCrawlError("RSS-Einträge ohne verwertbare Titel und Links") === "parse");
+check("Leerer Kandidat verdeckt keinen zweiten HTTP-Fehler", classifyCrawlError("erster: empty feed; zweiter: HTTP 404") === "http-4xx");
 check("Fehlercode leer -> null", classifyCrawlError("") === null);
 // Der ROHE Fehlertext (koennte URL enthalten) darf NICHT im Code auftauchen:
 check("Fehlercode enthaelt keine URL/keinen Rohtext", !/example\.org|https?:/.test(classifyCrawlError("getaddrinfo ENOTFOUND https://example.org/secret")));
