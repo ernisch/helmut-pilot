@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,20:42UTC: dauerhafte Quellenreparatur in PR1225 vorbereitet; regulaere Betriebsabnahme noch offen, Versorgung weiterpartial.**
+**15.11.2026,20:50UTC: dauerhafte Quellenreparatur PR1225 gemergt und live; regulaerer Wirksamkeitsnachweis offen, Versorgung weiterpartial.**
 
 Quellenauftrag: vorhandene Retry-/Fallback-/Monitoringwege nutzen; keine neue Infrastruktur oder Zusatzverarbeitung.
 Drei reproduzierte Ursachen: Prozessledger ersetzt Queue-Retry nach Abruf-/Persistenzfehler durch skipped-shared;
@@ -10,7 +10,9 @@ Offizielles CELLAR liefert drei echte OJ-L-Metadatensaetze vom13Nov; korrektes P
 EUR-Lex-Ersatz nur exakt bekannte Feedidentitaet, hoechstens1CELLARabruf/16Items/14UTCTage/256KiB, keine Anbietervertagung umgehen.
 Titel/Link/DatumCC0, HerkunftV2 bindet actualCELLAR/Werk/OJ-L/CELEX; kein neuer Volltext-/Bild-/Trainingsumfang.
 Evidenceae58b9b7:33Crawler/40Telemetry/8Queue/31Parlamentsdaten/11CELLAR-Gruppen gruen; bestehende160Health/58Google gruen.
-Unabhaengiges Runtime-Review:3P2 korrigiert; exakte Pflicht-CI und CI-Endreview vor Merge erforderlich.
+Unabhaengige Runtime-/CI-Reviews geschlossen; PR1225Kopfa6254664/CI43759893440 beidePflichtjobsgruen.
+Merge052650a3/MainCI43760131019 beidePflichtjobsgruen;Productiondpl_AX8PD18P3pewX1fMkkcbSFEjTizgREADY.
+HTML20:49:59HTTP200Version052650a3;Nachkontrolle20:50:19alle6Zielerfolge/Kostenunveraendert,0laufendeJobs.
 Lokaler Testauswahlfehler:2Bestandssuiten enthielten Mengenfaelle und liefen einmal;0Production/Model/APIKosten.
 CI-Auswahl korrigiert:kein erneuter source-demand-Lauf, Blobtest nur --gezielt; Vorfall im kanonischen Beleg dokumentiert.
 Production20:42:0laufendeJobs,6vorherigeZieljobs weitererledigt;0,711983USDTag/4,095017USDgesamt unveraendert.
