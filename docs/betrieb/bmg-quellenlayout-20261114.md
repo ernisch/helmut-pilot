@@ -1,5 +1,12 @@
 # BMG: vorgezogene Originalpruefung und begrenzte Parserkorrektur
 
+15.11.2026,01:26UTC: Browserjob132655402623 scheitert nach dem Wechsel von
+ubuntu-latest auf26.04 schon bei Installation: Playwright1.56.1 unterstuetzt
+chromium auf ubuntu26.04-x64 nicht. Minimaler Infrastrukturfix: ausschliesslich
+Browserjob fest an ubuntu-24.04 binden; Chromium-/Versionspin, Browserpflicht,
+Pruefauswahl und alle Schutzchecks bleiben. Drei vorhandene Runner-Vertragschecks
+pruefen den nun allgemeinen kompatiblen Pin. Keine App-/Production-Konfiguration.
+
 15.11.2026,01:21UTC, aktueller CI-Nachtrag: Folgestand #1204/8956819c besteht
 beide Pflichtchecks (43659496575), 14 Kern- und 87 Quellensuiten. #1203/9979f613
 besteht native Kernschritte und alle 189 Standardsuiten; 13 von 391 Bereichssuiten

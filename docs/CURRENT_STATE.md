@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**15.11.2026,01:21UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
+**15.11.2026,01:26UTC: autonome Quellenreparatur, Pflicht-CI noch offen.**
 
 Betreiber hat auftragsbezogene gruene Merges bis maximal20 freigegeben; bisher0.
 Kein zusaetzlicher bezahlter Modelllauf, Datenreset, Cron-/Env-/Budgeteingriff.
@@ -11,7 +11,9 @@ an heutige Mandats-/Quellen-/Checkpoint-/Appstartvertraege angepasst; Prosa nutz
 hashgebundenes Originalschema nur im historischen Offlinehelfer. Echte Riegel bleiben.
 Ein nativer PG17-Claimtest war faelschlich als offline klassifiziert; jetzt nur sein
 unveraenderter eigener netzloser CI-Schritt. Auswahlvertrag prueft dessen Erhalt.
-Betroffene Einzelpruefungen lokal gruen; Pflicht-CI am neuen Kopf voll erforderlich.
+Betroffene Einzelpruefungen lokal gruen. Browser-CI43662742553 scheitert vor Tests:
+Playwright1.56.1 unterstuetzt Ubuntu26 nicht. Nur Browserjob an Ubuntu24 gepinnt;
+Browserpflicht und gepinnter Chromium bleiben. Neue exakte Pflicht-CI erforderlich.
 PR1204 Kopf8956819c: beide Pflichtchecks gruen,14/14Kern und87/87Quellensuiten
 (CI43659496575); nach Integration des neuen Vorgaengers erneut bestaetigen.
 Fruehere8Quellenfixturefehler ebenfalls auf main reproduziert und gezielt120Gruppen

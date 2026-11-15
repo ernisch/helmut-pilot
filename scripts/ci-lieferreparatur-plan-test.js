@@ -650,10 +650,10 @@ test("Kundenansicht: Browserjob fuehrt nur neue Kundenansichten mit Browserpflic
   const scoped = workflow.slice(0, workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(scoped), false);
 });
-test("Kundenansicht: kompatibler Runner ist nur am exakten1193Tupel gepinnt und Browser bleibt Pflicht", () => {
+test("Kundenansicht: kompatibler Runner ist fuer gepinntes Playwright fest und Browser bleibt Pflicht", () => {
   const browser = workflow.slice(workflow.indexOf("  browser-smoke:"), workflow.indexOf("  synthetic-resource-diagnostic:"));
   const runner = browser.split("\n").find(line => line.startsWith("    runs-on:"));
-  A.equal(runner, "    runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}");
+  A.equal(runner, "    runs-on: ubuntu-24.04");
   A.match(browser, /playwright@1\.56\.1/); A.match(browser, /HELMUT_REQUIRE_BROWSER: "1"/);
   A.match(browser, /node scripts\/lokal\.js scripts\/browser-smoke-test\.js --kundenansichten/);
 });
@@ -707,7 +707,7 @@ test("Briefingfenster: Browserjob prueft nur neue gebundene Briefingteilstaende 
   A.match(workflow,/node scripts\/lokal\.js scripts\/browser-smoke-test\.js --briefing-teilstand/);
   const browser=workflow.slice(workflow.indexOf("  browser-smoke:"),workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.match(browser,/HELMUT_REQUIRE_BROWSER: "1"/);
-  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
+  A.ok(browser.includes("runs-on: ubuntu-24.04"));
 });
 
 
@@ -798,14 +798,14 @@ test("Radarartikel: Offlinejob prueft nur neue Planfaelle und Syntax ohne Fachwi
   A.match(section,/WIEDERVERWENDET/);A.equal(section.includes("node scripts/lokal.js scripts/radar-einzelartikel-titelbindung-test.js"),false);
   A.match(workflow,/github\.event\.pull_request\.base\.sha == '87505694ae9318d660f2052e634613d720729c03'/);
 });
-test("Radarartikel: Browserjob prueft nur neue Artikelanzeige mit PflichtChromium auf exaktem1196Runner",()=>{
+test("Radarartikel: Browserjob prueft nur neue Artikelanzeige mit PflichtChromium auf kompatiblem festem Runner",()=>{
   A.deepEqual(active("browser-smoke","synthetic-resource-diagnostic",C.validate(fixture(C.RADARARTIKEL))),[
     "Prüfplan aus geänderten Dateien","Abhängigkeiten installieren (aus package-lock.json)",
     "Playwright + Chromium installieren","Radarartikel - neue Artikelbindung Desktop und Mobil"]);
   const browser=workflow.slice(workflow.indexOf("  browser-smoke:"),workflow.indexOf("  synthetic-resource-diagnostic:"));
   A.match(browser,/HELMUT_REQUIRE_BROWSER: "1"/);A.match(browser,/playwright@1\.56\.1/);
   A.match(browser,/node scripts\/lokal\.js scripts\/browser-smoke-test\.js --radar-artikelbindung/);
-  A.ok(browser.includes("runs-on: ${{ github.event_name == 'pull_request' && github.repository == 'ernisch/helmut-pilot' && ((github.event.number == 1193 && github.event.pull_request.base.sha == '097d14e29be63e0c19d7c8fedae9e7eb16195c57' && github.event.pull_request.head.ref == 'codex/kundenansichten-20261114') || (github.event.number == 1194 && github.event.pull_request.base.sha == '4a49cbefa84950128116599dd667b181f79909be' && github.event.pull_request.head.ref == 'codex/briefing-fenster-20261114') || (github.event.number == 1196 && github.event.pull_request.base.sha == '87505694ae9318d660f2052e634613d720729c03' && github.event.pull_request.head.ref == 'codex/radar-artikelanzeige-20261114')) && 'ubuntu-24.04' || 'ubuntu-latest' }}"));
+  A.ok(browser.includes("runs-on: ubuntu-24.04"));
   A.equal(/pull-requests: write|checks: write|statuses: write/.test(workflow.slice(0,workflow.indexOf("  synthetic-resource-diagnostic:"))),false);
 });
 
