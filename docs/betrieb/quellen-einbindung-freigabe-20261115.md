@@ -1,7 +1,7 @@
 # Konkrete Freigabevorlage: zwei Quellen für bestehende Fachlücken
 
-Stand15.11.2026,11:56UTC. **Durch Betreiber und gemergten PR1214 ausdrücklich
-freigegeben; Production-Ausführung folgt erst nach grünem Code-Merge/Deployment.**
+Stand15.11.2026,12:15UTC. **Durch Betreiber und PR1214 ausdrücklich freigegeben,
+nach grünem Code-Merge/Deployment atomar ausgeführt und lesend bestätigt.**
 Die frühere automatische Ablehnung bleibt als historischer Beleg erhalten.
 Sie wurde nicht umgangen. Die seitdem erteilte genaue Freigabe steht in
 [AGENTS.md](../../AGENTS.md#verbindliche-dauerfreigabe-vom-15112026-quellenbetrieb-in-der-aufbauphase).
@@ -15,7 +15,7 @@ Die vier strukturellen Befunde betreffen drei fehlende Rollen-/Klassenbindungen.
 QuellenPR1207 enthält dafür zwei tatsächlich geprüfte Direktfeeds und drei
 fachlich belegte Zuordnungen. Der Merge allein installiert oder aktiviert nichts.
 
-## Genau vorgeschlagener Nutzungsumfang
+## Genau freigegebener Nutzungsumfang
 
 | Quelle | Erlaubter Textumfang | Bestehende Ausgabebedingungen |
 |---|---|---|
@@ -121,3 +121,177 @@ den belegten allgemeinen Originalbedingungen erlaubt; er wird weder zum Artikel-
 Publikationsdatum noch zu einer abweichenden Einschränkung umgedeutet. Unbekannte
 Erweiterungen bleiben gesperrt. Neue Kanal-/Artikel-/Nachbargegenfälle lokalgrün;
 dieselben10Originalauszüge bleiben nach der Korrektur erhalten.
+
+## Tatsächlicher Abschluss12:15UTC
+
+CodePR1215:Endkopf`30bd4da493b8415319dcdddae985454132da3bc0`,
+Merge`c3648b08dfac9d1382773da003764925657e44a3`.
+[PflichtCI43712210903](https://github.com/ernisch/helmut-pilot/actions/runs/43712210903)
+beidePflichtjobsgrün,14/14Kern und87/87Quellen;MainCI43712532507ebenfallsgrün.
+UnabhängigesReview samt Kanalrechte-Folgefix und mehrfachen Hinweisen abgeschlossen,
+keinRestbefund. Die bereits erfolgreichen unveränderten iRights-Ausgabeprüfungen
+bleiben erhalten. Keine Datenbank-/500er-/bezahlten Tests.
+
+Productiondeployment`dpl_5Kyd8q4V9vcxteNsRwbM5kei2dU1`READY,richtigerAlias,
+öffentlicheShellHTTP200mitVersionc3648b08. Erst danach die vorwertgebundene
+Transaktion ausgeführt. SkriptSHA256:
+`818cfe9e05ce845ab1e948767f59de3f2cde7cc7ebc0cad12c5fa5c413935fb8`.
+Zusätzliche Zeilensperren und Vorwertwache verhindern, dass die Paketaktivierung
+einen anderen bisher gesperrten Altweg einschaltet. Nur6Inserts/2Paketstatusupdates.
+
+Separate lesende Nachkontrolle bestätigt genau den vorgesehenen Herausgeber,
+beide exaktenRSS-URLs mit`needs_review/auto`,dreiLinksundbeidePaketstatus`active`.
+Alle fünf Altwege sind unverändert:die beiden Suchwege bereits über Bundbasis
+aktiv,die beiden Bundestag-RSS und DLF weiterhin`paused/manual`.
+Alle fünf vorhandenen geprüften Erfolgsjobs weiter`erledigt`,PayloadMD5identisch.
+Tageskosten0,536289USD,Gesamtbindung3,919323USD,8offeneAltreserven undOriginalzähler16
+unverändert. Einbindung0USD,keine zusätzlichen Quellen-/Admin-/Modellläufe.
+
+Beide neuen Wege haben noch`last_success_at:null`:das ist ehrliche Unbekanntheit
+bis zum ersten regulären Abruf. Der bestehende Tagesplan wird nicht geändert;
+die native Planung erstellt den nächsten Tagesplan regulär neu. Deshalb keine
+Behauptung,die letzte alte Quellenquittung oder das Morgenpaket seien jetzt grün.
+Rückweg ist vorbereitet und nicht ausgeführt:
+`e507675a9f254c0306cf4ccdb77a368497139dea025eb244616dc097c4facd9e`.
+Er pausiert nur eigene Wege und stellt bei unveränderten Vorwerten die beiden
+Paketstatus zurück;keineKatalogzeile,Originale,Verarbeitung oderKostenbelege löschen.
+
+### Gebundener ausgeführter Datenbefehl
+
+Historischer Ausführungsbeleg,nicht ungeprüft wiederholen. Freigabeumfang sieheoben.
+
+```sql
+-- Freigabe: AGENTS.md, gemergter PR1214; exakt sechs Inserts und zwei Paketstatus.
+-- Erst nach geprueftem Code-Merge/READY; keine Profile, Jobs, Budgets oder Migration.
+BEGIN;
+SET LOCAL statement_timeout = '5s';
+SET LOCAL lock_timeout = '2s';
+DO $activation$
+DECLARE complete boolean; n integer;
+BEGIN
+  PERFORM id FROM public.source_packages
+    WHERE id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung')
+    ORDER BY id FOR UPDATE;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 2 THEN RAISE EXCEPTION 'source-activation:package-count'; END IF;
+  -- Paketaktivierung darf keinen bislang gesperrten Altweg einschalten.
+  -- Nur genau betroffene Bestandswege sperren; keine Tabelle/globalen Jobs sperren.
+  PERFORM r.id FROM public.retrieval_paths r JOIN public.package_paths pp ON pp.retrieval_path_id=r.id
+    WHERE pp.package_id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung')
+    ORDER BY r.id FOR SHARE OF r;
+  IF EXISTS (SELECT 1 FROM public.package_paths pp JOIN public.retrieval_paths r ON r.id=pp.retrieval_path_id
+    WHERE pp.package_id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung')
+      AND r.id NOT IN ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss')
+      AND r.status NOT IN ('paused','archived') AND r.activation_mode NOT IN ('manual','dev_only')
+      AND NOT EXISTS (SELECT 1 FROM public.package_paths b JOIN public.source_packages p ON p.id=b.package_id
+        WHERE b.retrieval_path_id=r.id AND p.key='bund-basis' AND p.status='active'))
+    THEN RAISE EXCEPTION 'source-activation:unexpected-old-path'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.publishers WHERE id='publisher-destatis.de'
+    AND canonical_domain='destatis.de' AND publisher_type='statistical_office'
+    AND evidence_role='data_source' AND lifecycle_status='active') THEN
+    RAISE EXCEPTION 'source-activation:destatis-before';
+  END IF;
+  SELECT
+    (SELECT count(*)=1 FROM public.publishers WHERE id='publisher-irights.info'
+      AND name='iRights.info' AND canonical_domain='irights.info' AND publisher_type='media'
+      AND evidence_role='journalistic' AND trust='unbekannt' AND lifecycle_status='active' AND entity_id IS NULL)
+    AND (SELECT count(*)=2 FROM public.retrieval_paths r JOIN (VALUES
+      ('rp-fach-destatis-aktuell-rss','publisher-destatis.de','fach-destatis-aktuell-rss','Statistisches Bundesamt — Aktuelles','https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml'),
+      ('rp-fach-irights-rss','publisher-irights.info','fach-irights-rss','iRights.info','https://irights.info/feed')
+    ) v(id,publisher,legacy,name,url) ON r.id=v.id AND r.publisher_id=v.publisher
+      AND r.legacy_source_id=v.legacy AND r.name=v.name AND r.url=v.url
+      WHERE r.method='rss' AND r.parser='rss-regex' AND r.priority=80
+        AND r.status='needs_review' AND r.activation_mode='auto' AND r.query IS NULL
+        AND r.is_critical=false AND r.max_items IS NULL AND r.expected_frequency IS NULL)
+    AND (SELECT count(*)=3 FROM public.package_paths WHERE retrieval_path_id IN
+      ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss'))
+    AND (SELECT count(*)=3 FROM public.package_paths WHERE
+      (package_id,retrieval_path_id) IN (
+      ('pkg-fach-wirtschaft-energie','rp-fach-destatis-aktuell-rss'),
+      ('pkg-fach-digitales-staatsmodernisierung','rp-fach-destatis-aktuell-rss'),
+      ('pkg-fach-digitales-staatsmodernisierung','rp-fach-irights-rss')))
+    AND (SELECT count(*)=2 FROM public.source_packages WHERE id IN
+      ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung') AND status='active')
+    INTO complete;
+  IF complete THEN
+    RAISE NOTICE 'source-activation:already-exact-complete';
+    RETURN;
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.publishers WHERE id='publisher-irights.info' OR canonical_domain='irights.info')
+    OR EXISTS (SELECT 1 FROM public.retrieval_paths WHERE id IN
+      ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss') OR legacy_source_id IN
+      ('fach-destatis-aktuell-rss','fach-irights-rss') OR url IN
+      ('https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml','https://irights.info/feed'))
+    OR EXISTS (SELECT 1 FROM public.package_paths WHERE retrieval_path_id IN
+      ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss'))
+    OR (SELECT count(*) FROM public.source_packages WHERE
+      (id,key) IN (('pkg-fach-wirtschaft-energie','fach-wirtschaft-energie'),
+      ('pkg-fach-digitales-staatsmodernisierung','fach-digitales-staatsmodernisierung')) AND status='prepared') <> 2
+    THEN RAISE EXCEPTION 'source-activation:before-drift';
+  END IF;
+  INSERT INTO public.publishers (id,name,canonical_domain,publisher_type,evidence_role,trust,lifecycle_status,entity_id)
+    VALUES ('publisher-irights.info','iRights.info','irights.info','media','journalistic','unbekannt','active',null);
+  INSERT INTO public.retrieval_paths
+    (id,publisher_id,legacy_source_id,name,method,url,query,parser,priority,status,activation_mode,is_critical,max_items,expected_frequency)
+    VALUES
+    ('rp-fach-destatis-aktuell-rss','publisher-destatis.de','fach-destatis-aktuell-rss','Statistisches Bundesamt — Aktuelles','rss','https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml',null,'rss-regex',80,'needs_review','auto',false,null,null),
+    ('rp-fach-irights-rss','publisher-irights.info','fach-irights-rss','iRights.info','rss','https://irights.info/feed',null,'rss-regex',80,'needs_review','auto',false,null,null);
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 2 THEN RAISE EXCEPTION 'source-activation:path-count'; END IF;
+  INSERT INTO public.package_paths (package_id,retrieval_path_id) VALUES
+    ('pkg-fach-wirtschaft-energie','rp-fach-destatis-aktuell-rss'),
+    ('pkg-fach-digitales-staatsmodernisierung','rp-fach-destatis-aktuell-rss'),
+    ('pkg-fach-digitales-staatsmodernisierung','rp-fach-irights-rss');
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 3 THEN RAISE EXCEPTION 'source-activation:link-count'; END IF;
+  UPDATE public.source_packages SET status='active',updated_at=now()
+    WHERE id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung') AND status='prepared';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 2 THEN RAISE EXCEPTION 'source-activation:package-update-count'; END IF;
+END;
+$activation$;
+SELECT jsonb_build_object(
+  'packages',(SELECT jsonb_agg(jsonb_build_object('id',id,'status',status)) FROM public.source_packages
+    WHERE id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung')),
+  'paths',(SELECT jsonb_agg(jsonb_build_object('id',id,'status',status,'activation_mode',activation_mode,'url',url))
+    FROM public.retrieval_paths WHERE id IN ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss')),
+  'links',(SELECT count(*) FROM public.package_paths WHERE retrieval_path_id IN
+    ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss'))
+) AS activation_receipt;
+COMMIT;
+```
+
+### Vorbereiteter konservativer Rückweg
+
+Nur bei notwendigem Rückweg und erneut geprüftem Vorwert ausführen,keineErgebnislöschung.
+
+```sql
+-- Konservativer Rueckweg: nur pausieren, nie Ergebnisse oder Quellenzeilen loeschen.
+BEGIN;
+SET LOCAL statement_timeout='5s';
+SET LOCAL lock_timeout='2s';
+DO $rollback$
+DECLARE n integer;
+BEGIN
+  PERFORM id FROM public.source_packages WHERE id IN
+    ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung') ORDER BY id FOR UPDATE;
+  IF (SELECT count(*) FROM public.source_packages WHERE id IN
+    ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung') AND status='active') <> 2
+    THEN RAISE EXCEPTION 'source-rollback:package-drift'; END IF;
+  IF (SELECT count(*) FROM public.retrieval_paths WHERE (id,publisher_id,legacy_source_id,url) IN (
+    ('rp-fach-destatis-aktuell-rss','publisher-destatis.de','fach-destatis-aktuell-rss','https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml'),
+    ('rp-fach-irights-rss','publisher-irights.info','fach-irights-rss','https://irights.info/feed'))
+    AND status='needs_review' AND activation_mode='auto' AND method='rss' AND parser='rss-regex') <> 2
+    THEN RAISE EXCEPTION 'source-rollback:path-drift'; END IF;
+  UPDATE public.retrieval_paths SET status='paused',activation_mode='manual',updated_at=now()
+    WHERE id IN ('rp-fach-destatis-aktuell-rss','rp-fach-irights-rss') AND status='needs_review' AND activation_mode='auto';
+  GET DIAGNOSTICS n=ROW_COUNT;
+  IF n<>2 THEN RAISE EXCEPTION 'source-rollback:path-count'; END IF;
+  UPDATE public.source_packages SET status='prepared',updated_at=now()
+    WHERE id IN ('pkg-fach-wirtschaft-energie','pkg-fach-digitales-staatsmodernisierung') AND status='active';
+  GET DIAGNOSTICS n=ROW_COUNT;
+  IF n<>2 THEN RAISE EXCEPTION 'source-rollback:package-count'; END IF;
+END;
+$rollback$;
+COMMIT;
+```

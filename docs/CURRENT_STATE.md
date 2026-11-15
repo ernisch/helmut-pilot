@@ -1,34 +1,33 @@
 # CURRENT STATE — Helmut
-**15.11.2026,11:14UTC: Zusatzlauf abgeschlossen; Quellenvorbereitung live, Versorgung weiter teilweise.**
+**15.11.2026,12:15UTC: Destatis/iRights in Production aktiviert; Wirkungsnachweis der Tagesversorgung offen.**
 
-Runtime37d62160 READY nach PR1207; oeffentliche ShellHTTP200 mit exakt dieserVersion.
-QuellenPR1207:2inaktiveDirektwege/3begruendeteBindungen/6neueSeedzeilen gemergt,
-keineLiveinstallation/-aktivierung. ExakterKopf93accafb,CI43707311442beidePflichtjobsgruen:
-39Plan-/87Quellen-/14Kerngruppen,gezielteAuswahl,keinDB-/500er-/bezahlterTest.
-MainCI43707520208gruen mit echterMerge-/Treebindung;unabhaengigesReview ohneRestbefund.
-FruehererKopf7fa06CI43706873018zusaetzlich1074synthetischeInfrastrukturUnitfaelle;
-imEndplan wieaufMain bewusstnichtwiederholt. Erstfehler/Abbrueche bleiben dokumentiert.
-BisherigeLeserPR1203/1204/1206 undAttributionPR1209 erhalten;UI-PR1208 separatgemergt.
-BetreiberhatgenaueinAdminquellenlauf gestartet:10:45:32–10:49:22UTC,
-15erledigt/15Wiedervorlagen/72Vertagungen,0endgueltigeFehler,0Leaseverluste.
-Quellenabdeckungdanach weiterpartial:4Fehler/95Warnungen/13Drift,9Bedarfspakete,
-keineZuordnungsluecke. FehlendeRollen-/Klassenbindungen bleibenBetriebsblocker.
-14Wiedervorlagen habenechteMetadatenkonflikte;keineOriginale/Bindungenumgeschrieben.
-EinunbekannterModellausgang bleibtCASgesperrt;keinblinderRetry/Reserveabbau.
-Lage10:57 bestaetigtCache/7Vorgaenge/quellenversorgung-offen;Morgen10:58partial,
-reasonmorgenversorgung-unvollstaendig. BeideAbschlussquittungengespeichert,keinGesamtPASS.
-Kostenbuch11:12:0,536289USDheute,3,919323USDgesamtgebunden,8alteReservenoffen;
-Zusatzgegenvorher0,083777USD. Grenzen1USD/Tag/30USDgesamt unveraendert.
-5gepruefteErfolgsjobs nachZusatzlaufundMerge weitererledigt,PayloadMD5identisch.
-Adminsessiongrenze erhalten;Nutzerstart,keineSecretumgehung,keinQuoten-/Host-/Cronreset.
-AutomatischeFreigabepruefung lehnteNutzungsflagweitungfuer2Feeds mangelskonkretemGOab;
-keineFlag-/ProductionKatalogaenderung ausgefuehrt. KonkreteVorlage samtRueckweg liegtvor.
-Einmaligerprivater12FelderAbgleichbleibtabgeschlossen;keineerneuteProfilabfrage.
-EchteKundenabnahme/rechtlicheVerkaufsfreigabe weiterunbelegt. KeineBehauptungheuteverkaufsbereit.
-EinmaligelesendeKontrolle16Nov05:25UTCbleibt;Produktcronsunveraendert03:00–05:15UTC.
-NaechsterSchritt:genauebegrenzteNutzungs-/ProductionEinbindungder2Feedsfreigeben.
-[Abschlussnachweise](betrieb/versorgung-folgeabschluss-20261115.md) ·
-[PrueffaehigeFreigabevorlage](betrieb/quellen-einbindung-freigabe-20261115.md).
+BetreiberGO undgemergterPR1214 geben exakt2Feeds/6Katalogzeilen/2Paketaktivierungen frei.
+CodePR1215 gemergtalsc3648b08,Productiondpl_5Kyd8q4V9vcxteNsRwbM5kei2dU1READY;
+oeffentlicheShellHTTP200/Versionc3648b08. ExakterKopf30bd4da4,CI43712210903gruen:
+14/14Kern,87/87Quellen,beidePflichtjobs;MainCI43712532507gruen,keineDB-/500er-/bezahltenTests.
+UnabhaengigesReview:KanalrechteP2korrigiert,mehrfacheHinweiseberuecksichtigt,keinRestbefund.
+Destatis:nurbelegteRSS-Auszugemax480Zeichen,Original/Datum/Quellennachweis,0Bilder,
+abweichendeKanal-/Artikelrechte→TitelLink,keinHTML-/Spiegel-/Volltextnachladen.
+GespeichertesOriginal10/10datiertebrauchbareAuszuege,max443Zeichen;Copyright2019istkeinPubdatum.
+iRights:artikelweiseCC-BY-/Autor-/OERinfo-Bindung undKundenhinweis erhalten;sonstTitelLink.
+AtomareProductioneinbindungausgefuehrtund12:15lesendbestaetigt:1Herausgeber,2Wege,
+3Paketlinks,2Paketestatusactive;beideWegeneeds_review/auto,keinGesundheitsnachweiserfunden.
+5Altwegestatusunveraendert,BT2/DLF1weiterpaused/manual;keinandererAltwegaktiviert.
+5gepruefteErfolgsjobsweitererledigt,PayloadMD5vor/nachidentisch;keineOriginale/Jobsresettet.
+Kostenunveraendert:0,536289USDheute,3,919323USDgesamtgebunden,8alteReservenoffen,
+Originalabrufzaehler16;Einbindung0USD,keinzusaetzlicherAdmin-/Modell-/Quellenlauf.
+DefaultSeedsbleibeninaktiv,keinVollseed/Schema-/Profil-/Host-/Cron-/Secret-/Budgeteingriff.
+Quellenlauf15Nov10:45–10:49:15erledigt/15Wiedervorlagen/72vertagt/0endgueltigeFehler.
+LetzteechteAbdeckungsquittung10:49weiterpartial:4Fehler/95Warnungen/13Drift,9Bedarfspakete;
+dieserVor-Aktivierungsbelegwirdnichtumgewertet.NeueWegehabennochkeinenregulaerenAbrufbeleg.
+Lage10:57Cache7Vorgaenge/quellenversorgung-offen;Morgen10:58partial/versorgungunvollstaendig.
+14echteMetadatenkonflikte/1unbekannterCAS-Modellausgangbleibengesichert;keineWachenlockerung.
+Privater12FelderAbgleichbleibtabgeschlossen;keineerneuteProfilabfrage.
+LeserPR1203/1204/1206,Attribution1209,Quellenprep1207erhalten;UI-PR1208separatgemergt.
+EchteKundenabnahmeundrechtlicheGesamtverkaufsfreigabeweiterunbelegt;keinGesamtPASS.
+Produktcronsunveraendert03:00–04:45Quellen,05:00Lage,05:15MorgenUTC.
+NaechsterSchritt:naechstenregulaerenMorgenlaufam16NovautomatischpruefenundbelegteFehlerimfreigegebenenRahmenbearbeiten.
+[Abschluss](betrieb/versorgung-folgeabschluss-20261115.md) · [Freigabe/Aktivierungsnachweis/Rueckweg](betrieb/quellen-einbindung-freigabe-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.
