@@ -111,10 +111,68 @@ for (const source of S.ZUSAETZLICHE_QUELLEN) {
   assert(source.packageKeys.every((key)=>P.PACKAGE_DEFINITIONS.some((p)=>p.key===key)));
 }
 assert.equal(S.ZUSAETZLICHE_QUELLEN.find((s)=>s.id==='partei-csu-direkt-rss').verification.freshnessStatus,'older_than_30_days');
+
+// Neuer Direktweg nur vorbereitet: derselbe Destatis-Herausgeber wie beim
+// unveraenderten Soziales-Suchweg, genau eine Wirtschaftsbindung, keine Abrufe.
+const C = require("../lib/helmut/quellenarchitektur/catalog"), model = require("../lib/helmut/quellenarchitektur/model");
+const { v1Sources } = require("../lib/helmut/sources");
+const destatis = S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === "fach-destatis-aktuell-rss");
+assert(destatis);
+assert.equal(destatis.url, "https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml");
+assert.equal(model.canonicalDomain(destatis.url), "destatis.de");
+assert.equal(model.canonicalDomain(destatis.url.replace("www.", "")), "destatis.de");
+assert.deepEqual(destatis.packageKeys, ["fach-wirtschaft-energie"]);
+assert.deepEqual(destatis.fachgebietKeys, ["wirtschaft-energie"]);
+assert.equal(destatis.evidenceRole, "data_source");
+assert.deepEqual(destatis.coverageClasses, ["amtliche_daten"]);
+assert.equal(destatis.active, false);
+assert.equal(destatis.preparedOnly, true);
+assert.equal(destatis.rightsReviewRequired, true);
+assert.equal(destatis.usagePolicy.status, "review_required");
+assert.equal(destatis.usagePolicy.commercialUseApproved, false);
+assert.equal(destatis.usagePolicy.fullTextAllowed, false);
+assert(destatis.usagePolicy.note.includes("Vervielfältigung und Verbreitung, auch auszugsweise, mit Quellennachweis"));
+assert(destatis.usagePolicy.note.includes("Einzelangaben"));
+assert(destatis.usagePolicy.note.includes("Bilder haben gesonderte Rechte"));
+assert.deepEqual(destatis.usagePolicy.evidenceUrls, ["https://www.destatis.de/DE/Service/Impressum/_inhalt.html"]);
+assert.equal(destatis.verification.feedParsed, true);
+assert.equal(destatis.verification.httpStatus, 200);
+assert.equal(destatis.verification.itemCount, 10);
+assert.equal(destatis.verification.latestPublishedAt, "2026-11-13T08:00:00+01:00");
+assert.equal(destatis.verification.status, "technically_verified_rights_pending");
+const soziales = v1Sources.find((s) => s.id === "news-destatis-soziales");
+assert(soziales);
+const beforeDestatis = C.buildCatalog({ sources: [soziales] });
+for (const sources of [[soziales, destatis], [destatis, soziales]]) {
+  const mapped = C.buildCatalog({ sources });
+  assert.equal(mapped.publishers.filter((p) => p.canonical_domain === "destatis.de").length, 1);
+  const publisher = mapped.publishers.find((p) => p.canonical_domain === "destatis.de");
+  assert.equal(publisher.id, "publisher-destatis.de");
+  assert.equal(publisher.publisher_type, "statistical_office");
+  assert.equal(publisher.evidence_role, "data_source");
+  assert.equal(publisher.entity_id, "statoffice-destatis");
+  const path = mapped.retrievalPaths.find((p) => p.id === "rp-fach-destatis-aktuell-rss");
+  assert.equal(path.publisher_id, publisher.id);
+  assert.equal(path.method, "rss"); assert.equal(path.parser, "rss-regex");
+  assert.equal(path.status, "paused"); assert.equal(path.activation_mode, "manual");
+  assert.equal(path.prepared_only, true); assert.equal(path.rights_review_required, true);
+  assert.equal(path.evidence_role, "data_source"); assert.deepEqual(path.coverage_classes, ["amtliche_daten"]);
+  assert.equal(model.isPathActive(path, ["pkg-fach-wirtschaft-energie"]), false);
+  assert.deepEqual(mapped.packagePaths.filter((p) => p.retrieval_path_id === path.id),
+    [{ package_id: "pkg-fach-wirtschaft-energie", retrieval_path_id: path.id }]);
+  assert.equal(mapped.packages.find((p) => p.key === "fach-wirtschaft-energie").status, "prepared");
+  assert.deepEqual(mapped.retrievalPaths.find((p) => p.legacy_source_id === soziales.id), beforeDestatis.retrievalPaths.find((p) => p.legacy_source_id === soziales.id));
+}
+for (const [id, role] of [["swp", "data_source"], ["dji", "data_source"], ["rki", "data_source"],
+  ["dlf-wirtschaft", "journalistic"], ["dlf-wissen", "journalistic"], ["g-ba", "official_primary"], ["uba", "official_primary"]])
+  assert.equal(S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === `fach-${id}-rss`).evidenceRole, role);
+assert(!S.ZUSAETZLICHE_QUELLEN.some((s) => s.packageKeys.includes("fach-digitales-staatsmodernisierung")
+  && ["data_source", "journalistic"].includes(s.evidenceRole)), "Beide Digitalrollen bleiben ohne belegte neue Quelle offen");
+
 for (const [state, key] of [["Bayern", "bayern"], ["Nordrhein-Westfalen", "nordrhein-westfalen"]]) {
   const r = R.resolveProfilePackages({ parliamentType: "Bundestag", state });
   assert(r.optionalMissing.includes(`regionalpaket:${key}`), `Regionale Lücke ${state} darf nicht verschwinden`);
   assert(!r.required.includes(`${key}-basis`), "Landesmandatsgate nicht durch Regionalbedarf umgehen");
 }
 assert(R.resolveProfilePackages({ parliamentType: "Bundestag", state: "NI" }).optional.includes("regional-niedersachsen"));
-console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische10Parteizuordnungen,16Länder, Fraktionslosigkeit, Rechte-/Aktivierungsschranken");
+console.log("PASS Fach-/Parteiversorgung: aktuelle24Ausschüsse, symmetrische10Parteizuordnungen,16Länder, Fraktionslosigkeit, inaktiver Destatis-Wirtschaftsweg, Rechte-/Aktivierungsschranken");
