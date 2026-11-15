@@ -99,6 +99,22 @@ async function transport(body, status, fn) {
     }
   });
   await test("iRights-Herkunft weist Feed-, Artikel-, Titel-, Datums- und Textvertauschungen zurueck", () => {
+    const foreign = "Eine fremde, nicht im lizenzierten Text enthaltene Beschreibung behauptet einen anderen Sachverhalt.";
+    // Die unabhaengige description ist bereits VOR dem Parser veraendert;
+    // der unveraenderte Lizenzabsatz im encoded-Text legitimiert sie nicht.
+    const beforeParsing = irightsXml().replace(`<description><![CDATA[<p>${irightsText}</p>]]></description>`,
+      `<description><![CDATA[<p>${foreign}</p>]]></description>`);
+    const foreignEntry = C.parseRssItems(beforeParsing)[0];
+    assert(!foreignEntry.irightsTextBeleg);
+    const foreignDoc = D.toRawDocumentRow(C.normalizeRawItem(foreignEntry, irights));
+    assert.equal(foreignDoc.summary, null); assert.equal(Q.quellenhinweis(foreignDoc).licenseUrl, null);
+    const firstSentence = irightsText.slice(0, irightsText.indexOf(". ") + 1);
+    const overlapXml = irightsXml().replace(`<description><![CDATA[<p>${irightsText}</p>]]></description>`,
+      `<description><![CDATA[<p>${firstSentence} ${foreign}</p><p>The post Artikel appeared first on iRights.info.</p>]]></description>`);
+    const overlap = C.parseRssItems(overlapXml)[0];
+    assert.equal(overlap.content, firstSentence);
+    assert(overlap.irightsTextBeleg); assert(!overlap.content.includes(foreign));
+    assert(!overlap.content.includes("The post"));
     const entry = C.parseRssItems(irightsXml())[0];
     for (const source of [{ ...irights, url: "https://example.org/feed" },
       { ...irights, rssUrl: "https://example.org/feed" }, { ...irights, rssUrls: [irights.url, "https://example.org/feed"] }])
