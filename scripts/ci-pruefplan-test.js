@@ -144,4 +144,105 @@ check("Leere Dateiliste ist fail closed", () => {
   assert.equal(p.browser, true);
 });
 
+
+// Ein exakter inaktiver Quellenstand darf ohne fremde DB-/Mengenpruefungen
+// geprueft werden. Jede abweichende Runtime, SQL oder Mergebindung stoppt.
+const Q = require("./ci-inaktive-quellen-plan");
+function sourceFixture(push = false) {
+  const row = oid => ({ mode: "100644", type: "blob", oid });
+  const baseTree = new Map([["server.js", row("a".repeat(40))], ["client.js", row("b".repeat(40))],
+    ["supabase/migrations/unveraendert.sql", row("c".repeat(40))]]);
+  for (const file of Object.keys(Q.BLOBS)) baseTree.set(file, row("d".repeat(40)));
+  const evidenceTree = new Map(baseTree);
+  for (const [file, hash] of Object.entries(Q.BLOBS)) evidenceTree.set(file, row(hash));
+  const headTree = new Map(evidenceTree);
+  for (const file of Q.CI_FILES) headTree.set(file, row("e".repeat(40)));
+  const branchHead = "f".repeat(40), head = push ? "9".repeat(40) : branchHead;
+  return { event: push ? "push" : "pull_request", repository: Q.REPOSITORY,
+    ref: push ? "refs/heads/main" : `refs/pull/${Q.PR}/merge`, headRef: push ? undefined : Q.BRANCH,
+    head, before: Q.BASE, message: Q.MERGE_TITLE,
+    pr: { number: Q.PR, state: push ? "closed" : "open", draft: false, merged: push,
+      merge_commit_sha: push ? head : null,
+      base: { sha: Q.BASE, ref: "main", repo: { full_name: Q.REPOSITORY } },
+      head: { sha: branchHead, ref: Q.BRANCH, repo: { full_name: Q.REPOSITORY } } },
+    parents: push ? [Q.BASE, branchHead] : [Q.EVIDENCE], baseTree, evidenceTree, headTree,
+    prHeadTree: push ? new Map(headTree) : undefined };
+}
+function sourceDenied(change, push = false) {
+  const f = sourceFixture(push); change(f); assert.throws(() => Q.validate(f), /inaktive-quellen-ci:/);
+}
+check("Inaktive Quellen: exakter PR behaelt beide Pflichtjobs und nur Kern/Quellen", () => {
+  const p = Q.validate(sourceFixture());
+  assert.equal(p.inaktivequellen, true); assert.equal(p.core, true);
+  for (const key of ["standard", "area", "database", "browser"]) assert.equal(p[key], false);
+});
+for (const [name, change] of [
+  ["Repository", f => { f.repository = "fremd/repo"; }],
+  ["PR", f => { f.pr.number++; }],
+  ["Basis", f => { f.pr.base.sha = "1".repeat(40); }],
+  ["Branch", f => { f.pr.head.ref = "fremd"; }],
+  ["Checkout", f => { f.head = "2".repeat(40); }],
+  ["Ereignis", f => { f.event = "workflow_dispatch"; }],
+  ["Baum", f => { f.headTree = null; }],
+  ["Quellenblob", f => { f.headTree.set(Object.keys(Q.BLOBS)[0], { mode: "100644", type: "blob", oid: "3".repeat(40) }); }],
+  ["SQLblob", f => { f.headTree.delete("supabase/seeds/20260713_source_architecture_seed.sql"); }],
+  ["Belegbaum", f => { f.evidenceTree.delete(Object.keys(Q.BLOBS)[1]); }],
+  ["fremde Runtime", f => { f.headTree.delete("server.js"); }],
+  ["fremde UI", f => { f.headTree.set("client.js", { mode: "100644", type: "blob", oid: "4".repeat(40) }); }],
+  ["Migration", f => { f.headTree.delete("supabase/migrations/unveraendert.sql"); }],
+  ["unbekannte Datei", f => { f.headTree.set("lib/helmut/fremd.js", { mode: "100644", type: "blob", oid: "5".repeat(40) }); }],
+  ["CI-Symlink", f => { f.headTree.set(Q.CI_FILES[0], { mode: "120000", type: "blob", oid: "6".repeat(40) }); }]
+]) check(`Inaktive Quellen: ${name} stoppt statt Mengenrueckfall`, () => sourceDenied(change));
+check("Inaktive Quellen: wirklicher Mainmerge mit identischem PR-Baum erlaubt", () => {
+  assert.equal(Q.validate(sourceFixture(true)).mode, "inaktive-quellen");
+});
+for (const [name, change] of [
+  ["nicht gemergter PR", f => { f.pr.merged = false; }],
+  ["anderer Titel", f => { f.message += " fremd"; }],
+  ["anderer Vater", f => { f.parents[0] = "7".repeat(40); }],
+  ["fremder Mergebaum", f => { f.prHeadTree.delete("client.js"); }],
+  ["andere Vorgeschichte", f => { f.before = "8".repeat(40); }]
+]) check(`Inaktive Quellen: Main ${name} gesperrt`, () => sourceDenied(change, true));
+check("Inaktive Quellen: Workflow benutzt dieselbe Bindung in beiden Pflichtjobs", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  assert.equal((workflow.match(/node scripts\/ci-inaktive-quellen-plan\.js --github-output/g) || []).length, 2);
+  assert(workflow.includes("steps.plan.outputs.inaktivequellen == 'true'"));
+  assert(workflow.includes("scripts/run-offline-tests.js --nur-bereich --bereich quellen"));
+  assert(workflow.includes("name: Syntax + Offline-Suiten"));
+  assert(workflow.includes("name: Browser-/Mobile-Smoke (Chromium)"));
+  assert(workflow.includes(Q.MERGE_TITLE));
+  assert.match(workflow, /name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.inaktivequellen != 'true'/);
+});
+
+
+check("Inaktive Quellen: echter Workflow-Selektor faengt falschen Mainmergetitel vor breitem Plan ab", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const blocks = [...workflow.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1207 \][\s\S]*?\n          fi/g)].map(m => m[0]);
+  assert.equal(blocks.length, 2); assert.equal(blocks[0], blocks[1]);
+  const script = `set -e
+  git() {
+    case "$1" in
+      log) printf '%s' "$TEST_MESSAGE";;
+      rev-parse) printf '%s' "$TEST_PARENT";;
+      merge-base) return "$TEST_EVIDENCE_EXIT";;
+      *) return 99;;
+    esac
+  }
+  node() { printf 'GUARD'; return 23; }
+  ${blocks[0]}
+  printf 'BROAD'`;
+  const run = (message, parent, evidence) => require("node:child_process").spawnSync("bash", ["-c", script], {
+    encoding: "utf8", env: { PATH: process.env.PATH, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main",
+      GITHUB_OUTPUT: "/dev/null", TEST_MESSAGE: message, TEST_PARENT: parent, TEST_EVIDENCE_EXIT: String(evidence) }
+  });
+  for (const message of [Q.MERGE_TITLE, "Merge pull request #1207", "Tippfehler"]) {
+    const r = run(message, Q.BASE, 0);
+    assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  const unrelated = run("Anderer PR", Q.BASE, 1);
+  assert.equal(unrelated.status, 0, unrelated.stderr); assert.equal(unrelated.stdout, "BROAD");
+  const later = run("Spaeterer Maincommit", "8".repeat(40), 0);
+  assert.equal(later.status, 0, later.stderr); assert.equal(later.stdout, "BROAD");
+});
+
 console.log("\n" + pass + " PASS / 0 FAIL");

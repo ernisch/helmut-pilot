@@ -110,6 +110,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur der unveraenderte, hashgebundene inaktive Quellenstand aus PR1207.
+          # Ein unbekannter Baum stoppt; kein Rueckfall auf pauschale Mengenlaeufe.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1207 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/versorgung-destatis-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'feat(quellen): inaktive Fachquellen gezielt geprueft integrieren (#1207)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = ec79faa0540fb611c9cea117b02cfbad983cae6a ] \
+                  && git merge-base --is-ancestor 9eed81afa05afc8f41fe6433f1c6bdbf70acb096 HEAD; }; }; }; then
+            node scripts/ci-inaktive-quellen-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/einprofil-lieferfaehigkeit-20261113 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1184 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/dip-einzelartikel-20261113 ] \
@@ -401,7 +412,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -688,6 +699,14 @@ jobs:
           docker exec "$HELMUT_STARTTOR_PG_CONTAINER" pg_isready -U postgres
           node scripts/lokal.js -- node scripts/starttor-native-reader-datenbank-test.js
 
+      - name: Inaktive Quellen - gebundener Pruefplan und Quellenbereich
+        if: steps.plan.outputs.inaktivequellen == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/ci-pruefplan-test.js
+          node scripts/lokal.js -- node scripts/run-offline-tests.js --nur-bereich --bereich quellen
+
       - name: Schnelle Kernschutzprüfung
         if: steps.plan.outputs.core == 'true'
         env:
@@ -795,6 +814,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur der unveraenderte, hashgebundene inaktive Quellenstand aus PR1207.
+          # Ein unbekannter Baum stoppt; kein Rueckfall auf pauschale Mengenlaeufe.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1207 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/versorgung-destatis-20261115 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'feat(quellen): inaktive Fachquellen gezielt geprueft integrieren (#1207)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = ec79faa0540fb611c9cea117b02cfbad983cae6a ] \
+                  && git merge-base --is-ancestor 9eed81afa05afc8f41fe6433f1c6bdbf70acb096 HEAD; }; }; }; then
+            node scripts/ci-inaktive-quellen-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/einprofil-lieferfaehigkeit-20261113 ] \
             || [ "${HELMUT_CI_PR_NUMBER:-}" = 1184 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/dip-einzelartikel-20261113 ] \
