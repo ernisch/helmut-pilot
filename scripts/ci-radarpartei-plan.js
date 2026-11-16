@@ -8,13 +8,14 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1237;
 const BRANCH = "codex/radar-parteibezug-20261116";
 const BASE = "6cfcba3a34c22acb34305634e9370a05ff970f46";
-const EVIDENCE = "7fe950e5b71c054793fb2119b56fc7c616a6e853";
+const EVIDENCE = "b934be859c80acf559203f7b7a27e2cb0e8b346d";
 const MERGE_TITLE = "fix(radar): eigenen Parteibezug am angezeigten Artikel prüfen (#1237)";
 const BLOBS = Object.freeze({
   "lib/helmut/briefing-bereichsvertrag.js": "734be8e3579977f84de617825fb3888daa749295",
   "lib/helmut/radarState.js": "f6e691101072c972f96f6c34e244c34631d3f18f",
   "lib/helmut/tagespaket-auslieferung.js": "03153e038d1fe440270bddffac2e9b1710e2accb",
   "scripts/browser-smoke-test.js": "c4e25b7f30892952d24bf812310170ca6549dbd2",
+  "scripts/quellenpflicht-vertrag-test.js": "af4d9df2c455637544e206e9f6f5e19f46194390",
   "scripts/radar-einzelartikel-titelbindung-test.js": "e9c00a2a6e8ba8e83d7fc25d92032414486b8725",
   "scripts/radar-party-normalization-test.js": "fa946da9becea8ce5e394684845172144bd7f67a",
   "scripts/radar-state-test.js": "af01d8c0606f2876dface5e37a30b4d9741f9ce1",
