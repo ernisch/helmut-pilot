@@ -8,10 +8,10 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1233;
 const BRANCH = "codex/quellen-deadline-20261116";
 const BASE = "af1d8497cc1d649a8ec9afda0f6c925c0e13bda4";
-const EVIDENCE = "dfad80ecfb799c55db873a1c1722469cbcff7b48";
+const EVIDENCE = "b12f6d459e310d34d17f091919453fe2249459c1";
 const MERGE_TITLE = "fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)";
 const BLOBS = Object.freeze({
-  "lib/helmut/crawler.js": "ee671e708575f4383bdbf56ac44ef65ce9f9be57",
+  "lib/helmut/crawler.js": "2ea4baec104df51bdb574f84054900482667e33f",
   "lib/helmut/quellen-eurlex-auszug.js": "0f7592182e8ba92f0e6f344920cba90874308412",
   "lib/helmut/scalable-pipeline.js": "3dc645cc1541b6eb6d0e5ed3d10549cb5c6fc0d5",
   "scripts/anbietersteuerung-fachpfad-test.js": "3d5198b50d0ce33d99472b5e0e97c24e0d5d0ea9",
@@ -19,6 +19,7 @@ const BLOBS = Object.freeze({
   "scripts/crawler-quellenfrist-test.js": "7db5a6ad5a172d77cd25805416ba13e744ee7927",
   "scripts/pardok-fetch-test.js": "aaa7766a914b1581b0f78b255ca92e08f551be15",
   "scripts/quellen-eurlex-auszug-test.js": "b99d5ff5aea4132a6c88686aa700bfa0b4b3db31",
+  "scripts/quellen-eurlex-primary-test.js": "2eac2a8e8ac68a54264842571428bfefd59d94f0",
   "scripts/quellenauftrag-netzfrist-test.js": "a065f51e27a1c40f867a965d3035acab6130f849",
   "scripts/source-queue-telemetry-test.js": "f37a785d371cfbcebe399149ae4500b40a20426b"
 });

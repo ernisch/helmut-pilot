@@ -95,6 +95,17 @@ Abbruch, Redirect und echter Dispatchnachweis an offenem Ein-Record-Stream.
 Der historische5000/300Datensatzmodus wird nicht ausgefuehrt; Pflicht-CI
 bindet den Mengenfilter ausdruecklich. Kein externer HTTP-/Modelltest.
 
+Vor Integration zusaetzlich rot reproduziert: die neue durchgereichte Uhr ist
+eine Funktion, der alte CELLAR-Fallback erwartete ein Date-/Zeitwertargument.
+Nur an dieser bestehenden Schnittstelle wird die Uhr ausgewertet und als
+Date gebunden. Vier neue gezielte Funktionsuhr-/Date-/Legacy-/Abbruchgruppen
+gruen; das echte03–16Nov-Abfragefenster und Publikation13Nov bleiben erhalten.
+Der11Runtime-/Testblobs bindende Evidence-Stand ist
+`b12f6d459e310d34d17f091919453fe2249459c1`; ErstfehlerCI43818662436 bleibt
+erhalten, bereits gruene Zwischen-CI43823257157 gilt nur fuer ihren alten Kopf.
+Die heutige EUR-Lex-RSS-Fruehrueckgabe mit16Titelmetadaten ist als gesonderte
+belegte Restursache erfasst; deren Originalpfadkorrektur folgt getrennt.
+
 ## Verbleibende Grenzen
 
 Diese Korrektur beweist keine vollständige heutige Quellenversorgung oder
