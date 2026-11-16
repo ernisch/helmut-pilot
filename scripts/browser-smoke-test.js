@@ -345,17 +345,18 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           const b = start.briefing;
           assert.equal(b.gespeicherterNachweis.inhaltHash, row.payload.inhaltHash);
           assert.equal(b.paketStatus.quittungGebunden, true);
-          assert.equal(b.currentRadarState.anzeige.environment.party[0].title, artikelStory.newTitle);
-          assert.equal(b.currentRadarState.environment.party[0].title, artikelStory.oldTitle);
+          assert.deepEqual(b.currentRadarState.anzeige.environment.party, []);
+          assert.deepEqual(b.currentRadarState.environment.party, []);
+          assert.equal(row.payload.briefing.currentRadarState.environment.party[0].title, artikelStory.oldTitle);
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           await page.locator(`${isMobile ? ".mobile-dock" : ".nav-list"} [data-view="radar"]`).click();
           const root = page.locator("#radar2-root"); await root.waitFor({ state: "visible" });
           const env = root.locator(`.radar2-row[href="${artikelStory.sourceUrl}"]`);
-          const sourceDate = await page.evaluate(at => radarTime(at), artikelStory.publishedAt);
-          check(`${label}: Partei-Radarkarte zeigt Titel Link und Datum desselben neuen Artikels statt altem Akteurtitel`,
-            await env.locator(".radar2-row-title").innerText() === artikelStory.newTitle
-            && (await env.innerText()).includes(sourceDate)
-            && !(await root.innerText()).includes(artikelStory.oldTitle));
+          check(`${label}: gespeicherter Fremdparteienartikel erhaelt keine eigene Parteikarte`,
+            await env.count() === 0
+            && !(await root.innerText()).includes(artikelStory.newTitle)
+            && !(await root.innerText()).includes(artikelStory.oldTitle)
+            && !(await root.innerText()).includes("Betrifft die Partei"));
           const dynamics = root.locator('.radar2-card--dynamic[href="https://example.invalid/dokument/2"]');
           check(`${label}: auch die sichtbare Dynamik verwendet ausschliesslich die eigene gespeicherte Artikelueberschrift`,
             await dynamics.locator(".radar2-card-title").innerText() === lageAnsicht.paragraphs[1].sources[0].title

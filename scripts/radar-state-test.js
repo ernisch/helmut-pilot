@@ -78,7 +78,8 @@ const kosById = Object.fromEntries(allKos.map((k) => [k.id, k]));
 // (best_source_url) genuegt dafuer nicht mehr. Bewusst OHNE published_at, damit das belegte
 // Quellendatum dieses Fixtures leer bleibt (Status ehrlich 'stale').
 const envDocs = {
-  v4: [{ id: "rd-v4", title: "Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" }],
+  v3: [{ id: "rd-v3", title: "Die Linke beschließt neue Linie zur Migrationspolitik", url: "https://x.de/artikel-3" }],
+  v4: [{ id: "rd-v4", title: "Die Linke: Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" }],
   v5: [{ id: "rd-v5", title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" }]
 };
 
@@ -161,7 +162,7 @@ check("relevanceEvidence trägt den echten Profil-Treffer (Wert)",
     { knowledge_object_id: "k3", vorgang_id: "v3", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] },
     { knowledge_object_id: "k3", vorgang_id: "v3", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] }
   ];
-  const dupState = radarState.buildCurrentRadarState({ profile, decisions: dupDecisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: {}, now: nowDate });
+  const dupState = radarState.buildCurrentRadarState({ profile, decisions: dupDecisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: envDocs, now: nowDate });
   check("Innerhalb eines Bereichs keine Duplikate (v3 nur einmal in Partei)",
     dupState.environment.party.filter((e) => e.vorgangId === "v3").length === 1);
 }
@@ -343,7 +344,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     decisions: [{ knowledge_object_id: "s-party", vorgang_id: "s-party", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] }],
     kosById: { "s-party": mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] }) },
     knowledgeObjects: [mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] })],
-    sourcesByVorgang: {}, now: nowDate
+    sourcesByVorgang: {"s-party":[{id:"rd-s-party",title:"Die Linke beschließt Linie",url:"https://q.de/s-party"}]}, now: nowDate
   });
   check("Blocker #10/11 Leere mentions -> Zusammenfassung behauptet keine direkte Erwähnung",
     emptyMentionState.mentions.length === 0 && !/direkte Erwähnung/i.test(emptyMentionState.summary.line1) &&
@@ -392,7 +393,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     source_document_count: 4, updated_at: iso(1 * 3600e3), created_at: iso(20 * 864e5) };
   const dec = [{ knowledge_object_id: "krp", vorgang_id: "vrp", score: 60, matched_features: [{ type: "partei", value: "CDU" }] }];
   const src = { vrp: [
-    { id: "s1", url: "https://media.de/a", source_type: "media", published_at: iso(20 * 864e5) },
+    { id: "s1", title:"CDU bekräftigt Kurs trotz alter Quellenlage", url: "https://media.de/a", source_type: "media", published_at: iso(20 * 864e5) },
     { id: "s2", url: "https://bmi.de/b", source_type: "ministry", published_at: iso(21 * 864e5) }
   ] };
   const st = radarState.buildCurrentRadarState({ profile: pF, decisions: dec, kosById: { krp: koReprocessed }, knowledgeObjects: [koReprocessed], sourcesByVorgang: src, now: nowDate });
@@ -444,7 +445,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const koRealParty = { ...base, id: "krp2", vorgang_id: "vrp2", display_title: "Die Linke beschließt neue Linie",
     parteien: ["Die Linke"], best_source_url: "https://x.de/p", updated_at: iso(3600e3), created_at: iso(3600e3) };
   check("#4 Vorgang mit strukturell involvierter eigener Partei -> im Umfeld Partei",
-    one(koRealParty, { knowledge_object_id: "krp2", vorgang_id: "vrp2", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] })
+    one(koRealParty, { knowledge_object_id: "krp2", vorgang_id: "vrp2", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] },
+      {vrp2:[{id:"rd-vrp2",title:"Die Linke beschließt neue Linie",url:"https://x.de/p"}]})
       .environment.party.some((e) => e.vorgangId === "vrp2"));
   // #12 reiner Parteibezug (kein ko.ausschuesse) -> NICHT unter Ausschüsse.
   check("#12 Ausschüsse zeigt keinen reinen Parteibezug (kein ausschuesse -> nicht im Ausschuss-Segment)",
@@ -477,7 +479,9 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const terms = radarState.radarProfileTerms(p);
   check("radarRelationBeleg: party verlangt ko.parteien UND Akteurs-/Quellenbeleg (Titel ODER Partei-/Fraktionsquelle)",
     // Partei in parteien + Partei als Akteur im Titel -> belegt.
-    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Die Linke beschließt neue Linie" }, terms) === true &&
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Die Linke beschließt neue Linie" }, terms,
+      {title:"Die Linke beschließt neue Linie",url:"https://example.org/partei-meldung"}) === true &&
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Die Linke beschließt neue Linie" }, terms) === false &&
     // Partei in parteien + Partei-/Fraktionsquelle -> belegt (auch ohne Partei im Titel).
     radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms,
       { url: "https://www.linksfraktion.de/presse/eine-meldung", sourceType: "faction" }) === true &&
@@ -539,7 +543,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     parteien: ["SPD"], best_source_url: "https://x.de/spd", updated_at: iso(3600e3), created_at: iso(3600e3) };
   const stSPD = radarState.buildCurrentRadarState({ profile: pSPD,
     decisions: [{ knowledge_object_id: "kspd", vorgang_id: "vspd", score: 60, matched_features: [{ type: "partei", value: "SPD" }] }],
-    kosById: { kspd: koSPD }, knowledgeObjects: [koSPD], sourcesByVorgang: {}, now: nowDate });
+    kosById: { kspd: koSPD }, knowledgeObjects: [koSPD], sourcesByVorgang: {vspd:[{id:"rd-spd",title:"SPD beschließt neues Rentenkonzept",url:"https://x.de/spd"}]}, now: nowDate });
   check("SaaS: andere Partei/Profil (SPD als Akteur im Titel) -> unter Partei (keine hartkodierte Partei)",
     stSPD.environment.party.some((e) => e.vorgangId === "vspd"));
   const koSPDmedia = { ...koSPD, id: "kspm", vorgang_id: "vspm", display_title: "Kommentar: Was die Außenpolitik jetzt braucht", parteien: ["SPD"], mentioned_parties: ["SPD"] };

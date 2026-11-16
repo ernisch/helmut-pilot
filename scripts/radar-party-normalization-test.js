@@ -43,7 +43,7 @@ function runParty({ profileFields, parteien, mentioned_parties = [], title = "",
   const kf = matching.knowledgeObjectFeatures(ko);
   const mf = matching.matchedFeatures(pf, kf);
   const decision = { knowledge_object_id: "k", vorgang_id: "v", score: 50, matched_features: mf };
-  const sbv = sources.length ? { v: sources } : {};
+  const sbv = sources.length ? { v: sources.map(s => ({ ...s, title: s.title || title })) } : {};
   const st = radarState.buildCurrentRadarState({
     profile, decisions: [decision], kosById: { k: ko }, knowledgeObjects: [ko],
     sourcesByVorgang: sbv, now: nowDate
@@ -116,7 +116,7 @@ check("3b Fremdpartei: SPD-Profil am reinen Linke-Akteur-KO -> KEIN Partei-Reite
 check("4 Titel-Akteur: 'Die Linke fordert …' im Titel, nur Medienquelle -> erkannt",
   runParty({ profileFields: { party: "Die Linke" }, parteien: ["Die Linke"], title: "Die Linke fordert höheren Mindestlohn", sources: [src("media")] }).granted);
 check("4b Titel-Akteur mit Umlaut: 'Die Grünen fordern …' + Medienquelle -> erkannt (Umlaut-Faltung)",
-  runParty({ profileFields: { party: "Bündnis 90/Die Grünen" }, parteien: ["Grüne"], title: "Die Grüne kritisiert den Haushalt", sources: [src("media")] }).granted);
+  runParty({ profileFields: { party: "Bündnis 90/Die Grünen" }, parteien: ["Grüne"], title: "Die Grünen kritisieren den Haushalt", sources: [src("media")] }).granted);
 
 // =============================================================================
 // 5) B2-Fix: Partei-/Fraktionsquelle zaehlt AUCH, wenn sie nicht die primaere ist
@@ -173,7 +173,7 @@ check("6c Nur beiläufige Erwähnung (mentioned_parties) -> KEIN Partei-Reiter",
     { knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf },
     { knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf }
   ];
-  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: { v: [src("media")] }, now: nowDate });
+  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: { v: [{...src("media"),title:ko.display_title}] }, now: nowDate });
   check("7b Dedup: derselbe Vorgang erscheint nur einmal im Partei-Reiter", st.environment.party.filter((e) => e.vorgangId === "v").length === 1);
 }
 

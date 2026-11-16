@@ -68,19 +68,19 @@ async function state({ partial = false } = {}) {
     A.deepEqual(result.briefing.lageBriefing.vorgaenge, f.lageAnsicht.vorgaenge);
     A.deepEqual(result.briefing.currentRadarState, f.briefing.currentRadarState);
   });
-  await test("Unvollstaendiger Nachlauf behaelt vorher bestaetigte Inhalte bei ausgefallener Teilquelle", async () => {
+  await test("Unvollstaendiger Nachlauf darf bestaetigten Volltext nicht aus dem Tagespaket entfernen", async () => {
     const f = await state({ partial: true });
     const before = clone(f.row); f.rows.delete(`bf-${profile.id}-lage-${day}`);
-    await B.materialisiere({ profile, userId: profile.id, now: new Date(now.getTime() + 1000), storage: f.storage,
+    await A.rejects(B.materialisiere({ profile, userId: profile.id, now: new Date(now.getTime() + 1000), storage: f.storage,
       briefing: { available: false, items: [], currentHelmutState: { versorgung: { version: 1, zustand: "unbekannt" } },
-        currentRadarState: {} }, lageAnsicht: null });
+        currentRadarState: {} }, lageAnsicht: null }), { code: "BRIEFING_VOLLTEXT_ERHALT" });
     const row = f.rows.get(f.row.id);
-    A.equal(row.payload.lage, null, "Kein aktueller Narrativbeleg bei ausgefallenem cacheOnly-Leser");
+    A.deepEqual(row, before, "Der gesperrte Ersatz erhaelt das gesamte bestaetigte Paket");
+    A.deepEqual(row.payload.lage, before.payload.lage);
     A.deepEqual(row.payload.lageAnsicht, before.payload.lageAnsicht);
     A.deepEqual(row.payload.briefing.items, before.payload.briefing.items);
     A.deepEqual(row.payload.briefing.currentRadarState, before.payload.briefing.currentRadarState);
-    A.equal(row.payload.briefing.currentHelmutState.versorgung.zustand, "unbekannt");
-    A.deepEqual(row.payload.vorherigerStand, before);
+    A.equal(row.payload.briefing.currentHelmutState.versorgung.zustand, "offen");
     A.equal((await f.read({ now: new Date(now.getTime() + 2000) })).briefing.paketStatus.zustand, "teilweise");
   });
   await test("Fehlendes Paket erzeugt weder Rueckfall auf gestern noch Neuberechnung", async () => {

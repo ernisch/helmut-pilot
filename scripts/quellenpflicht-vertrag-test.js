@@ -97,7 +97,7 @@ console.log("— Radar (Server-Lesevertrag radarState) —");
   }));
   const sourcesByVorgang = {
     "v-gut": [
-      { id: "d1", url: "https://www.beispielmedien.de/politik/kommunalfinanzen-101.html", link_type: "direct", source_type: "media", source_name: "Beispielmedien", published_at: iso(2 * 3600e3) },
+      { id: "d1", title: "Die Linke fordert mit Erika Beispielfrau bessere Kommunalfinanzen", url: "https://www.beispielmedien.de/politik/kommunalfinanzen-101.html", link_type: "direct", source_type: "media", source_name: "Beispielmedien", published_at: iso(2 * 3600e3) },
       { id: "d2", url: "https://www.bundestag.de/presse/mitteilung-55", link_type: "direct", source_type: "parliament", source_name: "Bundestag", published_at: iso(3 * 3600e3) }
     ],
     "v-start": [
@@ -123,6 +123,9 @@ console.log("— Radar (Server-Lesevertrag radarState) —");
     JSON.stringify(alleItems.filter((i) => !istOeffnendeHttpsQuelle(i.sourceUrl)).map((i) => [i.id, i.sourceUrl])));
   check("Radar: der gut belegte Vorgang erscheint (Über dich)", state.mentions.some((m) => m.vorgangId === "v-gut"));
   check("Radar: der gut belegte Vorgang erscheint (Umfeld Partei)", state.environment.party.some((e) => e.vorgangId === "v-gut"));
+  const fremd = radarState.buildCurrentRadarState({ profile, decisions, kosById, knowledgeObjects: allKos,
+    sourcesByVorgang: { ...sourcesByVorgang, "v-gut": sourcesByVorgang["v-gut"].map(s => ({ ...s, title: "SPD und Gruene beraten Kommunalfinanzen" })) }, now: nowDate });
+  check("Radar: fremde Artikeltitel erben keinen eigenen Parteibeleg vom Vorgang", fremd.environment.party.length === 0);
   check("Radar: der gut belegte Vorgang erscheint (Dynamiken)", state.dynamics.some((d) => d.vorgangId === "v-gut"));
   check("Radar: der gut belegte Vorgang erscheint (Artikel)", state.articles.some((a) => a.vorgangId === "v-gut"));
   check("Radar: Vorgang OHNE URL erscheint in KEINEM Bereich", !alleVorgaenge.has("v-ohne"));
