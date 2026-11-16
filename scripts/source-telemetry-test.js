@@ -94,6 +94,42 @@ check("Fehlerzeile: Status error", r1.status === "error");
 check("Fehlerzeile: klassifizierter Fehlercode http-5xx", r1.error_code === "http-5xx");
 check("Fehlerzeile: neue Dokumente 0", r1.new_documents === 0);
 
+const vertagt = {
+  sourceId: "src-limit", sourceName: "Quelle", ok: false, status: "error", itemCount: 0,
+  items: [], retryCount: 0, error: "anbietergrenze: anbietergrenze-minutengrenze",
+  anbieterVertagung: { vorAbruf: true, grund: "anbietergrenze-minutengrenze", wartenMs: 1000,
+    bereich: { anbieter: "quelle", modell: "example.org", klasse: "quellenabruf" } },
+  quellenAbrufBeleg: { version: 1, gestarteteAbrufe: 0, zentraleVertagungen: 1 }
+};
+const zeile = (result, extra = {}) => buildSourceTelemetryRows({ results: [result], ...extra })[0];
+check("Belegte zentrale Null-Abruf-Vertagung hat eigenen Status/Code",
+  zeile(vertagt).status === "provider-deferred" && zeile(vertagt).error_code === "provider-limit");
+check("Tagesgrenze wird ebenfalls strukturiert behandelt", zeile({ ...vertagt,
+  anbieterVertagung: { ...vertagt.anbieterVertagung, grund: "anbietergrenze-tagesgrenze" } }).status === "provider-deferred");
+for (const [name, changed] of [
+  ["nur Fehlertext", { anbieterVertagung: null, quellenAbrufBeleg: null }],
+  ["nur vorAbruf", { quellenAbrufBeleg: null }],
+  ["vorheriger echter Abruf", { quellenAbrufBeleg: { ...vertagt.quellenAbrufBeleg, gestarteteAbrufe: 1 } }],
+  ["unbekannte Belegversion", { quellenAbrufBeleg: { ...vertagt.quellenAbrufBeleg, version: 2 } }],
+  ["keine zentrale Reservierung", { quellenAbrufBeleg: { ...vertagt.quellenAbrufBeleg, zentraleVertagungen: 0 } }],
+  ["nicht pruefbare Anbietersteuerung", { anbieterVertagung: { ...vertagt.anbieterVertagung, grund: "anbietersteuerung-nicht-pruefbar" } }],
+  ["Verlust nach Abruf", { anbieterVertagung: { ...vertagt.anbieterVertagung, vorAbruf: false } }],
+  ["ungueltige Wartezeit", { anbieterVertagung: { ...vertagt.anbieterVertagung, wartenMs: "1000" } }],
+  ["andere Verarbeitungsklasse", { anbieterVertagung: { ...vertagt.anbieterVertagung, bereich: { ...vertagt.anbieterVertagung.bereich, klasse: "llm" } } }],
+  ["erfasster Retry", { retryCount: 1 }],
+  ["vorheriger HTTP503", { error: "503 Service Unavailable; anbietergrenze-minutengrenze", quellenAbrufBeleg: null }],
+  ["vorheriger HTTP429", { error: "429 Too Many Requests; anbietergrenze-minutengrenze", quellenAbrufBeleg: null }],
+  ["vorheriger Parserfehler", { error: "Ungültige RSS-Antwort des Metadatenfeeds; anbietergrenze-minutengrenze", quellenAbrufBeleg: null }],
+  ["vorheriger Leerabruf", { error: "empty feed; anbietergrenze-minutengrenze", quellenAbrufBeleg: null }],
+  ["vorhandene Dokumente", { itemCount: 1, items: [{ title: "Darf nicht verschwinden" }] }]
+]) check(`${name} bleibt Fehler`, zeile({ ...vertagt, ...changed }).status === "error");
+check("Bestaetigte neue Dokumente widersprechen Null-Abruf-Beleg",
+  zeile(vertagt, { newBySource: { "src-limit": 1 } }).status === "error");
+check("URL-/Fehlertextfragmente koennen einen vollstaendigen Null-Abruf-Beleg nicht umdeuten",
+  zeile({ ...vertagt, error: "https://example.org/parse/503.xml: anbietergrenze-minutengrenze" }).status === "provider-deferred");
+check("Historischer unbekannter Fehler bleibt Fehler/unknown",
+  zeile({ ...results[1], error: "anbietergrenze: anbietergrenze-minutengrenze" }).error_code === "unknown");
+
 // ── Datensparsamkeit: KEIN Dokumenttitel/-inhalt im Serialisat ─────────────────
 const serialized = JSON.stringify(rows);
 check("Kein Dokumenttitel/-inhalt in der Telemetrie", !serialized.includes("GEHEIM") && !serialized.includes("Schlagzeile"));
@@ -101,6 +137,95 @@ check("Kein 'items'-Feld in den Zeilen", !("items" in r0) && !("items" in r1));
 
 // ── persistSourceCrawlTelemetry: Freigabe-Gate (default aus) ───────────────────
 (async () => {
+  // Echte Crawler-/Anbieterumschliessung, ausschliesslich lokales HTTP. Anders
+  // als ein fetchUrl-Fake zaehlt dies tatsaechliche Abrufstarts aller Feedstufen.
+  const http = require("http");
+  const C = require("../lib/helmut/crawler");
+  const A = require("../lib/helmut/anbieter-steuerung");
+  const CELLAR = require("../lib/helmut/quellen-eurlex-cellar"), cellarCrawl = CELLAR.crawl;
+  const original = { aktiv: A.steuerungAktiv, reserviere: A.reserviere, melde: A.melde };
+  const oldError = console.error;
+  let erlaubt = 0, hits = 0;
+  const server = http.createServer((req, res) => {
+    hits++;
+    if (req.url.startsWith("/503")) { res.writeHead(503); res.end("nicht verfuegbar"); }
+    else if (req.url.startsWith("/parse")) { res.end("<html>keine RSS-Antwort</html>"); }
+    else if (req.url.startsWith("/redirect")) { res.writeHead(302, { location: "/503" }); res.end(); }
+    else res.end("<rss><channel></channel></rss>");
+  });
+  try {
+    await new Promise((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
+    const base = `http://127.0.0.1:${server.address().port}`;
+    A.steuerungAktiv = () => true;
+    A.reserviere = async () => erlaubt-- > 0 ? { erlaubt: true } : {
+      erlaubt: false, wartenMs: 1000, grund: "anbietergrenze-minutengrenze"
+    };
+    A.melde = async () => ({ gemeldet: true });
+    console.error = () => {}; // erwartete Crawlerfehler, keine Rohfehlerausgabe
+    const crawl = async (first, count, opts = {}) => {
+      erlaubt = count; hits = 0;
+      const result = await C.crawlAllSources([{ id: "src-local", name: "Lokaler Test", type: "offiziell",
+        active: true, crawlMethod: "rss", url: base + "/html", rssUrls: [base + first, base + "/zweiter"] }], opts);
+      const row = zeile(result.results[0]);
+      return { result: result.results[0], row, hits };
+    };
+    const pure = await crawl("/leer", 0);
+    check("Crawler: zentrale Minute startet null HTTP-Aufrufe", pure.hits === 0);
+    check("Crawlerbeleg erreicht Telemetrie als Vertagung",
+      pure.result.quellenAbrufBeleg?.gestarteteAbrufe === 0 && pure.row.status === "provider-deferred");
+    for (const [first, code] of [["/503", "http-5xx"], ["/parse", "parse"], ["/leer", "empty-feed"], ["/redirect", "http-5xx"]]) {
+      const mixed = await crawl(first, 1);
+      check(`Crawler: ${first} vor Minute bleibt echter Fehler`, mixed.hits >= 1
+        && mixed.row.status === "error" && mixed.row.error_code === code && !mixed.result.quellenAbrufBeleg);
+    }
+    const retry = await crawl("/503/news.google.test", 1, { googleGate: {
+      schedule: f => f(), report() {}, isOpen: () => false, consumeRetry: () => true, state: () => ({ open: false })
+    }, hardeningConfig: { retryMax: 1, retryBaseMs: 1, retryCapMs: 1 }, sleep: async () => {} });
+    check("Google-Retry: 503 vor Minutenvertagung wird nicht zu Nichtabruf",
+      retry.hits === 1 && retry.result.retryCount === 1 && retry.row.status === "error" && !retry.result.quellenAbrufBeleg);
+    const fake = await crawl("/leer", 0, { fetchUrl: async (...args) => C.fetchUrl(...args) });
+    check("Injizierter Fetchadapter erzeugt keinen Produktions-Nullabrufbeleg",
+      fake.hits === 0 && !fake.result.quellenAbrufBeleg && fake.row.status === "error");
+    erlaubt = 1; hits = 0;
+    const parallel = await C.crawlAllSources(["a", "b"].map(id => ({ id, name: id, active: true,
+      crawlMethod: "rss", url: base + "/html", rssUrl: base + "/503" })));
+    check("Parallele Quellen teilen keinen Abrufzaehler", hits === 1
+      && !parallel.results[0].quellenAbrufBeleg && parallel.results[1].quellenAbrufBeleg?.gestarteteAbrufe === 0
+      && zeile(parallel.results[1]).status === "provider-deferred");
+    // Amtlicher nativer Dispatch mit kleinem Metadatenstub; alle Abrufe gehen
+    // weiter durch den echten lokalen HTTP-/Anbieterpfad, kein externer Zugriff.
+    const native = { ...require("../lib/helmut/quellenarchitektur/seeds/parlamentsdaten-quellen").PARLAMENTSDATEN_QUELLEN[0],
+      active: true, retrievalPathId: "rp-eurlex-amtsblatt-l-rss", eurlexExcerptApproved: true };
+    CELLAR.crawl = async ({ fetchUrl }) => { await fetchUrl(base + "/leer"); return []; };
+    erlaubt = 1; hits = 0;
+    let callbacks = 0;
+    const phased = await C.crawlAllSources([native], { cellarExcerpt: async (items, source, fetchUrl) => {
+      callbacks++; await fetchUrl(base + "/original"); return items;
+    } });
+    check("Nativer Callback nach Metadatenabruf verliert den bisherigen echten Versuch nicht",
+      callbacks === 1 && hits === 1 && !phased.results[0].quellenAbrufBeleg && zeile(phased.results[0]).status === "error");
+    erlaubt = 10; hits = 0;
+    const childDeadline = await C.crawlAllSources([native], { cellarExcerpt: async (items, source, fetchUrl) => {
+      await fetchUrl(base + "/original", 0, { deadlineMs: 1234, now: () => 1234 }); return items;
+    } });
+    check("Ohne Parentfrist bleiben lokale Callbackfrist und Funktionsuhr erhalten",
+      hits === 1 && childDeadline.results[0].ok === false && childDeadline.results[0].error === "quellenabruf-zeitbudget"
+      && !childDeadline.results[0].anbieterVertagung);
+    const sf = require("../lib/helmut/quellenarchitektur/source-failure");
+    const now = Date.parse("2026-11-16T09:00:00Z");
+    const succession = [3, 2, 1].map(n => ({ ...pure.row, finished_at: new Date(now - n * 60000).toISOString() }));
+    const h = sf.buildLaufhistorie(succession, { now }).get("src-local");
+    const health = sf.klassifiziereQuelle({ sourceId: "src-local", historie: h, now });
+    check("Drei echte zentrale Vertagungen ergeben null Versuche/Fehler/Erfolge",
+      h.versuche === 0 && h.fehler === 0 && h.fehlerserie === 0 && h.erfolge === 0 && h.vertagt === 3);
+    check("Vertagungsfolge behauptet keinen Versorgungserfolg oder Circuit",
+      health.klasse === "gedrosselt" && health.ursache === "provider-limit" && !sf.istWirksam(health));
+  } finally {
+    A.steuerungAktiv = original.aktiv; A.reserviere = original.reserviere; A.melde = original.melde;
+    CELLAR.crawl = cellarCrawl;
+    console.error = oldError;
+    await new Promise(resolve => server.close(resolve));
+  }
   // Default AUS: kein Writer-Aufruf.
   let writes = 0;
   const insert = async () => { writes += 1; };
@@ -122,4 +247,4 @@ check("Kein 'items'-Feld in den Zeilen", !("items" in r0) && !("items" in r1));
 
   console.log(`\n${passed}/${passed + failed} Source-Telemetrie-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
-})();
+})().catch(error => { console.error(error); process.exitCode = 1; });
