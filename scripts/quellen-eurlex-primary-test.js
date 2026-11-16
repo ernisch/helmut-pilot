@@ -4,11 +4,13 @@ const fs = require("node:fs"), path = require("node:path");
 const https = require("node:https"), { EventEmitter } = require("node:events");
 const C = require("../lib/helmut/crawler"), D = require("../lib/helmut/dedup");
 const H = require("../lib/helmut/parlamentsdaten-herkunft");
+const Q = require("../lib/helmut/quellen-eurlex-auszug"), F = require("./fixtures/eurlex-original");
 const source = require("../lib/helmut/quellenarchitektur/seeds/parlamentsdaten-quellen").PARLAMENTSDATEN_QUELLEN[0];
 const read = name => fs.readFileSync(path.join(__dirname, "fixtures/parlamentsdaten-20261106", name), "utf8");
 const rss = read("eurlex-amtsblatt-l.xml"), nowMs = Date.parse("2026-11-16T07:10:00.000Z");
 const metadata = JSON.parse(read("cellar-oj-l-metadaten.json")); metadata.results.bindings = metadata.results.bindings.slice(0, 1);
 const metadataBody = JSON.stringify(metadata);
+const approved = { ...source, active: true, retrievalPathId: "rp-" + source.id, eurlexExcerptApproved: true };
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 
@@ -41,6 +43,35 @@ async function transport(route, fn) {
 const route = ({ url }) => url === source.url
   ? { status: 202, mime: "text/html", body: "<html>Javascript required</html>" }
   : { mime: "application/sparql-results+json", body: metadataBody };
+const healthyRoute = ({ url }) => {
+  if (url === source.url) return { body: rss };
+  if (url.startsWith("https://publications.europa.eu/webapi/rdf/sparql?"))
+    return { mime: "application/sparql-results+json", body: metadataBody };
+  if (url === F.manifestationUri.replace(/^http:/, "https:")) return { mime: "application/rdf+xml", body: F.rdf() };
+  if (url === F.itemUrl) return { mime: "application/zip", body: F.zip() };
+  throw Error("unexpected-mock-target:" + url);
+};
+function context() {
+  const rows = new Map(), count = { callback: 0, quota: 0 }; let current = nowMs;
+  const clone = x => structuredClone(x);
+  const env = { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_QUELLEN_FENSTER_TAG: "8",
+    HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16", HELMUT_SUPABASE_TIMEOUT_MS: "10000" };
+  const deps = { now: () => current, deadlineMs: current + 39000, env,
+    speicher: {
+      lesen: async key => { current += 5; return rows.has(key) ? clone(rows.get(key)) : null; },
+      reservieren: async (key, row) => { current += 5; if (rows.has(key)) throw Error("held"); rows.set(key, clone(row)); },
+      abschliessen: async (key, id, row) => { current += 5; if (rows.get(key)?.versuchId === id && rows.get(key)?.zustand === "reserviert") rows.set(key, clone(row)); },
+      rueckgabeVorAbruf: async (key, row) => { current += 5; if (rows.get(key)?.versuchId === row.versuchId) rows.delete(key); }
+    },
+    originalReservierung: { reserviere: async args => {
+      current += 5; count.quota++; assert.equal(args.menge, 1); assert.equal(args.grenzeTag, 16);
+      return { verfuegbar: true, erlaubt: true };
+    } }
+  };
+  return { deps, rows, count, callback: (items, actual, fetchUrl) => {
+    count.callback++; assert.equal(actual.id, source.id); return Q.enrich(items, actual, { ...deps, fetchUrl });
+  } };
+}
 
 (async () => {
   await test("Native Funktionsuhr wird am alten RSS-Fehlerweg als echtes CELLAR-Abfragedatum gebunden", async () => {
@@ -79,6 +110,76 @@ const route = ({ url }) => url === source.url
       await assert.rejects(C.crawlSource(source, { now: () => nowMs, deadlineMs: nowMs + 39000,
         abbruchSignal: during.signal }), error => error === second);
       assert.deepEqual(calls.map(c => c.url), [source.url]);
+    });
+  });
+  await test("Freigegebener nativer Auftrag liest CELLAR und exakt einen Originalabsatz auch bei gesundem RSS", async () => {
+    const c = context();
+    await transport(healthyRoute, async calls => {
+      const result = await C.crawlAllSources([approved], { now: c.deps.now, deadlineMs: c.deps.deadlineMs,
+        cellarExcerpt: c.callback });
+      assert.equal(c.count.callback, 1); assert.equal(c.count.quota, 1);
+      assert.equal(calls.filter(x => x.url === source.url).length, 0);
+      assert.equal(calls.filter(x => x.url === F.itemUrl).length, 1);
+      assert.equal(result.successfulSources, 1); assert.equal(result.rawItems.length, 1);
+      const doc = D.toRawDocumentRow(result.rawItems[0]), proof = H.leseParlamentsdatenHerkunft(doc);
+      assert(proof); assert.equal(proof.version, 3); assert.equal(doc.summary, F.excerpt);
+      assert.equal(proof.originalTitle, metadata.results.bindings[0].title.value.replace(/\s+/g, " ").trim());
+      assert.equal(proof.retrieval.publicationDate, "2026-11-13"); assert.equal(doc.published_at, "2026-11-13T00:00:00.000Z");
+      assert.equal(proof.license, "EUR-Lex-legal-documents-reuse"); assert(H.parlamentsdatenQuellenhinweis(doc).text.includes("Europäische Kommission"));
+      assert.equal(c.rows.size, 1); assert.equal([...c.rows.values()][0].zustand, "belegt");
+    });
+  });
+  await test("Ohne native Freigabe oder Callback bleibt gesunder RSS exakt der erste und einzige Weg", async () => {
+    for (const [actual, callback] of [[{ ...approved, eurlexExcerptApproved: false }, true],
+      [{ ...approved, retrievalPathId: "rp-fremd" }, true], [approved, false]]) {
+      let enriched = 0;
+      await transport(healthyRoute, async calls => {
+        const items = await C.crawlSource(actual, { now: () => nowMs,
+          ...(callback ? { cellarExcerpt: async value => { enriched++; return value; } } : {}) });
+        assert(items.length); assert.equal(enriched, 0); assert.deepEqual(calls.map(c => c.url), [source.url]);
+        assert.equal(H.leseParlamentsdatenHerkunft(D.toRawDocumentRow(items[0])).version, 1);
+      });
+    }
+  });
+  await test("Inaktive Auszugspolicy schaltet keinen primaeren Originalweg frei", async () => {
+    const old = source.usagePolicy.legalExcerptAllowed; source.usagePolicy.legalExcerptAllowed = false;
+    try {
+      await transport(healthyRoute, async calls => {
+        const items = await C.crawlSource(approved, { cellarExcerpt: async () => { throw Error("nicht-aufgerufen"); } });
+        assert(items.length); assert.deepEqual(calls.map(c => c.url), [source.url]);
+      });
+    } finally { source.usagePolicy.legalExcerptAllowed = old; }
+  });
+  await test("CELLAR-Fehler im nativen Primaerweg bleibt Fehler statt eines RSS-Metadatenerfolgs", async () => {
+    let enriched = 0;
+    await transport(() => ({ status: 503, mime: "text/plain", body: "temporarily unavailable" }), async calls => {
+      await assert.rejects(C.crawlSource(approved, { now: () => nowMs,
+        cellarExcerpt: async items => { enriched++; return items; } }), /HTTP 503/);
+      assert.equal(enriched, 0); assert.equal(calls.length, 1);
+      assert(calls[0].url.startsWith("https://publications.europa.eu/webapi/rdf/sparql?"));
+    });
+  });
+  await test("Echte CELLAR-Leere bleibt leer, ohne alten RSS oder Originaltext ersatzweise einzulesen", async () => {
+    const empty = structuredClone(metadata); empty.results.bindings = []; let enriched = 0;
+    await transport(() => ({ mime: "application/sparql-results+json", body: JSON.stringify(empty) }), async calls => {
+      const items = await C.crawlSource(approved, { now: () => nowMs,
+        cellarExcerpt: async values => { enriched++; assert.deepEqual(values, []); return values; } });
+      assert.deepEqual(items, []); assert.equal(enriched, 1); assert.equal(calls.length, 1);
+    });
+  });
+  await test("Abbruch vor und nach Originalcallback verhindert weitere Verarbeitung des Primaerwegs", async () => {
+    const during = new AbortController(), before = Error("abbruch-vor-original"); let enriched = 0;
+    await transport(() => ({ mime: "application/sparql-results+json", body: metadataBody,
+      beforeBody: () => during.abort(before) }), async calls => {
+      await assert.rejects(C.crawlSource(approved, { now: () => nowMs, deadlineMs: nowMs + 39000,
+        abbruchSignal: during.signal, cellarExcerpt: async values => { enriched++; return values; } }), e => e === before);
+      assert.equal(enriched, 0); assert.equal(calls.length, 1);
+    });
+    const after = new AbortController(), reason = Error("abbruch-nach-original");
+    await transport(healthyRoute, async calls => {
+      await assert.rejects(C.crawlSource(approved, { now: () => nowMs, deadlineMs: nowMs + 39000,
+        abbruchSignal: after.signal, cellarExcerpt: async values => { after.abort(reason); return values; } }), e => e === reason);
+      assert.equal(calls.length, 1);
     });
   });
   console.log(`\n${passed}/${passed} gezielte EUR-Lex-Dispatchgruppen bestanden; kein Netz, keine DB, kein Modell.`);
