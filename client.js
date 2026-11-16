@@ -4785,6 +4785,15 @@ function uiSieText(value) {
     .replace(/\bLies\b/g, "Lesen Sie");
 }
 
+// Die persoenliche Ansprache darf einen explizit zitierten Originaltitel
+// nicht umschreiben. Escaping erfolgt weiterhin erst beim jeweiligen Renderer.
+function uiRelevanzText(value) {
+  const text = String(value == null ? "" : value);
+  const start = text.indexOf("Die Quelle berichtet: „"), end = text.lastIndexOf("“");
+  if (start < 0 || end < start + "Die Quelle berichtet: „".length) return uiSieText(text);
+  return uiSieText(text.slice(0, start)) + text.slice(start, end + 1) + uiSieText(text.slice(end + 1));
+}
+
 // Profilkontext der vorhandenen Mandatsebene. Keine neue Profilklassifikation.
 function renderUiMandateContext() {
   const parliament = profileParliamentType();
@@ -5540,9 +5549,14 @@ function renderLageEinordnung(data) {
   return `<section class="ui-lage-einordnung" data-ui-lage-einordnung aria-label="Geprüfte Lageeinordnung">
     <h2>Geprüfte Lageeinordnung</h2>
     <p class="ui-evidence-note">Gespeicherte KI-Einordnung · kein Originalauszug. Die Originalquellen sind je Absatz verlinkt.</p>
-    ${paragraphs.map(p => `<article class="ui-lage-einordnung-absatz"><p data-ui-lage-absatz>${escapeHtml(p.text)}</p>
+    ${paragraphs.map(p => `<article class="ui-lage-einordnung-absatz"><p data-ui-lage-absatz>${escapeHtml(p.text)}</p>${lageAbsatzMandatsbezugHtml(p)}
       <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
   </section>`;
+}
+
+function lageAbsatzMandatsbezugHtml(absatz) {
+  const satz = lageField(absatz?.relevanz?.satz);
+  return satz ? `<p class="ui-row-relevance" data-ui-lage-mandatsbezug><strong>Für Ihr Mandat:</strong> ${escapeHtml(uiRelevanzText(satz))}</p>` : "";
 }
 
 function renderLageView() {
@@ -5578,7 +5592,7 @@ function renderLageView() {
             const summary = lageField(v.displaySummary) || lageField(v.summary?.wasIstPassiert);
             return `<button class="ui-vorgang-row ${id === selectedId ? "is-selected" : ""}" type="button" data-ui-lage-select="${escapeAttribute(id)}" aria-pressed="${id === selectedId}">
               <span class="ui-row-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(uiSieText(summary))}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiSieText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
+              <span class="ui-row-content"><span class="ui-eyebrow">${escapeHtml(lageField(v.displayCategory) || lageCardCategory(v))}</span><span class="ui-row-title">${escapeHtml(title)}</span>${summary ? `<span class="ui-row-summary">${escapeHtml(uiSieText(summary))}</span>` : ""}${lageField(v.relevanz?.satz) ? `<span class="ui-row-relevance"><strong>Mandatsbezug:</strong> ${escapeHtml(uiRelevanzText(lageField(v.relevanz.satz)))}</span>` : ""}${lageListSourceHtml(v)}</span>
               <span class="ui-row-chevron" aria-hidden="true">›</span>
             </button>`;
           }).join("")}
@@ -5865,7 +5879,7 @@ function vsheetRelevanzHtml(v) {
   return `
     <section class="vsheet-sec">
       <h3 class="vsheet-h">Warum für Sie relevant?</h3>
-      <p class="vsheet-relevanz">${escapeHtml(uiSieText(satz))}</p>
+      <p class="vsheet-relevanz">${escapeHtml(uiRelevanzText(satz))}</p>
       ${belege.length ? `
       <details class="vsheet-belege">
         <summary>Belege ansehen</summary>
@@ -5887,7 +5901,7 @@ function lageParagraphContextHtml(v) {
   if (!paragraphs.length) return "";
   return `<details class="vsheet-sec ui-source-evidence"><summary>Zugeordnete Lageeinordnung lesen</summary>
     <p class="ui-evidence-note">Zusätzliche KI-Einordnung · kein Originalauszug. Kann mehrere Vorgänge betreffen und Fehler enthalten.</p>
-    ${paragraphs.map(p => `<p>${escapeHtml(p.text)}</p><div class="vsheet-sources">${(Array.isArray(p.sources) ? p.sources : []).map(vsheetSourceRow).join("")}</div>`).join("")}
+    ${paragraphs.map(p => `<p>${escapeHtml(p.text)}</p>${lageAbsatzMandatsbezugHtml(p)}<div class="vsheet-sources">${(Array.isArray(p.sources) ? p.sources : []).map(vsheetSourceRow).join("")}</div>`).join("")}
   </details>`;
 }
 

@@ -47,6 +47,14 @@ async function state({ partial = false } = {}) {
   return { rows, reads, storage, row, briefing, lageAnsicht,
     read: args => D.lese({ userId: profile.id, profile, now, storage, ...args }) };
 }
+function bindeTeststand(f) {
+  const row = f.rows.get(f.row.id);
+  row.payload.quellenStand = D.quellenStand(row.payload);
+  row.payload.inhaltHash = B.inhaltHash(row.payload);
+  f.rows.get(L.laufId(profile.id, day)).payload = L.quittung({ tenantId: profile.id, berlinTag: day,
+    erzeugtAm: now, status: L.STATUS_ERFOLG,
+    ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row), fensterStart: day + "T00:00:00Z" });
+}
 (async () => {
   await test("Normale Auslieferung liest genau Paket und gebundene Quittung, kein Korpus", async () => {
     const f = await state(), before = JSON.stringify([...f.rows]);
@@ -67,6 +75,65 @@ async function state({ partial = false } = {}) {
     A.deepEqual(result.briefing.items, f.briefing.items);
     A.deepEqual(result.briefing.lageBriefing.vorgaenge, f.lageAnsicht.vorgaenge);
     A.deepEqual(result.briefing.currentRadarState, f.briefing.currentRadarState);
+  });
+  await test("Lageabsatz zeigt aktuellen Mandatsbezug ohne Text-, Hash-, Quittungs- oder Speicherverlust", async () => {
+    const f = await state(), before = clone([...f.rows]), out = (await f.read()).briefing;
+    const paragraphs = out.lageBriefing.paragraphs;
+    A.equal(paragraphs.length, 2);
+    A.match(paragraphs[0].relevanz.satz, /Stellvertretung.*Haushaltsausschuss/);
+    A.match(paragraphs[1].relevanz.satz, /Pflege/);
+    for (const [index, p] of paragraphs.entries()) {
+      const { relevanz, ...original } = p;
+      A.deepEqual(original, f.lageAnsicht.paragraphs[index]); A(relevanz.belege.length > 0);
+    }
+    A.equal(out.gespeicherterNachweis.inhaltHash, f.row.payload.inhaltHash);
+    A.equal(out.paketStatus.quittungGebunden, true); A.equal(f.reads.length, 2);
+    A.deepEqual([...f.rows], before); A(!JSON.stringify(out).includes("mandatsbegruendung"));
+    A.equal((await f.read({ profile: { ...profile, committees: ["Gesundheitsausschuss"] } })).briefing.available, false);
+  });
+  await test("Aktuelle belegte Karten ersetzen alte Cachegruende und ordnen Fachthema vor Stellvertretung", async () => {
+    const f = await state(), row = f.rows.get(f.row.id);
+    row.payload.lageAnsicht.vorgaenge = B.lageAusgabe(row.payload.lage).vorgaenge.map(k => ({ ...k,
+      relevanz: { satz: "VERALTETER PERSOENLICHER GRUND", belege: [] }, whyRelevant: "VERALTETER PERSOENLICHER GRUND" }));
+    bindeTeststand(f); const before = clone([...f.rows]), out = (await f.read()).briefing.lageBriefing;
+    A.deepEqual(out.vorgaenge.map(k => k.vorgangId), ["vg-synth-2", "vg-synth-1"]);
+    A.match(out.vorgaenge[0].relevanz.satz, /Pflege/);
+    A.match(out.vorgaenge[1].relevanz.satz, /Stellvertretung/);
+    A(!JSON.stringify(out).includes("VERALTETER")); A.deepEqual([...f.rows], before);
+  });
+  await test("Mandatsgruende bleiben am eigenen Original und am jeweiligen freigegebenen Absatz gebunden", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), raw = row.payload.lage;
+    raw.quellen[0].quellenbelege[0].auszug += " Ein Pflegeentwurf wird beraten.";
+    raw.quellenHash = require("../lib/helmut/lage-quellenbeleg").hashEingabe(raw.quellen);
+    row.payload.lageAnsicht.quellenBindung.quellenHash = raw.quellenHash;
+    bindeTeststand(f);
+    const out = (await f.read()).briefing.lageBriefing;
+    A.match(out.paragraphs[0].relevanz.satz, /Haushaltsausschuss/);
+    A(!JSON.stringify(out.paragraphs[0].relevanz).includes("Pflege"));
+    A.match(out.paragraphs[1].relevanz.satz, /Pflege/);
+    A.deepEqual(out.paragraphs.map(p => p.text), raw.paragraphs.map(p => p.text));
+  });
+  await test("Fachfremde gebundene Altkarte verschwindet nur aus der Ausgabe, gueltiger Sachtext bleibt", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), raw = row.payload.lage;
+    const q = raw.quellen[0].quellenbelege[0];
+    q.titel = "Ministerium stellt eine Vorlage vor"; q.auszug = q.titel;
+    raw.paragraphs[0].text = q.titel; raw.paragraphs[0].belegstellen[0].text = q.titel;
+    raw.quellenHash = require("../lib/helmut/lage-quellenbeleg").hashEingabe(raw.quellen);
+    row.payload.lageAnsicht = B.lageAusgabe(raw);
+    row.payload.lageAnsicht.vorgaenge[0].relevanz = { satz: "Falscher alter Pflegebezug", belege: [] };
+    bindeTeststand(f); const before = clone([...f.rows]), out = (await f.read()).briefing;
+    A.equal(out.lageBriefing.paragraphs[0].text, q.titel);
+    A.equal(out.lageBriefing.paragraphs[0].relevanz, undefined);
+    A.deepEqual(out.lageBriefing.vorgaenge.map(k => k.vorgangId), ["vg-synth-2"]);
+    A.deepEqual([...f.rows], before); A.equal(out.paketStatus.quittungGebunden, true);
+    // Fehlende Bindung allein ist keine Negativbewertung einer Altkarte.
+    row.payload.lageAnsicht.vorgaenge[0].sources = [{ url: "https://example.invalid/anderer-artikel" }];
+    row.payload.lageAnsicht.vorgaenge[0].whyRelevant = "Falscher alter Pflegebezug";
+    bindeTeststand(f); const legacyBefore = clone([...f.rows]);
+    const legacy = (await f.read()).briefing.lageBriefing.vorgaenge.find(k => k.vorgangId === "vg-synth-1");
+    A.equal(legacy.displaySummary, q.titel); A.deepEqual(legacy.sources, row.payload.lageAnsicht.vorgaenge[0].sources);
+    A.equal(legacy.relevanz, undefined); A.equal(legacy.whyRelevant, undefined);
+    A.deepEqual([...f.rows], legacyBefore);
   });
   await test("Unvollstaendiger Nachlauf darf bestaetigten Volltext nicht aus dem Tagespaket entfernen", async () => {
     const f = await state({ partial: true });

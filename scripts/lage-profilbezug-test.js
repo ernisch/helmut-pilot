@@ -215,6 +215,56 @@ function setup(profile, pool, { matches = null, docs = null } = {}) {
       A.deepEqual((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge, []);
       A.equal(forbidden, 0);
     });
+    await test("Allgemeines Berichterstatterfeld wird nicht zur konkreten Aufgabe und verdraengt keinen Ausschuss", () => {
+      const broad = { reportingTopics: ["Soziales"] }, own = { ...broad, committees: ["Arbeit und Soziales"] };
+      const ko = F.ko("gewerkschaften", "Gewerkschaften beraten die Zukunft der Tarifbindung");
+      const feld = P.bewerte(ko, broad), haupt = P.bewerte(ko, own), deputy = P.bewerte(ko, { ...broad, deputyCommittees: ["Arbeit und Soziales"] });
+      A.equal(feld.belege[0].art, "fachgebiet"); A.equal(feld.gewicht, 40);
+      A(!feld.erklaerung.satz.includes("Fachaufgabe")); A(feld.erklaerung.satz.includes("Fachgebiet"));
+      A.equal(haupt.belege[0].art, "haupt"); A.equal(haupt.gewicht, 80);
+      A.equal(deputy.belege[0].art, "stellvertretung"); A(deputy.gewicht > feld.gewicht);
+      const specific = P.bewerte(F.positive.find(k => k.id === "ko-aufgabe"), { reportingTopics: ["Betriebsratswahlen"] });
+      A.equal(specific.belege[0].art, "aufgabe"); A.equal(specific.gewicht, 100);
+      A.equal(P.bewerte(F.ko("strafrecht", "Bundestag berät eine Reform im Strafrecht"), { reportingTopics: ["Arbeitsrecht"] }).passt, false);
+      A.equal(P.bewerte(F.ko("arbeitsrecht", "Neue Regeln im Arbeitsrecht werden beraten"), { reportingTopics: ["Arbeitsrecht"] }).gewicht, 100);
+    });
+    await test("Armutszeugnis ist kein Armutsbeleg, echte Armut und Armutsrisiken bleiben erhalten", async () => {
+      const profile = { ...F.profile, reportingTopics: ["Soziales"], focusTopics: [] };
+      const wrong = F.ko("armutszeugnis", "Frühe Bildung: Kritik an den Startchancen für Kinder", {
+        was_ist_passiert: "Die Bildungspolitikerin nennt den Vorschlag ein Armutszeugnis und verweist auf die Schulen." });
+      A.equal(P.bewerte(wrong, profile).passt, false);
+      for (const word of ["Armut", "Armutsrisiko", "Armutsbekämpfung"]) {
+        const ko = F.ko("echte-armut", `${word}: Neue Daten zur sozialen Absicherung vorgelegt`);
+        A.equal(P.bewerte(ko, profile).passt, true, word);
+      }
+      setup(profile, [wrong]);
+      A.deepEqual((await L.buildLageBriefing(profile, { cacheOnly: true })).vorgaenge, []);
+      A.equal(forbidden, 0);
+    });
+    await test("Persoenliche Erklaerung verbindet belegte Rolle mit konkretem Originalkontext in Sie-Form", () => {
+      const profile = { committees: ["Ausschuss für Arbeit und Soziales"], reportingTopics: ["Soziales"] };
+      const ko = F.ko("erklaerung", "Gewerkschaften beraten eine Reform");
+      const originalTitle = "Gewerkschaften legen einen Vorschlag für mehr Tarifbindung vor";
+      const rows = P.mitQuellenbezug([ko], profile, { [ko.vorgang_id]: [doc(ko, "", originalTitle)] });
+      A.equal(rows.length, 1);
+      A(rows[0].relevanz_erklaerung.satz.includes("Für Ihre Arbeit im Ausschuss für Arbeit und Soziales"));
+      A(rows[0].relevanz_erklaerung.satz.includes(originalTitle));
+      A(!rows[0].relevanz_erklaerung.satz.includes("konkrete Fachaufgabe"));
+      const proof = P.bewerte({ headline: originalTitle }, profile).belege;
+      const before = JSON.stringify(profile);
+      A.deepEqual(P.ausBelegen(proof, profile).erklaerung, rows[0].relevanz_erklaerung);
+      const firstPerson = "Wir fordern eine staerkere Tarifbindung";
+      const quoted = P.mitQuellenbezug([ko], profile, { [ko.vorgang_id]: [doc(ko, "", firstPerson)] });
+      A(quoted[0].relevanz_erklaerung.satz.includes(`Die Quelle berichtet: „${firstPerson}“`));
+      A(!quoted[0].relevanz_erklaerung.satz.includes(`relevant: ${firstPerson}`), "Keine zugeschriebene politische Position des Mandats");
+      const excerptOnly = P.bewerte({ headline: "Eine aktuelle Meldung", was_ist_passiert: "Gewerkschaften nennen EXKLUSIVER-AUSZUG-MARKER." }, profile);
+      A(excerptOnly.passt); A(excerptOnly.erklaerung.satz.includes("Die Quelle nennt gewerkschaften"));
+      A(!JSON.stringify(excerptOnly.erklaerung).includes("EXKLUSIVER-AUSZUG-MARKER"), "Keine neue Auszugskopie ohne artikelbezogene Attribution");
+      const noHeadline = P.bewerte({ was_ist_passiert: "Gewerkschaften nennen EXKLUSIVER-AUSZUG-MARKER." }, profile);
+      A(!JSON.stringify(noHeadline.erklaerung).includes("EXKLUSIVER-AUSZUG-MARKER"), "Fehlende Headline macht den Auszug nicht zum Titel");
+      A.equal(JSON.stringify(profile), before);
+      A.equal(P.VERSION, 3, "Historische Profil- und Cachehashversion bleibt erhalten");
+    });
     await test("Finanz- und Verteidigungsprofile unterscheiden Fachaufgaben von technischen und akademischen Worttreffern", async () => {
       for (const [profile, fremd, passend] of [
         [{ id: "lokal-finanzen", committees: ["Finanzausschuss"] },

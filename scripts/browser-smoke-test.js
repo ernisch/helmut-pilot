@@ -44,6 +44,7 @@ if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage brau
 if (tagespaketTeilstand && (tagespaketJsonb || tagespaketRuhelageOnly)) throw Error("Teilstand ist ein eigener gezielter Tagespaketfall");
 if (radarFrischeklarheit && (process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || tagespaketRuhelageOnly)) throw Error("Radar-Frischeklarheit ist ein eigener gezielter Tagespaketfall");
 const tagespaketOnly = process.argv.includes("--tagespaket") || tagespaketJsonb || tagespaketTeilstand || radarFrischeklarheit || kundenansichten || briefingTeilstand || radarArtikelbindung;
+const ohneAbsatzMandatsbezug = paragraphs => paragraphs.map(({ relevanz, ...p }) => p);
 
 function loadPlaywright() {
   const candidates = [
@@ -94,6 +95,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   const fixture = require("./fixtures/profilhash-integration");
   const { day, now } = fixture;
   const profile = { ...fixture.profile, onboardedAt: now.toISOString() };
+  if (kunden) {
+    profile.committees = ["Haushaltsausschuss"];
+    profile.deputyCommittees = [];
+  }
   const text = fixture.fixture().text;
   let rows = new Map([[text.id, structuredClone(text)]]);
   let briefing = structuredClone(fixture.briefing);
@@ -223,6 +228,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   }
   await B.materialisiere({ profile, userId: profile.id, now, briefing, lageAnsicht, storage });
   const row = rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);
+  const gespeicherterVorwert = structuredClone(row);
   assert(row, "Synthetisches Tagespaket muss vor dem Browserstart gespeichert sein");
   if (teilstand) {
     assert(require("../lib/helmut/lage-teilstand").gueltig(row.payload.lage, { userId: profile.id, tag: day, profile, now }));
@@ -431,7 +437,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert.equal(response.status(), 200); assert.equal(start.profile?.id, profile.id);
           assert.equal(start.briefing?.gespeicherterNachweis?.inhaltHash, row.payload.inhaltHash);
           assert.deepEqual(start.briefing.paketStatus.fehler, expectedErrors);
-          assert.deepEqual(start.briefing.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          assert.deepEqual(ohneAbsatzMandatsbezug(start.briefing.lageBriefing.paragraphs), lageAnsicht.paragraphs);
+          assert.match(start.briefing.lageBriefing.paragraphs[0].relevanz.satz, /Haushaltsausschuss/);
+          assert.match(start.briefing.lageBriefing.paragraphs[1].relevanz.satz, /Pflege/);
+          assert(!JSON.stringify(start.briefing.lageBriefing).includes("mandatsbegruendung"));
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           const nav = isMobile ? ".mobile-dock" : ".nav-list";
           await page.locator(`${nav} [data-view="briefing"]`).click();
@@ -439,6 +448,12 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           await einordnung.waitFor({ state: "visible" });
           const texte = await einordnung.locator("[data-ui-lage-absatz]").allTextContents();
           assert.deepEqual(texte, text.payload.paragraphs.map(p => p.text));
+          const mandatsgruende = await einordnung.locator("[data-ui-lage-mandatsbezug]").allTextContents();
+          assert.equal(mandatsgruende.length, 2);
+          assert.match(mandatsgruende[0], /Für Ihr Mandat:.*Haushaltsausschuss/);
+          assert.match(mandatsgruende[1], /Für Ihr Mandat:.*Pflege/);
+          assert.equal(await page.locator(".ui-lage-detail .vsheet-relevanz").count(), 1);
+          assert.deepEqual(row, gespeicherterVorwert, "Personalisierte Lesekopie veraendert kein bestaetigtes Paket");
           for (const [i, paragraph] of lageAnsicht.paragraphs.entries()) {
             assert.equal(await einordnung.locator("article").nth(i).locator(`a[href="${paragraph.sources[0].url}"]`).count(), 1);
           }
@@ -458,9 +473,25 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             const fremd = renderLageEinordnung(data) === ""; profile = previous;
             const text = '<img data-unerlaubtes-bild src="x" onerror="window.unerlaubt=true">';
             const container = document.createElement("div");
-            container.innerHTML = renderLageEinordnung({ ...data, paragraphs: [{ ...data.paragraphs[0], text }] });
+            container.innerHTML = renderLageEinordnung({ ...data, paragraphs: [{ ...data.paragraphs[0], text,
+              relevanz: { satz: text } }] });
+            const originalDu = 'Du kannst „Tarifbindung“ stärken <img data-originalzitat src="x" onerror="window.unerlaubt=true">';
+            const satz = `Deine Hauptzuständigkeit: Die Quelle berichtet: „${originalDu}“`;
+            const paragraph = document.createElement("div"), detail = document.createElement("div"), list = document.createElement("div");
+            paragraph.innerHTML = lageAbsatzMandatsbezugHtml({ relevanz: { satz } });
+            detail.innerHTML = vsheetRelevanzHtml({ relevanz: { satz } });
+            const alteKarte = data.vorgaenge[0];
+            try { data.vorgaenge[0] = { ...alteKarte, relevanz: { satz } }; list.innerHTML = renderLageView(); }
+            finally { data.vorgaenge[0] = alteKarte; }
+            const quoteUnveraendert = [[paragraph, "[data-ui-lage-mandatsbezug]"], [detail, ".vsheet-relevanz"], [list, ".ui-vorgang-row .ui-row-relevance"]]
+              .every(([el, selector]) => !el.querySelector("img") && el.querySelector(selector)?.textContent
+                .includes(`Ihre Hauptzuständigkeit: Die Quelle berichtet: „${originalDu}“`));
             return { ohneQuellen, nichtVerfuegbar, fremd, escaped: !container.querySelector("img")
-              && container.querySelector("[data-ui-lage-absatz]")?.textContent === text };
+              && container.querySelector("[data-ui-lage-absatz]")?.textContent === text
+              && container.querySelector("[data-ui-lage-mandatsbezug]")?.textContent.includes(text),
+              quoteUnveraendert,
+              keinErfundenerBezug: !renderLageEinordnung({ ...data, paragraphs: [{ ...data.paragraphs[0], relevanz: null }] })
+                .includes("data-ui-lage-mandatsbezug") };
           });
           assert(Object.values(grenzen).every(Boolean));
           await page.locator(`${nav} [data-view="helmut"]`).click();
@@ -558,7 +589,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert.deepEqual(b.paketStatus.fehler, ["lage-teilstand"]);
           assert.deepEqual(b.publicationEligibilityPolicy, P.publicInfo());
           assert.deepEqual(b.paketStatus.quellenStand, row.payload.quellenStand);
-          assert.deepEqual(b.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          assert.deepEqual(ohneAbsatzMandatsbezug(b.lageBriefing.paragraphs), lageAnsicht.paragraphs);
           assert.equal(b.lageBriefing.paragraphs.length, 1);
           assert.equal(b.lageBriefing.paragraphs[0].text, positive);
           assert.equal(b.lageBriefing.teilstand.vollstaendig, false);
@@ -602,7 +633,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert.deepEqual(b.publicationEligibilityPolicy, P.publicInfo());
           assert.deepEqual(b.paketStatus.quellenStand, row.payload.quellenStand);
           assert.deepEqual(b.paketStatus.fehler, []);
-          assert.deepEqual(b.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+          assert.deepEqual(ohneAbsatzMandatsbezug(b.lageBriefing.paragraphs), lageAnsicht.paragraphs);
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           check(`${label}: SPA nimmt gespeicherte Ruhelage mit identischer Profil- und Quellenbindung an`,
             await page.evaluate(expected => profile.id === expected.tenant
@@ -636,7 +667,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           && start.briefing.gespeicherterNachweis.profilHash === row.payload.profilHash
           && start.briefing.paketStatus.tag === day && start.briefing.paketStatus.quittungGebunden === true
           && JSON.stringify(start.briefing.paketStatus.quellenStand) === JSON.stringify(row.payload.quellenStand));
-        assert.deepEqual(start.briefing.lageBriefing.paragraphs, lageAnsicht.paragraphs);
+        assert.deepEqual(ohneAbsatzMandatsbezug(start.briefing.lageBriefing.paragraphs), lageAnsicht.paragraphs);
         check(`${label}: gepruefter Narrativtext mit ehrlichem Paketstatus ausgeliefert`,
           start.briefing.lageBriefing.pendingNarrative === false
           && JSON.stringify(start.briefing.paketStatus.fehler) === JSON.stringify(expectedErrors)
