@@ -252,11 +252,22 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   const expectedErrors = kunden || teilbriefing ? ["quellenversorgung-unvollstaendig", "briefing-ohne-tagesanlass"] : teilstand ? ["lage-teilstand"]
     : jsonb || radarArtikel || briefing.currentHelmutState.tagesAnlass ? [] : ["briefing-ohne-tagesanlass"];
   assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
-  const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: now,
-    status: L.STATUS_ERFOLG, ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row),
+  let quittiertesPaket = row, morgenAt = now;
+  if (teilbriefing) {
+    quittiertesPaket = structuredClone(row);
+    quittiertesPaket.generated_at = new Date(now.getTime() - 120000).toISOString();
+    quittiertesPaket.payload.erzeugtAm = quittiertesPaket.generated_at;
+    quittiertesPaket.payload.briefing.currentHelmutState.emptyState.headline = "Frueherer Quellenstand";
+    quittiertesPaket.payload.quellenStand = D.quellenStand(quittiertesPaket.payload);
+    quittiertesPaket.payload.inhaltHash = B.inhaltHash(quittiertesPaket.payload);
+    row.payload.vorherigerStand = quittiertesPaket;
+    morgenAt = new Date(now.getTime() - 60000);
+  }
+  const receipt = L.quittung({ tenantId: profile.id, berlinTag: day, erzeugtAm: morgenAt,
+    status: L.STATUS_ERFOLG, ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(quittiertesPaket),
     fensterStart: day + "T00:00:00Z" });
   rows.set(L.laufId(profile.id, day), { id: L.laufId(profile.id, day), user_id: profile.id,
-    slot: L.SLOT_ERFOLG, generated_at: now.toISOString(), payload: receipt });
+    slot: L.SLOT_ERFOLG, generated_at: morgenAt.toISOString(), payload: receipt });
   const before = JSON.stringify([...rows]);
   // Nur die expliziten schmalen Leser duerfen die gespeicherte Testfixture lesen.
   // Jede andere Speicheroperation und jeder Modellaufruf scheitert sichtbar.
@@ -377,7 +388,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert.equal(response.status(), 200); assert.equal(start.profile?.id, profile.id);
           const b = start.briefing;
           assert.equal(b.gespeicherterNachweis.inhaltHash, row.payload.inhaltHash);
-          assert.equal(b.vorlaeufigerBriefingstand.tag, day); assert.equal(b.paketStatus.quittungGebunden, true);
+          assert.equal(b.vorlaeufigerBriefingstand.tag, day); assert.equal(b.paketStatus.quittungGebunden, false);
+          assert.equal(b.vorlaeufigerBriefingstand.abschluss, "offen");
+          assert.equal(b.currentHelmutState.frischeVertrag.aktuell, false);
+          assert.equal(b.currentHelmutState.frischeVertrag.grund, "ausgabe-nicht-gebunden");
           assert.equal(b.paketStatus.vollstaendig, false); assert.deepEqual(b.paketStatus.fehler, expectedErrors);
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           await page.locator(`${isMobile ? ".mobile-dock" : ".nav-list"} [data-view="helmut"]`).click();
@@ -391,6 +405,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           }
           check(`${label}: vorlaeufiges Briefing zeigt wortgleiche gepruefte Absaetze mit eigenen Quelldaten und offenem Tagesurteil`,
             (await card.innerText()).includes("Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.")
+            && (await card.innerText()).includes("Der Abschluss des neueren Tagespakets ist noch offen.")
+            && !(await page.locator(".hstand-frische").innerText()).includes("kein erzeugtes Morgenbriefing")
             && await page.locator(".ui-briefing-status .hstand-status").innerText() === "Vorläufiger Stand"
             && (await page.locator(".ui-briefing-status .hstand-meta-line").innerText()).includes("Tagespaket vorbereitet:")
             && await page.locator('.hstand-state-card[data-empty-kind="gap"]').count() === 1
@@ -401,7 +417,9 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             try {
               const results = [
                 absent(() => { briefing.vorlaeufigerBriefingstand = null; }),
-                absent(() => { briefing.paketStatus.quittungGebunden = false; }),
+                absent(() => { briefing.paketStatus.quittungGebunden = true; }),
+                absent(() => { briefing.vorlaeufigerBriefingstand.abschluss = null; }),
+                absent(() => { briefing.vorlaeufigerBriefingstand.morgenlaufErzeugtAm = "ungueltig"; }),
                 absent(() => { briefing.vorlaeufigerBriefingstand.tag = "2026-09-12"; }),
                 absent(() => { briefing.vorlaeufigerBriefingstand.tag = briefing.paketStatus.tag = "2026-09-12";
                   briefing.vorlaeufigerBriefingstand.paketErzeugtAm = briefing.gespeicherterNachweis.erzeugtAm = "2026-09-12T12:00:00Z"; }),

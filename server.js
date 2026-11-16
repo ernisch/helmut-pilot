@@ -4924,6 +4924,21 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
     if (frischeKontext.speicherFehler) vertrag.speicherFehler = frischeKontext.speicherFehler;
   }
   const vertragBlockiert = Boolean(vertrag && vertrag.aktuell === false);
+  // Ein heutiger Morgenlauf kann eine bestaetigte Vorgaengerversion betreffen.
+  // Der Tagespaketleser hat die CAS-Kette und die aktuellen Absatzbelege
+  // geprueft. Das neue Paket bleibt ohne eigenen Gesamtabschluss unaktuell.
+  const teil = briefing.vorlaeufigerBriefingstand, paket = briefing.paketStatus;
+  const offenerTeilstand = Boolean(teil?.version === 1 && teil.zustand === "vorlaeufig" && teil.abschluss === "offen"
+    && teil.quellenversorgung === "offen" && teil.tagesprioritaet === "offen"
+    && Array.isArray(teil.absaetze) && teil.absaetze.length
+    && paket?.zustand === "teilweise" && paket.vollstaendig === false && paket.quittungGebunden === false
+    && paket.tag === teil.tag && briefing.gespeicherterNachweis?.erzeugtAm === teil.paketErzeugtAm
+    && state?.status === "empty" && state.emptyState?.kind === "gap" && !state.errorState && !state.staleState
+    && !state.primaryItem && !state.primaryVorgangId && !state.items?.length
+    && frischeKontext?.speicherFehler === "tagespaket-quittung-fehlt");
+  if (offenerTeilstand && vertragBlockiert) vertrag = { ...vertrag, grund: "ausgabe-nicht-gebunden",
+    grundText: "Der heutige Morgenlauf ist belegt; für das neuere Tagespaket fehlt noch die passende Abschlussquittung.",
+    hinweis: "Der heutige Morgenlauf ist belegt; für das neuere Tagespaket fehlt noch die passende Abschlussquittung." };
 
   const status = vertragBlockiert
     ? briefingFrische.LABEL_NICHT_AKTUELL
@@ -4934,7 +4949,7 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
   const stateOut = hasState
     ? {
       ...state,
-      ...(vertragBlockiert && state.status !== "error" ? { status: "stale", staleState: true } : {}),
+      ...(vertragBlockiert && state.status !== "error" && !offenerTeilstand ? { status: "stale", staleState: true } : {}),
       ...(vertrag ? { frischeVertrag: vertrag } : {})
     }
     : state;
