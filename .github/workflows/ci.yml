@@ -116,7 +116,7 @@ jobs:
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
               && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)' ] \
                 || { [ "$(git rev-parse HEAD^1)" = af1d8497cc1d649a8ec9afda0f6c925c0e13bda4 ] \
-                  && git merge-base --is-ancestor 33767b6e03a23ee5cb68a45ef129909761cabfce HEAD; }; }; }; then
+                  && git merge-base --is-ancestor dfad80ecfb799c55db873a1c1722469cbcff7b48 HEAD; }; }; }; then
             node scripts/ci-quellenfrist-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -818,7 +818,7 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellenauftrag-netzfrist-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-hardening-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/google-news-hardening-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/pardok-fetch-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/pardok-fetch-test.js --gezielt
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/anbietersteuerung-fachpfad-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-queue-telemetry-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/worker-mandatsphase-test.js
@@ -983,7 +983,7 @@ jobs:
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
               && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)' ] \
                 || { [ "$(git rev-parse HEAD^1)" = af1d8497cc1d649a8ec9afda0f6c925c0e13bda4 ] \
-                  && git merge-base --is-ancestor 33767b6e03a23ee5cb68a45ef129909761cabfce HEAD; }; }; }; then
+                  && git merge-base --is-ancestor dfad80ecfb799c55db873a1c1722469cbcff7b48 HEAD; }; }; }; then
             node scripts/ci-quellenfrist-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi

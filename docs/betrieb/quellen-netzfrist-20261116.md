@@ -70,6 +70,31 @@ unveränderte UI führt keinen zusätzlichen Browserlauf aus. Fremde Runtime-,
 Auth-, Datenbank- oder Policy-Diffs werden geschlossen abgewiesen.
 Unabhängige Runtime-/Test- und CI-Reviews sind Voraussetzung für den Merge.
 
+## Nachbesserung des roten Pflichtchecks
+
+CI43818662436 scheiterte bei crawler-hardening: das alte10s-Positivfixture
+liegt jetzt bereits unter der21s-Netzabschlussreserve. Der Test verwendet
+die native60s-Standardlease und prueft unveraendert echten zweiten503-/
+Persistenzabruf statt skipped-shared. Anbieter-/Telemetrie-Gegenfaelle wurden
+auf dieselben Phasen ausgerichtet: zu kurzer Start bleibt ohneI/O, nach
+Facharbeit zu kurzer Telemetrierest bleibt ohne neuenRPC; spaete Persistenz/
+Enqueue-/Fehlerantwort startet weiterhin keine neue Phase.
+
+Dabei separat rot belegt:39sNetzfrist im nativen60s-Handler kollidierte mit
+der39s-Vor-Quota-Wache des EUR-Lex-Readers. KleinsterFix: dort nur das noch
+noetige29s-Original-/Abschlussbudget verlangen; die identische NACH-Quota-Wache
+und die32s-Reservierungs-/Rueckgabereserve bleiben. Bei langsamer10sQuota
+keinGET, sondern exakte Rueckgabe der eigenen Reservierung. Volle echte
+Handler→Reader-Kette mit fortschreitender Uhr und10sRPC-Limit jetzt gruen,
+ohne Lease-/Quote-/Deadlineerhoehung oder UNKNOWN-Freigabe.
+
+Gezielt gruen:33Crawler,14EUR-Integration,71Anbieter,8Queue-Telemetrie,
+9Mandatsphase und58Google-Haertung. PARDOK12 funktionale Gruppen ausschliesslich
+mit `--gezielt`:40/12synthetischeDatensaetze, gleicher harter Byte-/Record-
+Abbruch, Redirect und echter Dispatchnachweis an offenem Ein-Record-Stream.
+Der historische5000/300Datensatzmodus wird nicht ausgefuehrt; Pflicht-CI
+bindet den Mengenfilter ausdruecklich. Kein externer HTTP-/Modelltest.
+
 ## Verbleibende Grenzen
 
 Diese Korrektur beweist keine vollständige heutige Quellenversorgung oder

@@ -8,13 +8,19 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1233;
 const BRANCH = "codex/quellen-deadline-20261116";
 const BASE = "af1d8497cc1d649a8ec9afda0f6c925c0e13bda4";
-const EVIDENCE = "33767b6e03a23ee5cb68a45ef129909761cabfce";
+const EVIDENCE = "dfad80ecfb799c55db873a1c1722469cbcff7b48";
 const MERGE_TITLE = "fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)";
 const BLOBS = Object.freeze({
   "lib/helmut/crawler.js": "ee671e708575f4383bdbf56ac44ef65ce9f9be57",
+  "lib/helmut/quellen-eurlex-auszug.js": "0f7592182e8ba92f0e6f344920cba90874308412",
   "lib/helmut/scalable-pipeline.js": "3dc645cc1541b6eb6d0e5ed3d10549cb5c6fc0d5",
+  "scripts/anbietersteuerung-fachpfad-test.js": "3d5198b50d0ce33d99472b5e0e97c24e0d5d0ea9",
+  "scripts/crawler-hardening-test.js": "a85d709b7771aa753fbb64563c3ba97bb59d9002",
   "scripts/crawler-quellenfrist-test.js": "7db5a6ad5a172d77cd25805416ba13e744ee7927",
-  "scripts/quellenauftrag-netzfrist-test.js": "a065f51e27a1c40f867a965d3035acab6130f849"
+  "scripts/pardok-fetch-test.js": "aaa7766a914b1581b0f78b255ca92e08f551be15",
+  "scripts/quellen-eurlex-auszug-test.js": "b99d5ff5aea4132a6c88686aa700bfa0b4b3db31",
+  "scripts/quellenauftrag-netzfrist-test.js": "a065f51e27a1c40f867a965d3035acab6130f849",
+  "scripts/source-queue-telemetry-test.js": "f37a785d371cfbcebe399149ae4500b40a20426b"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-quellenfrist-plan.js", "scripts/ci-quellenfrist-plan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellen-netzfrist-20261116.md"]);

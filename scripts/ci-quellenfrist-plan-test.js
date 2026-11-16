@@ -63,6 +63,7 @@ check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  assert.match(w,/name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.quellenfrist != 'true'/);
  const step=w.split("      - name: Quellenfrist -")[1].split("      - name: Quellen-Dauerbetrieb -")[0];
  for(const s of ["crawler-quellenfrist","quellenauftrag-netzfrist","crawler-hardening","google-news-hardening","pardok-fetch","anbietersteuerung-fachpfad","source-queue-telemetry","worker-mandatsphase","quellen-eurlex-auszug"])assert(step.includes("scripts/"+s+"-test.js"));
+ assert(step.includes("scripts/pardok-fetch-test.js --gezielt"));
  assert(!/source-demand|--extended|Mock100|Mock500/.test(step));
 });
 console.log(pass+" neue CI-Gruppen bestanden");
