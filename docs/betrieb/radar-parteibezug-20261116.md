@@ -38,6 +38,11 @@ Der exakte oeffentliche Fremdparteien-Titel aus dem Betreiberbeleg ist mit
 synthetischem Profil reproduziert. Negative und positive Partei-/Fraktionsfaelle,
 Artikelreihenfolge, mehrdeutige Quellen, Legacycache, Zusatzchips, Mandant,
 Profilhash, Datum, unveraenderter Speicher und Quittung sind geprueft.
+Zusaetzlich Bereichsvertrag 41/41 und vollstaendige Tagespaketauslieferung 15/15
+bestanden. Deren alter Nachlauftest erwartete den Verlust gueltigen Volltexts;
+dieser Fehler ist auch am unveraenderten Basisbaum reproduziert. Die Erwartung
+entspricht jetzt der bestehenden Schutzwache: Ersatz abweisen und das gesamte
+erfolgreiche Paket unveraendert erhalten. Keine Wache oder Testgruppe entfaellt.
 
 Der gezielte bestehende Chromiumfall prueft die sichtbare Sperre und erhaltene
 Dynamik auf Desktop und Mobil. Beide Pflichtchecks bleiben erforderlich.
