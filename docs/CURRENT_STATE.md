@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 **16.11.2026: gemeinsame Quellenursachen eingegrenzt; Frist- und EUR-Lex-Originalkorrektur live. Versorgung bleibt partial.**
 PR #1233 / a67b44c0 repariert absolute Netzfrist, Abbruchweitergabe und sichere Vertagung im bestehenden Motor. Erfolge, Archive, UNKNOWN und Quoten bleiben erhalten.
-Beide Reparatur-PRs und beide Main-Pflichtchecks grün, unabhängig geprüft; aktuelle Production-Runtime 7b4c42c1 / HTTP 200 bestätigt. [Frist-, CI- und Rolloutbeleg](betrieb/quellen-netzfrist-20261116.md).
+Frist-/EUR-PRs und Main-Pflichtchecks grün, unabhängig geprüft; letzter Rolloutbeleg 08:02 UTC: Runtime 7b4c42c1 / HTTP 200. [Frist-, CI- und Rolloutbeleg](betrieb/quellen-netzfrist-20261116.md).
 PR #1234 / 7b4c42c1 schließt den belegten EUR-Lex-Früherfolg: heutiger freigegebener Job erledigt, 16 neue RSS-Zeilen jedoch nur Metadaten V1. Native Freigabe nutzt jetzt vorhandenen CELLAR-/Original-/CAS-Pfad vor RSS; Legacy unverändert.
 [Gemeinsame Ursachenanalyse](betrieb/quellen-ursachenanalyse-20261116.md): sechs Gruppen statt Artikelserien. 112 wartende Quell-IDs teilen denselben Google-Minutenriegel; keine 112 Parserfehler oder belegte Compilerduplikation.
 22 morgendliche + 4 neue Artikel-Endfehler sind getrennt zugeordnet; Integritäts-/Inhaltswachen bleiben. 167 erledigte Katalogjobs sind kein Nachweis vollständiger Versorgung.
@@ -9,7 +9,7 @@ Betriebsbelege: Lage 05:00 / Morgen 05:15 partial, Abdeckung 03:31 blocked. Die 
 Destatis/iRights je zwei echte Abrufquittungen statt drei; keine künstliche Freischaltung. BMG 633d9438 aus Archiv wiedergewonnen / wartend 2, Nachanalyse offen; Linke c096918b erledigt / attempt 1.
 Adminlauf 08:05–08:09: 13 erledigt / 134 vertagt / 4 Endfehler, 30 neue Einträge. Kontrolle 08:11: keine laufenden Jobs, sechs frühere Erfolge erhalten; 4 Fenster / 1200 s / 1 Original; 0,135652 USD Tag / 4,230669 USD insgesamt gebunden.
 1 USD/UTC-Tag, 30 USD insgesamt, 8 Fenster / 2400 s / 16 Originale unverändert. Keine Budget-, Cron-, Profil-, Schema- oder Rechteerweiterung; keine bezahlten Tests/Mengenläufe.
-Gemeinsamer Überwachungsfehler belegt: 107 zentrale Minutenvertagungen als Quellenfehler gezählt. Kleinste Telemetrie-/Healthkorrektur in Arbeit; echte Fehler bleiben geschützt.
+PR #1235 trennt bestätigte Nullabruf-Vertagungen von Fehler/Erfolg: 73 Telemetrie-/174 Healthchecks grün. Echte Mischfehler und historische Quittungen bleiben; Abschlussbelege im PR.
 Die Kontrolle 16.11., 05:25 bleibt beendet. EUR/Destatis/iRights-Tagesjobs sind erledigt und werden nicht wiederholt. Nächster regulärer Start 17.11., 03:00 UTC unter bestehenden Wachen; kein Ersatztermin.
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.

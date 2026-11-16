@@ -1,8 +1,9 @@
 # Quellenabrufe: absolute Netzfrist und sichere Fortsetzung
 
-Stand 16.11.2026: PR #1233 ist geprüft, gemergt und live. Ein neuer
-Production-Wirksamkeitsnachweis aus Quellenverarbeitung steht aus. Ausgangspunkt
-war Main af1d8497 mit Runtime dc9bd6ea. Der echte Morgenabschluss bleibt partial; die bisherigen Erfolge,
+Stand 16.11.2026: PR #1233 ist geprüft, gemergt und live. Ein
+vollständiger Wirksamkeits-/Versorgungsnachweis steht aus. Der erste zulässige
+Folgelauf vom 16.11., 08:05–08:09 UTC ist im [Ursachenbeleg](quellen-ursachenanalyse-20261116.md)
+dokumentiert und bleibt partial. Ausgangspunkt war Main af1d8497 / dc9bd6ea. Der echte Morgenabschluss bleibt partial; die bisherigen Erfolge,
 Quellenbelege, Archive, negativen Prüfungen und unbekannten Ausgänge bleiben erhalten.
 
 ## Belegtes Problem und begrenzte Aussage

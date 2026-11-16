@@ -87,6 +87,38 @@ Main-SHA und Alias `helmut-pilot.vercel.app` bestätigt. Öffentliche Nachkontro
 `3ffcecb243198789bb42c82cd4bdf3540ca575b6c4884f61e6d82195316ee7bf`.
 Rollout ist kein vollständiger Versorgungsnachweis.
 
+## Gemeinsame Überwachungsreparatur in PR #1235
+
+Der interne Beleg entsteht pro Quelle am bestehenden Anbieterwrapper direkt
+vor dem Rohaufruf. Nur bei null begonnenen Abrufen und bestätigter zentraler
+Minuten-/Tagesvertagung schreibt der Builder `provider-deferred/provider-limit`.
+Die Gesundheitsauswertung zählt diese gekoppelte Art weder als Quellenfehler
+noch als erfolgreichen Abruf; drei reine Vertagungen ergeben keinen PASS.
+Fehlende/widersprüchliche Belege, echte 429/503-/Parser-/Leerfeedfehler und
+Mischfälle nach bereits begonnenem Abruf bleiben konservativ sichtbar.
+
+Die Bilanz ist je Quelle getrennt. Injizierte Fetchadapter gelten nicht als
+vollständiger Nullabrufbeleg. Unteraufrufe behalten lokale Fristen und Uhren,
+wenn keine Elternwerte gesetzt sind. Die bestehende Storageprojektion genügt;
+keine neue Spalte, Migration, Queue-, Quoten- oder Kostenlogik. Historische
+`error/unknown`-Quittungen werden nicht nachträglich verändert oder als Erfolg
+umgewertet; ein aktueller gesunder Quellenzustand wird dadurch nicht behauptet.
+
+Gezielte lokale Nachweise: 73 Telemetrie- und 174 Health-Prüfungen, fünf
+Syntaxchecks und Diffcheck grün. Enthalten sind echter lokaler HTTP-Transport,
+Nullabruf, parallele Quellenisolation, Google-503 mit anschließender Vertagung,
+RSS-503/Parser/Leerfeed/Redirect vor Vertagung und der native CELLAR-Callback.
+Ein abgelaufener lokaler Unteraufruf startet auch ohne Elternfrist keinen GET.
+Die reine Folge Telemetrie → drei Vertagungen → null Versuche/Fehler/Erfolge
+sowie die tatsächliche reduzierte Storageprojektion sind nachgewiesen.
+
+Evidence `d914f7ea6f6de3b1e57dcf29974a0626747cf71f` bindet fünf Runtime-/
+Testblobs; der enge CI-Plan bindet zudem den restlichen Baum, die Basis und den
+wirklichen Main-Merge. Beide Pflichtchecks bleiben; nur Schnellkern und
+betroffene Telemetrie-/Health-/Queue-/Abdeckungs-/Abbruchverträge werden geprüft.
+Unabhängige Reviews und exakter CI-/Merge-/Rolloutabschluss stehen in
+[PR #1235](https://github.com/ernisch/helmut-pilot/pull/1235).
+
 ## Zulässige automatische Behandlung
 
 Bestehende Queue mit begrenzten Versuchen und Backoff, Anbieter- und
