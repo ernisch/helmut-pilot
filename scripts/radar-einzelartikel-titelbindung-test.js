@@ -85,7 +85,8 @@ async function main(){
     const f=await fixture(),before=JSON.stringify([...f.rows]),out=(await f.read()).briefing,r=out.currentRadarState;
     A.equal(r.anzeige.environment.party[0].title,actorNew);A.equal(r.environment.party[0].title,actorNew);
     A.equal(r.anzeige.dynamics.length,2);A.deepEqual(r.dynamics,f.row.payload.briefing.currentRadarState.dynamics);
-    A.deepEqual(out.lageBriefing.paragraphs,B.lageAusgabe(f.row.payload.lage).paragraphs);
+    A.deepEqual(out.lageBriefing.paragraphs.map(({relevanz,...p})=>p),B.lageAusgabe(f.row.payload.lage).paragraphs);
+    A.deepEqual(out.lageBriefing.paragraphs.map(p=>p.relevanz.belege[0].art),["stellvertretung","thema"]);
     A.equal(out.vorlaeufigerBriefingstand.absaetze.length,2);A.equal(out.paketStatus.quittungGebunden,true);
     A.equal(out.gespeicherterNachweis.inhaltHash,f.row.payload.inhaltHash);A.equal(out.currentHelmutState.emptyState.kind,"gap");
     A.equal(f.reads.length,2);A.ok(f.identityReads.length>0);A.equal(JSON.stringify([...f.rows]),before);
