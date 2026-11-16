@@ -45,6 +45,21 @@ async function fixture(){
 }
 let count=0;
 async function test(name,fn){await fn();count++;console.log("PASS "+name);}
+function folgepaket(f,tiefe=1){
+  const basis=clone(f.row);let kind=f.row,vorgaenger;
+  for(let i=1;i<=tiefe;i++){
+    vorgaenger=clone(basis);vorgaenger.generated_at=new Date(now.getTime()-i*120000).toISOString();
+    vorgaenger.payload.erzeugtAm=vorgaenger.generated_at;
+    vorgaenger.payload.briefing.currentHelmutState.emptyState.headline="Frueherer Teilstand "+i;
+    vorgaenger.payload.quellenStand=D.quellenStand(vorgaenger.payload);vorgaenger.payload.inhaltHash=B.inhaltHash(vorgaenger.payload);
+    kind.payload.vorherigerStand=vorgaenger;kind=vorgaenger;
+  }
+  const at=new Date(Date.parse(vorgaenger.generated_at)+30000).toISOString();
+  f.rows.get(L.laufId(profile.id,day)).generated_at=at;
+  f.rows.get(L.laufId(profile.id,day)).payload=L.quittung({tenantId:profile.id,berlinTag:day,erzeugtAm:at,
+    status:L.STATUS_ERFOLG,ausgabeBeleg:require("../lib/helmut/briefing-ausgabebeleg").ausPaket(vorgaenger)});
+  return vorgaenger;
+}
 async function main(){
   await test("Gebundener aktueller GAP erhaelt nur Referenzen auf vollstaendig gepruefte Absatzausgabe",async()=>{
     const f=await fixture(),before=JSON.stringify([...f.rows]),out=(await f.read()).briefing,m=out.vorlaeufigerBriefingstand;
@@ -64,6 +79,42 @@ async function main(){
     A.equal(L.qualifiziereFensterCheckpoint(receipt,{id:f.row.id,user_id:profile.id,slot:B.SLOT,
       generated_at:f.row.generated_at,briefing:f.row.payload.briefing},{profile,tag:day,jetzt:now}).zustand,"offen");
     A.equal(Object.hasOwn(f.row.payload.briefing,"vorlaeufigerBriefingstand"),false);
+  });
+  await test("Quittierter Vorgaenger stellt aktuelle gepruefte Absaetze ohne falschen Gesamtabschluss wieder her",async()=>{
+    const f=await fixture();folgepaket(f);const before=clone([...f.rows]),out=await f.read(),b=out.briefing;
+    A.equal(b.vorlaeufigerBriefingstand.abschluss,"offen");A.equal(b.vorlaeufigerBriefingstand.paketErzeugtAm,f.row.generated_at);
+    A.equal(b.vorlaeufigerBriefingstand.absaetze.length,2);A.equal(b.paketStatus.quittungGebunden,false);
+    A.equal(b.paketStatus.vollstaendig,false);A.equal(b.currentHelmutState.primaryItem,null);A.deepEqual(b.currentHelmutState.items,[]);
+    A.deepEqual(b.lageBriefing.paragraphs.map(p=>p.text),f.row.payload.lage.paragraphs.map(p=>p.text));
+    A.equal(out.frischeKontext.lauf,null);A.equal(out.frischeKontext.speicherFehler,"tagespaket-quittung-fehlt");
+    const decorated=require("../server").__decorateBriefingFreshness(b,out.frischeKontext);
+    A.equal(decorated.currentHelmutState.status,"empty");A.notEqual(decorated.currentHelmutState.staleState,true);
+    A.equal(decorated.currentHelmutState.frischeVertrag.aktuell,false);
+    A.equal(decorated.currentHelmutState.frischeVertrag.grund,"ausgabe-nicht-gebunden");
+    A.equal(decorated.currentHelmutState.frischeVertrag.hinweis,decorated.currentHelmutState.frischeVertrag.grundText);
+    A(!decorated.currentHelmutState.frischeVertrag.grundText.includes("kein erzeugtes Morgenbriefing"));
+    A.equal(f.reads.length,2);A.deepEqual([...f.rows],before);
+  });
+  await test("Mehrere Teilaktualisierungen bleiben begrenzt und verlangen jeden echten Zwischenvorwert",async()=>{
+    const f=await fixture();folgepaket(f,3);A.equal((await f.read()).briefing.vorlaeufigerBriefingstand.abschluss,"offen");
+    for(const change of [a=>{a.payload.inhaltHash="f".repeat(64);},a=>{a.user_id="fremd";},
+      a=>{a.payload.profilHash="f".repeat(64);},a=>{a.payload.tag="2026-09-12";},
+      a=>{a.generated_at=now.toISOString();},a=>{a.payload.quellenStand.sicherheitsHash="f".repeat(64);},
+      a=>{a.payload.vorherigerStand=a;}]){
+      const n=await fixture();folgepaket(n,3);change(n.row.payload.vorherigerStand);
+      A.equal((await n.read()).briefing.vorlaeufigerBriefingstand,null);
+    }
+    const deep=await fixture();folgepaket(deep,33);A.equal((await deep.read()).briefing.vorlaeufigerBriefingstand,null);
+  });
+  await test("Auch ein Folgepaket akzeptiert keine fehlende manipulierte fehlerhafte oder fremde Quittung",async()=>{
+    for(const change of [f=>f.rows.delete(L.laufId(profile.id,day)),
+      f=>{f.rows.get(L.laufId(profile.id,day)).payload.ausgabeBeleg.briefingHash="f".repeat(64);},
+      f=>{f.rows.get(L.laufId(profile.id,day)).payload.status=L.STATUS_FEHLER;},
+      f=>{f.rows.get(L.laufId(profile.id,day)).payload.tenantId="fremd";},
+      f=>{f.rows.get(L.laufId(profile.id,day)).payload.vertragVersion=999;},
+      f=>{f.rows.get(L.laufId(profile.id,day)).payload.erzeugtAm="2026-09-12T10:00:00Z";}]){
+      const f=await fixture();folgepaket(f);change(f);A.equal((await f.read()).briefing.vorlaeufigerBriefingstand,null);
+    }
   });
   await test("Fehlende manipulierte oder unlesbare Quittung erzeugt keinen Teilbriefinghinweis",async()=>{
     for(const change of [f=>f.rows.delete(L.laufId(profile.id,day)),
@@ -126,7 +177,7 @@ async function main(){
       A.equal(calls.length,suffix?0:1);A.equal(result,suffix?"explizite-auswahl":value);
     }
   });
-  A.equal(count,7);A.deepEqual(forbidden,[]);console.log(`${count}/${count} neue Teilbriefinggruppen bestanden; keine Alttests Modelle oder DBwrites.`);
+  A.equal(count,10);A.deepEqual(forbidden,[]);console.log(`${count}/${count} neue Teilbriefinggruppen bestanden; keine Alttests Modelle oder DBwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of originals)Object.assign(m,old);

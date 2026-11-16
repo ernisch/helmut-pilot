@@ -6957,12 +6957,17 @@ function briefingTeilstandAbsaetze(state) {
     || !profile?.id || profile.id !== activePoliticianId || state.profileId !== profile.id
     || (state.tenantId != null && state.tenantId !== profile.id)
     || state.versorgung?.zustand !== "offen" || paket?.zustand !== "teilweise" || paket.vollstaendig !== false
-    || paket.quittungGebunden !== true || paket.tag !== marker.tag || proof?.auswahl !== "aktuell"
+    || (marker.abschluss === "offen" ? paket.quittungGebunden !== false
+      || !Number.isFinite(Date.parse(marker.morgenlaufErzeugtAm))
+      || Date.parse(marker.morgenlaufErzeugtAm) >= Date.parse(marker.paketErzeugtAm)
+      : marker.abschluss != null || paket.quittungGebunden !== true)
+    || paket.tag !== marker.tag || proof?.auswahl !== "aktuell"
     || proof.erzeugtAm !== marker.paketErzeugtAm || !Number.isFinite(Date.parse(marker.paketErzeugtAm))
     || data?.teilstand || data?.qualitaet?.teilstand || !Array.isArray(marker.absaetze)
     || !marker.absaetze.length || marker.absaetze.length !== data?.paragraphs?.length) return [];
   const berlinDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" });
   if (marker.tag !== berlinDay.format(new Date()) || marker.tag !== berlinDay.format(new Date(marker.paketErzeugtAm))
+    || (marker.abschluss === "offen" && marker.tag !== berlinDay.format(new Date(marker.morgenlaufErzeugtAm)))
     || Date.parse(marker.paketErzeugtAm) > Date.now()) return [];
   const checked = lageGepruefteAbsaetze(data), result = [];
   for (const [i, ref] of marker.absaetze.entries()) {
@@ -6983,6 +6988,7 @@ function renderBriefingTeilstand(state) {
   return `<section class="ui-lage-einordnung" data-ui-briefing-teilstand aria-label="Vorläufiger Briefingstand">
     <h2>Vorläufiger Briefingstand</h2>
     <p class="ui-evidence-note">Die Quellenversorgung ist noch unvollständig. Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.</p>
+    ${briefing.vorlaeufigerBriefingstand.abschluss === "offen" ? '<p class="ui-evidence-note">Der heutige Morgenlauf ist belegt. Der Abschluss des neueren Tagespakets ist noch offen.</p>' : ""}
     <p class="ui-evidence-note">Bereits geprüfte, gespeicherte Einordnungen. Die Originalquellen und ihr Veröffentlichungsdatum stehen jeweils dabei.</p>
     ${paragraphs.map(p => `<article><p data-ui-briefing-absatz>${escapeHtml(p.text)}</p>
       <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
