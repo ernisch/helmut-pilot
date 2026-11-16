@@ -214,6 +214,40 @@ test("absolute-frist-parser", async () => {
   } finally { steuerung.reserviere = originalReserve; }
 });
 
+test("redirect-kind-settlement", async () => {
+  for (const kind of ["get", "pardok"]) {
+    let parent, finishChild, settled = false, childStarted;
+    const ready = new Promise(resolve => { childStarted = resolve; });
+    await mitHttp(({ antwort, calls }) => {
+      if (calls.length === 1) { parent = antwort(302, { location: "/kind" }); return; }
+      const child = antwort(); child.write("Kindantwort");
+      finishChild = () => { child.complete = true; child.end(); };
+      // Fehler des alten Redirect-Streams, waehrend dessen Kind noch arbeitet.
+      parent.emit("aborted"); parent.destroy(); childStarted();
+    }, async calls => {
+      const controller = new AbortController();
+      const deps = { abbruchSignal: controller.signal, env: {} };
+      const work = kind === "get" ? crawler.fetchUrl("https://example.invalid/", 0, deps)
+        : crawler.fetchPardokText("https://example.invalid/", {}, 0, deps);
+      const observed = work.then(value => { settled = true; return value; }, error => { settled = true; throw error; });
+      // Ablehnung sofort beobachten, damit auch der rote Nachweis keine
+      // unbehandelte Promise-Ablehnung und keinen laufenden Kindabruf hinterlaesst.
+      observed.catch(() => {});
+      try {
+        await begrenzt(ready);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(calls.length, 2);
+        assert.equal(settled, false, "Redirect-Elternfehler darf nicht vor laufendem Kind zurueckkehren");
+      } finally {
+        finishChild?.();
+        await Promise.allSettled([observed]);
+      }
+      const result = await observed;
+      assert.equal(result.body, "Kindantwort");
+    });
+  }
+});
+
 test("ohne-signal", async () => {
   await mitHttp(({ antwort }) => { const res = antwort(); res.complete = true; res.end("synthetisch vollstaendig"); }, async () => {
     assert.deepEqual(await crawler.fetchUrl("https://example.invalid/", 0, { env: {} }), { body: "synthetisch vollstaendig", finalUrl: "https://example.invalid/" });
