@@ -116,3 +116,41 @@ EUR-Lex, Destatis und iRights haben bereits abgeschlossene T00-Tagesaufträge.
 Deren erneuter künstlicher Abruf wäre kein regulärer Tagesnachweis. Die
 Drittquittungen, der EUR-Lex-V3-Produktnachweis und die BMG-Inhaltsanalyse
 bleiben ausdrücklich offen. Kein Abnahme-PASS aus Code, Paketkante oder Bestand.
+
+## Prüf- und Katalogvertrag für die eine Zuordnung
+
+Runtime-/Test-Evidence `96d3d068ffc5cfc5725112ccab287c5ace7a3097`:
+Fachquellensuite, 22 reproduzierbare Seedprüfungen und Syntax/JSON/Diffcheck grün;
+unabhängiger Code-/Rechtereview ohne notwendigen P1/P2-Befund. Der Seed unterscheidet
+sich ausschließlich durch eine package_paths-Zeile; er wird nicht angewendet.
+Die gezielte Pflicht-CI bleibt an drei Blobs, vollständigen Baum und echten Merge
+gebunden. Der aktuelle Prüf-, Merge-, Rollout- und Katalogabschluss steht in
+[PR #1236](https://github.com/ernisch/helmut-pilot/pull/1236).
+
+Vorwerte 09:15:19 UTC, keine laufende Verarbeitung, genau zwei alte Links:
+
+| Geschützter Datensatz | MD5 des vollständigen Datensatzes |
+| --- | --- |
+| Destatis-Pfad | `516228f268a0e6c85fb0c6fa6860cc78` |
+| Destatis-Herausgeber | `f7441f4bc373f8671f232e78922caef1` |
+| AS-Paket | `84db13c49a9776be66c84973b6de5940` |
+| Alte Digitalbindung | `555d9d55ac5b81b7a37e6567056e8cae` |
+| Alte Wirtschaftsbindung | `95f50c89ba528bfa42d46761e65efa85` |
+
+Die atomare Aktion nimmt zuerst eine kurze SHARE-Sperre auf helmut_jobs mit
+NOWAIT; bei Konflikt bricht sie sofort ab. So kann während der Null-Lauf-Prüfung
+und der Katalogtransaktion kein neuer Claim beginnen. Sie sperrt die vorhandenen Katalogzeilen, prüft alle Vorwerte,
+Feed-/Publisher-/Paketidentität, Eindeutigkeit, Zielabwesenheit und null laufende
+Jobs. Einzige Mutation ist INSERT der zusätzlichen Paarung. Danach müssen genau
+drei Links, unveränderte Eltern/Altlinks, Budgets, Quoten und sechs Zielerfolge
+nachgewiesen sein. Bei Abweichung rollt die gesamte Transaktion zurück.
+
+Bei unbekanntem Ausgang ausschließlich lesen, nicht erneut schreiben. Das
+zusammengesetzte Primärschlüsselpaar verhindert Duplikation. Ein bereits vorhandenes
+Ziel führt zu keiner Umwidmung und verlangt zunächst lesende Klärung.
+
+Rückweg: ausschließlich die selbst angelegte Paarung löschen, gebunden an ihre
+zurückgelesene created_at und MD5, unveränderte Eltern/Altlinks und nachweislich
+keine inzwischen abhängige Verarbeitung. Bei Drift oder Nutzung stoppen; keine
+Inhalte, Jobs, Quittungen, Paketstatus oder anderen Bindungen zurücknehmen. Der
+konkrete Besitzbeleg und SQL-Hash werden nach Ausführung im PR festgehalten.

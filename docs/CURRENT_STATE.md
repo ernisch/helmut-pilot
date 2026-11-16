@@ -7,7 +7,7 @@ Letzter Rollout 08:36: Runtime accf7c4b / HTTP 200. Nachweise im PR #1235 und [U
 22 morgendliche + vier neue Artikel-Endfehler zugeordnet; wegen Wiedervorlagen nicht pauschal zu 25 addieren. Echte Inhalts-, Versions- und Rechtekonflikte bleiben offen.
 BMG: positiver Revision-2-Cache mit 304 Zeichen und exaktem Reparaturhash lesend validiert. Kein belegtes wiederverwendbares Analyseergebnis; alter Job (Fenster 11Nov) wartend 2/max 3. Heutige Arbeit hat Vorrang.
 DIP: 35 BT-/fünf BR-Drucksachen mit typisierter Herkunft im 21-Tage-Bestand; kein neuer Bundesratkanal allein aus fehlendem RSS. BMAS/Bundesregierung vorhanden; vollständige heutige Textabnahme nicht behauptet.
-Destatis: zwei erlaubte Bestandsauszüge zu Pflege/Beruf und Erwerbstätigkeit. Fehlende AS-Paketzuordnung wird gezielt ergänzt; Rechte und individuelle Fachprüfung bleiben. Paketkante ist kein Versorgungs-PASS.
+Destatis: zwei erlaubte Bestandsauszüge zu Pflege/Beruf und Erwerbstätigkeit. AS-Paketzuordnung gezielt in PR #1236 ergänzt; Rechte und individuelle Fachprüfung bleiben. Paketkante ist kein Versorgungs-PASS.
 Destatis/iRights je zwei echte Quittungen statt drei, EUR-Lex heute 16 V1-Zeilen ohne Text. Erfolgreiche T00-Jobs werden nicht künstlich wiederholt; Ausschuss-RSS-Textrechte ungeklärt.
 Adminlauf 08:05–08:09: 30 neue Einträge, Linke erledigt / attempt 1, sechs frühere Zielerfolge erhalten. Lage/Morgen und Abdeckung bleiben partial.
 Kosten 08:36:58: 0,135652 USD Tag / 4,230669 USD gesamt gebunden; vier Fenster / 1200 s / ein Original, keine laufenden Jobs. Keine zusätzlichen bezahlten Läufe; 1 USD/Tag und 30 USD gesamt unverändert.
