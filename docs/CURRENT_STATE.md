@@ -1,16 +1,17 @@
 # CURRENT STATE — Helmut
-**16.11.2026: gemeinsame Quellenursachen eingegrenzt; Frist- und EUR-Lex-Originalkorrektur live. Versorgung bleibt partial.**
-PR #1233 / a67b44c0 repariert absolute Netzfrist, Abbruchweitergabe und sichere Vertagung im bestehenden Motor. Erfolge, Archive, UNKNOWN und Quoten bleiben erhalten.
-Frist-/EUR-PRs und Main-Pflichtchecks grün, unabhängig geprüft; letzter Rolloutbeleg 08:02 UTC: Runtime 7b4c42c1 / HTTP 200. [Frist-, CI- und Rolloutbeleg](betrieb/quellen-netzfrist-20261116.md).
-PR #1234 / 7b4c42c1 schließt den belegten EUR-Lex-Früherfolg: heutiger freigegebener Job erledigt, 16 neue RSS-Zeilen jedoch nur Metadaten V1. Native Freigabe nutzt jetzt vorhandenen CELLAR-/Original-/CAS-Pfad vor RSS; Legacy unverändert.
-[Gemeinsame Ursachenanalyse](betrieb/quellen-ursachenanalyse-20261116.md): sechs Gruppen statt Artikelserien. 112 wartende Quell-IDs teilen denselben Google-Minutenriegel; keine 112 Parserfehler oder belegte Compilerduplikation.
-22 morgendliche + 4 neue Artikel-Endfehler sind getrennt zugeordnet; Integritäts-/Inhaltswachen bleiben. 167 erledigte Katalogjobs sind kein Nachweis vollständiger Versorgung.
-Betriebsbelege: Lage 05:00 / Morgen 05:15 partial, Abdeckung 03:31 blocked. Die alleinige Ursache des 03:30-Abbruchs ist nicht vollständig protokolliert.
-Destatis/iRights je zwei echte Abrufquittungen statt drei; keine künstliche Freischaltung. BMG 633d9438 aus Archiv wiedergewonnen / wartend 2, Nachanalyse offen; Linke c096918b erledigt / attempt 1.
-Adminlauf 08:05–08:09: 13 erledigt / 134 vertagt / 4 Endfehler, 30 neue Einträge. Kontrolle 08:11: keine laufenden Jobs, sechs frühere Erfolge erhalten; 4 Fenster / 1200 s / 1 Original; 0,135652 USD Tag / 4,230669 USD insgesamt gebunden.
-1 USD/UTC-Tag, 30 USD insgesamt, 8 Fenster / 2400 s / 16 Originale unverändert. Keine Budget-, Cron-, Profil-, Schema- oder Rechteerweiterung; keine bezahlten Tests/Mengenläufe.
-PR #1235 trennt bestätigte Nullabruf-Vertagungen von Fehler/Erfolg: 73 Telemetrie-/174 Healthchecks grün. Echte Mischfehler und historische Quittungen bleiben; Abschlussbelege im PR.
-Die Kontrolle 16.11., 05:25 bleibt beendet. EUR/Destatis/iRights-Tagesjobs sind erledigt und werden nicht wiederholt. Nächster regulärer Start 17.11., 03:00 UTC unter bestehenden Wachen; kein Ersatztermin.
+**16.11.2026: Quellenabnahme heute fortgesetzt; Versorgung weiterhin partial.**
+Drei gemeinsame Motorreparaturen sind geprüft und live: Frist/Abbruch (PR #1233), EUR-Lex-Originalpfad (#1234), Anbietervertagung/Health (#1235, accf7c4b). Jeweils beide PR-/Main-Pflichtchecks und unabhängige Reviews grün.
+Letzter Rollout 08:36: Runtime accf7c4b / HTTP 200. Nachweise im PR #1235 und [Ursachenbeleg](betrieb/quellen-ursachenanalyse-20261116.md).
+[Heutige Abnahme und amtliche Sollquellen](betrieb/quellen-abnahme-20261116.md): 176 Claims = 13 erledigt + 134 vertagt + 25 wiederholt + vier Endfehler, keine verlorene Lease. Weitere 23 Neueinreihungen sind keine Claims.
+134 Vertagungen: 107 Anbieter-Minute, 22 Kontext-Zeitbudget, vier offene Kontexte, eine Quellenzeitgrenze; alle attempt 0. 25 Wiederholungen auf 1/max 3, Sperren ohne blinde Modellaufrufe. Kein weiterer universeller Motorfehler belegt.
+22 morgendliche + vier neue Artikel-Endfehler zugeordnet; wegen Wiedervorlagen nicht pauschal zu 25 addieren. Echte Inhalts-, Versions- und Rechtekonflikte bleiben offen.
+BMG: positiver Revision-2-Cache mit 304 Zeichen und exaktem Reparaturhash lesend validiert. Kein belegtes wiederverwendbares Analyseergebnis; alter Job (Fenster 11Nov) wartend 2/max 3. Heutige Arbeit hat Vorrang.
+DIP: 35 BT-/fünf BR-Drucksachen mit typisierter Herkunft im 21-Tage-Bestand; kein neuer Bundesratkanal allein aus fehlendem RSS. BMAS/Bundesregierung vorhanden; vollständige heutige Textabnahme nicht behauptet.
+Destatis: zwei erlaubte Bestandsauszüge zu Pflege/Beruf und Erwerbstätigkeit. Fehlende AS-Paketzuordnung wird gezielt ergänzt; Rechte und individuelle Fachprüfung bleiben. Paketkante ist kein Versorgungs-PASS.
+Destatis/iRights je zwei echte Quittungen statt drei, EUR-Lex heute 16 V1-Zeilen ohne Text. Erfolgreiche T00-Jobs werden nicht künstlich wiederholt; Ausschuss-RSS-Textrechte ungeklärt.
+Adminlauf 08:05–08:09: 30 neue Einträge, Linke erledigt / attempt 1, sechs frühere Zielerfolge erhalten. Lage/Morgen und Abdeckung bleiben partial.
+Kosten 08:36:58: 0,135652 USD Tag / 4,230669 USD gesamt gebunden; vier Fenster / 1200 s / ein Original, keine laufenden Jobs. Keine zusätzlichen bezahlten Läufe; 1 USD/Tag und 30 USD gesamt unverändert.
+Kontrolle 16Nov05:25 beendet/unverändert. Nächster regulärer Start 17Nov03:00UTC unter bestehenden Wachen; kein Ersatztermin. Privater Zwölf-Felder-Profilabgleich geschlossen.
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
 Amtlicher Beleg CELEX 32026D2505 / DEU / COM / OJ-L 2026/2505, Publikation 13.11., 142 Zeichen. Rechtsdokument-Reuse primär belegt; CC0 nur Metadaten, keine Fremdwerke, Bilder, Anhänge oder Volltexte.
