@@ -57,6 +57,44 @@ test("Originalquellen bleiben unveraendert", () => {
   const docs = [source("spdfraktion.de")], before = JSON.stringify(docs);
   state(docs); A.equal(JSON.stringify(docs), before);
 });
+test("Fremde Parteitage erben weder KO-Partei noch Quellentyp oder Quellennamen", () => {
+  const p = { id: "synthetisch-parteibeleg", fullName: "Alex Beispiel", party: "Die Linke", faction: "Die Linke" };
+  const k = { ...ko, display_title: "Die Linke stimmt ueber einen Vertrag ab", parteien: ["Die Linke"] };
+  for (const title of ["Mecklenburg-Vorpommern - Parteitage: SPD und Grüne stimmen über Koalitionsvertrag ab",
+    "Wochenzeitung Das Parlament: Grünen-Bildungspolitikerin Anja Reinalter spricht zur Kita"]) {
+    const d = source("deutschlandfunk.de", { title, source_name: "Die Linke", source_type: "party" });
+    const s = build(p, k, [{ type: "partei", value: "Die Linke" }], [d]);
+    A.equal(s.environment.party.length, 0); A.equal(s.anzeige.environment.party.length, 0);
+    A.ok(s.articles.every(i => !i.relationTypes.includes("party")));
+  }
+});
+test("Medienartikel braucht eigenen expliziten Parteibeleg und keine zitierte Richtungsangabe", () => {
+  const keys = R.radarProfileTerms({ party: "Die Linke" }).parties;
+  for (const title of ["Die linke Seite bleibt gesperrt", "Linke Ideen fuer die Stadt",
+    "SPD sagt: „Die Linke blockiert den Vertrag“", 'Grüne sagen: "Die Linke blockiert"',
+    "SPD zitiert ‚Die Linke‘", "SPD zitiert ‘Die Linke’", "SPD zitiert ‹Die Linke›", "SPD zitiert ›Die Linke‹",
+    "SPD sagt: „Die Linke blockiert"]) A.equal(R.radarParteiArtikelbeleg(source("deutschlandfunk.de", { title }), keys), false, title);
+  for (const title of ["Die Linke fordert eine Reform", "DIE LINKE fordert eine Reform", "Linke-Parteichef fordert eine Reform", "Linksfraktion fordert höhere Renten",
+    "Die Linke kritisiert Scholz’ Rentenpläne", "Die Linke kritisiert Scholz' Rentenpläne"])
+    A.equal(R.radarParteiArtikelbeleg(source("deutschlandfunk.de", { title }), keys), true, title);
+});
+test("Echte eigene Medienquelle bleibt trotz neuerem fremden Parteibericht gebunden", () => {
+  const own = source("deutschlandfunk.de", { title: "SPD fordert eine Reform", id: "d-eigene-medienquelle" });
+  const other = source("deutschlandfunk.de", { title: "CDU beschliesst einen Antrag", id: "d-fremde-medienquelle", url: "https://deutschlandfunk.de/presse/anderer-antrag", published_at: "2026-09-25T08:00:00Z" });
+  for (const docs of [[own, other], [other, own]]) {
+    const s = state(docs);
+    A.equal(s.environment.party[0].documentId, own.id);
+    A.equal(s.anzeige.environment.party[0].documentId, own.id);
+  }
+});
+test("Explizite Parteinamen gelten fuer weitere erlaubte Parteien ohne Personen-Sonderfall", () => {
+  for (const [party, title] of [["SPD", "SPD fordert Reform"], ["CDU", "CDU fordert Reform"],
+    ["CSU", "CSU fordert Reform"], ["Bündnis 90/Die Grünen", "Die Grünen fordern Reform"],
+    ["FDP", "FDP fordert Reform"], ["BSW", "BSW fordert Reform"]]) {
+    const terms = R.radarProfileTerms({ party }).parties;
+    A.equal(R.radarParteiArtikelbeleg(source("deutschlandfunk.de", { title }), terms), true, party);
+  }
+});
 
 // --- Segmentbezogener Ursprung fuer Wahlkreis und Ausschuss -------------------
 // Derselbe Grundsatz wie fuer Partei/Fraktion: der sichtbare Link/die sichtbare Quelle

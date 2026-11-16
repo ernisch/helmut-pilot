@@ -7,9 +7,9 @@ const A=require("node:assert/strict"),V=require("../lib/helmut/briefing-bereichs
   R=require("../lib/helmut/radarState"),S=require("../lib/helmut/storage"),AI=require("../lib/helmut/ai"),
   F=require("./fixtures/profilhash-integration");
 if(process.argv.length!==2)throw Error("Unbekannte Testauswahl");
-const {profile,day,now}=F,clone=structuredClone,vid="vg-synthetische-koalition",
+const {day,now}=F,profile={...F.profile,party:"Die Linke",faction:"Die Linke"},clone=structuredClone,vid="vg-synthetische-koalition",
   actorOld="Alte Partei stimmt in Beispielstadt ueber den Vertrag ab",
-  actorNew="Andere Koalitionsparteien stimmen ueber denselben Vertrag ab",
+  actorNew="Die Linke stimmt ueber denselben Vertrag ab",
   url="https://example.invalid/koalition/abstimmung",at=day+"T05:00:00Z";
 const docs=[{id:"rd-actor-alt",title:actorOld,summary:"Der gemeinsame Vertrag wird beraten.",
   url:"https://example.invalid/koalition/vorher",published_at:"2026-09-12T05:00:00Z"},
@@ -18,7 +18,7 @@ const docs=[{id:"rd-actor-alt",title:actorOld,summary:"Der gemeinsame Vertrag wi
 const item={vorgangId:vid,documentId:"rd-actor-neu",title:actorOld,sourceUrl:url,publishedAt:at,
   ursprungsBeleg:{documentId:"rd-actor-neu",url},relationTypes:["party"]};
 function produce(rows=docs,i=item,dynamic=false){return V.radarAnzeige({mentions:[],environment:{party:dynamic?[]:[i]},
-  dynamics:dynamic?[{...i,publishedAt:undefined,lastUpdatedAt:at}]:[]},{[vid]:rows},now);}
+  dynamics:dynamic?[{...i,publishedAt:undefined,lastUpdatedAt:at}]:[]},{[vid]:rows},now,[],profile);}
 const oldPolicy=process.env[P.ENV],modules=[S,AI].map(m=>[m,{...m}]),native=modules[0][1],forbidden=[];
 const fail=name=>()=>{forbidden.push(name);throw Error("Verboten: "+name);};
 for(const [k,v] of Object.entries(S))if(typeof v==="function"&&k!=="assertTenant")S[k]=fail("storage."+k);
@@ -28,7 +28,7 @@ process.env[P.ENV]=JSON.stringify({version:1,holds:[{publicationUrl:"https://exa
 const hadPolicy=Object.hasOwn(F.briefing,"publicationEligibilityPolicy"),fixturePolicy=F.briefing.publicationEligibilityPolicy;
 F.briefing.publicationEligibilityPolicy=P.publicInfo();
 async function fixture(){
-  const full=F.fixture().text,rows=new Map([[full.id,clone(full)]]),reads=[],identityReads=[];
+  const full=F.fixture(profile).text,rows=new Map([[full.id,clone(full)]]),reads=[],identityReads=[];
   const briefing=clone(F.briefing),lage=B.lageAusgabe(full.payload);
   briefing.currentHelmutState={status:"empty",qualityStatus:"empty",profileId:profile.id,tenantId:null,items:[],
     primaryItem:null,primaryVorgangId:null,emptyState:{kind:"gap"},versorgung:{version:1,zustand:"offen"}};
@@ -83,7 +83,7 @@ async function main(){
   });
   await test("Echter gespeicherter Appreader korrigiert nur sichtbare Radartitel und behaelt beide Dynamiken Lage Marker Hash und Quittung",async()=>{
     const f=await fixture(),before=JSON.stringify([...f.rows]),out=(await f.read()).briefing,r=out.currentRadarState;
-    A.equal(r.anzeige.environment.party[0].title,actorNew);A.equal(r.environment.party[0].title,actorOld);
+    A.equal(r.anzeige.environment.party[0].title,actorNew);A.equal(r.environment.party[0].title,actorNew);
     A.equal(r.anzeige.dynamics.length,2);A.deepEqual(r.dynamics,f.row.payload.briefing.currentRadarState.dynamics);
     A.deepEqual(out.lageBriefing.paragraphs,B.lageAusgabe(f.row.payload.lage).paragraphs);
     A.equal(out.vorlaeufigerBriefingstand.absaetze.length,2);A.equal(out.paketStatus.quittungGebunden,true);
@@ -97,7 +97,7 @@ async function main(){
       const f=await fixture();change(f.row.payload.briefing.items[2]);f.rebind();
       const before=JSON.stringify([...f.rows]),out=(await f.read()).briefing;
       A.equal(out.currentRadarState.anzeige.environment.party.length,0);A.equal(out.currentRadarState.anzeige.dynamics.length,2);
-      A.equal(out.currentRadarState.environment.party.length,1);A.equal(JSON.stringify([...f.rows]),before);
+      A.equal(out.currentRadarState.environment.party.length,0);A.equal(JSON.stringify([...f.rows]),before);
     }
   });
   await test("Canonical www Zeit Mandat Tag Policy und persoenliche Namensbindung werden nicht erweitert",async()=>{
@@ -111,7 +111,37 @@ async function main(){
     const personal=rows=>V.radarAnzeige({mentions:[{...item}],environment:{},dynamics:[]},{[vid]:rows},now,[],profile).mentions;
     A.equal(personal([named]).length,1);A.equal(personal(docs).length,0);
   });
-  A.equal(count,6);A.deepEqual(forbidden,[]);console.log(`${count}/${count} neue Radar-Artikelgruppen bestanden; keine Alttests Modelle oder Productionwrites.`);
+  await test("Fremder Parteititel verschwindet aus neuem und gespeichertem Partei-DTO ohne Speicherpatch",async()=>{
+    const foreign="Mecklenburg-Vorpommern - Parteitage: SPD und Grüne stimmen über Koalitionsvertrag ab";
+    const rows=docs.map(d=>d.id===item.documentId?{...d,title:foreign}:d);
+    A.equal(produce(rows).environment.party.length,0);
+    for(const legacy of [false,true]){
+      const f=await fixture(),radar=f.row.payload.briefing.currentRadarState;
+      for(const i of f.row.payload.briefing.items)for(const q of [...(i.sources||[]),i.primarySource].filter(Boolean))
+        if(require("../lib/helmut/dedup").canonicalizeUrl(q.url)===require("../lib/helmut/dedup").canonicalizeUrl(url))q.title=foreign;
+      const stale={...item,relationType:"party",relationLabel:"Betrifft Ihre Partei",relevanceEvidence:"Die Linke",
+        zusatzSignale:["Betrifft die Partei","Weitere Berichte"]};
+      radar.environment.party=[clone(stale)];
+      radar.dynamics=[{...clone(stale),signalType:"rising",evidence:"Weitere Berichte",relationTypes:["party","subject"]}];
+      radar.articles=[{...clone(stale),relationTypes:["party","media"]}];
+      if(legacy)delete radar.anzeige;
+      else {radar.anzeige.environment.party=[clone(stale)];radar.anzeige.dynamics=clone(radar.dynamics);radar.anzeige.articles=clone(radar.articles);}
+      f.rebind();const before=JSON.stringify([...f.rows]),out=(await f.read()).briefing.currentRadarState;
+      A.equal(out.anzeige.environment.party.length,0);A.equal(out.environment.party.length,0);
+      A.equal(out.anzeige.dynamics.length,1);A.equal(out.dynamics.length,1);
+      for(const i of [out.anzeige.dynamics[0],out.dynamics[0]]){
+        A.deepEqual(i.relationTypes,["subject"]);A.equal(i.relationLabel,undefined);A.equal(i.relationType,undefined);
+        A.deepEqual(i.zusatzSignale,["Weitere Berichte"]);
+      }
+      for(const i of [out.anzeige.articles[0],out.articles[0]]){
+        A.equal(i.title,foreign);A.deepEqual(i.relationTypes,["media"]);A.equal(i.relationLabel,undefined);
+      }
+      const extraOnly={...item,title:foreign,relationTypes:[],zusatzSignale:["Betrifft die Partei","Weitere Berichte"]};
+      A.deepEqual(V.radarParteiZuordnung(extraOnly,profile).zusatzSignale,["Weitere Berichte"]);
+      A.equal(JSON.stringify([...f.rows]),before);
+    }
+  });
+  A.equal(count,7);A.deepEqual(forbidden,[]);console.log(`${count}/${count} neue Radar-Artikelgruppen bestanden; keine Alttests Modelle oder Productionwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of modules)Object.assign(m,old);if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
