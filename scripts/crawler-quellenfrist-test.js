@@ -180,6 +180,40 @@ test("sonderweg-kombination", async () => {
   assert.equal(calls, 1); assert.equal(result.results[0].ok, false);
 });
 
+test("absolute-frist-parser", async () => {
+  // Die Uhr laeuft im synchronen RSS-Parser ab; der Abort-Timer konnte noch
+  // nicht zugestellt werden. Danach darf keine Google-Aufloesung starten.
+  const controller = new AbortController(); let now = 10, calls = 0;
+  const herkunft = require("../lib/helmut/quellen-irights-text-herkunft");
+  const original = herkunft.rssBeleg;
+  herkunft.rssBeleg = (...args) => { const result = original(...args); now = 21; return result; };
+  try {
+    const result = await crawler.crawlAllSources([direct], {
+      abbruchSignal: controller.signal, deadlineMs: 20, now: () => now,
+      fetchUrl: async (url, _depth, deps) => {
+        calls++; assert.equal(deps.deadlineMs, 20); assert.equal(deps.now(), 10);
+        return { body: xml(["https://news.google.com/articles/syntheticClock"]), finalUrl: url };
+      }
+    });
+    assert.equal(controller.signal.aborted, false, "Signal-Timer wurde bewusst nicht zugestellt");
+    assert.equal(calls, 1); assert.equal(result.results[0].ok, false);
+    assert.equal(result.results[0].error, "quellenabruf-zeitbudget");
+  } finally { herkunft.rssBeleg = original; }
+  // Dieselbe absolute Grenze gilt auch fuer direkte Netzwerkadapter ohne
+  // zugestellten Timer und muss vor der Anbieterreservierung greifen.
+  const originalReserve = steuerung.reserviere; let reservations = 0;
+  steuerung.reserviere = async () => { reservations++; return { erlaubt: true }; };
+  try {
+    await mitHttp(() => { throw new Error("Abgelaufene absolute Frist hat HTTP gestartet"); }, async requests => {
+      const deps = { abbruchSignal: controller.signal, deadlineMs: 20, now: () => now, env: { HELMUT_ANBIETER_STEUERUNG: "on" } };
+      for (const invoke of [() => crawler.fetchUrl("https://example.invalid/", 0, deps), () => crawler.postForm("https://example.invalid/", "x=1", deps), () => crawler.fetchPardokText("https://example.invalid/", {}, 0, deps)]) {
+        await assert.rejects(invoke(), error => error.code === "HELMUT_SOURCE_DEADLINE");
+      }
+      assert.equal(requests.length, 0); assert.equal(reservations, 0);
+    });
+  } finally { steuerung.reserviere = originalReserve; }
+});
+
 test("ohne-signal", async () => {
   await mitHttp(({ antwort }) => { const res = antwort(); res.complete = true; res.end("synthetisch vollstaendig"); }, async () => {
     assert.deepEqual(await crawler.fetchUrl("https://example.invalid/", 0, { env: {} }), { body: "synthetisch vollstaendig", finalUrl: "https://example.invalid/" });
