@@ -113,7 +113,7 @@ for (const source of S.ZUSAETZLICHE_QUELLEN) {
 assert.equal(S.ZUSAETZLICHE_QUELLEN.find((s)=>s.id==='partei-csu-direkt-rss').verification.freshnessStatus,'older_than_30_days');
 
 // Neuer Direktweg nur vorbereitet: derselbe Destatis-Herausgeber wie beim
-// unveraenderten Soziales-Suchweg; belegtes Wirtschafts- und Digitalangebot.
+// unveraenderten Soziales-Suchweg; belegtes Wirtschafts-, Digital- und Sozialangebot.
 const C = require("../lib/helmut/quellenarchitektur/catalog"), model = require("../lib/helmut/quellenarchitektur/model");
 const { v1Sources } = require("../lib/helmut/sources");
 const destatis = S.ZUSAETZLICHE_QUELLEN.find((s) => s.id === "fach-destatis-aktuell-rss");
@@ -121,8 +121,8 @@ assert(destatis);
 assert.equal(destatis.url, "https://www.destatis.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/Aktuell.xml");
 assert.equal(model.canonicalDomain(destatis.url), "destatis.de");
 assert.equal(model.canonicalDomain(destatis.url.replace("www.", "")), "destatis.de");
-assert.deepEqual(destatis.packageKeys, ["fach-wirtschaft-energie", "fach-digitales-staatsmodernisierung"]);
-assert.deepEqual(destatis.fachgebietKeys, ["wirtschaft-energie", "digitales-staatsmodernisierung"]);
+assert.deepEqual(destatis.packageKeys, ["fach-wirtschaft-energie", "fach-digitales-staatsmodernisierung", "arbeit-und-soziales"]);
+assert.deepEqual(destatis.fachgebietKeys, ["wirtschaft-energie", "digitales-staatsmodernisierung", "arbeit-soziales"]);
 assert.equal(destatis.evidenceRole, "data_source");
 assert.deepEqual(destatis.coverageClasses, ["amtliche_daten"]);
 assert.equal(destatis.active, false);
@@ -160,7 +160,8 @@ for (const sources of [[soziales, destatis], [destatis, soziales]]) {
   assert.equal(model.isPathActive(path, ["pkg-fach-wirtschaft-energie"]), false);
   assert.deepEqual(mapped.packagePaths.filter((p) => p.retrieval_path_id === path.id),
     [{ package_id: "pkg-fach-wirtschaft-energie", retrieval_path_id: path.id },
-      { package_id: "pkg-fach-digitales-staatsmodernisierung", retrieval_path_id: path.id }]);
+      { package_id: "pkg-fach-digitales-staatsmodernisierung", retrieval_path_id: path.id },
+      { package_id: "pkg-arbeit-und-soziales", retrieval_path_id: path.id }]);
   assert.equal(mapped.packages.find((p) => p.key === "fach-wirtschaft-energie").status, "prepared");
   assert.deepEqual(mapped.retrievalPaths.find((p) => p.legacy_source_id === soziales.id), beforeDestatis.retrievalPaths.find((p) => p.legacy_source_id === soziales.id));
 }
@@ -262,6 +263,16 @@ assert.deepEqual(activeFeeds.map(p => p.source.id).sort(), [destatis.id, irights
 assert(activeFeeds.every(p => p.source.active === true));
 assert.equal(destatis.active, false); assert.equal(irights.active, false);
 
+// Genau die fehlende Paketkante oeffnet den schon genehmigten Direktweg fuer
+// den synthetischen Sozialbedarf. Quelle/Status/Rechte/alle Altlinks bleiben.
+const socialProfile = { ...params.profiles[0], focusTopics: [], committees: ["Ausschuss für Arbeit und Soziales"] };
+const socialCatalog = { ...params, profiles: [socialProfile], retrievalPaths: live.retrievalPaths };
+assert.deepEqual(SM.buildRelationalCrawlPlan(socialCatalog).aktiv.map(p => p.source.id), [destatis.id]);
+assert.equal(SM.buildRelationalCrawlPlan({ ...socialCatalog, packagePaths: socialCatalog.packagePaths.filter(p =>
+  !(p.package_id === "pkg-arbeit-und-soziales" && p.retrieval_path_id === "rp-fach-destatis-aktuell-rss")) }).aktiv.length, 0);
+assert.deepEqual(SM.buildRelationalCrawlPlan({ ...socialCatalog, profiles: [{ ...socialProfile,
+  committees: ["Ausschuss für Tourismus"] }] }).aktiv.map(p => p.source.id), []);
+
 // Destatis bleibt RSS-Text: Datum/Original/Quellennachweis erhalten, fremde
 // Einzelbedingungen -> Titel/Link, keine Bilder und keine Volltextnachladung.
 const CR = require("../lib/helmut/crawler"), DD = require("../lib/helmut/dedup"), EX = require("../lib/helmut/quellen-auszug");
@@ -280,6 +291,39 @@ const emptyText = { ...row, summary: null };
 assert.equal(EX.brauchtInhalt(emptyText), false);
 assert.equal(EX.fromHtml(emptyText, { finalUrl: feedItem.url, body: "<main>Fremder Volltext</main>" }).ok, false);
 assert.equal(EX.fromMirror(emptyText, [good]).ok, false);
+
+// Zwei bereits gespeicherte amtliche RSS-Auszüge, keine neue Originalabfrage.
+// Die Datenjahre 2025/2005 ersetzen ausdruecklich NICHT das Publikationsdatum.
+const socialSamples = [
+  { id: "rd-8534c6f8bb2bf609c380444010b0ffb5edb513c5ad1b0afdc4d7c47d563c88a0",
+    title: "Pflege: 10 % der Erwerbstätigen von 25 bis 64 Jahren betreuen Angehörige",
+    url: "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/11/PD26_N079_23.html",
+    publishedAt: "2026-11-12T07:00:00.000Z", chars: 371, focus: "Pflege",
+    content: "Nicht nur die Kinderbetreuung, sondern auch die Pflege von Angehörigen stellt viele Menschen bei der Vereinbarkeit von Familie und Berufsleben vor Herausforderungen. 10 % der Erwerbstätigen im Alter von 25 bis 64 Jahren in Deutschland betreuen erwachsene Angehörige, wie das Statistische Bundesamt (Destatis) nach Erstergebnissen der Arbeitskräfte­erhebung 2025 mitteilt." },
+  { id: "rd-e0d688dfea150cfb91b206bcca83c5a5d2e7dcd49505da4da9d46a4b87e4ddd9",
+    title: "70 % der Eingewanderten sind erwerbstätig",
+    url: "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/11/PD26_N078_13.html",
+    publishedAt: "2026-11-11T12:00:00.000Z", chars: 368, focus: "Erwerbstätige",
+    content: "Nach Deutschland Eingewanderte sind deutlich häufiger erwerbstätig als früher. 70 % der Eingewanderten im Alter von 15 bis 64 Jahren waren im Jahr 2025 erwerbstätig. Wie das Statistische Bundesamt (Destatis) nach Ergebnissen des Mikrozensus mitteilt, ist die Erwerbstätigenquote von Eingewanderten damit im Vergleich zum Jahr 2005 (57 %) um 13 Prozentpunkte gestiegen." }
+];
+const bezug = require("../lib/helmut/lage-profilbezug");
+for (const sample of socialSamples) {
+  const original = CR.normalizeRawItem(sample, destatis), stored = DD.toRawDocumentRow(original);
+  assert.equal(stored.id, sample.id);
+  assert.equal(stored.source_id, destatis.id); assert.equal(stored.source_type, "official");
+  assert.equal(stored.source_name, destatis.name); assert.equal(original.author, destatis.name);
+  assert.equal(stored.url, sample.url); assert.equal(stored.canonical_url, sample.url.replace("www.", ""));
+  assert.equal(stored.published_at, sample.publishedAt);
+  assert.equal(stored.summary, sample.content); assert.equal(stored.summary.length, sample.chars);
+  assert(EX.hatOriginalinhalt(stored)); assert.equal(EX.brauchtInhalt(stored), false);
+  assert.equal(original.imageUrl, null);
+  assert(bezug.bewerte({ headline: sample.title, was_ist_passiert: sample.content },
+    { ...socialProfile, focusTopics: [sample.focus] }).passt, "Individueller Fachbezug bleibt einzeln erforderlich");
+}
+assert.equal(bezug.bewerte({ headline: "Mehr Gründungen größerer Betriebe",
+  was_ist_passiert: "Die Rechtsform und Beschäftigtenzahl lassen auf eine größere wirtschaftliche Bedeutung schließen." },
+  { ...socialProfile, focusTopics: ["Pflege", "Erwerbstätige"] }).passt, false,
+  "Eine neue Paketkante macht allgemeine Wirtschaftsmeldungen nicht zu Sozialversorgung");
 for (const patch of [{ rssRights: ["Nur fuer private Nutzung"] }, { rssRights: ["CC BY-NC 4.0"] },
   { rssRights: "ungueltig" }, { content: feedItem.content + " Nur mit schriftlicher Genehmigung weiterverwenden." },
   { url: "https://www.destatis.de/DE/Service/Impressum/_inhalt.html" }, { publishedAt: null }])
