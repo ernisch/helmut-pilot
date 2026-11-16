@@ -213,7 +213,9 @@ function directSource(id) {
           : { ok: true, neuIds: [], vorhandene: 1 };
       }, sourceTelemetryEnabled: () => false });
     const run = () => P.HANDLER.source_fetch({ id: `job-${mode}`, payload: { quelle: source } }, deps,
-      { auftragsDeadlineMs: Date.now() + 10000 });
+      // Native Standardlease:60s Auftragsbudget. Die10s des alten Fixtures
+      // reichen nicht fuer die neue bestaetigte Netz-/Abschlussreserve.
+      { auftragsDeadlineMs: Date.now() + 60000 });
     await assert.rejects(run(), mode === "flaky" ? /503/ : /persistenz-fehlgeschlagen/);
     assert.equal((await run()).ok, true);
     const path = new URL(source.url).pathname + new URL(source.url).search;

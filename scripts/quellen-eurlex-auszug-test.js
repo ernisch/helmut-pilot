@@ -142,22 +142,29 @@ function context({ rows = new Map(), quota = true, finishUnknown = false, manife
     c.deps.deadlineMs = c.deps.now() + 60000;
     const enriched = await Q.enrich([input], job.payload.quelle, c.deps);
     assert.equal(enriched[0].content, F.excerpt); assert.equal(c.calls.zip, 1);
-    let callback = 0;
+    let callback = 0, nativeNow = Date.parse(readAt);
+    const native = context(); native.deps.env = c.deps.env;
+    native.deps.now = () => nativeNow;
+    for (const name of Object.keys(native.deps.speicher)) {
+      const original = native.deps.speicher[name];
+      native.deps.speicher[name] = async (...args) => { nativeNow += 5; return original(...args); };
+    }
     const P = require("../lib/helmut/scalable-pipeline");
     // Handler-Abschluss nach Callback kontrolliert stoppen: kein Speicheradapter
     // und keine nachgelagerte Verarbeitung fuer diesen Einbindungsnachweis.
     await assert.rejects(P.HANDLER.source_fetch({ id: "synthetischer-auftrag", payload: job.payload }, {
-      env, now: c.deps.now, hardeningConfig: () => ({ enabled: false }),
+      env: native.deps.env, now: native.deps.now, hardeningConfig: () => ({ enabled: false }),
       enrichEurlexExcerpt: async (items, s, deps) => {
-        callback++; assert.equal(s.eurlexExcerptApproved, true); assert.equal(deps.deadlineMs, c.deps.deadlineMs);
-        return enriched;
+        callback++; assert.equal(s.eurlexExcerptApproved, true);
+        assert.equal(deps.deadlineMs, c.deps.deadlineMs - 21000);
+        return Q.enrich(items, s, { ...native.deps, ...deps });
       },
       crawlAllSources: async (sources, options) => {
-        const out = await options.cellarExcerpt([input], sources[0], c.deps.fetchUrl);
+        const out = await options.cellarExcerpt([input], sources[0], native.deps.fetchUrl);
         assert.equal(out[0].content, F.excerpt); throw Error("gezielter-einbindungsabschluss");
       }
     }, { auftragsDeadlineMs: c.deps.deadlineMs }), /gezielter-einbindungsabschluss/);
-    assert.equal(callback, 1);
+    assert.equal(callback, 1); assert.equal(native.calls.zip, 1); assert.equal(native.calls.quota, 1);
     const unapproved = await require("../lib/helmut/source-demand").kompiliereQuellenbedarf({
       profile: [{ id: "synthetischer-einzelbedarf" }], quellenFuerProfil: async () => [seed], jetztMs: Date.parse(readAt), env });
     assert.notEqual(unapproved.auftraege[0]?.payload.quelle.eurlexExcerptApproved, true);
@@ -186,6 +193,20 @@ function context({ rows = new Map(), quota = true, finishUnknown = false, manife
   await test("Globale Originalgrenze wird nicht erweitert; eigene Reservierung vor Abruf exakt zurueckgegeben", async () => {
     const c = context({ quota: false }); const result = await Q.enrich([input], source, c.deps);
     assert.equal(result[0], input); assert.equal(c.calls.zip, 0); assert.equal(c.calls.quota, 1);
+    assert.equal(c.calls.release, 1); assert.equal(c.rows.size, 0);
+  });
+  await test("Langsame Quota innerhalb39s Netzfrist gibt vor Original-GET nur die eigene Reservierung zurueck", async () => {
+    const c = context(); let current = Date.parse(readAt);
+    c.deps.env = { ...env, HELMUT_SUPABASE_TIMEOUT_MS: "10000" };
+    c.deps.now = () => current; c.deps.deadlineMs = current + 39000;
+    for (const name of Object.keys(c.deps.speicher)) {
+      const original = c.deps.speicher[name];
+      c.deps.speicher[name] = async (...args) => { current += 5; return original(...args); };
+    }
+    const quota = c.deps.originalReservierung.reserviere;
+    c.deps.originalReservierung.reserviere = async args => { current += 10000; return quota(args); };
+    assert.equal((await Q.enrich([input], source, c.deps))[0], input);
+    assert.equal(c.calls.quota, 1); assert.equal(c.calls.zip, 0);
     assert.equal(c.calls.release, 1); assert.equal(c.rows.size, 0);
   });
   await test("UNKNOWN nach Abschluss schreibt oder liest kein zweites Original und erhaelt die Reservierung", async () => {
