@@ -30,6 +30,37 @@ exakten Pfad/Feed und 16 neue V1-Zeilen ohne Text. Der frühe RSS-Return wurde
 isoliert reproduziert. Der Fix verwendet dieselbe bestehende amtliche Kette,
 keinen neuen Anbieter und keine pauschale Textfreigabe.
 
+## Alle 22 morgendlichen Endfehler und vier Folgefehler
+
+Die 17 + 5 Endfehler aus 03:00/03:15 sind tatsächlich heute abgeschlossene
+Artikelanalysen, keine kumulierten Altzähler und keine zusätzlichen RSS-Defekte.
+Elf Jobs wurden heute angelegt, elf zuvor. Die reine Katalogabrufstatistik
+oben kann diese `document_understanding`-Abschlüsse nicht erklären.
+
+| Technische Ursache | Anzahl | Tatsächlicher Befund / Grenze |
+| --- | ---: | --- |
+| Kein bestätigtes Artikelziel | 9 | Originalziel nicht belegt; sichere Sperre erhalten. |
+| Titel-/Datums-/Nutzungskonflikt | 3 | Gebundene Negativprüfung; kein pauschaler Parserdefekt. |
+| BMG-Extraktion | 3 | Revision 2 tatsächlich ohne positiven Reparaturbeleg: zwei Themenpfade strukturell mehrdeutig, eine Pressemitteilung weiterhin unvollständiger Artikeltext. Archive und Originalpointer vorhanden. |
+| DIP-Quellfelder nicht bestätigt | 2 | Diagnosejobs ohne kanonisches Dokument; andere Fälle als die zwei erfolgreich reparierten DIP-Fundstellen. |
+| Eingangs-Versionskonflikt | 1 | Archiv und Kanonik vorhanden, tatsächlicher Publikationszeitkonflikt. |
+| Quellenstand-Metadatenabweichung | 2 | Ein Titel- und ein Publikationszeitkonflikt bei vorhandenem Archiv. |
+| Artikelprüfung `skipped-failed` | 1 | Bereits geparkter Analysefall; kein neuer Modellaufruf durch diesen Status. |
+| Dauerhaft offener Artikelkontext | 1 | Endliche Wartefrist abgelaufen; keine endlose Wiederholung. |
+
+Die vier Endfehler des Adminlaufs sind ebenfalls Artikel-Eingangs-
+Versionskonflikte. Bei allen vier sind Archive und Kanonik vorhanden und beide
+URL-Felder identisch. Alle Publikationszeitpunkte unterscheiden sich tatsächlich
+(`::timestamptz`, kein bloßer JSON-Schreibweisenvergleich); drei Fälle außerdem
+in Titel und Herausgeber. Welcher Stand inhaltlich maßgeblich ist, wurde nicht
+entschieden. Kein pauschales Metadatenangleichen und kein behaupteter Abschluss.
+
+Diese 26 Fälle werden nicht durch PR #1233 als behoben deklariert. Kein weiterer
+universeller Reader-/Recoverydefekt ist daraus nachgewiesen. Eingangssperre und
+Wiedergewinnung: `lib/helmut/scalable-pipeline.js`; Versionsbindung:
+`lib/helmut/storage.js`; konservativer Negativabschluss:
+`lib/helmut/artikel-verarbeitungszustand.js`.
+
 ## Dauerhafte Reparaturen und Prüfungen
 
 PR #1233: [Frist-, Erstfehler-, CI- und Rolloutbeleg](quellen-netzfrist-20261116.md).
@@ -84,6 +115,26 @@ Start 08:05:50.914 UTC, Lauf-ID
 `admin-quellen-2026-11-16-8e4cd2f7-2090-45ad-b3b2-7c5edd653e5d`.
 Echte Adminsitzung und CSRF wurden benutzt; kein Cronkey-Ersatz, kein Reset,
 keine Wiederverwendung der alten Einmalrechte und kein paralleler Quellenlauf.
+Abschluss 08:09:37.023 UTC: partial, 13 erledigt / 134 vertagt / vier Endfehler;
+30 neue Einträge. Abdeckungsquittung 08:09:37.541 UTC ebenfalls partial.
+Linke-Zieljob jetzt erledigt / attempt 1; BMG-Nachanalyse weiterhin wartend 2.
+Sechs frühere Zielerfolge unverändert, 08:11:34 UTC keine laufenden Jobs.
+Tageskosten einschließlich Bindungen 0,135652 USD, insgesamt 4,230669 USD;
+Mehrkosten genau 0,045 USD. Vier Fenster / 1200 reservierte Sekunden / ein Original.
+
+107 Quellenabrufe wurden zentral am Anbieter-Minutenlimit vertagt. Dieselben
+107 Quittungen tragen fälschlich `error/unknown`. Der Builder ignoriert die
+strukturierte Vertagung, die Gesundheitsauswertung zählt sie dadurch als echte
+Fehlversuche und verwendet dies für Quellen-/Abdeckungsbefunde. Das ist ein
+weiterer nachgewiesener gemeinsamer Motorfehler; PR #1235 korrigiert genau
+diese Grenze. Echte vorherige HTTP-/Parserfehler dürfen dabei nicht verschwinden.
+
+EUR-Lex, Destatis und iRights besitzen bereits erfolgreich abgeschlossene
+reguläre Tagesaufträge mit `freshness_window=2026-11-16T00Z`. Die zulässige
+Fortsetzung wiederholt diese Erfolge nicht: EUR bleibt heute bislang V1 ohne
+Text; Destatis/iRights haben weiterhin je zwei echte Quittungen statt drei.
+Eine weitere Betätigung erzeugt dafür keinen neuen regulären Tagesnachweis.
+Es werden keine Ersatzjobs oder künstlichen Drittquittungen angelegt.
 
 Die bestehende Kontrolle 16.11., 05:25 wurde erhalten und ist beendet. Kein
 Nachmittagscron oder paralleler Ersatztermin wurde eingerichtet. Nächster
