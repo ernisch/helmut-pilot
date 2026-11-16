@@ -22,9 +22,9 @@ async function mitHttp(handler, run) {
     req.write = () => {}; req.end = () => {};
     req.destroy = error => { if (req.destroyed) return; req.destroyed = true; queueMicrotask(() => { if (error) req.emit("error", error); req.response?.destroy(error); req.emit("close"); }); };
     calls.push(args[0]);
-    queueMicrotask(() => handler({ req, callback, calls, antwort(status = 200, headers = {}) {
+    queueMicrotask(() => handler({ req, callback, calls, antwort(status = 200, headers = {}, prepare) {
       const res = new PassThrough(); res.statusCode = status; res.headers = headers; res.complete = false;
-      req.response = res; callback(res); return res;
+      req.response = res; if (prepare) prepare(res); callback(res); return res;
     } }));
     return req;
   }
@@ -237,6 +237,7 @@ test("redirect-kind-settlement", async () => {
         await begrenzt(ready);
         await new Promise(resolve => setImmediate(resolve));
         assert.equal(calls.length, 2);
+        assert.equal(parent.destroyed, true, "Alter Redirect-Body ist entsorgt");
         assert.equal(settled, false, "Redirect-Elternfehler darf nicht vor laufendem Kind zurueckkehren");
       } finally {
         finishChild?.();
@@ -246,6 +247,33 @@ test("redirect-kind-settlement", async () => {
       assert.equal(result.body, "Kindantwort");
     });
   }
+});
+
+test("antwort-dispose", async () => {
+  const nativeDestroy = res => {
+    const original = res.destroy.bind(res);
+    res.destroy = error => { if (!res.destroyed && !res.complete) res.emit("aborted"); return original(error); };
+  };
+  for (const kind of ["get", "post", "pardok"]) {
+    let response;
+    await mitHttp(({ antwort }) => { response = antwort(503, {}, nativeDestroy); }, async calls => {
+      const deps = { env: {} };
+      const work = kind === "get" ? crawler.fetchUrl("https://example.invalid/", 0, deps)
+        : kind === "post" ? crawler.postForm("https://example.invalid/", "x=1", deps)
+        : crawler.fetchPardokText("https://example.invalid/", {}, 0, deps);
+      await assert.rejects(begrenzt(work), error => {
+        assert.equal(response.destroyed, true, "Fehlerbody muss vor Rueckkehr entsorgt sein");
+        assert.match(error.message, /HTTP 503/); return true;
+      });
+      assert.equal(calls.length, 1);
+    });
+  }
+  // PARDOK beendet einen vollstaendigen Record absichtlich frueh. Das native
+  // synchrone aborted-Ereignis beim Entsorgen darf diesen Erfolg nicht ueberholen.
+  await mitHttp(({ antwort }) => { antwort(200, {}, nativeDestroy).write("<Dokument>x</Dokument>Rest"); }, async () => {
+    const result = await crawler.fetchPardokText("https://example.invalid/", { maxRecords: 1 }, 0, { env: {} });
+    assert.equal(result.truncated, true); assert.equal(result.body, "<Dokument>x</Dokument>");
+  });
 });
 
 test("ohne-signal", async () => {
