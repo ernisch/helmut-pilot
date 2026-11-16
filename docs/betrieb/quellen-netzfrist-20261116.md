@@ -1,8 +1,9 @@
 # Quellenabrufe: absolute Netzfrist und sichere Fortsetzung
 
-Stand16.11.2026: gezielte Codekorrektur in Entwicklung, noch kein neuer
-Production-Wirksamkeitsnachweis. Ausgangspunkt ist Mainaf1d8497 mit Runtime
-dc9bd6ea. Der echte Morgenabschluss bleibt partial; die bisherigen Erfolge,
+Stand 16.11.2026: PR #1233 ist geprüft, gemergt und live. Ein
+vollständiger Wirksamkeits-/Versorgungsnachweis steht aus. Der erste zulässige
+Folgelauf vom 16.11., 08:05–08:09 UTC ist im [Ursachenbeleg](quellen-ursachenanalyse-20261116.md)
+dokumentiert und bleibt partial. Ausgangspunkt war Main af1d8497 / dc9bd6ea. Der echte Morgenabschluss bleibt partial; die bisherigen Erfolge,
 Quellenbelege, Archive, negativen Prüfungen und unbekannten Ausgänge bleiben erhalten.
 
 ## Belegtes Problem und begrenzte Aussage
@@ -103,8 +104,8 @@ gruen; das echte03–16Nov-Abfragefenster und Publikation13Nov bleiben erhalten.
 Der11Runtime-/Testblobs bindende Evidence-Stand ist
 `b12f6d459e310d34d17f091919453fe2249459c1`; ErstfehlerCI43818662436 bleibt
 erhalten, bereits gruene Zwischen-CI43823257157 gilt nur fuer ihren alten Kopf.
-Die heutige EUR-Lex-RSS-Fruehrueckgabe mit16Titelmetadaten ist als gesonderte
-belegte Restursache erfasst; deren Originalpfadkorrektur folgt getrennt.
+Die heutige EUR-Lex-RSS-Früherückgabe mit 16 Titelmetadaten wurde getrennt
+in PR #1234 repariert; [gemeinsame Ursachen und Originalpfad](quellen-ursachenanalyse-20261116.md).
 
 ## Verbleibende Grenzen
 
@@ -117,5 +118,23 @@ Ungeklärte Medienrechte und sicher abgelehnte Metadaten werden nicht freigegebe
 Ein realer Folgeeffekt darf nur aus ohnehin autorisierten Produktläufen belegt
 werden; alte Einmalrechte und unbekannte Abrufe werden nicht wiederholt.
 
-Nächster Schritt: exakt geprüften Kopf nach grüner Pflicht-CI regulär integrieren
-und den Rollout sowie erhaltene technische Produktbelege lesend kontrollieren.
+## Merge und lesender Rolloutnachweis
+
+- PR #1233: Evidence `b12f6d459e310d34d17f091919453fe2249459c1`, geprüfter Kopf
+  `b0e58a4ad2ff44e6aa6b49a5947fe3c2de1fad8d`, beide Pflichtchecks erfolgreich
+  in [PR-CI 43824570255](https://github.com/ernisch/helmut-pilot/actions/runs/43824570255).
+  Unabhängige Runtime-, Test- und CI-Reviews geschlossen.
+- Merge `a67b44c07e55188357943ced88cd3e1a11398aea`; beide Main-Pflichtchecks
+  erfolgreich in [Main-CI 43825368169](https://github.com/ernisch/helmut-pilot/actions/runs/43825368169).
+- Reguläres Production-Deployment `dpl_a6WHmR6Dr8HtR1tSsHKawp5Xc1vh` READY,
+  Main-SHA und Alias `helmut-pilot.vercel.app` bestätigt.
+- Öffentliche HTML-Nachkontrolle 16.11., 07:47:42 UTC: HTTP 200, 6118 Bytes,
+  Runtime `a67b44c0`, SHA256
+  `1321baff95a6cf14e793f7582966cac27e57157278eeee73b260002a559dbe0a`.
+- Vor dem nachfolgenden PR-1234-Merge, 08:01 UTC: keine laufenden Jobs.
+  Sechs frühere Zielerfolge waren bei der Kontrolle 07:54 weiterhin erledigt /
+  attempt 1; Kosten und Quoten unverändert. Kein Quellen-/Original-/Modelllauf
+  wurde durch diese Nachkontrollen gestartet.
+
+Nächster Schritt: dieselbe zulässige Betriebsfortsetzung anhand echter
+Abschlüsse und lesbarer Inhalte prüfen; kein Gesamt-PASS aus dem Rollout.

@@ -439,6 +439,38 @@ gruppe("24 · Production-ähnliche Kombination (leerer Lauf, alter Erfolg, Rhyth
   check("gedrosselt zählt NICHT als Abruffehler", r.klasse !== K.ABRUFFEHLER && r.laufdaten.fehler === 0);
 }
 {
+  const deferred = tage => ({ ...lauf("q24quota", tage, "fehler"), status: "provider-deferred", error_code: "provider-limit",
+    duplicate_documents: 0, ignored_documents: 0 });
+  const zeilen = [3, 2, 1].map(deferred);
+  const r = klassifiziere("q24quota", zeilen, weg("q24quota"));
+  check("Providervertagung ist eigene allowlistete Laufart", sf.laufart(zeilen[0]) === "vertagt");
+  check("Drei Providervertagungen sind weder Versuche, Fehler noch Erfolge",
+    r.laufdaten.versuche === 0 && r.laufdaten.fehler === 0 && r.laufdaten.erfolge === 0 && r.laufdaten.vertagt === 3);
+  check("Providervertagung bleibt zentral sichtbar ohne Circuit-Behauptung",
+    r.klasse === K.GEDROSSELT && r.ursache === "provider-limit" && !/Schutzschalter/.test(r.erklaerung));
+  check("Providervertagung ist kein Nachweis tragender Versorgung", !sf.istWirksam(r));
+  check("Neuer Status ohne passenden Code bleibt Fehler", sf.laufart({ ...zeilen[0], error_code: "unknown" }) === "fehler");
+  check("Neuer Status mit Circuit-Code bleibt Fehler", sf.laufart({ ...zeilen[0], error_code: "circuit-open" }) === "fehler");
+  check("Neuer Status mit Dokumenten bleibt Fehler", sf.laufart({ ...zeilen[0], found_documents: 1 }) === "fehler");
+  check("Neuer Status mit Retry bleibt Fehler", sf.laufart({ ...zeilen[0], retry_count: 1 }) === "fehler");
+  const projected = zeilen.map(({ duplicate_documents, ignored_documents, ...row }) => row);
+  check("Tatsaechliche Storageprojektion ohne optionale Verlustzaehler bleibt lesbar",
+    sf.laufart(projected[0]) === "vertagt" && klassifiziere("q24quota", projected, weg("q24quota")).ursache === "provider-limit");
+  check("Fehlender obligatorischer Neudokumentzaehler bleibt Fehler",
+    sf.laufart({ ...projected[0], new_documents: undefined }) === "fehler");
+  check("Vorhandener widerspruechlicher Verlustzaehler bleibt Fehler",
+    sf.laufart({ ...projected[0], duplicate_documents: 1 }) === "fehler");
+  check("Alte error/unknown-Zeile wird niemals umgewertet", sf.laufart(lauf("q24quota", 1, "fehler")) === "fehler");
+  const gemischt = klassifiziere("q24quota", [lauf("q24quota", 4, "fehler", { code: "http-5xx" }), ...zeilen], weg("q24quota"));
+  check("Realer Fehler bleibt trotz drei Vertagungen ein Versuch und eine Fehlerserie",
+    gemischt.laufdaten.versuche === 1 && gemischt.laufdaten.fehler === 1 && gemischt.laufdaten.fehlerserie === 1
+      && gemischt.laufdaten.erfolge === 0 && gemischt.klasse !== K.GEDROSSELT);
+  const serie = klassifiziere("q24quota", [lauf("q24quota", 6, "lieferung"), lauf("q24quota", 5, "lieferung"),
+    lauf("q24quota", 4, "fehler", { code: "http-5xx" }), ...zeilen, lauf("q24quota", 0.5, "fehler", { code: "http-5xx" })], weg("q24quota"));
+  check("Vertagungen loeschen oder unterbrechen keine echten Fehlerserien",
+    serie.klasse === K.ABRUFFEHLER && serie.laufdaten.fehlerserie === 2 && serie.laufdaten.erfolge === 2);
+}
+{
   // Übersprungene Läufe (geteilter Abrufweg) dürfen niemals eine Serie bilden.
   const r = klassifiziere("q24c", reihe("q24c", [[5, "lieferung"], [4, "lieferung"], [3, "lieferung"],
     [2, "uebersprungen"], [1.5, "uebersprungen"], [1, "uebersprungen"], [0.5, "uebersprungen"], [0.2, "uebersprungen"]]), weg("q24c"));
