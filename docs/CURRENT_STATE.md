@@ -1,8 +1,13 @@
 # CURRENT STATE — Helmut
+**16.11.2026: Quellen-Netzfrist korrigiert, Pflicht-CI-Nachbesserung in Arbeit; Versorgung weiterhin partial.**
+PR1233 bindet die absolute Netzfrist durch alle Abrufstufen; zu kurzer Rest vertagt vor Netz/Reservierung. UNKNOWN-/Original-/Schreibwachen bleiben.
+CI-Fehler war ein veraltetes10s-Positivfixture. Zusaetzlich echte EUR-Lex-Doppelreserve aufgedeckt und phasengenau korrigiert: nativer60s-Pfad bleibt erreichbar.
+Handler→echterOriginalreader sowie langsameQuotaohneGET gezielt gruen. Kein zusaetzlicher Produktlauf; [Korrekturbeleg](betrieb/quellen-netzfrist-20261116.md).
+Heutige Lage/Morgen weiterpartial; Feeds je2statt3Messungen, BMGausArchivwiedergewonnen/Nachanalyseoffen. EUR-RSS liefert16Titelmetadaten, Textpfadfolgepruefung offen.
+
 **15.11.2026,23:04UTC: Quellenreparaturen einschließlich EUR-Lex-Lesergrenze live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
 
-PR1231 Kopf88670481/PR-CI43772362977, Merge dc9bd6ea/Main-CI43772591998: beide Pflichtchecks grün, unabhängige Runtime-/CI-Reviews geschlossen.
-Production dpl_J6dnMp5cu5EB9o3wsCkSAez75LPu READY; Alias23:03:44HTTP200/6118Bytes zeigt dc9bd6ea.
+PR1231/dc9bd6ea am15Novlive, beidePR-/Main-Pflichtchecks und unabhaengige Reviews gruen; Runtime-/Aliasnachweis im Korrekturbeleg.
 Nativer Speicher-/Archiv-/JSONB-Replay bestätigt142Zeichen bis Briefing. Neuer synthetischer240Zeichen-Grenzfall: vorher gültiger Auszug→null; jetzt exakt erhalten.
 Nur vollständig validierter Legalbeleg umgeht alte Schnittgrenzenreparatur.13Integration/14Auszug/3nativeGruppen,124CI-Verträge+14Schnellkern grün.
 EUR-Lex-Grundanbindung PR1229/d3bbb9e9 mit beiden grünen Pflichtchecks und amtlichem Primärbeleg bleibt unverändert.
@@ -11,9 +16,7 @@ Neuer enger Textvertrag:60–240Zeichen mit Fassung, Original-/Auszughash, Urheb
 EUR-Lex-Rechtsdokument-Reuse ist primär belegt; CC0 bleibt nur Metadaten. Keine ungeprüften Fremdwerke/Bilder/Anhänge oder Volltextfreigabe.
 Vorhandener Transport+CAS-Cache, höchstens1neuer Originalabruf je regulärem Quellenauftrag innerhalb unveränderter16erTagesquote; keine Zusatzverarbeitung.
 Quittierter temporärer HTTP-Fehler erlaubt genau1späteren Versuch nach mind15Minuten/Retry-After; Timeout/UNKNOWN und alte Negative bleiben geschützt.
-SourceMode→Compiler→Handler und native60sDeadline gezielt geprüft; kanonische Hashes/JSONB, Qualitätsgates und komplette Quellenausgabe erhalten.
 Neue Fassung überschreibt keine Altzeile; gleiche CELEX-Fassungen zählen als1Beleg, alle Varianten bleiben sichtbar.
-Grundabnahme13Original-/5Transport-/12Integrationsgruppen sowie Quellen-/Abdeckungs-/Identitätstests und108CI-Verträge bleiben gültige frühere Belege.
 BMG/presse/reden ist durch PR1227/Runtime224b0c97 dauerhaft im strengen Artikelkopfleser/Revision2; gespeichertes Original liefert offline304Zeichen Intro.
 BMG-Zieljob633d9438weiterwartend2/max3/Revision1; regulärer Claim kann Archiv-CAS erreichen, kein Reset/Neufetch/Modellstart.
 PR1225 repariert falsches skipped-shared beim Queue-Retry, RSS/HTML als Leer-Erfolg und Parserfehlerklassifikation; Compiler/Lease/Anbietergrenzen erhalten.

@@ -85,9 +85,9 @@ async function main() {
     (crawlerQuelle.match(/verdrahteAbbruch\(request, deps\.abbruchSignal/g) || []).length === 3,
     String((crawlerQuelle.match(/verdrahteAbbruch\(request, deps\.abbruchSignal/g) || []).length));
   check("1.4 fetchText geht ueber fetchUrl (keine zweite Abrufimplementierung)",
-    /async function fetchText\(url\)\s*\{\s*\n\s*const result = await fetchUrl\(url\);/.test(crawlerQuelle));
+    /async function fetchText\(url, deps = \{\}\)\s*\{\s*pruefeAbbruch\(deps\);\s*const result = await \(deps\.fetchUrl \|\| fetchUrl\)\(url, 0, deps\);/.test(crawlerQuelle));
   check("1.4b fetchHtmlPage geht ueber fetchText",
-    /async function fetchHtmlPage\(url\)\s*\{\s*\n\s*const html = await fetchText\(url\);/.test(crawlerQuelle));
+    /async function fetchHtmlPage\(url, deps = \{\}\)\s*\{\s*const html = await fetchText\(url, deps\);/.test(crawlerQuelle));
   // KEIN DOPPELZAEHLEN: das Tagesbudget bleibt allein bei reserveLlmBudgetOrThrow. Die
   // Anbietergrenze kennt fuer KI-Anbieter KEINE eigene Tagesgrenze — sonst zaehlte derselbe
   // Aufruf zweimal gegen zwei Toepfe.
@@ -411,6 +411,7 @@ async function main() {
       max_attempts: 5, payload: { quelle: { id: "zeit-synthetisch", active: true,
         type: "person", url: "https://news.google.com/rss/search?q=synthetisch" } } };
     const deps = { now: Date.now, handler: SP.HANDLER,
+      env: { HELMUT_SCALABLE_PIPELINE: "off", HELMUT_SUPABASE_TIMEOUT_MS: "1000" },
       hardeningConfig: () => ({ enabled: false }),
       crawlAllSources: async () => { trace.push("crawl"); return { rawItems: [{ id }], results: [{ ok: true, items: [{ id }] }] }; },
       persistRohdokumente: async () => { trace.push("persist"); return { ok: true, neuIds: [id], bestaetigteIds: [id] }; },
@@ -426,15 +427,15 @@ async function main() {
   check("9.1 Abgelaufener Google-/Personenauftrag beginnt keinen Abruf oder Write",
     leer.zeitbudgetErschoepft === true && leer.zurueckgestellt === true && startLeer.trace.length === 0);
   const rechtzeitig = zeitFall({ now: () => 100 });
-  const gut = await SP.HANDLER.source_fetch(rechtzeitig.auftrag, rechtzeitig.deps, { auftragsDeadlineMs: 1000 });
+  const gut = await SP.HANDLER.source_fetch(rechtzeitig.auftrag, rechtzeitig.deps, { auftragsDeadlineMs: 60000 });
   check("9.2 Innerhalb der Deadline bleiben Persistenz, Kindauftrag und Slotfreigabe erhalten",
     gut.ok === true && gut.verstehensAuftraege === 1
     && rechtzeitig.trace.join(",") === "crawl,persist,enqueue,release");
 
   let zeit = 100;
   const nachSlot = zeitFall({ now: () => zeit });
-  nachSlot.deps.klassen.belege = async () => { zeit = 1000; return { erlaubt: true, slot: "zeit-slot" }; };
-  const slotEnde = await SP.HANDLER.source_fetch(nachSlot.auftrag, nachSlot.deps, { auftragsDeadlineMs: 1000 });
+  nachSlot.deps.klassen.belege = async () => { zeit = 60000; return { erlaubt: true, slot: "zeit-slot" }; };
+  const slotEnde = await SP.HANDLER.source_fetch(nachSlot.auftrag, nachSlot.deps, { auftragsDeadlineMs: 60000 });
   check("9.3 Verspaetete Klassenfreigabe startet keine Arbeit und gibt den Slot frei",
     slotEnde.zurueckgestellt === true && nachSlot.trace.join(",") === "release");
 
@@ -444,8 +445,8 @@ async function main() {
   zeit = 100;
   const nachPersist = zeitFall({ now: () => zeit });
   nachPersist.deps.persistRohdokumente = async () => { nachPersist.trace.push("persist"); speicherungBegonnen(); return speicherungEnde; };
-  const wartenSpeichern = SP.HANDLER.source_fetch(nachPersist.auftrag, nachPersist.deps, { auftragsDeadlineMs: 1000 });
-  await speicherungStart; zeit = 1000;
+  const wartenSpeichern = SP.HANDLER.source_fetch(nachPersist.auftrag, nachPersist.deps, { auftragsDeadlineMs: 60000 });
+  await speicherungStart; zeit = 60000;
   fertigSpeichern({ ok: true, neuIds: [nachPersist.id], bestaetigteIds: [nachPersist.id] });
   const persistEnde = await wartenSpeichern;
   check("9.4 Vor Deadline gestarteter spaeter Write erzeugt keinen Kindauftrag",
@@ -455,8 +456,8 @@ async function main() {
   const nachEnqueue = zeitFall({ now: () => zeit });
   const viele = Array.from({ length: SP.UNDERSTANDING_BUENDEL + 1 }, (_, i) => "rd-" + String(i).padStart(64, "0"));
   nachEnqueue.deps.persistRohdokumente = async () => ({ ok: true, neuIds: viele, bestaetigteIds: viele });
-  nachEnqueue.deps.enqueue = async () => { nachEnqueue.trace.push("enqueue"); zeit = 1000; return { verfuegbar: true, neu: true }; };
-  const enqueueEnde = await SP.HANDLER.source_fetch(nachEnqueue.auftrag, nachEnqueue.deps, { auftragsDeadlineMs: 1000 });
+  nachEnqueue.deps.enqueue = async () => { nachEnqueue.trace.push("enqueue"); zeit = 60000; return { verfuegbar: true, neu: true }; };
+  const enqueueEnde = await SP.HANDLER.source_fetch(nachEnqueue.auftrag, nachEnqueue.deps, { auftragsDeadlineMs: 60000 });
   check("9.5 Nach verspaeteter Enqueuequittung beginnt kein zweiter Kindauftrag",
     enqueueEnde.zurueckgestellt === true && nachEnqueue.trace.filter(x => x === "enqueue").length === 1);
 
@@ -469,7 +470,7 @@ async function main() {
     process.on("unhandledRejection", beobachten);
     try {
       const beendet = await SP.fuehreAuftragAus({ auftrag: spaet.auftrag, deps: spaet.deps,
-        besitzer: "zeit-worker-synthetisch", restzeitMs: 1000, leaseMs: 5000 });
+        besitzer: "zeit-worker-synthetisch", restzeitMs: 4000, leaseMs: 10000 });
       check(`9.${fehlAntwort ? 8 : 6} Echter Worker beendet den Zeitueberlauf mit bisherigem Wiederholungsstatus`,
         beendet.ausgang === "wiederholt" && spaet.trace.join(",") === "finish");
       if (fehlAntwort) fehlerAntwort(new Error("synthetische-spaetantwort"));

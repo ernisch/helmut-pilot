@@ -83,8 +83,16 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     await test("Fehlende Messung oder Restzeit startet keinen Telemetrie-RPC und erfindet keine Quittung", async () => {
       const noMeasurement = fixture({ result: { startedAt: undefined } });
       assert.equal((await noMeasurement.run()).ok, true); assert.equal(noMeasurement.writes.length, 0);
-      const short = fixture(); assert.equal((await short.run({ auftragsDeadlineMs: at + 1500 })).ok, true);
-      assert.equal(short.writes.length, 0);
+      const short = fixture(); assert.equal((await short.run({ auftragsDeadlineMs: at + 1500 })).zurueckgestellt, true);
+      assert.equal(short.writes.length, 0); assert.equal(short.calls.crawl, 0);
+      // Die Fachphase beginnt rechtzeitig. Erst ihre bestaetigte Persistenz
+      // verbraucht den Rest; das darf danach keinen Telemetrie-RPC starten.
+      const afterWork = fixture(); let current = at;
+      afterWork.deps.now = () => current;
+      const persist = afterWork.deps.persistRohdokumente;
+      afterWork.deps.persistRohdokumente = async () => { const result = await persist(); current += 8500; return result; };
+      assert.equal((await afterWork.run()).ok, true); assert.equal(afterWork.writes.length, 0);
+      assert.equal(afterWork.calls.persist, 1);
       const noDeadline = fixture(); assert.equal((await noDeadline.run({})).ok, true); assert.equal(noDeadline.writes.length, 0);
     });
     await test("Persoenliche Quellennamen gelangen nicht in die technische Allowlist", async () => {
