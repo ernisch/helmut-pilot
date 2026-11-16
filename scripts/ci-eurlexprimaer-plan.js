@@ -8,12 +8,13 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1234;
 const BRANCH = "codex/eurlex-primary-integration-20261116";
 const BASE = "a67b44c07e55188357943ced88cd3e1a11398aea";
-const EVIDENCE = "084e36658172e4be707c0c585a122c235b20e3b7";
+const EVIDENCE = "6fabc7d6950f95e6f6d111ebbbfc8e2b4f5757ed";
 const MERGE_TITLE = "fix(quellen): freigegebene EUR-Lex-Originale vor RSS-Erfolg lesen (#1234)";
 const BLOBS = Object.freeze({
   "lib/helmut/crawler.js": "1391a38ce33ca2020abb2ede9b5631c7a054c9a7",
   "lib/helmut/quellen-eurlex-auszug.js": "a8b9734882c6e023f1b96a7de3da0e4a609a4518",
-  "scripts/quellen-eurlex-primary-test.js": "1fefac3889ae3aa060cc96744aca893b4ad019d8"
+  "scripts/quellen-eurlex-primary-test.js": "1fefac3889ae3aa060cc96744aca893b4ad019d8",
+  "scripts/parlamentsdaten-quellen-test.js": "4d27d09699f3945a369c204274f4211b0548b86b"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-eurlexprimaer-plan.js", "scripts/ci-eurlexprimaer-plan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellen-netzfrist-20261116.md", "docs/betrieb/quellen-ursachenanalyse-20261116.md"]);
