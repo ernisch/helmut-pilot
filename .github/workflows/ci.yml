@@ -110,6 +110,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur exakt gebundene Quellen-Netzfrist, PR1233.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1233 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-deadline-20261116 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = af1d8497cc1d649a8ec9afda0f6c925c0e13bda4 ] \
+                  && git merge-base --is-ancestor 33767b6e03a23ee5cb68a45ef129909761cabfce HEAD; }; }; }; then
+            node scripts/ci-quellenfrist-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Nur exakt gebundene EUR-Lex-Lesergrenze, PR1231.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1231 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/eurlex-lesergrenze-20261115 ] \
@@ -472,7 +482,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true' && steps.plan.outputs.quellendauerbetrieb != 'true' && steps.plan.outputs.bmgwiedergewinnung != 'true' && steps.plan.outputs.eurlexoriginal != 'true' && steps.plan.outputs.eurlexleser != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true' && steps.plan.outputs.quellendauerbetrieb != 'true' && steps.plan.outputs.bmgwiedergewinnung != 'true' && steps.plan.outputs.eurlexoriginal != 'true' && steps.plan.outputs.eurlexleser != 'true' && steps.plan.outputs.quellenfrist != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -798,6 +808,22 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikelkontext-quellenlayout-test.js --bmg
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikel-wiedergewinnung-test.js
 
+      - name: Quellenfrist - gezielte Netz- und Queuevertraege
+        if: steps.plan.outputs.quellenfrist == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/ci-quellenfrist-plan-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-quellenfrist-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellenauftrag-netzfrist-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-hardening-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/google-news-hardening-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/pardok-fetch-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/anbietersteuerung-fachpfad-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-queue-telemetry-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/worker-mandatsphase-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
+
       - name: Quellen-Dauerbetrieb - gezielte Fehler- und Herkunftsvertraege
         if: steps.plan.outputs.quellendauerbetrieb == 'true'
         env:
@@ -951,6 +977,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          # Nur exakt gebundene Quellen-Netzfrist, PR1233.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1233 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellen-deadline-20261116 ] \
+            || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): Abrufe vor dem Auftragszeitlimit sicher beenden (#1233)' ] \
+                || { [ "$(git rev-parse HEAD^1)" = af1d8497cc1d649a8ec9afda0f6c925c0e13bda4 ] \
+                  && git merge-base --is-ancestor 33767b6e03a23ee5cb68a45ef129909761cabfce HEAD; }; }; }; then
+            node scripts/ci-quellenfrist-plan.js --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # Nur exakt gebundene EUR-Lex-Lesergrenze, PR1231.
           if [ "${HELMUT_CI_PR_NUMBER:-}" = 1231 ] \
             || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/eurlex-lesergrenze-20261115 ] \

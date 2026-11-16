@@ -1,4 +1,14 @@
 # CURRENT STATE — Helmut
+**16.11.2026: Quellen-Netzfrist gezielt korrigiert, Integration noch offen.**
+Auf erneuten autonomen Quellenauftrag ist die fehlende Weitergabe der absoluten
+Netzfrist lokal reproduziert und im bestehenden Kern korrigiert. Zu kurzer Rest
+vertagt vor Netz/Reservierung; laufende Requests, Redirects, Antwortkörper und
+parallele Resolver erhalten die Frist. Bestehende UNKNOWN-/Original-/Modell-/
+Schreibwachen und sämtliche Budgets/Rechte bleiben. Kein zusätzlicher Produktlauf.
+Neue gezielte Handler-/Netzregressionen und unabhängige Reviews; genauer Status
+und verbleibende Grenzen im [Korrekturbeleg](betrieb/quellen-netzfrist-20261116.md).
+Noch kein neuer Production- oder vollständiger Briefingnachweis daraus.
+
 **15.11.2026,23:04UTC: Quellenreparaturen einschließlich EUR-Lex-Lesergrenze live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
 
 PR1231 Kopf88670481/PR-CI43772362977, Merge dc9bd6ea/Main-CI43772591998: beide Pflichtchecks grün, unabhängige Runtime-/CI-Reviews geschlossen.
