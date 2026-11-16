@@ -43,6 +43,12 @@ bestanden. Deren alter Nachlauftest erwartete den Verlust gueltigen Volltexts;
 dieser Fehler ist auch am unveraenderten Basisbaum reproduziert. Die Erwartung
 entspricht jetzt der bestehenden Schutzwache: Ersatz abweisen und das gesamte
 erfolgreiche Paket unveraendert erhalten. Keine Wache oder Testgruppe entfaellt.
+Im ersten PR-CI-Lauf 43865608085 bestand der echte Desktop-/Mobil-Browserfall;
+der Schnellkern scheiterte an einem weiteren alten Positivfixture ohne
+Artikeltitel. Das Fixture traegt nun seinen synthetischen Originaltitel und
+einen zusaetzlichen Fremdparteien-Gegenfall. Lokal besteht der komplette
+unveraendert ausgewaehlte Schnellkern mit 14/14 Suiten; der alte CI-Fehlschlag
+wird nicht umgewertet. Der neue Kopf braucht erneut beide Pflichtchecks.
 
 Der gezielte bestehende Chromiumfall prueft die sichtbare Sperre und erhaltene
 Dynamik auf Desktop und Mobil. Beide Pflichtchecks bleiben erforderlich.
