@@ -1,34 +1,24 @@
 # CURRENT STATE — Helmut
-**16.11.2026: Quellen-Netzfrist korrigiert, Pflicht-CI-Nachbesserung in Arbeit; Versorgung weiterhin partial.**
-PR1233 bindet die absolute Netzfrist durch alle Abrufstufen; zu kurzer Rest vertagt vor Netz/Reservierung. UNKNOWN-/Original-/Schreibwachen bleiben.
-CI-Fehler war ein veraltetes10s-Positivfixture. Zusaetzlich echte EUR-Lex-Doppelreserve aufgedeckt und phasengenau korrigiert: nativer60s-Pfad bleibt erreichbar.
-Handler→echterOriginalreader sowie langsameQuotaohneGET gezielt gruen. Kein zusaetzlicher Produktlauf; [Korrekturbeleg](betrieb/quellen-netzfrist-20261116.md).
-Heutige Lage/Morgen weiterpartial; Feeds je2statt3Messungen, BMGausArchivwiedergewonnen/Nachanalyseoffen. EUR-RSS liefert16Titelmetadaten, Textpfadfolgepruefung offen.
+**16.11.2026: gemeinsame Quellenursachen eingegrenzt; Frist- und EUR-Lex-Originalkorrektur live. Versorgung bleibt partial.**
+PR #1233 / a67b44c0 repariert absolute Netzfrist, Abbruchweitergabe und sichere Vertagung im bestehenden Motor. Erfolge, Archive, UNKNOWN und Quoten bleiben erhalten.
+Beide Reparatur-PRs und beide Main-Pflichtchecks grün, unabhängig geprüft; aktuelle Production-Runtime 7b4c42c1 / HTTP 200 bestätigt. [Frist-, CI- und Rolloutbeleg](betrieb/quellen-netzfrist-20261116.md).
+PR #1234 / 7b4c42c1 schließt den belegten EUR-Lex-Früherfolg: heutiger freigegebener Job erledigt, 16 neue RSS-Zeilen jedoch nur Metadaten V1. Native Freigabe nutzt jetzt vorhandenen CELLAR-/Original-/CAS-Pfad vor RSS; Legacy unverändert.
+[Gemeinsame Ursachenanalyse](betrieb/quellen-ursachenanalyse-20261116.md): sechs Gruppen statt Artikelserien. 112 wartende Quell-IDs teilen denselben Google-Minutenriegel; keine 112 Parserfehler oder belegte Compilerduplikation.
+17 Wartende ohne Fehlertext sind keine 17 belegten Defekte; 167 erledigte Jobs / 148 Quell-IDs sind kein Nachweis gelesener Inhalte oder Kundenversorgung.
+Betriebsbelege: Lage 05:00 / Morgen 05:15 partial, Abdeckung 03:31 blocked. Die alleinige Ursache des 03:30-Abbruchs ist nicht vollständig protokolliert.
+Destatis/iRights je zwei echte Abrufquittungen statt drei; keine künstliche Freischaltung. BMG 633d9438 aus Archiv wiedergewonnen / wartend 2, Nachanalyse offen; Linke c096918b erledigt / attempt 1.
+Adminlauf 08:05–08:09: 13 erledigt / 134 vertagt / 4 Endfehler, 30 neue Einträge. Kontrolle 08:11: keine laufenden Jobs, sechs frühere Erfolge erhalten; 4 Fenster / 1200 s / 1 Original; 0,135652 USD Tag / 4,230669 USD insgesamt gebunden.
+1 USD/UTC-Tag, 30 USD insgesamt, 8 Fenster / 2400 s / 16 Originale unverändert. Keine Budget-, Cron-, Profil-, Schema- oder Rechteerweiterung; keine bezahlten Tests/Mengenläufe.
+Gemeinsamer Überwachungsfehler belegt: 107 zentrale Minutenvertagungen als Quellenfehler gezählt. Kleinste Telemetrie-/Healthkorrektur in Arbeit; echte Fehler bleiben geschützt.
+Die bestehende Kontrolle 16.11., 05:25 ist beendet; kein paralleler Ersatztermin. Nächster geplanter regulärer Start 17.11., 03:00 UTC bleibt an Betriebs-, Automatik- und Budgetwachen gebunden.
 
-**15.11.2026,23:04UTC: Quellenreparaturen einschließlich EUR-Lex-Lesergrenze live; regulärer Wirksamkeitsnachweis offen, Versorgung weiter partial.**
-
-PR1231/dc9bd6ea am15Novlive, beidePR-/Main-Pflichtchecks und unabhaengige Reviews gruen; Runtime-/Aliasnachweis im Korrekturbeleg.
-Nativer Speicher-/Archiv-/JSONB-Replay bestätigt142Zeichen bis Briefing. Neuer synthetischer240Zeichen-Grenzfall: vorher gültiger Auszug→null; jetzt exakt erhalten.
-Nur vollständig validierter Legalbeleg umgeht alte Schnittgrenzenreparatur.13Integration/14Auszug/3nativeGruppen,124CI-Verträge+14Schnellkern grün.
-EUR-Lex-Grundanbindung PR1229/d3bbb9e9 mit beiden grünen Pflichtchecks und amtlichem Primärbeleg bleibt unverändert.
-Amtlicher CELLAR-Originalread21:54:48 belegt CELEX32026D2505/DEU/COM/OJ-L2026/2505, Publikation13Nov, erster ganzer operativer Absatz142Zeichen.
-Neuer enger Textvertrag:60–240Zeichen mit Fassung, Original-/Auszughash, Urheber, echtem Datum, Fundstelle, Nutzungs-/Bearbeitungshinweis.
-EUR-Lex-Rechtsdokument-Reuse ist primär belegt; CC0 bleibt nur Metadaten. Keine ungeprüften Fremdwerke/Bilder/Anhänge oder Volltextfreigabe.
-Vorhandener Transport+CAS-Cache, höchstens1neuer Originalabruf je regulärem Quellenauftrag innerhalb unveränderter16erTagesquote; keine Zusatzverarbeitung.
-Quittierter temporärer HTTP-Fehler erlaubt genau1späteren Versuch nach mind15Minuten/Retry-After; Timeout/UNKNOWN und alte Negative bleiben geschützt.
-Neue Fassung überschreibt keine Altzeile; gleiche CELEX-Fassungen zählen als1Beleg, alle Varianten bleiben sichtbar.
-BMG/presse/reden ist durch PR1227/Runtime224b0c97 dauerhaft im strengen Artikelkopfleser/Revision2; gespeichertes Original liefert offline304Zeichen Intro.
-BMG-Zieljob633d9438weiterwartend2/max3/Revision1; regulärer Claim kann Archiv-CAS erreichen, kein Reset/Neufetch/Modellstart.
-PR1225 repariert falsches skipped-shared beim Queue-Retry, RSS/HTML als Leer-Erfolg und Parserfehlerklassifikation; Compiler/Lease/Anbietergrenzen erhalten.
-Offizieller CELLAR-Metadatenersatz bleibt deutsch/OJ-L/echtes Datum/14UTC-Tage/max16Items/256KiB; blockierten Zugang nicht umgehen.
-Lesende Nachkontrolle23:03:49:0laufendeJobs,6vorherigeZieljobs weitererledigt/attempt1;0,711983USDTag/4,095017USDgesamt unverändert.
-Vorheriger Adminabschluss6a95d30419:14–19:18:12erledigt/53vertagt/0Endfehler;2DIP/ZDF/BMAS verstanden. Lage19:37:6Vorgänge aus gültigem Cache/partial/0Modellkosten.
-Destatis/iRights je1echteQuittung; minLaeufe3 bleibt. Linke-RSS19:34nach404genau1URL auf geprüftenfeed.rss korrigiert, regulärer Abrufnachweis offen.
-Einmalkey15Nov verbraucht;9Fenster2700s16Originale,1USD/UTC-Tag30gesamt und alle alten Reserven unverändert; keine alten Laufrechte wiederverwenden.
-Lokaler historischer Testauswahlfehler dokumentiert:keine Wiederholung von source-demand-Mengensuiten, Blobtest nur --gezielt;0Production/Modellkosten.
-Privater12FelderProfilabgleich geschlossen. Ungeklärte Medien-/Textrechte bleiben offen; kein Gesamtversorgungs- oder Verkaufs-PASS aus Offline-/Metadatenzahlen.
-Nächster Schritt: bestehende Kontrolle16Nov05:25UTC wertet reguläre Quittungen und Restblocker aus; kein neuer Zusatzlauf.
-[Reparaturen und Primärbelege](betrieb/quellen-dauerbetrieb-20261115.md) · [Vorheriger Quellenabschluss](betrieb/quellen-abschlussfenster-20261115.md) · [Altstände](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md).
+**Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
+Amtlicher Beleg CELEX 32026D2505 / DEU / COM / OJ-L 2026/2505, Publikation 13.11., 142 Zeichen. Rechtsdokument-Reuse primär belegt; CC0 nur Metadaten, keine Fremdwerke, Bilder, Anhänge oder Volltexte.
+Höchstens ein neues Original je Quellenauftrag innerhalb der 16er-Tagesquote, bestätigter CAS-/Fassungscache; quittierter temporärer HTTP-Fehler genau ein späterer Retry nach mindestens 15 Minuten/Retry-After. UNKNOWN/Altnegative geschützt.
+PR #1227 heilt BMG /presse/reden im strengen Reader/Revision 2 aus gespeichertem Original; PR #1225 heilt Queue-Ledger-Früherfolg, RSS/HTML-Leere und Parserfehlerklassifikation. Geprüfter Linke-feed.rss bleibt.
+15.11.-Adminabschluss 19:14–19:18: 12 erledigt / 53 vertagt / 0 Endfehler; zwei DIP/ZDF/BMAS verstanden. Lage 19:37: sechs Vorgänge aus gültigem Cache / partial / 0 Modellkosten. Alte Einmalrechte bleiben verbraucht.
+Privater Zwölf-Felder-Profilabgleich geschlossen. Ungeklärte Medienrechte bleiben offen; kein Gesamtversorgungs-/Verkaufs-PASS aus Offline-, Job- oder Metadatenzahlen.
+[Reparaturen und Originalrechte](betrieb/quellen-dauerbetrieb-20261115.md) · [Vorheriger Quellenabschluss](betrieb/quellen-abschlussfenster-20261115.md) · [Altstände](betrieb/quellen-altstaende-korrektur-20261115.md) · [DIP](betrieb/dip-fundstellen-korrektur-20261115.md).
 
 [Vollstaendiger unveraenderter vorheriger Status](archive/project_state/2026_11_15_CURRENT_STATE_vor_nachtkorrektur.md).
 Archiv-SHA256: `63d05cfc9da1469a423f3d32741e875952ccfba0b2db3f60731f1457aef24c2a`.

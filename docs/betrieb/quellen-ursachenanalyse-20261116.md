@@ -1,68 +1,98 @@
 # Gemeinsame Ursachen der Quellenprobleme
 
-Stand16.11.2026,07:40UTC. Auftrag: gleiche Ursachen gemeinsam behandeln,
-moeglichst viele Quellen durch wenige dauerhafte Korrekturen verbessern.
-Keine neue Infrastruktur, Massenpruefung oder kuenstliche Erfolgsquittung.
-Der private12FelderProfilabgleich bleibt geschlossen; dies ist keine vorgezogene
-mandatsbezogene Vollstaendigkeitsinventur aus Issue1218.
+Stand: 16.11.2026. Gleiche Ursachen werden gemeinsam behandelt; Vorrang haben
+wenige dauerhafte Korrekturen im bestehenden Motor. Keine neue Infrastruktur,
+Mengenprüfung oder künstliche Erfolgsquittung. Der private Zwölf-Felder-
+Profilabgleich bleibt geschlossen; keine neue Mandatsinventur aus Issue #1218.
 
-## Ergebnis und Prioritaet
+## Ursachen und kleinster notwendiger Umfang
 
-| Prioritaet / gemeinsame Ursache | Vorhandener Nachweis und Reichweite | Status / kleinste dauerhafte Korrektur |
+| Gemeinsame Ursache | Beleg und Reichweite | Korrektur oder verbleibende Grenze |
 | --- | --- | --- |
-| 1. Netzarbeit laeuft ueber die sichere Auftragsfrist hinaus | Regulärer03:30Fehlabschluss;5646ms-Restauftrag und rot reproduzierte fehlende Abbruchweitergabe. Betroffen sind alle nativen Quellenabrufe, auch Redirects, POST, PARDOK und Spezialadapter. Die alleinige Ursache des damaligen Laufabbruchs ist damit nicht bewiesen. | PR1233 nach gruener Pflicht-CI und unabhaengigen Reviews gemergt:a67b44c0. Absolute Netzfrist, durchgaengiger Abbruch, abgewartete Kinder/Streams und Aufraeumreserve im bestehenden Motor; UNKNOWN bleibt geschuetzt. |
-| 2. Gemeinsamer Anbieter-Minutenriegel |112wartendeJobs/112QuellIDs mit exakt `zurueckgestellt: anbietergrenze: anbietergrenze-minutengrenze`.112verschiedene primaereRSS-URLs, keine belegte Compilerduplikation. Google-Konto `google\|news\|quellenabruf`:8Minutenfenster, maximal30 und insgesamt227Buchungen,03:00–03:31. | Vorhandene Schutzfunktion, keine112Parserdefekte. Atomare Reservierung und attempt-erhaltende Vertagung existieren. Kein Limitreset/keine Erhoehung; gemeinsame zulaessige Betriebsfortsetzung statt112Einzelpatches. |
-| 3. Technischer Erfolg erreicht nicht den bestaetigten nutzbaren Inhalt | Prozessledger erzeugte skipped-shared nach Fehlversuch; HTML wurde als leeresRSS interpretiert; Quittungshook fehlte. Jetzt: EUR-Lex-Job mit ausdruecklicher Textfreigabe erledigt,16neueZeilen aber HerkunftV1/summarynull, weil erfolgreicherRSS vor dem Originalpfad zurueckkehrt. | Ledger-, Feedhuellen-, Fehlerklassifikations- und Telemetriereparaturen sind bereits live. Verbleibender EUR-Befund wird mit bestehender amtlicher CELLAR-Kette vor dem RSS-Frueherfolg geschlossen, ausschliesslich im exakt freigegebenen nativen Weg; keine Artikelkorrektur. |
-| 4. Abrufziel oder Herausgeberformat hat sich geaendert | Linke rss.xml404/feed.rss200; konkrete BMG/BMAS/ZDF/hib- und Titel-/Einleitungsbelege. BMG-Reden konnten aus vorhandenem Original nach gepruefter Parserrevision wiedergewonnen werden. | Bestehende strenge Adapter/Reader gezielt korrigiert. Gemeinsame hashgebundene Archivwiedergewinnung statt erneuter Originalabrufe oder manueller Artikelserien; keine freie HTML-/Titelaehnlichkeit. BMG-Nachanalyse bleibt offen. |
-| 5. Original-, Datums-, Versions- oder Nutzungsnachweis fehlt wirklich | Historische NULL-Publisherziele und konkret abweichende NDR/DLF-Daten sind keine pauschalen Parserfehler. Ungeklaerte POLITICO-/Table.Media-Textrechte bleiben offen. Die alten14Metadatenkonflikte gelten nicht fuer spaeter gepruefte36Bindungen: dort Titel/Herausgeber/Datum jeweils0Abweichungen. | Echte Sperren erhalten. Nur belegt reparierbare Parser-/Bindungsfehler aus gesicherten Originalen heilen; kein generischer Metadatenabgleich, keine Rechte aus RSS/Quellen-ID ableiten. Bereits erlaubte amtliche/Destatis-/artikelweiseiRights-Auszuge nutzen. |
-| 6. Betrieb ist gestoppt oder echte Beobachtung fehlt | Heutige Lage/Morgen partial, Abdeckung03:31blocked; Destatis/iRights je2echteErfolgsquittungen statt3. Linke-Auftragwartend0, BMGausArchivwiedergewonnen/wartend2.17weitereWartende ohneFehlertext sind nicht17belegteQuellendefekte. | Bestehenden zulaessigen Produktlauf fortsetzen und echte Abschluesse lesen. Keine zusaetzliche Retry-/Alarmarchitektur, keine erfundene Tagesprioritaet, keine kuenstliche dritte Quittung. |
+| Netzarbeit überschreitet die sichere Auftragsfrist | Regulärer 03:30-Fehlabschluss; 5646 ms Restzeit und rot reproduzierte fehlende Abbruchweitergabe. Betrifft alle nativen Quellenabrufe einschließlich Redirects, POST, PARDOK und Spezialadapter. Die alleinige Ursache des damaligen Abbruchs ist damit nicht bewiesen. | PR #1233 live: absolute Netzfrist, durchgängiger Abbruch, abgewartete Requests/Streams/Kinder und Abschlussreserve. Zu kurzer Rest vertagt vor Netz/Reservierung, ohne Fehlversuchsverbrauch. UNKNOWN bleibt geschützt. |
+| Gemeinsamer Anbieter-Minutenriegel | 112 wartende Jobs / 112 Quell-IDs mit genau `zurueckgestellt: anbietergrenze: anbietergrenze-minutengrenze`; 112 verschiedene primäre RSS-URLs. Google-Konto `google\|news\|quellenabruf`: acht Minutenfenster, maximal 30 und insgesamt 227 Buchungen, 03:00–03:31 UTC. | Bestehende Schutzfunktion, keine 112 Parserdefekte oder belegte Compilerduplikation. Atomare Reservierung und begrenzte, attempt-erhaltende Vertagung nutzen; keine Limit- oder Reserveänderung und keine 112 Einzelpatches. |
+| Technischer Erfolg liefert keinen bestätigten nutzbaren Inhalt | Bereits belegte Queue-Ledger-Früherfolge, HTML als leeres RSS und fehlender Quittungshook. Neuer heutiger EUR-Lex-Job mit Textfreigabe erledigt, aber 16 Metadatenzeilen V1 / ohne Text: gesunder RSS kehrte vor dem Originalpfad zurück. | Frühere Ledger-, Feedhüllen-, Fehlerklassifikations- und Telemetrieheilungen bleiben live. PR #1234 nutzt im exakt freigegebenen nativen EUR-Lex-Weg die vorhandene amtliche CELLAR-/Original-/CAS-Kette vor RSS. Alte Aufrufe und Rechtewachen bleiben erhalten. |
+| Abrufziel oder Herausgeberformat geändert | Linke rss.xml HTTP 404 / geprüftes feed.rss HTTP 200; konkrete BMG/BMAS/ZDF/hib-Belege. BMG-Reden konnten aus gespeichertem Original nach Parserrevision wiedergewonnen werden. | Strenge vorhandene Adapter gezielt korrigiert; gemeinsame hashgebundene Archivwiedergewinnung statt neuer Originalabrufe oder manueller Artikelserien. Keine freie HTML-/Titelnäherung. Fehlender positiver Archivbeleg bleibt eine Lücke. |
+| Original-, Datums-, Versions- oder Nutzungsnachweis fehlt tatsächlich | Historische NULL-Publisherziele und konkrete NDR/DLF-Konflikte; ungeklärte POLITICO-/Table.Media-Textrechte. Die alten 14 Konflikte betreffen nicht die später geprüften 36 Bindungen: dort jeweils null Titel-, Herausgeber- und Datumsabweichungen. | Echte Sperren erhalten; nur aus gesichertem Original nachweisbare Parser-/Bindungsfehler heilen. Keine Rechte aus RSS oder Quellen-ID ableiten. Amtliche, erlaubte Destatis- und artikelweise belegte iRights-Auszüge nutzen. |
+| Betrieb oder ausreichende echte Beobachtung fehlt | Heutige Lage/Morgen partial, Abdeckung 03:31 blocked; vor Fortsetzung Destatis/iRights je zwei Erfolgsquittungen statt drei. Linke wartend / attempt 0; BMG aus Archiv wiedergewonnen / wartend 2, Nachanalyse offen. | Zulässige bestehende Produktverarbeitung fortsetzen und echte Abschlüsse prüfen. Keine neue Retry-/Alarmarchitektur, keine erfundene Tagespriorität und keine künstliche dritte Quittung. |
 
-## Wie die aktuellen Gruppen ermittelt wurden
+## Abgrenzung der Nachweise
 
-Rein lesende, auf5sbegrenzte Productionabfragen. Fuer den Jobvergleich nur
-seit15.11.00:00UTC angelegte Jobs mit fester Katalogquellen-ID in retrieval_paths
-und Quellentyp ungleich person; keine Profil-, Mandats- oder Nachrichteninhalte.
-Ergebnis:167erledigteJobs/148QuellIDs;112wartend mit gemeinsamem Minutenriegel;
-17wartend ohneFehlertext;1wartend mit Zeitgrenze(Bundestag);1alterfehlgeschlagener
-EUR-Formatjob. Der neue heutige EUR-Job ist separat erledigt/attempt1.
-Die erste Klassenbildung nach Fehlertext wurde durch den exakten112erGrund
-und den engen Anbieter-Kontenabgleich bestaetigt. Wartend ist nicht defekt;
-erledigt ist noch kein Lesetext-, Rechte- oder Kundenversorgungsnachweis.
+Die auf fünf Sekunden begrenzten READ-ONLY-Abfragen vergleichen feste öffentliche
+Katalogquellen seit 15.11., 00:00 UTC: 167 erledigte Jobs / 148 Quell-IDs,
+112 Minutenvertagungen, 17 Wartende ohne Fehlertext, ein Zeitvertagter und ein
+alter fehlgeschlagener EUR-Formatjob. Der heutige EUR-Job ist erledigt / attempt 1.
+Wartend bedeutet keinen Defekt; erledigt bedeutet noch keinen gelesenen Text,
+Rechtenachweis oder vollständige Kundenversorgung.
 
-Gesonderter Originalpfadbeleg07:09: heutiger EUR-Auftrag hat
-eurlexExcerptApproved:true und den exakt bekannten Pfad/Feed. Alle16seit
-Mitternacht neu gespeicherten EUR-Dokumente tragen HerkunftV1 und keinen Text.
-Der fruehe RSS-Return ist im Code und isoliert mit gesundemRSS reproduzierbar.
-Der passende Fix verwendet denselben bestehenden CELLAR-/Original-/CAS-Weg;
-keine neue Quelle, kein neuer Anbieter und keine pauschale Textfreigabe.
+Der engere EUR-Primärbeleg 07:09 UTC bestätigt `eurlexExcerptApproved:true`,
+exakten Pfad/Feed und 16 neue V1-Zeilen ohne Text. Der frühe RSS-Return wurde
+isoliert reproduziert. Der Fix verwendet dieselbe bestehende amtliche Kette,
+keinen neuen Anbieter und keine pauschale Textfreigabe.
 
-Vorwerte07:25UTC:0laufendeJobs;3Quellenfenster/900reservierteSekunden/1Original;
-0,090652USDheute und4,185669USDgesamtgebunden.1USD/UTC-Tag und30USDgesamt,
-alle Reserven, Fristen, Rechte, Archive und erfolgreiche Ergebnisse bleiben.
+## Dauerhafte Reparaturen und Prüfungen
 
-## Was heute fuer einen echten Abschluss fehlt
+PR #1233: [Frist-, Erstfehler-, CI- und Rolloutbeleg](quellen-netzfrist-20261116.md).
+Merge `a67b44c07e55188357943ced88cd3e1a11398aea`, beide PR-/Main-Pflichtchecks
+und unabhängige Runtime-, Test- und CI-Reviews erfolgreich.
 
-Der heutige bestehende Fortsetzungsweg ist `POST /api/admin/quellenlauf` mit
-echter Adminsitzung und CSRF. Er verwendet normale300s-/8Fenster-/2400s-/
-16Original-Kontingente und ein neues heutiges Auftragspaar. Die Betreiberfreigabe
-ersetzt technisch weder Sitzung noch CSRF; ein Cronkey ist kein Adminersatz.
-Es ist hier kein bedienbarer angemeldeter Browser verfuegbar.
+PR #1234: Evidence `6fabc7d6950f95e6f6d111ebbbfc8e2b4f5757ed`, geprüfter Kopf
+`3fef22388ab0a04b4830e334439a54956f0f5867`, beide Pflichtchecks erfolgreich
+in [PR-CI 43827640556](https://github.com/ernisch/helmut-pilot/actions/runs/43827640556).
+Merge `7b4c42c1a8b926ca364e0ebf46ba98ec1e31a4f0`, beide Main-Pflichtchecks
+in [Main-CI 43828028312](https://github.com/ernisch/helmut-pilot/actions/runs/43828028312) erfolgreich.
+Unabhängiger Runtime-/Test-/Dokumentationsreview und getrennter CI-Review geschlossen.
 
-Die regulaeren Quellenfenster enden vor05:00UTC. Es gibt keinen aktuellen
-Nachmittagscron. Der naechste geplante regulaere Start ist17.11.03:00UTC,
-vorbehaltlich vorhandener Bereitschafts-/Automatik-/Kontingentpruefung.
-Legacy-Lage/Understanding und worker-weck ersetzen keinen nativen Claim.
-Alte14/15Nov-Einmalrechte werden nicht wiederverwendet.
+Gezielt grün: zehn Dispatch-, 14 Originalintegrations-, 31 Parlamentsdaten- und
+14 Crawlerfristgruppen; 17 CI-Vertragsgruppen, Syntax und 14 Schnellkerngruppen.
+Der erste rote Check 43826332348 bleibt dokumentiert: Zwei alte CELLAR-only-
+Testattrappen wurden seit der Fristkorrektur auch für RSS benutzt. Nur das
+hermetische Fixture wurde korrigiert, alle Assertions erhalten. Keine externen
+HTTP-, Modell-, Datenbank- oder Production-Testaufrufe und keine Mengensuiten.
 
-Prioritaetenfolge bleibt: universellen Fristfix abschliessen, den laufenden
-amtlichen Originalpfad schliessen, dann dieselbe zulaessige Betriebsfortsetzung
-auf Inhalte, Quittungen und Kundenausgabe pruefen. Erst ein dabei konkret
-belegter Restdefekt begruendet eine weitere Reparatur. Kein Gesamt-PASS aus Code.
+Reguläres Production-Deployment `dpl_8f99YMdV23W9LtdBRnwg45n1mJoj` READY;
+Main-SHA und Alias `helmut-pilot.vercel.app` bestätigt. Öffentliche Nachkontrolle
+08:02:54 UTC: HTTP 200, 6118 Bytes, Runtime `7b4c42c1`, HTML-SHA256
+`3ffcecb243198789bb42c82cd4bdf3540ca575b6c4884f61e6d82195316ee7bf`.
+Rollout ist kein vollständiger Versorgungsnachweis.
 
-## Primaere vorhandene Detailbelege
+## Zulässige automatische Behandlung
 
-- [Fristkorrektur und Erstfehler](quellen-netzfrist-20261116.md).
-- [Dauerreparaturen, Originalrechte und erhaltene Erfolge](quellen-dauerbetrieb-20261115.md).
-- [Korrigierte36Bindungen und Telemetriehook](versorgung-sofortpruefung-20261115.md).
-- [Gepruefte Quellenformate und echte Inhaltsgrenzen](quellen-parser-folge-20261115.md).
+Bestehende Queue mit begrenzten Versuchen und Backoff, Anbieter- und
+Originalquoten, Circuit Breaker, Negativ-/Fassungscache, hashgebundene
+Archivwiedergewinnung, technische Quittungen und strenge Inhalts-/Datums-/
+Rechteprüfung werden weiterverwendet. Ein bestätigter temporärer Original-HTTP-
+Fehler erhält genau einen späteren Versuch nach mindestens 15 Minuten oder
+Retry-After. Unbekannte Ausgänge werden nicht blind wiederholt. Dauerhafte
+inhaltliche oder rechtliche Fehler bleiben dokumentierte, ehrliche Lücken.
+
+CELLAR ist eine offizielle Alternative ohne Umgehung der Zugangssperre.
+[Primärbelege und Abwägung des EUR-Lex-Webdienstes](quellen-dauerbetrieb-20261115.md#eur-lex-offizielle-alternative-statt-zugangssperre-umgehen)
+bleiben erhalten: SOAP verlangt Registrierung und gesonderte Zugangsdaten;
+CELLAR ist bereits zulässig eingebunden. Publikationsdatum bleibt von
+Änderungs-/Ingestionsdatum getrennt; CC0 gilt nur für Metadaten.
+
+## Echter Produktbetrieb und Restgrenze
+
+Vorwerte 08:04:59 UTC: keine laufenden Jobs; drei Fenster / 900 reservierte
+Sekunden / ein Original; 0,090652 USD Tagesverbrauch einschließlich Bindungen.
+Die unveränderten Grenzen bleiben 1 USD/UTC-Tag und 30 USD insgesamt sowie
+8 Fenster / 2400 Sekunden / 16 Originale. Erfolge, Archive und Reserven bleiben.
+
+Der Betreiber hat genau einmal den bestehenden Admin-Quellenlauf gestartet.
+Start 08:05:50.914 UTC, Lauf-ID
+`admin-quellen-2026-11-16-8e4cd2f7-2090-45ad-b3b2-7c5edd653e5d`.
+Echte Adminsitzung und CSRF wurden benutzt; kein Cronkey-Ersatz, kein Reset,
+keine Wiederverwendung der alten Einmalrechte und kein paralleler Quellenlauf.
+
+Die bestehende Kontrolle 16.11., 05:25 wurde erhalten und ist beendet. Kein
+Nachmittagscron oder paralleler Ersatztermin wurde eingerichtet. Nächster
+geplanter regulärer Start 17.11., 03:00 UTC bleibt an die bestehenden
+Betriebs-, Automatik- und Kontingentprüfungen gebunden.
+
+## Erhaltene Detailbelege
+
+- [Dauerreparaturen, Originalrechte und erfolgreiche Ergebnisse](quellen-dauerbetrieb-20261115.md).
+- [Korrigierte 36 Bindungen und Quittungshook](versorgung-sofortpruefung-20261115.md).
+- [Quellenformate und tatsächliche Inhaltsgrenzen](quellen-parser-folge-20261115.md).
 - [Linke-RSS-Korrektur und vorheriger Abschluss](quellen-abschlussfenster-20261115.md).
