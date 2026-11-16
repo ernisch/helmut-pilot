@@ -59,3 +59,20 @@ Abschlussquittungen bleiben erhalten. Beide Pflichtchecks am exakten Kopf,
 unabhaengige Reviews und regulaerer Rollout werden in PR1238 belegt.
 Kein pauschaler Quellenversorgungs- oder Produktabnahme-PASS.
 Rueckweg: PR revertieren, kein Datenrollback notwendig.
+
+## Gezeigter Arbeitsbedingungen-Absatz
+
+Der anschliessende Abgleich mit dem oeffentlichen Betreiberbeispiel zeigt einen
+fehlenden allgemeinen Fachanker: faire Arbeitsbedingungen in Lieferketten.
+Der bereits gelesene Sachverhalt ist fachlich passend, wird aber vom bisherigen
+Arbeits-/Sozialwortabgleich nicht erkannt. Dieser eng begrenzte Nachtrag ergaenzt
+Arbeitsbedingungen; Lieferketten und Lebensmittel allein begruenden weiterhin
+keinen Arbeits-/Sozialbezug. Keine neue Quellenlesung oder Modellverarbeitung.
+
+Gezielter kompletter Profilbezugstest:28/28 Gruppen gruen, weiterhin6/6
+Solltreffer erhalten und0 Modell-/Schreibversuche. Positiver Original- und
+Absatzbezug sowie anderes Mandat, sachfremde Quelle, reine Lieferketten und
+unveraenderter Eingang sind enthalten. UI, Reader und Browserfall bleiben
+unveraendert; ihr echter Desktop-/Mobilbeleg aus PR1238 wird am vollstaendigen
+unveraenderten Restbaum erhalten. Beide Pflichtjobs am Nachtragskopf bleiben
+erforderlich, kein neuer Browserlauf oder Mengenlauf wird behauptet.

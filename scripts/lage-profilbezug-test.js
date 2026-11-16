@@ -99,6 +99,23 @@ function setup(profile, pool, { matches = null, docs = null } = {}) {
 
 (async () => {
   try {
+    await test("Arbeitsbedingungen sind quellen- und absatzgebunden, Lieferketten allein kein Sozialbezug", () => {
+      const profile = { id: "lokal-arbeitsbedingungen", committees: ["Ausschuss für Arbeit und Soziales"] };
+      const text = "Das BMAS kündigt an, dass unter seiner Begleitung Lebensmittelhändler und Unternehmen der Ernährungsindustrie ab 2027 Maßnahmen für faire Arbeitsbedingungen in ihren Lieferketten umsetzen werden, berichtet das BMAS.";
+      const ko = F.ko("arbeitsbedingungen", text), source = { ...doc(ko, "", "Gemeinsam faire Lieferketten gestalten"), summary: text };
+      const before = JSON.stringify({ profile, ko, source });
+      const rows = P.mitQuellenbezug([ko], profile, { [ko.vorgang_id]: [source] });
+      A.equal(rows.length, 1); A.equal(rows[0].relevanz_erklaerung.belege[0].art, "haupt");
+      const absatz = P.bewerte({ was_ist_passiert: text }, profile);
+      A.equal(absatz.passt, true); A.equal(absatz.belege[0].art, "haupt");
+      A.equal(absatz.belege[0].anknuepfung, "arbeitsbedingungen");
+      A(!rows[0].relevanz_erklaerung.satz.includes(text), "Kein neues Originalauszugszitat");
+      const fremd = F.ko("lieferkette", "Lebensmittelhändler gestalten Lieferketten der Ernährungsindustrie neu");
+      A.equal(P.bewerte(fremd, profile).passt, false);
+      A.equal(P.bewerte(ko, { id: "lokal-anderes-mandat", committees: ["Finanzausschuss"] }).passt, false);
+      A.equal(P.mitQuellenbezug([ko], profile, { [ko.vorgang_id]: [doc(fremd)] }).length, 0);
+      A.equal(JSON.stringify({ profile, ko, source }), before);
+    });
     await test("Originale Windenergieanhoerung behaelt den quellenbelegten Stellvertretungsbezug", async () => {
       const profile = { ...wind.profile, id: "lokal-original-wind", parliamentType: "Bundestag" };
       const ko = wind.knowledgeObject;
