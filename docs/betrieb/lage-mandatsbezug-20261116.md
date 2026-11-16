@@ -59,3 +59,12 @@ Abschlussquittungen bleiben erhalten. Beide Pflichtchecks am exakten Kopf,
 unabhaengige Reviews und regulaerer Rollout werden in PR1238 belegt.
 Kein pauschaler Quellenversorgungs- oder Produktabnahme-PASS.
 Rueckweg: PR revertieren, kein Datenrollback notwendig.
+
+## Gezeigter Arbeitsbedingungen-Absatz
+
+Der anschliessende Abgleich mit dem oeffentlichen Betreiberbeispiel zeigt einen
+fehlenden allgemeinen Fachanker: faire Arbeitsbedingungen in Lieferketten.
+Der bereits gelesene Sachverhalt ist fachlich passend, wird aber vom bisherigen
+Arbeits-/Sozialwortabgleich nicht erkannt. Dieser eng begrenzte Nachtrag ergaenzt
+Arbeitsbedingungen; Lieferketten und Lebensmittel allein begruenden weiterhin
+keinen Arbeits-/Sozialbezug. Keine neue Quellenlesung oder Modellverarbeitung.
