@@ -76,6 +76,9 @@ async function transport(body, status, fn) {
     let cellarCalls = 0;
     await transport("<html>Javascript required</html>", 202, async calls => {
       const items = await C.crawlSource(eurlex, { now: new Date("2026-11-15T12:00:00Z"), fetchUrl: async (url, depth, opts) => {
+        // Derselbe injizierte Fetch bedient auch RSS; dafuer bleibt die echte
+        // HTTP-Kette an der obigen https.get-Attrappe, ohne externes Netz.
+        if (url === eurlex.url) return C.fetchUrl(url, depth, opts);
         cellarCalls++; assert(url.startsWith("https://publications.europa.eu/webapi/rdf/sparql?"));
         assert.equal(depth, 0); assert.equal(opts.allowedHost, "publications.europa.eu");
         return { status: 200, body: read("cellar-oj-l-metadaten.json"), finalUrl: url };
@@ -96,7 +99,10 @@ async function transport(body, status, fn) {
   });
   await test("Funktionierendes EUR-Lex-RSS benoetigt keinen Ersatz; fehlgeschlagener Ersatz bleibt Fehler", async () => {
     let calls = 0;
-    const fetchUrl = async () => { calls++; throw Error("cellar-timeout"); };
+    const fetchUrl = async (url, depth, opts) => {
+      if (url === eurlex.url) return C.fetchUrl(url, depth, opts);
+      calls++; throw Error("cellar-timeout");
+    };
     await transport(feeds[0], 200, async () => assert((await C.crawlSource(eurlex, { fetchUrl })).length));
     assert.equal(calls, 0);
     await transport("<html>Challenge</html>", 202, async () => {
