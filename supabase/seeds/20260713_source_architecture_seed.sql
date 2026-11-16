@@ -732,6 +732,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-fach-wohnen-stadtentwicklung-bauwesen-kommunen', 'rp-bt-fach-wohnen-stadtentwicklung-bauwesen-kommunen-rss'),
   ('pkg-fach-wirtschaft-energie', 'rp-fach-destatis-aktuell-rss'),
   ('pkg-fach-digitales-staatsmodernisierung', 'rp-fach-destatis-aktuell-rss'),
+  ('pkg-arbeit-und-soziales', 'rp-fach-destatis-aktuell-rss'),
   ('pkg-fach-digitales-staatsmodernisierung', 'rp-fach-irights-rss'),
   ('pkg-fach-wirtschaft-energie', 'rp-fach-dlf-wirtschaft-rss'),
   ('pkg-fach-finanzen', 'rp-fach-dlf-wirtschaft-rss'),
