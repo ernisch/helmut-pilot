@@ -1,5 +1,5 @@
 # CURRENT STATE — Helmut
-**16.11.2026: Quellen partial; Radar-Parteibezug live; individueller Lagebezug in Pruefung.**
+**16.11.2026: Quellen partial; Radar-Parteibezug live; individueller Lagebezug live.**
 Die Quellenmotor-Reparaturen #1233 (Frist/Abbruch), #1234 (EUR-Lex-Originalpfad), #1235 (Anbietervertagung/Health) und #1236 (Destatis-Paketkante) sind gruen gemergt; letzter regulaerer Rollout 6cfcba3a / HTTP200. [Ursachenbeleg](betrieb/quellen-ursachenanalyse-20261116.md).
 Echter genehmigter Abschlusslauf 11:40:53–11:44:38 UTC: 152 Claims = 11 erledigt + 135 vertagt + sechs wiederholt + null Endfehler; keine verlorene Lease. 17 neue Eintraege, Abdeckung weiter partial. Primaerbelege und unveraenderte Altstaende: [PR1236](https://github.com/ernisch/helmut-pilot/pull/1236).
 135 Vertagungen: 106 Anbieter-Minute, 22 offene Kontexte, sechs Kontextzeitgrenzen, eine Quellenzeitgrenze; attempt0. Die 106 provider-deferred-Quittungen belegen die korrigierte Fehlerklassifikation, keine 106 reparierten Quellen.
@@ -7,7 +7,7 @@ Sechs Wiederholungen: je zwei Metadata-Abseits, dauerhafter Kontext und geschuet
 BMG-Cache ist lesend validiert, Analysejob bleibt wartend2/max3. EUR-Lex-Tagesjob bleibt vorhandener V1-Erfolg ohne Text; kein kuenstlicher Replay. DIP-Bestand/amtliche Sollquellen: [Abnahme](betrieb/quellen-abnahme-20261116.md).
 Destatis und iRights je zwei echte Quittungen; Destatis-AS-Paketkante gezielt ergaenzt, kein Produktionsnachweis danach. Dritte Quittung allein ist kein Verkaufsblocker. Rechte-/Versions-/Inhaltskonflikte bleiben gesondert offen.
 Kosten 11:46:20 UTC: 0,198683 USD Tag / 4,293700 USD gesamt gebunden; fuenf Fenster /1500s /ein Original. Tagesjournal158/158 erhalten, keine aktiven Jobs. Der einmal genehmigte Zusatzlauf ist verbraucht; kein neues Laufrecht, keine Budgeterhoehung.
-Radar #1237 / 5aeedf07 ist geprueft live; PR-/Main-Pflichtchecks gruen. [Beleg](betrieb/radar-parteibezug-20261116.md). Neuer Auftrag: breite Fachgebiete nicht als konkrete Aufgabe bevorzugen und individuellen Lagebezug quellengebunden anzeigen; [Diagnose](betrieb/lage-mandatsbezug-20261116.md), PR1238 lokal27/19/9/9/6/7 gruen. Keine Profil-/Originaldatenwrites oder neuen Modelllaeufe; CI/Review/Rollout separat, kein Produktabnahme-PASS.
+Radar #1237 / 5aeedf07 und individueller Lagebezug #1238 / 412c2436 sind geprueft live, jeweils PR-/Main-Pflichtchecks gruen. [Beleg](betrieb/lage-mandatsbezug-20261116.md). Der gezeigte Arbeitsbedingungen-Absatz braucht noch einen kleinen allgemeinen Fachanker: PR1239 lokal28/28, keine Lebensmittel-/Lieferketten-Pauschalzuordnung. Keine neuen Modelllaeufe, Profil-/Datenwrites; Nachtrags-CI/Review/Rollout separat, kein Produktabnahme-PASS.
 Kontrolle16Nov05:25 beendet/unveraendert, naechster regulaerer Start17Nov03UTC unter bestehenden Wachen. Privater Zwoelf-Felder-Profilabgleich geschlossen. Gesamtannahme fuer den ersten Kunden bleibt offen.
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
