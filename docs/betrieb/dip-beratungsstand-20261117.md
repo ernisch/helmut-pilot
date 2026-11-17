@@ -2,8 +2,24 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise: lokal geprueft; unabhaengiges Endkopfreview, Pflicht-CI,
-regulaerer Rollout und neuer regulaerer Verarbeitungsbeleg noch offen.**
+**BLOCKIERT fuer Integration: implementiert und Pflicht-CI gruen;
+unabhaengige Endabnahme der letzten D-Deltas offen.**
+
+Stand17.11.,17:44UTC: [PR1253](https://github.com/ernisch/helmut-pilot/pull/1253)
+bleibt konfliktfrei auf `e95b0084d907d83fdd531d20a51fb5f767ee1c8e`.
+[Regulaerer Pflichtlauf44134024822](https://github.com/ernisch/helmut-pilot/actions/runs/44134024822):
+`Syntax + Offline-Suiten` (Job134218515299) und
+`Browser-/Mobile-Smoke (Chromium)` (Job134218514431) erfolgreich;
+gesonderter Mock100 planmaessig nicht gestartet.
+Es fruehere Abnahmen bleiben erhalten. Offen sind ausschliesslich die spaeteren
+D-Deltas `10fdbe4c` (Cache-/Speicherlease), `4f451f73` (fuenf Altvertraege) und
+`e95b0084` (enger Zeithelfer-Testvertrag), angefragt in
+[#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6955224324).
+Schlusskontrolle: keine neue Abnahme in #1218 oder den PR-Kommentaren,
+keine formalen PR-Reviews. D darf die eigene unabhaengige Abnahme nicht ersetzen.
+Deshalb kein Merge/Production-Rollout; F1252 bleibt fuer danach vorbereitet.
+Der Statusnachtrag liegt auf separatem Dokumentationsbranch, damit der gruene
+PR-Codekopf unveraendert bleibt. Kein Gesamtprodukt- oder Kunden-PASS.
 
 ## Belegkette
 
@@ -199,5 +215,11 @@ nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 
-**Naechster Schritt:** fertigen Integrationskopf unabhaengig pruefen und mit
-unveraenderter Pflicht-CI sequenziell integrieren.
+Letzte rein lesende Productionkontrolle **17:44:35UTC**: weiterhin null
+Verarbeitungsabschluesse seit PR1251/13:56:37UTC und null `main-dipstand-*`.
+Letzter regulaerer Quellenhauptabschluss: `warteschlange-crawl`,
+17.11.,04:49:09.506UTC; der spaetere Adminabschluss ist kein regulaerer Beleg.
+Kein neuer Quellen-/Modelllauf und keine Production-Datenaktion gestartet.
+
+**Naechster Schritt:** E nimmt die drei offenen D-Diffs am Kopf `e95b0084`
+unabhaengig ab.
