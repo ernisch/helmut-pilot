@@ -385,11 +385,14 @@ test("Widerspruechliche und bei der Zeitumstellung uneindeutige Schlusszeiten sp
   assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("2026-10-25T12:00:00Z oder um 16:00 Uhr Berliner Zeit")],
     jetzt, null, k, profile)), false);
   assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("25.10.2026 um 13:00 Uhr +01:00")], jetzt, null, k, profile)), true);
-  for (const zone of ["PST", "pst", "PsT"]) {
+  for (const zone of ["PST", "pst", "PsT", "IST", "ist", "IsT"]) {
     const normal = doc("fremde-zone", "2026-09-23", { summary:
       "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um 15:00 Uhr " + zone + " beim Parlament." });
     assert.equal(B.istTagesauftrag(B.tagesAnlass([normal], now, null, { ...ko(), deadline: "2026-09-24" }, profile)), false);
   }
+  const berlin = doc("berliner-ortszeit", "2026-09-23", { summary:
+    "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um 15:00 Uhr Berliner Zeit beim Parlament." });
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([berlin], now, null, { ...ko(), deadline: "2026-09-24" }, profile)), true);
   const sprung = doc("sommerzeit", "2026-03-28", {
     summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 29.03.2026 um 02:30 Uhr beim Parlament." });
   assert.equal(B.istTagesauftrag(B.tagesAnlass([sprung], new Date("2026-03-29T00:40:00Z"), null,
