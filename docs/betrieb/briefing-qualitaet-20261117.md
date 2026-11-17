@@ -36,7 +36,7 @@ und eroeffnet den tatsaechlichen Originalbeleg. Kein pauschales 'Heute
 entscheidend' aus technischer Frische. Keine automatische politische Aktion.
 
 Gezielt bestanden: vorhandener Bereichsvertrag46/46, Orientierung33/33 und
-Paketleser21/21, einschliesslich BT/LT, persoenlicher Frist ohne Fachtreffer,
+Paketleser21/21 vor abschliessendem Randfall, einschliesslich BT/LT, persoenlicher Frist ohne Fachtreffer,
 fremdem Namen/getrennten Saetzen, Fristvorrang bei optionalem Actionability-
 flag und Cacheimmutabilitaet. Echter vorhandener Chromiumharness Desktop/
 Mobil11/11: native Vorbereitung, geoeffneter sichtbarer Originalsatz und
@@ -50,3 +50,15 @@ unpriorisiert; kein Datum aus URL/Termin erfunden. BT/LT-Positive sind
 synthetische technische Vertragspruefungen, keine echte Kundenabnahme.
 Keine neuen Modell-/Quellenaufrufe, Massenpruefungen oder Productiondatenwrites.
 Integration und echte Nachkontrolle werden erst nach gruenem Kopf bestaetigt.
+
+Unabhaengiges Review fand den kleinen Cache-Randfall, dass ein Beratungsdatum
+als virtuelle Frist eingesetzt wurde. Deadline wird nun nur fuer echte
+Fristarten gesetzt. Neuer echter Producer→Cache-Test mit Beratung und Wort
+endet zuerst rot, nach Fix zusammen mit bestehender Vorbereitung gruen;
+volle22 Paketlesergruppen laufen in der Pflicht-CI am finalen Kopf.
+
+Erster CI-Kopf3290674e scheiterte im Quellenpflicht-Schnellkern: dessen alte
+positive Fixture besass nur Link/Zaehler, aber keinen neuen Original-/Mandats-
+Handlungsbeleg. Nur die positive Fixture passend qualifiziert; alle bisherigen
+Quellenpflichtassertionen behalten und negativen Link-ohne-Auftrag ergaenzt.
+Gezielt61/61 gruen, keine Abschwaechung der Quellenpflicht.

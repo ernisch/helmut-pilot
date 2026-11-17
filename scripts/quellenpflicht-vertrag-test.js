@@ -221,11 +221,23 @@ console.log("— Heute/Briefing (Server-Vertrag briefingContract) —");
     display_title: "Vorgang nur mit Startseite", best_source_url: "https://www.beispielverlag.de/",
     updated_at: iso(3600e3), created_at: iso(2 * 3600e3)
   };
+  // Die Quellenpflicht bleibt unveraendert. Eine positive Tagesprioritaet
+  // braucht zusaetzlich den inzwischen verbindlichen Original-/Mandatsbeleg.
+  const vorbereitungsKo = { ...ko, headline: "Pflegereform: Nachbesserungen angekuendigt",
+    display_title: "Pflegereform: Nachbesserungen angekuendigt",
+    was_ist_passiert: "Zur Pflegereform wurden Nachbesserungen angekuendigt." };
+  const vorbereitungsDocs = docs.map(d => d.id === "d1" ? { ...d,
+    summary: "Bei der ersten Beratung der Pflegereform wurden Schwachstellen eingeräumt und Nachbesserungen für die weitere parlamentarische Beratung angekündigt." } : d);
   const stand = briefingContract.buildCurrentHelmutState({
-    profile: { id: "u1" }, decisions: [dec("k1", "v1"), dec("kz", "vz"), dec("ks", "vs")],
-    kosById: { k1: ko, kz: koNurZaehler, ks: koStartseiteHeute },
-    sourcesByVorgang: { v1: docs }, now: nowDate
+    profile: { id: "u1", focusTopics: ["Pflege"] }, decisions: [dec("k1", "v1"), dec("kz", "vz"), dec("ks", "vs")],
+    kosById: { k1: vorbereitungsKo, kz: koNurZaehler, ks: koStartseiteHeute },
+    sourcesByVorgang: { v1: vorbereitungsDocs }, now: nowDate
   });
+  const nurQuelle = briefingContract.buildCurrentHelmutState({
+    profile: { id: "u1", focusTopics: ["Pflege"] }, decisions: [dec("k1", "v1")],
+    kosById: { k1: ko }, sourcesByVorgang: { v1: docs }, now: nowDate
+  });
+  check("Briefing-Tab: Quellenlink ohne Original-/Mandatsauftrag erfindet keine Tagesprioritaet", nurQuelle.primaryItem === null);
   check("Briefing-Tab: der Stand traegt den belegten Vorgang mit oeffnender Quelle",
     Boolean(stand.primaryItem) && stand.primaryVorgangId === "v1");
   check("Briefing-Tab: primaryItem traegt sourceUrl (oeffnende https-Quelle) + sourceName",

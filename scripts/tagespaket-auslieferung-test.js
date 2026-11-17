@@ -368,5 +368,23 @@ function bindeTeststand(f) {
       A.equal(gesperrt.currentHelmutState.recommendation, ""); A.deepEqual([...f.rows], vorher);
     }
   });
+  await test("Heutiger Beratungstermin bleibt im nativen Cache ein Verfahrensschritt und wird keine Abgabefrist", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), C = require("../lib/helmut/briefingContract");
+    const text = `Die öffentliche Beratung zur Pflegereform findet am ${day} statt und endet nach den Stellungnahmen der Verbände.`;
+    const ko = { id: "ko-synth-2", vorgang_id: "vg-synth-2", headline: "Beratung der Pflegereform",
+      was_ist_passiert: text, status: "neu", understanding_status: "complete", zeitdruck: "keiner" };
+    const doc = { id: "rd-synth-2", title: ko.headline, summary: text,
+      url: "https://example.invalid/dokument/2", published_at: day + "T05:00:00Z" };
+    const native = C.buildCurrentHelmutState({ profile, now, kosById: { [ko.id]: ko },
+      decisions: [{ knowledge_object_id: ko.id, decision: "Beobachten", score: 50 }], sourcesByVorgang: { [ko.vorgang_id]: [doc] } });
+    A.equal(native.tagesAnlass.art, "bevorstehender-schritt"); A.equal(native.tagesAnlass.termin, day);
+    row.payload.briefing.currentHelmutState = native; bindeTeststand(f);
+    const before = clone([...f.rows]), out = (await f.read()).briefing;
+    A.equal(out.currentHelmutState.primaryVorgangId, ko.vorgang_id);
+    A.equal(out.currentHelmutState.tagesAnlass.art, "bevorstehender-schritt");
+    A.equal(out.currentHelmutState.tagesAnlass.beleg.text, text);
+    A.equal(out.currentHelmutState.recommendation, native.recommendation);
+    A.equal(out.paketStatus.quittungGebunden, true); A.deepEqual([...f.rows], before);
+  });
   console.log(`\n${n} PASS, 0 FAIL`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
