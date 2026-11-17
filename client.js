@@ -11780,6 +11780,16 @@ function irightsSourceNoticeUrl(value, original = false) {
   } catch (_) { return ""; }
 }
 
+function destatisSourceNoticeUrl(value) {
+  if (typeof value !== "string" || value.length > 600) return "";
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && ["www.destatis.de", "destatis.de"].includes(url.hostname)
+      && !url.username && !url.password && !url.port && !url.search && !url.hash
+      && /^\/DE\/Presse\/Pressemitteilungen\/.+\.html$/.test(url.pathname) ? url.href : "";
+  } catch (_) { return ""; }
+}
+
 function boundSourceNotice(source, articleHref) {
   const notice = source && source.sourceNotice;
   if (!notice || typeof notice !== "object" || typeof notice.text !== "string" || !notice.text.trim()) return null;
@@ -11795,6 +11805,23 @@ function boundSourceNotice(source, articleHref) {
         : notice.originalUrl !== article || notice.licenseUrl != null)
       || [source.publishedAt, source.published_at].filter(v => v != null)
         .some(v => Date.parse(v) !== Date.parse(notice.publishedAt))) return null;
+    return notice;
+  }
+  if (notice.sourceId === "fach-destatis-aktuell-rss") {
+    const article = destatisSourceNoticeUrl(notice.articleUrl), original = destatisSourceNoticeUrl(notice.originalUrl);
+    // Nur die vorhandene www-Kanonisierung derselben Pressemitteilung zulassen.
+    // Die allgemeine Linkfreigabe anderer Herkunftshinweise bleibt unveraendert.
+    if (!article || article !== articleHref || !original
+      || article.replace("https://www.destatis.de/", "https://destatis.de/")
+        !== original.replace("https://www.destatis.de/", "https://destatis.de/")
+      || [source.sourceId, source.source_id].filter(v => v != null).some(v => v !== notice.sourceId)
+      || notice.scope !== "licensed_rss_excerpt"
+      || typeof notice.articleTitle !== "string" || !notice.articleTitle.trim() || notice.articleTitle.length > 300
+      || notice.licenseUrl !== "https://www.destatis.de/DE/Service/Impressum/_inhalt.html"
+      || !Number.isFinite(Date.parse(notice.publishedAt))
+      || [source.publishedAt, source.published_at].filter(v => v != null)
+        .some(v => Date.parse(v) !== Date.parse(notice.publishedAt))
+      || typeof notice.changes !== "string" || !notice.changes.trim()) return null;
     return notice;
   }
   const host = { "bundespuls-vorgaenge-rss": "bundespuls.de", "eurlex-amtsblatt-l-rss": "eur-lex.europa.eu" }[notice.sourceId];
@@ -11819,8 +11846,8 @@ function renderSourceNotice(source, articleHref = source && (source.itemUrl || s
   if (!notice) return "";
   const original = notice.sourceId === "fach-irights-rss"
     ? irightsSourceNoticeUrl(notice.originalUrl, notice.scope === "licensed_rss_excerpt")
-    : sourceNoticeHref(notice.originalUrl);
-  const license = sourceNoticeHref(notice.licenseUrl);
+    : notice.sourceId === "fach-destatis-aktuell-rss" ? destatisSourceNoticeUrl(notice.originalUrl) : sourceNoticeHref(notice.originalUrl);
+  const license = notice.sourceId === "fach-destatis-aktuell-rss" ? notice.licenseUrl : sourceNoticeHref(notice.licenseUrl);
   const changes = typeof notice.changes === "string" ? notice.changes.trim() : "";
   const originalLabel = typeof notice.originalLabel === "string" && notice.originalLabel.trim() ? notice.originalLabel : "Originalquelle";
   const date = bundespulsPublicationUnknown(source, articleHref) ? " Veröffentlichungsdatum unbekannt." : "";

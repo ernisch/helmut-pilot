@@ -108,6 +108,21 @@ function irightsDto(licensed = true) {
     sourceNotice: ih.hinweis(doc), sourceUrl: ih.FEED_URL, itemUrl: ihUrl, href: ihUrl, linkType: "direct",
     excerpt: doc.summary, confidence: "medium", relationTypes: ["media"], qualityStatus: "partial" };
 }
+const ds = require("../lib/helmut/quellen-destatis-rss-stand");
+// Derselbe gesicherte RSS-Eintrag wie im vorhandenen Standtest; kein neuer Abruf.
+const dsItem = { title: "Energieverbrauch der Industrie 2025 um 2,9 % gesunken",
+  url: "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/11/PD26_400_435.html",
+  publishedAt: "2026-11-16T07:00:00.000Z", rssRights: ["Statistisches Bundesamt, Wiesbaden 2019"],
+  content: "Die deutsche Industrie hat im Jahr 2025 insgesamt 3 248 Petajoule Energie verbraucht. Wie das Statistische Bundesamt (Destatis) mitteilt, waren das 2,9 % weniger Energie als im Vorjahr. Zuvor war der Energieverbrauch im Jahr 2024 (+1,9 %) nach zwei Jahren mit starken Rückgängen (2022: -9,1 %, 2023: -7,8 %) angestiegen." };
+const dsRow = require("../lib/helmut/dedup").toRawDocumentRow(require("../lib/helmut/crawler")
+  .normalizeRawItem(dsItem, { id: ds.SOURCE_ID, url: ds.FEED_URL }));
+function destatisDto(canonical = false) {
+  const url = canonical ? dsRow.canonical_url : dsRow.url;
+  return { ...dsRow, sourceId: ds.SOURCE_ID, name: ds.NAME, sourceName: ds.NAME,
+    sourceUrl: ds.FEED_URL, url, itemUrl: url, href: url, publishedAt: dsRow.published_at,
+    ...require("../lib/helmut/quellen-hinweis").quellenhinweisFelder(dsRow, url),
+    linkType: "direct", confidence: "medium", relationTypes: ["official"], qualityStatus: "partial" };
+}
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log("PASS " + name); }
 function dto(source, url, title, truncated = false) {
@@ -133,6 +148,44 @@ const renderers = {
   Helmut: s => api.renderHstandPrimary({ primaryItem: { ...s, sourceUrl: s.url } }),
   Ereignisrollen: s => api.renderEreignisRollen({ ereignisKontexte: [{ title: "Synthetischer Ereigniskontext", summary: "", sources: [s] }] })
 };
+
+test("Destatis zeigt amtlichen RSS-Hinweis, Originaldatum, Original- und Nutzungslink in allen Quellenansichten", () => {
+  for (const canonical of [false, true]) for (const [name, render] of Object.entries(renderers)) {
+    const html = render(destatisDto(canonical));
+    for (const text of ["Statistisches Bundesamt (Destatis)", dsItem.title, dsItem.publishedAt,
+      "Unverändertes ganzes Satzpräfix", "weiterer Artikeltext und Bilder nicht übernommen"])
+      assert(html.includes(text), `${name}/${canonical}: ${text}`);
+    assert(html.includes(`href="${dsItem.url}"`), name);
+    assert(html.includes('href="https://www.destatis.de/DE/Service/Impressum/_inhalt.html"'), name);
+    assert(!html.includes("CC BY"), name);
+  }
+});
+test("Destatis verwirft fremde Artikel, Quellen, Daten, Scopes und unsichere oder fremde Links", () => {
+  const dto = destatisDto(true);
+  for (const patch of [
+    { itemUrl: dsItem.url.replace("400_435", "401_213") },
+    { sourceId: "fremde-quelle" }, { source_id: "fremde-quelle" },
+    { publishedAt: "2026-11-16T07:02:04Z" }, { published_at: "2026-11-17T07:00:00Z" },
+    ...[{ scope: "title_link_metadata" }, { scope: "full_text" }, { publishedAt: null },
+      { articleTitle: "" }, { changes: "" }, { originalUrl: dsItem.url.replace("400_435", "401_213") },
+      { licenseUrl: "https://creativecommons.org/licenses/by/4.0/deed.de" },
+      { licenseUrl: "https://www.destatis.de/DE/Service/Impressum/_inhalt.html?fremd=1" },
+      ...["http://www.destatis.de/DE/Presse/Pressemitteilungen/2026/11/PD26_400_435.html",
+        ds.FEED_URL, dsItem.url + "?fremd=1", dsItem.url + "#fremd",
+        dsItem.url.replace("www.destatis.de", "www.destatis.de.example.org"),
+        dsItem.url.replace("www.destatis.de", "name@www.destatis.de"),
+        dsItem.url.replace("www.destatis.de", "www.destatis.de:444"), "javascript:alert(1)"]
+        .map(originalUrl => ({ originalUrl }))
+    ].map(notice => ({ sourceNotice: { ...dto.sourceNotice, ...notice } }))
+  ]) assert.equal(api.renderSourceNotice({ ...dto, ...patch }), "", JSON.stringify(patch));
+  assert(!api.lageSourceRow({ ...dto, url: dsItem.url.replace("400_435", "401_213") }).includes("source-notice"));
+  assert(!api.renderRadarArticleRow({ ...dto, sourceUrl: ds.FEED_URL }).includes("source-notice"));
+  assert.equal(api.renderSourceNotice({ ...dto, sourceNotice: undefined }), "");
+  // Die neue Quelle erweitert keine Linkfreigabe fremder Hinweistypen.
+  const foreign = api.renderSourceNotice({ ...bundespuls,
+    sourceNotice: { ...bundespuls.sourceNotice, originalUrl: dsItem.url, licenseUrl: dto.sourceNotice.licenseUrl } });
+  assert(!foreign.includes("destatis.de"));
+});
 
 test("iRights zeigt Autor, Originaltitel, Erstveroeffentlichung, CC-BY-Link und Bearbeitung in allen bestehenden Ansichten", () => {
   for (const [name, render] of Object.entries(renderers)) {
@@ -235,15 +288,21 @@ if (process.argv.includes("--browser")) {
   const output = path.join(root, "tmp/parlamentsdaten-quellen-ui");
   fs.mkdirSync(output, { recursive: true });
   const htmlFile = path.join(output, "quellen.html");
-  const markup = Object.entries(renderers).map(([name, render]) => `<section><h2>${name}</h2>${render(bundespuls)}</section>`).join("");
+  const browserSources = [bundespuls, destatisDto(true)];
+  const markup = browserSources.map(source => Object.entries(renderers)
+    .map(([name, render]) => `<section data-source="${source.sourceId}"><h2>${name}</h2>${render(source)}</section>`).join("")).join("");
   const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
   fs.writeFileSync(htmlFile, `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><style>${css}</style><style>body{display:block;padding:16px;width:auto;min-width:0}section{margin-bottom:20px;min-width:0}h2{font-size:16px}</style></head><body>${markup}<script>
     try {
       const notices = [...document.querySelectorAll('.source-notice')];
-      if (notices.length !== ${Object.keys(renderers).length}) throw Error('Quellenhinweis fehlt');
+      if (notices.length !== ${Object.keys(renderers).length * browserSources.length}) throw Error('Quellenhinweis fehlt');
       for (const notice of notices) {
         if (notice.closest('a')) throw Error('Verschachtelter Anker');
-        if (!notice.textContent.includes('Originaldaten kostenlos bei DIP')) throw Error('Originaldaten fehlen');
+        const destatis = notice.closest('[data-source]').dataset.source === '${ds.SOURCE_ID}';
+        if (!notice.textContent.includes(destatis ? 'Statistisches Bundesamt (Destatis)' : 'Originaldaten kostenlos bei DIP')) throw Error('Originaldaten fehlen');
+        if (destatis && (!notice.textContent.includes('${dsItem.publishedAt}')
+          || !notice.querySelector('a[href="${dsItem.url}"]')
+          || !notice.querySelector('a[href="https://www.destatis.de/DE/Service/Impressum/_inhalt.html"]'))) throw Error('Destatisbindung fehlt');
         if (!notice.getBoundingClientRect().height) throw Error('Hinweis unsichtbar');
         for (const a of notice.querySelectorAll('a')) {
           if (a.protocol !== 'https:' || a.target !== '_blank' || !a.relList.contains('noopener') || !a.relList.contains('noreferrer')) throw Error('Linkschutz fehlt');
