@@ -52,9 +52,22 @@ verlangt zusaetzlich den exakten amtlichen Fund und den vorliegenden passenden
 RSS-Eintrag. Der lesende echte Archivabgleich bestaetigt den nativen SHA256
 `ead997ecc3e43032e68f606d21ec9127146a68fe415036c2e353e20709edae90`,
 Titel, Datum und Text. Das gespeicherte offizielle Original-Finding besitzt
-jedoch `retrieval_path_id=NULL`; der erste Adapter weist diesen Altfall ab.
-Eine eng begrenzte Kompatibilitaet wird gegen den bestehenden optionalen
-Finding-Vertrag geprueft, kein fremder nichtleerer Abrufpfad zugelassen.
+jedoch `retrieval_path_id=NULL`; der erste Adapter wies diesen Altfall ab.
+Der bestehende Vertrag `20260715_dedup_findings.sql` definiert dieses Feld
+ausdruecklich als optionalen weichen Verweis, ausserhalb des Finding-Schluessels.
+Folge-PR #1250 erlaubt deshalb ausschliesslich NULL/fehlend; falsche nichtleere
+Pfade sowie Leerstring/false/0 bleiben gesperrt. Alle anderen Bindungen bleiben.
+Gegenfaelle zuerst rot, gezielte bestehende RSS-Suite danach 9/9 gruen;
+unabhaengiges Review ohne Blocker. Keine zusaetzliche technische Grundursache
+oder zweite wiederhergestellte Quelle zaehlen: dies ergaenzt denselben Fall.
+
+Echter rein lokaler Replay auf dem lesenden Snapshot vom17Nov12:44:47UTC
+mit demselben vorliegenden Primaer-RSS bestaetigt nun die Akzeptanz:
+320Zeichen, amtlich07:00UTC, neue Kennung
+`rd-635871adf86344f67e0b7b29058b3d4b3f8cd4d5e71bc844d439c876d2060ebb`.
+Archiv und Finding bleiben bytegleich; keine nachgetragene Pfadkennung.
+Dies belegt die sichere Wiederverwendbarkeit vorhandener Originale, keine
+neue Production-Speicherung, Analyse, Jobfortsetzung oder Kundenversorgung.
 Noch keine neue Analyse, Speicherung oder Abschlussquittung behauptet.
 
 ## Amtliche Alternativen und Rechte
