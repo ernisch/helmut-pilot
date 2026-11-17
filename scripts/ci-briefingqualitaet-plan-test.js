@@ -22,8 +22,8 @@ function sourceFixture(push = false, profile = Q) {
     parents: push ? [profile.BASE] : [profile.EVIDENCE], baseTree, evidenceTree, headTree,
     prHeadTree: push ? new Map(headTree) : undefined };
 }
-check("nur gebundener Briefingstatus-Kopf mit Kern und gezielten Gruppen",()=>{
- const p=Q.validate(sourceFixture());assert.equal(p.mode,"briefingstatus");assert(p.core&&p.syntax&&p.npm&&p.briefingstatus);
+check("nur gebundener Quellenbedarf-Kopf mit Kern und gezielten Gruppen",()=>{
+ const p=Q.validate(sourceFixture());assert.equal(p.mode,"quellenbedarf");assert(p.core&&p.syntax&&p.npm&&p.quellenbedarf);
  assert.equal(p.browser,false);
  for(const k of ["standard","area","database"])assert.equal(p[k],false);
 });
@@ -36,20 +36,20 @@ for(const [name,mutate] of [
  ["ui",f=>f.headTree.delete("client.js")],["migration",f=>f.headTree.delete("supabase/migrations/unveraendert.sql")],
  ["symlink",f=>f.headTree.set(Q.CI_FILES[1],{mode:"120000",type:"blob",oid:"4".repeat(40)})],
  ["fremdfile",f=>f.headTree.set("unbekannt.js",{mode:"100644",type:"blob",oid:"5".repeat(40)})]
-])check(name+" wird abgewiesen",()=>{const f=sourceFixture();mutate(f);assert.throws(()=>Q.validate(f),/briefingstatus-ci:/);});
+])check(name+" wird abgewiesen",()=>{const f=sourceFixture();mutate(f);assert.throws(()=>Q.validate(f),/quellenbedarf-ci:/);});
 check("jeder Laufzeit- und Testblob gebunden",()=>{for(const file of Object.keys(Q.BLOBS)){
  const f=sourceFixture();f.headTree.set(file,{mode:"100644",type:"blob",oid:"0".repeat(40)});
- assert.throws(()=>Q.validate(f),/briefingstatus-ci:/);
+ assert.throws(()=>Q.validate(f),/quellenbedarf-ci:/);
 }});
 check("nur echter normaler Mainmerge mit identischem Baum",()=>{
- assert.equal(Q.validate(sourceFixture(true)).mode,"briefingstatus");
+ assert.equal(Q.validate(sourceFixture(true)).mode,"quellenbedarf");
  for(const mutate of [f=>f.message="fremd",f=>f.parents=["8".repeat(40)],f=>f.prHeadTree.delete("server.js"),f=>f.before="1".repeat(40),f=>f.pr.merged=false]){
-  const f=sourceFixture(true);mutate(f);assert.throws(()=>Q.validate(f),/briefingstatus-ci:/);
+  const f=sourceFixture(true);mutate(f);assert.throws(()=>Q.validate(f),/quellenbedarf-ci:/);
  }
 });
 check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  const w=fs.readFileSync(".github/workflows/ci.yml","utf8");
- const blocks=[...w.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1247 \][\s\S]*?\n          fi/g)].map(x=>x[0]);
+ const blocks=[...w.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1249 \][\s\S]*?\n          fi/g)].map(x=>x[0]);
  assert.equal(blocks.length,2);assert.equal(blocks[0],blocks[1]);
  const script=`set -e
  git(){ case "$1" in log) printf '%s' "$MSG";;rev-parse) printf '%s' "$PARENT";;merge-base) return "$ANCESTOR";;*) return 99;;esac; }
@@ -57,15 +57,15 @@ check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  ${blocks[0]}
  printf BROAD`;
  const run=(msg,parent,ancestor,extra={})=>spawnSync("bash",["-c",script],{encoding:"utf8",env:{PATH:process.env.PATH,GITHUB_EVENT_NAME:"push",GITHUB_REF:"refs/heads/main",GITHUB_OUTPUT:"/dev/null",MSG:msg,PARENT:parent,ANCESTOR:String(ancestor),...extra}});
- for(const msg of [Q.MERGE_TITLE,"Merge pull request #1247","fehlerhafter Betreff"]){const r=run(msg,Q.BASE,0);assert.equal(r.status,23,r.stderr);assert.equal(r.stdout,"GUARD");}
+ for(const msg of [Q.MERGE_TITLE,"Merge pull request #1249","fehlerhafter Betreff"]){const r=run(msg,Q.BASE,0);assert.equal(r.status,23,r.stderr);assert.equal(r.stdout,"GUARD");}
  for(const msg of ["fremd","spaeterer Commit"]){const r=run(msg,"8".repeat(40),1);assert.equal(r.status,0);assert.equal(r.stdout,"BROAD");}
- const pr=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_NUMBER:"1247"});assert.equal(pr.status,23);assert.equal(pr.stdout,"GUARD");
+ const pr=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_NUMBER:"1249"});assert.equal(pr.status,23);assert.equal(pr.stdout,"GUARD");
  const branch=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_HEAD_REF:Q.BRANCH});assert.equal(branch.status,23);assert.equal(branch.stdout,"GUARD");
- assert.match(w,/name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.briefingstatus != 'true'/);
- const step=w.split("      - name: Briefingstatus -")[1].split("      - name: Quellenreadback -")[0];
- for(const name of ["briefing-freshness-header","quellen-versorgungsstand"])assert(step.includes("scripts/"+name+"-test.js"));
+ assert.match(w,/name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.quellenbedarf != 'true'/);
+ const step=w.split("      - name: Quellenbedarf -")[1].split("      - name: Quellenreadback -")[0];
+ for(const name of ["dip-vorgangsfakten-profil","quellen-destatis-rss-stand","fach-parteiquellen","dedup-quellenkontext","dedup-findings","quellen-eurlex-auszug"])assert(step.includes("scripts/"+name+"-test.js"));
  assert(!/source-demand|--extended|Mock100|Mock500|morgen-paketnachweis/.test(step));
- const browser=w.split("      - name: Briefingstatus - gebundenen")[1].split("      - name: Quellenreadback -")[0];
+ const browser=w.split("      - name: Quellenbedarf - gebundenen")[1].split("      - name: Quellenreadback -")[0];
  assert.match(browser,/44065530896\/job\/133978126070/);
  assert.match(browser,/kein neuer Chromiumlauf/i);
  assert(!browser.includes("run: node scripts/lokal.js -- node scripts/browser-smoke-test.js"));

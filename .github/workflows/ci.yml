@@ -110,12 +110,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          # Nur exakt gepruefter autorisierter Briefingqualitaets-Kopf, PR1247.
-          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1247 ] \
-            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-status-20261117 ] \
+          # Nur exakt gebundene DIP-/Destatis-Quellenreparatur, PR1249.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1249 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabdeckung-20261117 ] \
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
-              && { [ "$(git log -1 --format=%s)" = 'fix(briefing): Statusbegründung aus qualifiziertem Tagesstand ableiten (#1247)' ] \
-                || [ "$(git rev-parse HEAD^1)" = 2877e265ce0860da9362e20a6a9d6f4c4f46fc6b ]; }; }; then
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)' ] \
+                || [ "$(git rev-parse HEAD^1)" = 7d55e40cbb943d0397bcbb9f1b76818638cb4e0b ]; }; }; then
             node scripts/ci-briefingqualitaet-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -593,7 +593,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: Native automation boundary qualification (synthetic)
-        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true' && steps.plan.outputs.quellendauerbetrieb != 'true' && steps.plan.outputs.bmgwiedergewinnung != 'true' && steps.plan.outputs.eurlexoriginal != 'true' && steps.plan.outputs.eurlexleser != 'true' && steps.plan.outputs.quellenfrist != 'true' && steps.plan.outputs.eurlexprimaer != 'true' && steps.plan.outputs.quellenvertagung != 'true' && steps.plan.outputs.destatisarbeit != 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.lagearbeit != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenmorgen != 'true' && steps.plan.outputs.bmgdirekt != 'true' && steps.plan.outputs.quellenoperator != 'true' && steps.plan.outputs.quellenreadback != 'true' && steps.plan.outputs.briefingstatus != 'true'
+        if: steps.plan.outputs.verarbeitungskern != 'true' && steps.plan.outputs.lieferreparatur != 'true' && steps.plan.outputs.dipartikelisolation != 'true' && steps.plan.outputs.mandatsarbeitvorrang != 'true' && steps.plan.outputs.lageteilstand != 'true' && steps.plan.outputs.tagesfrische != 'true' && steps.plan.outputs.quellenabrufanteil != 'true' && steps.plan.outputs.artikelversionskonflikt != 'true' && steps.plan.outputs.lageergaenzung != 'true' && steps.plan.outputs.lagekostenvertrag != 'true' && steps.plan.outputs.kundenansichten != 'true' && steps.plan.outputs.briefingfenster != 'true' && steps.plan.outputs.briefingvolltext != 'true' && steps.plan.outputs.radarartikel != 'true' && steps.plan.outputs.fachthemen != 'true' && steps.plan.outputs.artikelautonom != 'true' && steps.plan.outputs.wiedergewinnung != 'true' && steps.plan.outputs.echtlauf != 'true' && steps.plan.outputs.inaktivequellen != 'true' && steps.plan.outputs.quellenquittung != 'true' && steps.plan.outputs.quellenabschluss != 'true' && steps.plan.outputs.quellendauerbetrieb != 'true' && steps.plan.outputs.bmgwiedergewinnung != 'true' && steps.plan.outputs.eurlexoriginal != 'true' && steps.plan.outputs.eurlexleser != 'true' && steps.plan.outputs.quellenfrist != 'true' && steps.plan.outputs.eurlexprimaer != 'true' && steps.plan.outputs.quellenvertagung != 'true' && steps.plan.outputs.destatisarbeit != 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.lagearbeit != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenmorgen != 'true' && steps.plan.outputs.bmgdirekt != 'true' && steps.plan.outputs.quellenoperator != 'true' && steps.plan.outputs.quellenreadback != 'true' && steps.plan.outputs.quellenbedarf != 'true'
         # The root deployment bootstrap verifies this actual successful job step,
         # not only the job name. Pure synthetic tests: no SSH, GPG key creation,
         # external APIs, originals, native resource cases or Production access.
@@ -919,14 +919,18 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikelkontext-quellenlayout-test.js --bmg
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikel-wiedergewinnung-test.js
 
-      - name: Briefingstatus - vorhandene Header- und Versorgungsvertraege
-        if: steps.plan.outputs.briefingstatus == 'true'
+      - name: Quellenbedarf - DIP, lizenzierte RSS-Fassung, Dedup und Herkunft
+        if: steps.plan.outputs.quellenbedarf == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
         run: |
           node scripts/lokal.js -- node scripts/ci-briefingqualitaet-plan-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/briefing-freshness-header-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-versorgungsstand-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dip-vorgangsfakten-profil-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-destatis-rss-stand-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/fach-parteiquellen-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-quellenkontext-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-findings-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
 
       - name: Quellenreadback - JSON-Speicherung, Ersatzvorstand und bestehende HTTP-Integration
         if: steps.plan.outputs.quellenreadback == 'true'
@@ -1224,12 +1228,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          # Nur exakt gepruefter autorisierter Briefingqualitaets-Kopf, PR1247.
-          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1247 ] \
-            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/briefing-status-20261117 ] \
+          # Nur exakt gebundene DIP-/Destatis-Quellenreparatur, PR1249.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1249 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabdeckung-20261117 ] \
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
-              && { [ "$(git log -1 --format=%s)" = 'fix(briefing): Statusbegründung aus qualifiziertem Tagesstand ableiten (#1247)' ] \
-                || [ "$(git rev-parse HEAD^1)" = 2877e265ce0860da9362e20a6a9d6f4c4f46fc6b ]; }; }; then
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)' ] \
+                || [ "$(git rev-parse HEAD^1)" = 7d55e40cbb943d0397bcbb9f1b76818638cb4e0b ]; }; }; then
             node scripts/ci-briefingqualitaet-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -1603,10 +1607,10 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js scripts/browser-smoke-test.js --briefing-teilstand
-      - name: Briefingstatus - gebundenen echten Browserbeleg erhalten
-        if: steps.plan.outputs.briefingstatus == 'true'
+      - name: Quellenbedarf - gebundenen echten Browserbeleg erhalten
+        if: steps.plan.outputs.quellenbedarf == 'true'
         run: |
-          echo 'UI-/Browser-/fachliche Bibliotheksdateien im vollstaendigen Baum unveraendert; Serverdelta nur getestete Statusdekoration. Kein neuer Chromiumlauf oder Browser-PASS behauptet.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Server, UI und Browserdateien im vollstaendigen Baum unveraendert; Fachdelta durch native RSS-/Storage-/DTO-Belege gezielt geprueft. Kein neuer Chromiumlauf oder Browser-PASS behauptet.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Echter Desktop-/Mobilbeleg PR1246: https://github.com/ernisch/helmut-pilot/actions/runs/44065530896/job/133978126070' >> "$GITHUB_STEP_SUMMARY"
       - name: Quellenreadback - gebundenen echten Browserbeleg erhalten
         if: steps.plan.outputs.quellenreadback == 'true'
@@ -1683,7 +1687,7 @@ jobs:
           echo '13 erfolgreiche Browser-Einzelpruefungen als Teilbeleg WIEDERVERWENDET aus https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997 ; damaliger Gesamtjob FAIL wegen zweier Ruhelage-Timingfaelle, hier keine Umwertung.' >> "$GITHUB_STEP_SUMMARY"
           node scripts/lokal.js -- node scripts/browser-smoke-test.js --tagespaket-jsonb --nur-ruhelage
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
-        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.briefingstatus != 'true'
+        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenbedarf != 'true'
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
         # womit browser-smoke-test.js bei fehlendem Playwright bereits mit
         # Exit 1 abbricht statt still zu SKIPpen. Das Flag macht die Pflicht
@@ -1694,7 +1698,7 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/browser-smoke-test.js
       - name: Getrennte Prosa in beiden App Ansichten (Chromium, hell und dunkel)
-        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.briefingstatus != 'true'
+        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenbedarf != 'true'
         env:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"

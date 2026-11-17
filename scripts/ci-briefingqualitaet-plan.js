@@ -1,25 +1,32 @@
 "use strict";
 
-// Exakt gepruefte Statusableitung aus qualifiziertem Tagesstand PR1247.
+// Exakt gebundene DIP-/Destatis-Quellenreparatur PR1249.
 // Beide Pflichtjobs bleiben. Unveraenderte Browser-/UI-Belege aus PR1246 erhalten;
 // Runtime-/Testblobs und unveraenderter restlicher Baum sind geschlossen gebunden.
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
-const REPOSITORY = "ernisch/helmut-pilot", PR = 1247;
-const BRANCH = "codex/briefing-status-20261117";
-const BASE = "2877e265ce0860da9362e20a6a9d6f4c4f46fc6b";
-const EVIDENCE = "03e58cf970f5509b13f5255a736c654f4d1744ff";
-const MERGE_TITLE = "fix(briefing): Statusbegründung aus qualifiziertem Tagesstand ableiten (#1247)";
+const REPOSITORY = "ernisch/helmut-pilot", PR = 1249;
+const BRANCH = "codex/quellenabdeckung-20261117";
+const BASE = "7d55e40cbb943d0397bcbb9f1b76818638cb4e0b";
+const EVIDENCE = "899119de889eaae54a78fa017b685bc15e79a828";
+const MERGE_TITLE = "fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)";
 const BLOBS = Object.freeze({
-  "server.js": "639c6560f4670d600bdbc8af9970146fc4d9efe6",
-  "scripts/briefing-freshness-header-test.js": "b5f147c97ef80dde258972243ea6612f79f6b7a3",
-  "scripts/quellen-versorgungsstand-test.js": "5b9e65f0a80ea404d208f33a533470d70eb93ce0"
+  "lib/helmut/dip.js": "0712ea6fd79bad499a75fd30721f6029de5d433c",
+  "lib/helmut/crawler.js": "717d6e1b74b70f2f573c4fbf5d0bf4b73b8943c5",
+  "lib/helmut/dedup.js": "5738e348981cab5d8303cca518fe72bf18fa6e10",
+  "lib/helmut/quellen-destatis-rss-stand.js": "fb04b14fb394ed96cb3d1f013191e07d16738e1a",
+  "lib/helmut/quellen-hinweis.js": "b7f185656bc555efe78fcc5a50466b7f9d344677",
+  "lib/helmut/quellenarchitektur/dedup-global.js": "f7f6e2b22438acf8b16243bec2e3406be245be75",
+  "lib/helmut/storage.js": "935e9c59ac5b6c189df498cdd38b4268924a72dd",
+  "scripts/dip-vorgangsfakten-profil-test.js": "ef140cd5de7341f03113349c34219e989aa6a9cb",
+  "scripts/quellen-destatis-rss-stand-test.js": "095620c886cfbe74773a1de2cdce6a1f3f0b0965",
+  "scripts/fach-parteiquellen-test.js": "931a9b20dbac9b95c425e4c7563aae29c966a7fd"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-briefingqualitaet-plan.js", "scripts/ci-briefingqualitaet-plan-test.js"]);
-const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellen-abnahme-20261117.md", "docs/betrieb/briefing-qualitaet-20261117.md"]);
+const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellenbedarf-20261117.md"]);
 const sha = s => typeof s === "string" && /^[a-f0-9]{40}$/.test(s);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
-function need(ok, reason) { if (!ok) throw Error("briefingstatus-ci:" + reason); }
+function need(ok, reason) { if (!ok) throw Error("quellenbedarf-ci:" + reason); }
 function regular(row) { return row?.mode === "100644" && row.type === "blob" && sha(row.oid); }
 
 function validate({ event, repository, ref, headRef, before, message, pr, head, parents = [], baseTree, evidenceTree, headTree, prHeadTree }) {
@@ -49,11 +56,11 @@ function validate({ event, repository, ref, headRef, before, message, pr, head, 
     need(same(baseTree.get(file), headTree.get(file)) && same(evidenceTree.get(file), headTree.get(file)),
       "unerwarteter-diff:" + file);
   }
-  return { mode: "briefingstatus", reason: "Exakt gebundene Statuskorrektur mit Header- und Versorgungstest",
+  return { mode: "quellenbedarf", reason: "Exakt gebundene DIP-/Destatis-Quellenreparatur mit nativen Speicher-/DTO-Belegen",
     standard: false, core: true, area: false, database: false, browser: false, syntax: true, npm: true,
-    briefingstatus: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
-    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte Kopf-/Versorgungs- und Legacyvertraege", "Unveraenderten echten Desktop-/Mobilbeleg aus PR1246 wiederverwenden"],
-    limits: ["Nur Statusdekoration im Server; keine Auth-/UI-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Persistenzkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
+    quellenbedarf: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
+    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte DIP-/RSS-/Dedup-/Herkunftsvertraege", "Unveraenderten echten Desktop-/Mobilbeleg aus PR1246 wiederverwenden"],
+    limits: ["Nur DIP-Profilfilter und geschlossene lizenzierte RSS-Fassung; keine Auth-/UI-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Altzeilenkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
 }
 function git(args) { return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 10000 }); }
 function tree(ref) {
@@ -89,7 +96,7 @@ function main() {
   const args = process.argv.slice(2);
   need(args.length === 2 && args[0] === "--github-output" && Boolean(args[1]), "argumente-ungueltig");
   const p = fromCheckout();
-  const keys = ["standard", "core", "area", "database", "browser", "syntax", "npm", "briefingstatus"];
+  const keys = ["standard", "core", "area", "database", "browser", "syntax", "npm", "quellenbedarf"];
   fs.appendFileSync(args[1], keys.map(k => `${k}=${p[k]}\n`).join("") + `mode=${p.mode}\n`);
   console.log(JSON.stringify(p));
 }
