@@ -21,3 +21,23 @@ nicht aus Quellen-/Lagearbeit. Vor echtem Start frischen Budget-/Ruheabgleich.
 Code, gezielte Tests, Review, exakte Pflicht-CI und Deployment werden am PR
 belegt. Danach genau ein echter Lauf und lesende Abschluss-/Kostenkontrolle;
 keine kuenstliche Gesamtversorgung oder Lizenzfreigabe.
+
+## Gezielter Nachweis vor Integration
+
+Arbeitsfenster25/25, echter lokaler HTTP-Admin-/Cronstart21/21,
+Planung11/11 Offlinegruppen bestanden. Einschliesslich Auth/Production/Tag,
+striktem Auftrag, genau einem Zusatzfenster, gescheiterter Startquittung,
+Planungs-UNKNOWN ohne Worker, Normalbetrieb18Nov, verschobenen Wiederholungen
+mit unveraendertem Ersttermin und null Altjobschreibzugriffen.
+Zwei unabhaengige OpenAI-Reviews: keine offenen P1/P2 nach Korrekturen.
+Die zwei tatsaechlich generierten PostgREST-Leseabfragen wurden separat
+rein lesend gegen Production bestaetigt: HTTP200 und jeweils leere Liste;
+kein Enqueue, kein Quellenabruf und keine Modellkosten durch diesen Vorflug.
+Die vorangegangene Leasediagnose wurde auf echten Status laeuft korrigiert;
+frische Probe ueber Status plus aktive Lease leer. Siehe BMG-Belegkorrektur.
+
+PR1243 bindet die sechs Runtime-/Testblobs und den unveraenderten Restbaum.
+Beide Pflichtjobs bleiben; nur kleine betroffene Suiten plus Schnellkern.
+Unveraenderte UI: vorhandener Browserbeleg PR1240, kein neu behaupteter
+Chromiumlauf. Keine 500er-Pruefungen oder zusaetzlichen bezahlten Tests.
+Echte Betriebsabnahme nach regularem Deployment bleibt vor dem Start offen.

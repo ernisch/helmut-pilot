@@ -48,6 +48,18 @@ function welt() {
     stand: key => konten.get(`${new Date(zeit).toISOString().slice(0, 10)}|${key}`) || 0 };
 }
 const lauf = (w, arbeit = async () => ({ ok: true }), env = ENV) => fenster.fuehreAus({ env, deps: w.deps, arbeit });
+const OPERATOR_KEY = "quellenarbeit|operatorabschluss-20261117";
+const operatorAuftrag = (tag = "2026-11-17", letzteZiffer = "1") => ({ tag,
+  auftragId: `00000000-0000-4000-8000-00000000000${letzteZiffer}` });
+function operatorWelt(time = "2026-11-17T09:16:00Z") {
+  const w = welt(); w.setze(time);
+  const tag = new Date(w.zeit()).toISOString().slice(0, 10);
+  for (const [key, wert] of [[fenster.SCHLUESSEL.fenster, 8], [fenster.SCHLUESSEL.sekunden, 2400], [fenster.SCHLUESSEL.originale, 16]])
+    w.konten.set(`${tag}|${key}`, wert);
+  return w;
+}
+const operatorLauf = (w, arbeit = async () => ({ ok: true }), auftrag = operatorAuftrag(), env = ENV) =>
+  fenster.fuehreAus({ env, deps: w.deps, arbeit, adminAuftrag: auftrag });
 
 async function main() {
   await check("ausgeschaltet ohne jede Reservierung", async () => {
@@ -214,6 +226,80 @@ async function main() {
     assert.equal(termine.length, 10); assert.equal(config.functions["api/index.js"].maxDuration, fenster.FENSTER_SEKUNDEN);
     for (let i = 1; i < termine.length; i++) assert.ok(termine[i].minute - termine[i - 1].minute >= 15);
     assert.equal(termine[8].path, "/api/cron/lage-briefing"); assert.equal(termine[9].path, "/api/cron/morning-briefing");
+  });
+  await check("17Nov ab09:16 genau ein global gebuchtes Zusatzfenster ohne weitere Originalrechte", async () => {
+    const w = operatorWelt(); let arbeiten = 0;
+    const r = await operatorLauf(w, async ({ freigabe }) => {
+      arbeiten++; assert(fenster.freigabeGueltig(freigabe, w.zeit()));
+      assert.equal((await fenster.reserviereOriginal({ env: ENV, deps: w.deps })).erlaubt, false);
+      return { ok: true };
+    });
+    assert.equal(r.ok, true); assert.equal(arbeiten, 1);
+    assert.deepEqual(r.arbeitsfenster.grenzen, { gueltig: true, fenster: 9, sekunden: 2700, originale: 16 });
+    assert.equal(r.arbeitsfenster.einmalausnahme.grund, "operatorabschluss-20261117");
+    assert.deepEqual(r.arbeitsfenster.einmalausnahme.normaleGrenzen, { fenster: 8, sekunden: 2400, originale: 16 });
+    assert.equal(w.stand(OPERATOR_KEY), 1); assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 9);
+    assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), 2700); assert.equal(w.stand(fenster.SCHLUESSEL.originale), 16);
+    assert(w.rpcs.filter(o => o.schluessel === fenster.SCHLUESSEL.originale).every(o => o.grenzeTag === 16));
+    w.weiter(360000);
+    const wieder = await operatorLauf(w, async () => assert.fail("Kein zweites Zusatzfenster"), operatorAuftrag("2026-11-17", "2"));
+    assert.equal(wieder.grund, "arbeitslimit-tagesgrenze"); assert.equal(wieder.limit, OPERATOR_KEY);
+    assert.equal(w.stand(OPERATOR_KEY), 1); assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 9);
+    assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), 2700); assert.equal(arbeiten, 1);
+  });
+  await check("17Nov Zusatzrecht gilt weder vor09:16 noch fuer regulaeren Cron oder andere Basisgrenzen", async () => {
+    const vor = operatorWelt("2026-11-17T09:15:59Z");
+    assert.equal((await operatorLauf(vor, async () => assert.fail("Noch nicht freigegeben"))).limit, fenster.SCHLUESSEL.fenster);
+    assert.equal(vor.stand(OPERATOR_KEY), 0);
+    const cron = operatorWelt("2026-11-17T04:45:00Z");
+    assert.equal((await lauf(cron, async () => assert.fail("Keine Operatorausnahme im Cron"))).limit, fenster.SCHLUESSEL.fenster);
+    assert.equal(cron.stand(OPERATOR_KEY), 0);
+    for (const override of [{ HELMUT_QUELLEN_FENSTER_TAG: "7" }, { HELMUT_QUELLEN_SEKUNDEN_TAG: "2100" }, { HELMUT_ORIGINALABRUFE_TAG: "15" }]) {
+      const w = operatorWelt();
+      assert.equal((await operatorLauf(w, async () => assert.fail("Keine Erweiterung anderer Grenzen"), operatorAuftrag(), { ...ENV, ...override })).limit,
+        fenster.SCHLUESSEL.fenster);
+      assert.equal(w.stand(OPERATOR_KEY), 0);
+    }
+  });
+  await check("Operatorauftrag braucht gueltigen heutigen Tag und endet vor UTC Tageswechsel", async () => {
+    for (const auftrag of [operatorAuftrag("2026-11-16"), operatorAuftrag("2026-11-18"),
+      { ...operatorAuftrag(), auftragId: "keine-uuid" }, { ...operatorAuftrag(), extra: true }]) {
+      const w = operatorWelt();
+      assert.equal((await operatorLauf(w, async () => assert.fail("Keine fremde Autoritaet"), auftrag)).grund, "adminauftrag-ungueltig-oder-abgelaufen");
+      assert.equal(w.rpcs.length, 0);
+    }
+    const ende = operatorWelt("2026-11-17T23:55:00Z");
+    assert.equal((await operatorLauf(ende, async () => assert.fail("Kein Start ueber Tagesende"))).grund, "adminauftrag-tagesende");
+    assert.equal(ende.rpcs.length, 0);
+    for (const tag of ["2026-11-16", "2026-11-18"]) {
+      const w = operatorWelt(`${tag}T09:16:00Z`);
+      assert.equal((await operatorLauf(w, async () => assert.fail("Keine Ausnahme am anderen Tag"), operatorAuftrag(tag))).limit, fenster.SCHLUESSEL.fenster);
+      assert.equal(w.stand(OPERATOR_KEY), 0);
+    }
+  });
+  await check("Operator UNKNOWN und Teilreservierung bleiben ohne Retry oder Erstattung verbraucht", async () => {
+    for (const phase of ["normal", "extra", "fenster", "sekunden"]) {
+      const w = operatorWelt(), reserviere = w.deps.reserviere; let arbeiten = 0, verloren = false;
+      w.deps.reserviere = async o => {
+        const r = await reserviere(o);
+        const trifft = phase === "normal" && o.schluessel === fenster.SCHLUESSEL.fenster && o.grenzeTag === 8
+          || phase === "extra" && o.schluessel === OPERATOR_KEY
+          || phase === "fenster" && o.schluessel === fenster.SCHLUESSEL.fenster && o.grenzeTag === 9
+          || phase === "sekunden" && o.schluessel === fenster.SCHLUESSEL.sekunden;
+        if (!verloren && trifft) { verloren = true; throw Error("Antwort verloren"); }
+        return r;
+      };
+      const r = await operatorLauf(w, async () => { arbeiten++; return { ok: true }; });
+      assert.equal(r.grund, "arbeitslimit-nicht-pruefbar"); assert.equal(arbeiten, 0); assert.equal(verloren, true);
+      assert.equal(w.stand(OPERATOR_KEY), phase === "normal" ? 0 : 1);
+      assert.equal(w.stand(fenster.SCHLUESSEL.fenster), ["fenster", "sekunden"].includes(phase) ? 9 : 8);
+      assert.equal(w.stand(fenster.SCHLUESSEL.sekunden), phase === "sekunden" ? 2700 : 2400);
+      if (phase !== "normal") {
+        const wieder = await operatorLauf(w, async () => assert.fail("UNKNOWN darf nicht wiederholt werden"), operatorAuftrag("2026-11-17", "2"));
+        assert.equal(wieder.limit, OPERATOR_KEY); assert.equal(wieder.grund, "arbeitslimit-tagesgrenze");
+        assert.equal(arbeiten, 0);
+      } else assert.equal(w.rpcs.some(o => o.schluessel === OPERATOR_KEY), false);
+    }
   });
   console.log(`PASS ${pass}/${pass} Quellen-Arbeitsfenster; keine Productionaufrufe`);
 }

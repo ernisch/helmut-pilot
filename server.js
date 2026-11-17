@@ -167,6 +167,26 @@ async function handleRequest(request, response) {
     return require("./lib/helmut/dip-resolver-runtime-witness")
       .handleRequest(request, response, url, { jsonHeaders });
   }
+  // Ausdruecklicher Maschinenauftrag mit bestehender Cronauthentifizierung.
+  // Keine Adminsession/CSRF-Imitation, kein Account-/Profilvorlauf.
+  if (url.pathname === "/api/cron/quellen-operator") {
+    if (!authorizeCron(request, url, response)) return;
+    if (request.method !== "POST" || url.search) {
+      response.writeHead(400, jsonHeaders());
+      response.end(JSON.stringify({ ok: false, grund: "operator-aufruf-ungueltig" })); return;
+    }
+    if (process.env.VERCEL_ENV !== "production") {
+      response.writeHead(403, jsonHeaders());
+      response.end(JSON.stringify({ ok: false, grund: "operator-nur-production" })); return;
+    }
+    return handleJson(request, response, async body => {
+      const A = require("./lib/helmut/quellen-adminstart");
+      if (!A.auftragGueltig(body)) throw accounts.httpError(400, "Ungueltiger Quellenauftrag.");
+      const result = await runQuellenArbeitsfenster("crawl", body, { operator: true });
+      return { ...A.ergebnis(body, result),
+        ...(result.operatorErgaenzung ? { operatorErgaenzung: result.operatorErgaenzung } : {}) };
+    });
+  }
   // Einmalige explizite B055-Freigabe vor jedem Account-/Profil-Vorlauf.
   // Private Fachtexte kommen ausschliesslich aus dem gebundenen DB-Auftrag.
   if (url.pathname === "/api/cron/b055-einzelabschluss") {
@@ -8653,12 +8673,12 @@ async function narrativSlotLauf({ slot = "morgen", startMs = Date.now(), runId =
   };
 }
 
-async function runQuellenArbeitsfenster(cronName, adminAuftrag = null) {
+async function runQuellenArbeitsfenster(cronName, adminAuftrag = null, { operator = false } = {}) {
   const result = await quellenArbeitsfenster.fuehreAus({ adminAuftrag, arbeit: async ({ freigabe, startMs }) => {
     const runId = adminAuftrag ? require("./lib/helmut/quellen-adminstart").laufId(adminAuftrag) : helmutRunId(`cron-${cronName}`, startMs);
     return require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(
       () => withTimeout(runCronUeberWarteschlange(cronName, {
-        deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe
+        deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe, operator
       }), Math.max(1, startMs + 280000 - Date.now()), `quellenfenster-${cronName}`)
         .catch(async (error) => {
           if (!/^Timeout nach \d+ms: quellenfenster-/.test(String(error?.message || ""))) throw error;
@@ -8676,7 +8696,7 @@ async function runQuellenArbeitsfenster(cronName, adminAuftrag = null) {
   return result;
 }
 
-async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null, arbeitsfenster = null } = {}) {
+async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null, arbeitsfenster = null, operator = false } = {}) {
   const start = Number(startedMs) || Date.now();
   const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
   const verbleibend = () => Math.max(0, deadlineMs - (Date.now() - start));
@@ -8696,6 +8716,30 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     location: helmutExecLocation(), status: "running",
     startedAt: new Date(start).toISOString(), finishedAt: null
   }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
+
+  // Ausschliesslich der explizite Operator ergaenzt neu autorisierte Quellen.
+  // Erst nach Fensterreservierung und echter Startquittung; kein Journalreset.
+  let operatorErgaenzung = null;
+  if (operator) {
+    try {
+      if (startQuittung?.ok !== true || !arbeitsfenster || !quellenArbeitsfenster.freigabeGueltig(arbeitsfenster))
+        throw Error("operator-fenster-nicht-bestaetigt");
+      operatorErgaenzung = new Date(start).toISOString().slice(0, 10) === "2026-11-17"
+        ? await require("./lib/helmut/quellen-operatorplanung").ergaenze({
+          jetztMs: start, deadlineMs: Math.min(start + deadlineMs - 10000, Date.now() + 20000) })
+        : { ok: true, neu: 0, grund: "kein-beauftragter-planungszusatz" };
+      if (operatorErgaenzung?.ok !== true) throw Error("operator-planung-nicht-bestaetigt");
+    } catch (_) {
+      const ende = await storageModul.schreibeWarteschlangenLaufquittung({
+        process: quittungsProzess, runId: laufkennung, mode: "warteschlange",
+        location: helmutExecLocation(), status: "failed", startedAt: new Date(start).toISOString(),
+        finishedAt: new Date().toISOString(), reason: "operator-planung-nicht-bestaetigt",
+        zielmenge: 0, fehlgeschlagen: 0, processed: 0,
+        fehlerklasse: "planung-nicht-bestaetigt" }).catch(() => ({ ok: false }));
+      return { ok: false, grund: "operator-planung-nicht-bestaetigt",
+        lauftelemetrie: { status: "failed", ende: ende.ok === true } };
+    }
+  }
 
   // PLANUNGSANTEIL: gedeckelt, damit eine langsame Planung nie den gesamten Slot frisst.
   // Die Grenze liegt IN `planeArbeit`, nicht als `withTimeout`/Promise.race hier: ein Race
@@ -8729,6 +8773,8 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // werden deshalb BEGRENZT oft wieder vorgelegt — vor dem Arbeiten, damit sie noch in
   // diesem Slot drankommen. Fehlt die Migration 20260809, meldet der Aufruf das ehrlich
   // und aendert nichts.
+  if (operatorErgaenzung) plan.operatorErgaenzung = operatorErgaenzung;
+
   const wieder = arbeitsfenster && !plan.neuGeplant
     ? { uebersprungen: true, grund: "fortsetzung-ohne-wiedervorlage" }
     : await scalablePipeline.wiedervorlage({ trockenlauf: false })
@@ -8875,6 +8921,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     durationMs: Date.now() - start,
     lauf: { laufId: laufkennung },
     planung: plan,
+    ...(operatorErgaenzung ? { operatorErgaenzung } : {}),
     verarbeitung: bilanz,
     wiedervorlage: wieder,
     // Zielarchitektur: Dispatch-Sicht dieses Laufs (off => beide uebersprungen).
