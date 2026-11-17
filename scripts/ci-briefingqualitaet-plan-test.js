@@ -71,4 +71,74 @@ check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  assert(!browser.includes("run: node scripts/lokal.js -- node scripts/browser-smoke-test.js"));
 
 });
-console.log(pass+" neue CI-Gruppen bestanden");
+const D = require("./ci-destatisanzeige-plan");
+check("Destatisanzeige behaelt beide Pflichtjobs, Schnellkern und echte Browserpruefung", () => {
+  for (const push of [false, true]) {
+    const p = D.validate(sourceFixture(push, D));
+    assert.equal(p.mode, "destatisanzeige");
+    for (const k of ["core", "browser", "syntax", "npm", "destatisanzeige"]) assert.equal(p[k], true);
+    for (const k of ["standard", "area", "database"]) assert.equal(p[k], false);
+  }
+});
+for (const [name, mutate] of [
+  ["repo", f => f.repository = "fremd/repo"], ["PR", f => f.pr.number++],
+  ["branch", f => f.pr.head.ref = "fremd"], ["base", f => f.pr.base.sha = "1".repeat(40)],
+  ["head", f => f.head = "2".repeat(40)], ["dispatch", f => f.event = "workflow_dispatch"],
+  ["geschlossen", f => f.pr.state = "closed"], ["beleg", f => f.evidenceTree.delete("client.js")],
+  ["fremdruntime", f => f.headTree.set("server.js", { mode: "100644", type: "blob", oid: "3".repeat(40) })],
+  ["alterguard", f => f.headTree.set("scripts/ci-briefingqualitaet-plan.js", { mode: "100644", type: "blob", oid: "3".repeat(40) })],
+  ["fremdfile", f => f.headTree.set("unbekannt.js", { mode: "100644", type: "blob", oid: "3".repeat(40) })],
+  ["symlink", f => f.headTree.set(D.CI_FILES[1], { mode: "120000", type: "blob", oid: "4".repeat(40) })]
+]) check("Destatisanzeige " + name + " stoppt", () => {
+  const f = sourceFixture(false, D); mutate(f);
+  assert.throws(() => D.validate(f), /destatisanzeige-ci:/);
+});
+check("Destatisanzeige bindet jeden Renderer-/Testblob und den echten Mergebaum", () => {
+  for (const file of Object.keys(D.BLOBS)) {
+    const f = sourceFixture(false, D);
+    f.headTree.set(file, { mode: "100644", type: "blob", oid: "0".repeat(40) });
+    assert.throws(() => D.validate(f), /destatisanzeige-ci:/);
+  }
+  for (const mutate of [f => f.message = "fremd", f => f.before = "1".repeat(40),
+    f => f.parents = ["8".repeat(40)], f => f.prHeadTree.delete("server.js"), f => f.pr.merged = false]) {
+    const f = sourceFixture(true, D); mutate(f);
+    assert.throws(() => D.validate(f), /destatisanzeige-ci:/);
+  }
+});
+check("Destatisanzeige waehlt in beiden Jobs denselben Guard ohne Fehler-Rueckfall", () => {
+  const w = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+  const blocks = [...w.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1251 \][\s\S]*?\n          fi/g)].map(m => m[0]);
+  assert.equal(blocks.length, 2); assert.equal(blocks[0], blocks[1]);
+  const script = `set -e
+git(){ case "$1" in log) printf '%s' "$MSG";;rev-parse) printf '%s' "$PARENT";;*) return 99;;esac; }
+node(){ printf GUARD; return 23; }
+${blocks[0]}
+printf BROAD`;
+  const run = (msg, parent, extra = {}) => spawnSync("bash", ["-c", script], { encoding: "utf8",
+    env: { PATH: process.env.PATH, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main",
+      GITHUB_OUTPUT: "/dev/null", MSG: msg, PARENT: parent, ...extra } });
+  for (const msg of [D.MERGE_TITLE, "abweichender Betreff"]) {
+    const r = run(msg, D.BASE); assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  for (const extra of [{ HELMUT_CI_PR_NUMBER: "1251" }, { HELMUT_CI_PR_HEAD_REF: D.BRANCH }]) {
+    const r = run("x", "8".repeat(40), { GITHUB_EVENT_NAME: "pull_request", ...extra });
+    assert.equal(r.status, 23, r.stderr); assert.equal(r.stdout, "GUARD");
+  }
+  const other = run("spaeterer Commit", "8".repeat(40));
+  assert.equal(other.status, 0); assert.equal(other.stdout, "BROAD");
+  const step = w.split("      - name: Destatisanzeige -")[1].split("      - name: Quellenbedarf -")[0];
+  for (const suite of ["ci-briefingqualitaet-plan", "quellen-destatis-rss-stand", "parlamentsdaten-quellen-ui"])
+    assert(step.includes("scripts/" + suite + "-test.js"));
+  assert(!/--extended|Mock100|Mock500/.test(step));
+  const browser = w.split("      - name: Destatisanzeige - vorhandene Kundenansicht")[1].split("      - name: Quellenbedarf -")[0];
+  assert(browser.includes("scripts/browser-smoke-test.js --briefing-qualitaet"));
+  assert(browser.includes('HELMUT_REQUIRE_BROWSER: "1"'));
+  assert(browser.includes("WIEDERVERWENDET"));
+  assert(!browser.includes("|| true"));
+  const generic = w.split("      - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)\n")[1].split("\n")[0];
+  assert(generic.includes("steps.plan.outputs.destatisanzeige != 'true'"));
+  const prose = w.split("      - name: Getrennte Prosa in beiden App Ansichten (Chromium, hell und dunkel)\n")[1].split("\n")[0];
+  assert(prose.includes("steps.plan.outputs.browser == 'true'"));
+  assert(!prose.includes("destatisanzeige"));
+});
+console.log(pass+" CI-Gruppen bestanden; keine Mengen-/DB-/Modelllaeufe");
