@@ -2,8 +2,70 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise: lokal geprueft; unabhaengiges Endkopfreview, Pflicht-CI,
-regulaerer Rollout und neuer regulaerer Verarbeitungsbeleg noch offen.**
+**Teilweise: PR1253/1252 regulaer live; notwendige Produktlesefolge in Arbeit.
+Neue Textwege ohne Nutzungsfreigabe inaktiv, regulaere Kundenwirkung offen.**
+
+## Integration und notwendiger Folgeanschluss
+
+E hat den unveraenderten Kopf `e95b0084` einschliesslich aller drei letzten
+D-Deltas [unabhaengig abgenommen](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6957036835).
+Die beiden gruenen Pflichtchecks44134024822 wurden wiederverwendet.
+PR1253 SHA-gebunden gemergt auf `ec76e38819f3b03235eb7fa5520859df70a06891`;
+normaler Git-Productionrollout `dpl_2M7uWRPej1X1QjeYzQUDddDPEfvP` READY.
+Oeffentlicher Alias/Appclient HTTP200, Versionec76e388 und gepruefte Bytes
+SHA256 `983d2709d1f8b9ea24fbef36da34c1dd6e0f37f1062b6d73091257c8217bbae5`.
+F1252 danach mit unveraenderten drei abgenommenen Dateiblobs auf Mainbasis
+integriert, Kopf941fbbdb/Pflichtlauf44148454840 beide gruen; Merge
+`6c1af21af4c39f29ad0244eda0a7fa2271e7a877`, normaler Gitrollout
+`dpl_FFghQURCpRKd9vixFC76Yre9kXVA` READY und Aliasversion6c1af21a bestaetigt.
+Keine Retentionausfuehrung, Datenloeschung, Quellenaktivierung oder Rechtsfreigabe.
+Der fruehere Endreviewblocker ist damit geschlossen; a5abd880 erhaelt dessen
+historischen Abschlussstand, wird nicht als aktueller Blocker ausgegeben.
+
+Der erweiterte Quellenauftrag belegt drei notwendige Folgepunkte:
+
+- Es Dokumentparser las Plenarsitzungen110–113, die Zusammenfassung nur110.
+  E-Nachtrag6776ac72 von D vollstaendig unabhaengig gelesen, unveraendert als
+  42909cb0 uebernommen. Alle vier Beginne bleiben erhalten; gemeinsame TOPs
+  werden keinem Tag erfunden. Es20/21-Gruppen- und zehn Originalbelege
+  wiederverwendet, keine zweite Testkopie.
+- Der bevorzugte App-Sammelleser umging den DIP-Standleser. Die staerkere
+  native Gegenprobe liefert zuerst `unbekannt` statt gespeichertem `Ueberwiesen`.
+  Derselbe bestehende GET-Leser erreicht jetzt Einzel- und Sammelpfad;
+  vorhandene DIP-Suite mit echter Stand-/Abrufzeitassertion17/17 gruen.
+- Gespeicherte Terminbelege hatten keinen Produktverbraucher. Neuer enger
+  Leser prueft Namespace, sourceId, exakten Hash, neueste Beobachtung,
+  Mehrdeutigkeit, Zukunft, aktuelle Code-/Katalogfreigabe und Mandatsrolle.
+  Allgemeiner Kontext einmal bei Lagequellen; Radar-/Briefingmetadaten nur
+  bei exakter amtlicher BT-Drucksache/Wahlperiode/Original- und Vorgangsbindung.
+  Keine Titeljoins, persoenliche Anwesenheit, neue Signale oder Prioritaeten.
+
+Der normale App-Einstieg liefert das gepruefte gespeicherte Tagespaket, nicht
+den frischen V3-Producer. Die neue Ausgabe-Kopie erhaelt deshalb nur exakt
+gebundene aktuelle Quellenmetadaten nach den unveraenderten Paketwachen.
+Texte, Reihenfolge, Empfehlungen, Originalpaket und Hash-/Quittungsobjekte
+bleiben erhalten. Explizite Historie wird nicht nachtraeglich angereichert.
+Produktlesen ausschliesslich GET; maximal50 angezeigte Vorgangskennungen,
+je40 vorhandene Quellkanten und maximalzwei Beobachtungen je Quelle.
+Keine amtlichen Abrufe, Modelle, Migrationen, neuen Quellenfamilien oder Flags.
+
+Gezielt lokal ueber `scripts/lokal.js`: neue Produktgruppen14/14 inklusive
+normalem App-Leseeinstieg, echtem Einzel-/Sammelreader, Profilwechsel,
+Rechteentzug auch aus Cache, Plenum/ICS, Konflikt, alter/historischer Frist;
+Radar117/117, Bereichsvertrag46/46, Quellen-UI13/13, DIP17/17.
+Echter vorhandener Chromiumharness390/1280 mit Renderernetz gesperrt:
+sichtbarer parlamentarischer Kontext, aufgeklappter historischer Fristbeleg,
+getrennte Links und kein Ueberlauf. Neue Clientbytes SHA256
+`09d3ec9cca3e1aef2ca181662d624392474e26ada1e7a89b67592ca6d3beb055`.
+Erste Browserprobe zeigte mangels passendem Test-Namespace nur unbekannten
+Stand; Namespacefixture korrigiert und positive Hash-/Fristassertion verstaerkt.
+Erste neue Tests korrigierten reale Zeitstempel-/PostgREST-Fixtures sowie einen
+lokalen Namensfehler. Keine Produktionswache fuer gruenen Test gelockert.
+Endreview/Pflicht-CI/Deployment dieser Folge stehen noch aus.
+Schnellkern: elf Suiten direkt erfolgreich; drei weitere zunaechst nur durch
+Sandbox-`listen EPERM` verhindert. Mit erlaubtem lokalen Loopback gezielt
+danach Vertrags-Snapshot19/19, P1-Sicherheit347/347 und Mandant39/39 gruen;
+insgesamt alle14 Schnellkernsuiten belegt, keine Wiederholung der elf Erfolge.
 
 ## Belegkette
 

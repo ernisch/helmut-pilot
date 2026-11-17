@@ -3588,18 +3588,23 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
         { previewMode, compact, frischeKontext: null });
       }
     }
-    return prepareBriefingResponse({ ...row.payload.briefing,
+    const gespeicherteAusgabe = { ...row.payload.briefing,
       lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
       gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
         inhaltHash: row.payload.inhaltHash,
         profilbindung: require("./lib/helmut/briefing-speicher").profilBindungsstand(row),
         auswahl: aktuellTag ? "aktuell" : "historisch", profilHash: row.payload.profilHash,
         vorgaengerId: row.payload.profilkontextUebergang?.vorgaengerId || null,
-        pruefung: row.payload.pruefung } }, { previewMode, compact, frischeKontext: null });
+        pruefung: row.payload.pruefung } };
+    return prepareBriefingResponse(aktuellTag && !previewMode
+      ? await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(gespeicherteAusgabe,profile)
+      : gespeicherteAusgabe, { previewMode, compact, frischeKontext: null });
   }
   const paket = await require("./lib/helmut/tagespaket-auslieferung").lese({
     userId: politicianId, profile, storage: storageModul });
-  return prepareBriefingResponse(paket.briefing, { previewMode, compact, frischeKontext: paket.frischeKontext });
+  const ausgabe = previewMode ? paket.briefing
+    : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(paket.briefing,profile);
+  return prepareBriefingResponse(ausgabe, { previewMode, compact, frischeKontext: paket.frischeKontext });
 }
 
 // opts.slot (optional): expliziter Slot-Override (Tests/Admin/spaetere Cron-Nutzung).
