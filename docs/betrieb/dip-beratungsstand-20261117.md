@@ -2,8 +2,9 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise,23:26UTC: PR1252/1253/1254/1255 regulaer live und lesend bestaetigt.
-Technische Lesekorrekturen wirken; laufende Vollversorgung und Kunden-/Rechtsabnahme offen.**
+**Teilweise,23:40UTC: PR1252–1256 regulaer live und lesend bestaetigt.
+1254-Produktwirkung echt belegt; 1255/56-Code abgenommen, neue Betriebswirkung
+und Kunden-/Rechtsabnahme offen. Kein vollstaendiger Quellen-/Verkaufs-PASS.**
 
 Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
 ist completed/success, exakt an69e85a3f9e949613c94184f7c7c6a00dbc5a8895
@@ -57,7 +58,7 @@ Tageslauf oder kuenstliches Paket zum Erzeugen eines positiven Nachweises.
 | Bereich | Tatsaechlicher Rest | Kleinster zulaessiger Abschluss |
 | --- | --- | --- |
 | DIP-Beratungsstaende | Anschluss bis normalem App-GET wirkt, aber null gespeicherte neue Staende; aktueller Stand unbekannt | Naechsten ohnehin stattfindenden regulaeren DIP-Abschluss bis Original/Stand/Anzeige abnehmen; keinen Zusatzlauf starten. |
-| Destatis | PR1249–1251 erledigt; gebundene16Nov-Fassung rd-635871ad noch ohne Speicherung/Analyse/Ausgabe | Dieselbe Kette im naechsten regulaeren Abschluss nachweisen; keine erneute Reparatur ohne neuen Fehler. |
+| Destatis | PR1249–1251 erledigt; neue gebundene16Nov-Fassung noch ohne Speicherung/Analyse/Ausgabe. Realkatalog needs_review/auto/expected_frequencyNULL; C-02-Code korrigiert | Belegten Publikationsrhythmus klaeren, keine daily-Fixture uebernehmen; Wirkung im naechsten regulaeren Abschluss pruefen. Keine erneute Reparatur ohne neuen Fehler. |
 | Arbeit/Soziales | Originale/Parser/Produktleser vorhanden; neuer Weg ohne Q2-Recht inaktiv, Nummer44/45 bleibt Konflikt | Konkrete externe Nutzungsfreigabe fuer benoetigte Fakten/Archiv-/Ausgabeform; erst danach eng freigegebene Aktivierung und regulaerer Nachweis. |
 | Wirtschaft/Energie und Digitales | Stellvertretungen getrennt angebunden; Wege ohne Q2-Recht inaktiv, Digitalfrist11Nov historisch | Dieselbe konkrete Q2-Entscheidung; keine persoenliche Frist oder Mitgliedschaft erfinden. |
 | Plenum/Sitzungswochen | Vier Beginne/ICS-Ende und unbekannte Einzel-TOP-Zuordnung technisch erhalten, beide Wege rechtlich inaktiv | Q2-Entscheidung und danach regulaere Aufnahme; Wochenplan nicht als individueller Termin ausgeben. |
@@ -74,7 +75,7 @@ briefing-fristbeleg.js, briefing-orientierung.js, tagespaket-auslieferung.js und
 die bestehenden Bereichsvertrag-/Tagespakettests sowie den bestehenden Radar-
 Einzelartikel-Titelbindungstest (6962321699) und Lage-Radar-Zusatznutzentest
 (6962544954) sowie Radar-Zusammenfassung-/Ursprungstests (6963118407);
-weitere Pfade vorher abgleichen.
+Dieser Zuschnitt ist abgeschlossen; weitere notwendige Pfade vorher neu abgleichen.
 D schreibt dort nicht und uebernimmt unabhaengiges Review/Integration.
 E bestaetigt im eigenen Quellenbereich keinen weiteren notwendigen Codefehler.
 Der reine Statusabschluss wird nach gemeinsamer Integration zusammengefuehrt;
@@ -127,7 +128,7 @@ Kein positiver G-Funktionsnachweis aus der Leere. Regulaerer Original- und
 Kundenausgabebeleg bleibt offen. Keine Zusatzlaeufe oder Datenwrites.
 
 
-### Notwendiger separater Folgepunkt C-02
+### C-02: artikelbezogene Fachabdeckung integriert, Betriebsbeleg offen
 
 G hat [6962664646](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962664646)
 mit den realen Fachpaketvertraegen und einer synthetischen Insolvenzenmeldung
@@ -138,13 +139,41 @@ uebernimmt dessen Rollen/Klassen dann fuer jedes verknuepfte Paket. Das ist
 von der separat fehlenden realen Digitalversorgung zu trennen.
 Nach1255-Rollout [zwei Dateien exklusiv G](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6964068458):
 quellenarchitektur/abdeckungspruefung.js und scripts/abdeckungspruefung-test.js.
-D prueft den Endkopf unabhaengig und integriert allein nach beiden gruenen
-Pflichtchecks. Technischen Abruf/Lesbarkeit erhalten, fachliche Versorgung
-artikelbezogen und bei Unklarheit unbekannt. Kein neuer Katalog, keine neue
-Taxonomie, Quellen-/Paket-/Rechteaktivierung oder Modelle. D hat die echten
-Verwaltungs-/Cron-Aufrufer samt relationaler Projektion lesend geprueft;
-G muss die Wirkung auch durch diesen bestehenden Wrapper erhalten. Weitere
-Projektionsdateien erst nach konkretem Zuschnitt. C-02 ist noch offen.
+D hat den vollstaendigen Zwei-Dateien-Diff, die echten Verwaltungs-/Cron-Aufrufer,
+relationalen Projektionen, Fachbegriffe, Frische und unveraenderten Rechtssperren
+unabhaengig geprueft. [Endabnahme f3a6a29](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6964278008).
+G-Belege33/33 Abdeckung,16/16 Betriebsabdeckung,18/18 Cron,17/17 EUR-Lex
+wiederverwendet, keine Suitekopie. Vier gezielte zusaetzliche G-Faelle durch den
+wirklichen buildBetriebsabdeckung-Wrapper mit buildFullModel-Sollstruktur:
+Wirtschaft allein1/0, alter Digitalauszug1/0, beide frisch1/1, fehlender
+Publikationsrhythmus0/0 bei jeweils technisch1/1. Explizit synthetische
+Eingaben; daily in den Positiven ist KEIN bestaetigter Productionvorwert.
+[Tatsaechliche Nachweisgrenzen](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6964186179).
+
+Pflichtlauf [44200124055](https://github.com/ernisch/helmut-pilot/actions/runs/44200124055)
+completed/success exakt f3a6a29a7bf9cd06fd7de554d10ef3d4fac409ac:
+Kern134451742404 und Browserpflicht134451743015 erfolgreich; Browserausfuehrung
+und vollerMock100 planmaessig skipped. Kein neuer Browser-/Produktnachweis.
+PR1256 SHA-gebunden auf `b0819baec6713c668097fd1edbe09c5a5d4ea508` gemergt;
+regulaeres Git-Deployment `dpl_CCLXt4wfrDYMjCyqhiMqGrGhyjRu` READY,
+oeffentlicher Alias/Root/Client HTTP200, Versionb0819bae und ClientSHA09d3ec9c
+unveraendert. Keine Katalog-/Paket-/Rechteaktivierung oder neue Taxonomie.
+Normaler AppGET23:40:41.013UTC HTTP200/availablefalse,3574Bytes, Tagespaket18Nov
+weiterhin fehlt. AntwortSHA256
+`d0fbefe7588564b7504c1578c3450f28568dbc59008ee56a70c333eb4d14bbcc`.
+Leere Antwort ist kein positiver C-02-, Radar- oder Fristwirkungsnachweis.
+
+Native Schlusslesung23:40:47UTC: ueberhaupt null abgeschlossene process_runs
+seit1251/13:56:37UTC und null offene Prozesse, null DIP-/Terminstandzeilen,
+null neue gebundene Destatis-Fassung. Realer Destatis-Katalog unveraendert
+needs_review/auto/expected_frequencyNULL. Deshalb ist auch bei einem kuenftigen
+Abruf ohne belegten Publikationsrhythmus keine positive Frischeabnahme moeglich.
+Benoetigten echten Rhythmus fachlich belegen; keine stille Konfiguration aus
+Fiktivnachweisen. Der nachgelagerte alte quellen-abdeckung-Eintrag04:49:10.033UTC
+ist kein neuer Quellen-/Verarbeitungsabschluss nach dem Quellenparent04:49:09.506.
+C-02-Codefehler geschlossen; seine Wirkung an neuer regulaerer Betriebsbilanz
+bleibt offen. Keine weiteren konkret nachgewiesenen notwendigen Codefehler
+nach diesen unabhaengigen Endabnahmen; das beweist keine Vollversorgung.
 
 ## Integration und notwendiger Folgeanschluss
 
@@ -456,5 +485,8 @@ nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 
-**Naechster Schritt:** Gs C-02-Endkopf fuer artikelbezogene Fachabdeckung
-unabhaengig abnehmen.
+**Genau ein naechster Schritt:** Die konkrete Q2-Nutzungsfreigabe fuer die
+fuenf inaktiven Parlamentswege anhand des bestehenden
+[Freigabedossiers](../recht/verkaufsblocker-f-20261117.md) entscheiden lassen.
+Bis dahin bleiben diese Wege inaktiv; regulaere Betriebsbelege und angemeldete
+fachliche Kundenabnahme bleiben eigenstaendige offene Abnahmekriterien.
