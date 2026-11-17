@@ -112,7 +112,7 @@ Originalhash und gebundenerMorgenquittung. Fuenf zentrale Quellenursachen
 behoben, ein neuer amtlicher BMG-Abrufweg real bestaetigt; zweiweitere
 bestehende Wege im Abschluss erfolgreich. ZusaetzlicheQuellenwirkung nicht
 belastbarbezifferbar; kein Vollstaendigkeits-PASS aus Warnungs-/Auftragszahlen.
-Endkontrolle0aktiveJobs, Kosten0,789020USDTag/5,082720gesamt,
+Endkontrolle0laufendeJobs, Kosten0,789020USDTag/5,082720gesamt,
 76heutigeBuchungen/einealteUNKNOWN unveraendert; keine weiterenbezahltenLaeufe.
 Abnahmestatus ersterKunde offen: echteQuellen-/Lesebelegluecken,
 unbestaetigteAusschuss-/Terminvollstaendigkeit und offeneTextrechte.
