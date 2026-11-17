@@ -257,7 +257,7 @@ async function main() {
       assert.equal(http,3);assert.equal(rows.size,0);assert(calls.every(c=>c.method!=="POST"));
     } finally {Object.assign(A,old);S.supabaseRequest=oldRequest;for(const[k,v]of Object.entries(savedEnv)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
   });
-  await test("Nativer produktseitiger Storage-Leser liefert den gebundenen Stand ohne Quellen- oder Modellabruf",async()=>{
+  await test("Native Einzel- und App-Sammelleser liefern den gespeicherten Stand ohne Quellen- oder Modellabruf",async()=>{
     const s=await read();await store().speichern(s);const native=doc();
     const keys=["SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","HELMUT_V3_STORE","HELMUT_SUPABASE_STORE_ID"];
     const oldEnv=Object.fromEntries(keys.map(k=>[k,process.env[k]])), oldFetch=global.fetch;
@@ -268,11 +268,20 @@ async function main() {
       const u=new URL(url);assert.equal(u.origin,"https://offline.invalid");
       assert(!opts.method || opts.method==="GET");
       if(u.pathname==="/rest/v1/ko_document_links") return json([{raw_documents:native}]);
+      if(u.pathname==="/rest/v1/knowledge_objects") return json([{
+        id:"ko-declared-offline-vorgang",vorgang_id:"declared-offline-vorgang",
+        ko_document_links:[{raw_document_id:native.id,raw_documents:native}]
+      }]);
       return json(await request(u.pathname+u.search,opts));
     };
     try {
       const docs=await S.getSourcesForVorgang("declared-offline-vorgang",{strict:true});
       assert.equal(docs.length,1);assert.equal(H.quellenhinweisFelder(docs[0],docs[0].url).dipBeratungsstaende[0].vorgangId,id);
+      assert.equal(H.quellenhinweisFelder(docs[0],docs[0].url).dipBeratungsstaende[0].stand,root.beratungsstand);
+      const batch=await S.getPruefSourcesByVorgaenge([{id:"ko-declared-offline-vorgang",vorgang_id:"declared-offline-vorgang"}]);
+      const dto=H.quellenhinweisFelder(batch["declared-offline-vorgang"][0],native.url).dipBeratungsstaende[0];
+      assert.equal(dto.stand,root.beratungsstand,"Bevorzugter App-Sammelleser muss den gespeicherten DIP-Stand erreichen");
+      assert.equal(dto.gelesenAm,s.gelesenAm);
       assert(calls.every(c=>c.method==="GET"));
     } finally {global.fetch=oldFetch;for(const[k,v]of Object.entries(oldEnv)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
   });

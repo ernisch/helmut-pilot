@@ -59,7 +59,8 @@ async function test(name, f) { await f(); passed++; console.log("PASS " + name);
     A.equal(B.pruefeInhalt(ausgaben.briefing, ausgaben.lage).strukturellVollstaendig, false);
   });
   const context = vm.createContext({ URL, escapeHtml, briefing: null });
-  vm.runInContext([fn("renderProsaEinordnung"), fn("renderLageView"), fn("renderHelmutView"),
+  vm.runInContext([fn("renderProsaEinordnung"), fn("renderLageView"), fn("renderLageViewInhalt"),
+    fn("renderParlamentsKontext"), fn("renderParlamentsOriginale"), fn("renderHelmutView"),
     'function lageData() { return briefing.lageBriefing; }'].join("\n"), context);
   const html = {};
   await test("Beide echten View Funktionen rendern nur getrennte Bloecke und Quellen", () => {
@@ -89,7 +90,8 @@ async function test(name, f) { await f(); passed++; console.log("PASS " + name);
     try { pw = require(candidate); break; } catch (_) {}
   }
   A(pw, "Playwright fehlt; keine gruene Browserpruefung");
-  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"],
+    ...(process.env.HELMUT_BROWSER_EXECUTABLE_PATH ? { executablePath:process.env.HELMUT_BROWSER_EXECUTABLE_PATH } : {}) });
   try {
     const page = await browser.newPage();
     const errors = []; page.on("pageerror", e => errors.push(e.message));

@@ -5560,6 +5560,9 @@ function lageAbsatzMandatsbezugHtml(absatz) {
 }
 
 function renderLageView() {
+  return renderLageViewInhalt() + renderParlamentsKontext(lageData()?.parlamentsKontext);
+}
+function renderLageViewInhalt() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
   const items = lageVisibleVorgaenge(data);
@@ -11863,6 +11866,50 @@ function withSourceNotice(markup, source, articleHref) {
 }
 
 function renderDipBeratungsstand(source, articleHref) {
+  return renderDipBeratungsstandKern(source,articleHref)
+    + (source?.parlamentsDokumentUrl === articleHref ? renderParlamentsOriginale(source.parlamentsBelege) : "");
+}
+function renderParlamentsKontext(kontext) {
+  if (kontext?.version !== 1 || kontext.coverage !== "partial" || !Array.isArray(kontext.belege) || kontext.belege.length > 5) return "";
+  return `<section class="ui-source-details" data-parlamentskontext><p class="ui-eyebrow">Amtliche parlamentarische Grundlagen</p><p>Begrenzter Quellenstand für Ihr Mandat; keine Zuordnung zu einer bestimmten Meldung.</p>${renderParlamentsOriginale(kontext.belege)}</section>`;
+}
+function renderParlamentsOriginale(belege) {
+  if (!Array.isArray(belege) || belege.length > 5) return "";
+  const datum = (v,zeit=false) => {
+    if (!v) return "nicht belegt";
+    const d = new Date(zeit ? v : String(v).slice(0,10)+"T12:00:00Z");
+    if (!Number.isFinite(d.getTime())) return "nicht belegt";
+    return new Intl.DateTimeFormat("de-DE",{ dateStyle:"medium",...(zeit ? { timeStyle:"short" } : {}),timeZone:"Europe/Berlin" }).format(d);
+  };
+  const link = v => {
+    try { const u=new URL(v); return u.protocol==="https:" && u.hostname==="www.bundestag.de" && !u.username && !u.password && !u.port && !u.search && !u.hash
+      && /^\/resource\/blob\/\d+\/[^/]+\.(pdf|ics)$/i.test(u.pathname) ? u.href : ""; } catch { return ""; }
+  };
+  return belege.map(b => {
+    if (b?.version !== 1 && b?.gelesenAm !== null || !["Hauptausschuss","Stellvertretung","Bundestagsmandat"].includes(b?.rolle)
+      || !Array.isArray(b.originale) || b.originale.length > 8 || !Array.isArray(b.sitzungen) || b.sitzungen.length > 12 || !Array.isArray(b.termine) || b.termine.length > 3) return "";
+    const lesezeit = b.gelesenAm ? `Beobachtung: ${datum(b.gelesenAm,true)}. ${b.aktuell ? "" : "Kein aktueller Stand bestätigt."}` : "Kein gespeicherter Originalstand bestätigt.";
+    const meetings = b.sitzungen.map(m => {
+      const offen = m.stand !== "geplant" || m.konflikte?.length;
+      const name = offen ? "Sitzungszuordnung ungeklärt" : `Sitzung ${String(m.kennung).split("|")[0]}`;
+      const tops = (Array.isArray(m.tops) ? m.tops : []).slice(0,8).map(t => {
+        const fristen=(Array.isArray(t.fristen)?t.fristen:[]).slice(0,30).map(f =>
+          `${f.art} ${datum(f.zeitpunkt || f.tag,Boolean(f.zeitpunkt))} (${f.status === "abgelaufen" ? "abgelaufen" : f.status === "unbestaetigt" ? "nicht aktuell bestätigt" : "laut Plan"})`).join("; ");
+        return `<li>${escapeHtml(`TOP ${t.nummer}${fristen ? "; "+fristen : ""}`)}</li>`;
+      }).join("");
+      return `<li>${escapeHtml(`${name}; geplanter Beginn: ${m.beginn ? datum(m.beginn,true) : "nicht eindeutig bestätigt"}.`)}${tops ? `<ul>${tops}</ul>` : ""}${offen ? " Widerspruch oder unvollständige Fassung; keine aktuelle TOP-Zuordnung bestätigt." : ""}</li>`;
+    }).join("");
+    const wochen=b.termine.map(t=>`<li>${escapeHtml(`Sitzungswoche ${datum(t.von)} bis vor ${datum(t.bisExklusiv)} (Ende exklusiv); ${t.status}. Keine konkrete Sitzungs- oder Anwesenheitszuordnung.`)}</li>`).join("");
+    const originale=b.originale.map(o=>{
+      const url=link(o.url);if(!url)return "";
+      const einzel=b.sitzungen.some(m=>m.konflikte?.length) ? (o.sitzungen||[]).slice(0,12).map(m=>
+        `Original nennt Sitzung ${m.nummer}, ${datum(m.beginn||m.tag,Boolean(m.beginn))}.`).join(" ") : "";
+      return `<p><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Amtlicher Originalbeleg</a>${o.veroeffentlicht ? ` · Veröffentlichung ${escapeHtml(datum(o.veroeffentlicht))}` : ""}${einzel ? `<br>${escapeHtml(einzel)} Zusammenführung ungeklärt.` : ""}</p>`;
+    }).join("");
+    return `<details class="source-notice" data-parlamentsbeleg><summary>${escapeHtml(`${b.name} · ${b.rolle}${b.dokumentnummer ? " · Drucksache "+b.dokumentnummer : ""}`)}</summary><p>Quelle: Deutscher Bundestag. Strukturierte Angaben ausgewählt und gegliedert. ${escapeHtml(lesezeit)}</p>${b.sitzungszuordnung === "unbekannt" ? "<p>Gemeinsames Plenarprogramm: Zuordnung dieser Drucksache zu einem einzelnen Sitzungstag oder TOP nicht bestätigt.</p>" : ""}<ul>${meetings}${wochen}</ul>${originale}<p>Planungsangaben; Durchführung, Beschlüsse und spätere Änderungen sind nicht bestätigt. Kein persönlicher Anwesenheits- oder Handlungsauftrag.</p></details>`;
+  }).join("");
+}
+function renderDipBeratungsstandKern(source, articleHref) {
   const values=source?.dipBeratungsstaende;
   if (!Array.isArray(values) || values.length>20) return "";
   const pdf=value=>{

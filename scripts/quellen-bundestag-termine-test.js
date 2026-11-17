@@ -108,7 +108,22 @@ test("Plenarsitzungen110–113 und Tagesordnungsstand bleiben getrennt; kein Bes
   A.equal(d.meetings.length, 4); A.equal(d.meetings[0].day, "2026-11-24");
   A.equal(d.meetings[3].day, "2026-11-27"); A.equal(d.publishedDay, "2026-11-12");
   A.equal(d.conflicts.length, 0); A(d.plenumTops.length); A.deepEqual(d.references, ["21/7300", "21/7302"]);
-  A.equal(B.baueStand(B.QUELLEN[3], [d], new Date(now()).toISOString(), "a".repeat(64)).plannedIsDecision, false);
+  const stand = B.baueStand(B.QUELLEN[3], [d], new Date(now()).toISOString(), "a".repeat(64));
+  A.equal(stand.plannedIsDecision, false);
+  A.deepEqual(stand.meetings.map(m => ({ key: m.key, startsAt: m.startsAt })), d.meetings.map(m => ({
+    key: `${m.number}|${m.day}`, startsAt: m.startsAt
+  })), "Alle vier Plenarsitzungen behalten ihren eigenen belegten Beginn");
+  A(stand.meetings.every(m => m.tops.length === 0 && m.topVersions.length === 0));
+  A.deepEqual(stand.documents[0].plenumTops, d.plenumTops, "Gemeinsame TOPs bleiben ohne erfundene Tageszuordnung am Original");
+});
+test("Gemeinsame Tagesordnung belegt keine TOP-Zuordnung zu jeder enthaltenen Sitzung", () => {
+  const page = "Tagesordnung Stand: 12. November 2026\n" + [110,111].map((n,i) =>
+    `${n}. Sitzung des Deutschen Bundestages\nam Dienstag, dem ${24+i}. November 2026, 9 Uhr`).join("\n")
+    + "\nTagesordnungspunkt 9\nGemeinsam veroeffentlichter Beratungsgegenstand\nDrucksache 21/7300";
+  const d = B.tagesordnung(B.QUELLEN[3], link(0, { listedMeeting:null }), Buffer.from("%PDF-fixture"), [page]);
+  const stand = B.baueStand(B.QUELLEN[3], [d], new Date(now()).toISOString(), "a".repeat(64));
+  A.equal(stand.meetings.length,2); A.equal(stand.documents[0].tops.length,1);
+  A(stand.meetings.every(m => m.tops.length === 0 && m.topVersions.length === 0));
 });
 const ics = extra => Buffer.from(`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:fixture.test\r\nDTSTAMP:20251216T100654Z\r\nDTSTART;VALUE=DATE:20261123\r\nDTEND;VALUE=DATE:20261128\r\nSUMMARY:Sitzungswoche Deutscher Bundestag\r\n${extra || ""}END:VEVENT\r\nEND:VCALENDAR\r\n`);
 test("Amtliche Sitzungswoche23–27Nov: exklusives28Nov, ganztags, DTSTAMP kein Publikationstag", () => {
@@ -244,6 +259,9 @@ if (originalDir) test("Zehn amtliche Originalfassungen: drei Ausschuesse/Plenum/
   A.equal(docs["digital-ergaenzung"].tops[0].deadlines.length,2);
   A(docs["digital-ergaenzung"].tops[0].deadlines.every(f=>f.day==="2026-11-11"&&f.at===null));
   A.equal(docs.plenum.meetings.length,4); A.equal(docs.plenum.conflicts.length,0); A(docs.plenum.plenumTops.length>0);
+  const plenumStand = B.baueStand(B.QUELLEN[3],[docs.plenum],new Date(now()).toISOString(),"a".repeat(64));
+  A.deepEqual(plenumStand.meetings.map(m=>m.key),docs.plenum.meetings.map(m=>`${m.number}|${m.day}`));
+  A.deepEqual(plenumStand.meetings.map(m=>m.startsAt),docs.plenum.meetings.map(m=>m.startsAt));
   const bytes = fs.readFileSync(path.join(originalDir,"kalender.ics"));
   A.equal(B.hash(bytes),"0b134ea87f2029efd7e164be3d5b98d52009464a7b57f6beca4008fa92a0fc37");
   const calendar = B.kalender(B.QUELLEN[4],{url:"https://www.bundestag.de/resource/blob/1103938/Parlamentstermine_2026_ics.ics"},bytes);
