@@ -134,6 +134,41 @@ Ausgabetag vergleichen, historische Termine nie als heutige Pflicht ausgeben.
 `tops` ist die eindeutige aktuelle Sicht, `topVersions` erhaelt die Historie;
 bei Konflikt keine aktuelle TOP-Liste. Keine Ausgabe darf neue Abrufe starten.
 
-Genau ein naechster Schritt: D prueft den exakten E-PR und koordiniert dessen
-sequenzielle Integration; die externen Rechteblocker und spaetere regulaere
-Original-/Kundenausgabenachweise bleiben ausdruecklich offen.
+## Endabnahme und zusaetzlicher Pilotbedarfsabgleich
+
+E hat die drei verbliebenen D-Deltas10fdbe4c/4f451f73/e95b0084 am unveraenderten
+Endkopf `e95b0084d907d83fdd531d20a51fb5f767ee1c8e` unabhaengig abgenommen:
+[Review6957036835](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6957036835).
+Beide vorhandenen Pflichtchecks aus Lauf44134024822 wurden wiederverwendet,
+keine Sammelpruefung gestartet. D hat PR1253 danach SHA-gebunden auf
+`ec76e38819f3b03235eb7fa5520859df70a06891` integriert. Das belegt keine neue
+regulaere Versorgung oder Kundenabnahme; Rollout/Nachkontrolle liegen bei D.
+
+Der anschliessende begrenzte Abgleich aus vorhandenem Code und denselben
+Originalen ergab einen eigenen notwendigen Nachtrag: die Dokumentebene las
+alle vier Plenarsitzungen110–113, `baueStand().meetings` enthielt aber nur110.
+Eine gezielte lokale Gegenprobe und die zunaechst rote Regression belegen
+den Verlust111–113. Die Aggregation erhaelt jetzt jede gelesene Sitzung mit
+ihrem eigenen Beginn und Originalhash. Gemeinsame TOPs bleiben am Original;
+ohne ausdrueckliche Zuordnung werden sie keinem der einzelnen Tage zugewiesen.
+Die unveraenderte Ausschuss-Fassungs-/Konflikt-/Fristlogik bleibt erhalten.
+Nach Korrektur **20/20** gezielte Gruppen plus die bereits vorhandenen zehn
+hashgebundenen Originale, zusammen **21/21**, erfolgreich. Keine neuen Abrufe,
+Modelle, Quellfamilien, Aktivierungen, Rechte- oder CI-Auswahlaenderungen.
+
+| Pilotbedarf | Belegter Rest / Auswirkung auf Lage, Radar und Briefing |
+| --- | --- |
+| Drei Ausschuesse | Originale und Parser vorhanden; neue Textwege ohne kommerziellen Nutzungsbeleg inaktiv. Arbeit45/44 bleibt Konflikt; Wirtschaft0–4 mit09:00; Digital-Voten11.11. historisch, keine heutige Pflicht. |
+| Plenum und Sitzungswochen | Vier Sitzungen mit eigenem Beginn erhalten; Wochen-ICS ist kein Ausschuss-/TOP-Kalender. Nachtrag behebt die Aggregationsluecke. |
+| Beratungsstaende | PR1253 verbindet amtliche DIP-Angaben bis zu bestehenden Quellenansichten. Zwei Aufnahmen/30-Minuten-Cache und begrenzte Positionslisten sind keine Vollstaendigkeit; regulaerer Original-/Ausgabebeleg bleibt offen. |
+| Termine/TOPs/Fristen in Produkten | `bt-terminstand` wird bislang nur vom Quellenhandler geschrieben; der gemeinsame Produktleser ergaenzt nur DIP-Staende. Exakte Schnittstelle und Verantwortung an D in [6957127639](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6957127639) uebergeben; keine parallele Produktimplementierung durch E. |
+| Mandatsrelevanz | Bestehende DIP-Filter und Profilqualifikation beruecksichtigen Haupt- und Stellvertretungsrollen. Fuer Terminbelege fehlt noch die konkrete Produkt-/Originalbindung; Titel, Paketzugehoerigkeit oder Kalender allein ersetzen sie nicht. |
+
+Keine weitere zwingende Quellfamilie laesst sich aus diesem begrenzten Bestand
+belegen. Das ist keine aktuelle Vollzaehligkeitsbehauptung: spaetere Anhoerungen,
+Vorlagen oder Aenderungen sind ohne regulaeren Originalnachweis unbekannt.
+Die externen Rechteblocker und spaetere regulaere Original-/Kundenausgabenachweise
+bleiben ausdruecklich offen.
+
+Genau ein naechster Schritt: D prueft und integriert den getrennten
+Plenum-Aggregationsnachtrag sequenziell unter den bestehenden Pflichtchecks.
