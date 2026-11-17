@@ -164,7 +164,17 @@ Risiken, Kommunikationspflichten oder18Quellen. Keine Runtimeaenderung dafuer.
 Es getrennte Zeitfaelle (32/40/68/16 sowie Relativzeit) und vier weitere
 Vertraege (194/34/31/64) sind unabhaengig gelesen und uebernommen; ihre
 gezielten Belege werden nicht durch identische Wiederholungen ersetzt.
-Der zweite reguläre Pflicht-CI-Lauf am fertigen Kopf bleibt erforderlich.
+Der zweite regulaere Pflichtlauf44129128160 am Kopf4f451f73 bestaetigt
+Browser, Standard-Offlinesuite und isolierte DB-Stufen; in der
+Bereichsregression verbleibt genau ein Fehler: `kalender-ics-test.js`.
+Gezielt lokal133/134 identisch: die pauschale Pfadsperre trifft Es Wiedergebrauch
+des reinen `kalender/zeitzonen.wanduhrZuUtc` fuer amtliche PDF-Uhrzeiten.
+Weder persoenliche ICS-Einladungen noch Terminverwaltung sind angebunden.
+Die statische Wache erlaubt jetzt ausschliesslich diesen einzelnen Aufruf im
+amtlichen Leser; Einladungsimport im selben Leser und Zeithelfer in anderen
+Production-Dateien bleiben durch neue Gegenproben gesperrt. Gezielt136/136
+gruen, keine Runtime-/CI-Auswahlaenderung. Abschliessende Pflicht-CI weiterhin
+erforderlich; beide fehlgeschlagenen Laeufe bleiben erhalten.
 
 Es Aufnahme60526304 samt korrigierter Nutzungsbindung6346e7b5 ist von D
 vollstaendig unabhaengig gelesen und ohne Konflikt sequenziell uebernommen;
