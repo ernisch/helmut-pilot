@@ -91,7 +91,8 @@ async function main() {
     https.get = (url, opts, callback) => {
       calls++;
       const req = new EventEmitter(); req.destroy = error => req.emit("error", error);
-      queueMicrotask(() => callback({ statusCode: 302, headers: { location: "https://anderes.example.org/a" }, resume() {} }));
+      queueMicrotask(() => callback(Object.assign(new EventEmitter(), { statusCode: 302,
+        headers: { location: "https://anderes.example.org/a" }, complete: true, resume() {}, destroy() {} })));
       return req;
     };
     try {
@@ -115,7 +116,8 @@ async function main() {
       const pending = require("../lib/helmut/crawler").fetchUrl(raw.url, 0,
         { allowedHost: "example.org", env: { HELMUT_ANBIETER_STEUERUNG: "on" }, abbruchSignal: stop.signal });
       setImmediate(() => stop.abort());
-      await assert.rejects(pending, /Abgebrochen/); assert.equal(destroyed, 1);
+      await assert.rejects(pending, error => error === stop.signal.reason && error.name === "AbortError");
+      assert.equal(destroyed, 1);
     } finally { https.get = original; provider.reserviere = reserve; provider.melde = melde; }
   });
   await test("Neue Suchwegauszuege behalten Grenzen und alten Quellenstand", pruefeSuchwegAnschluss);
