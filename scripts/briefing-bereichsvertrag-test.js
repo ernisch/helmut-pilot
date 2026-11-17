@@ -88,11 +88,47 @@ test("Vorabendquelle bleibt zulaessig und traegt sichtbar ihren wirklichen Tag",
   assert.match(a.text, /Quellenstand: 2026-09-23/);
   assert.equal(ds[0].published_at, "2026-09-23T20:00:00Z");
 });
-test("Verschiedene Tage und Artikel tragen begrenzte Beobachtung, keine Prognose", () => {
-  const s = B.beobachtung([doc("alt", "2026-09-22"), doc("neu", "2026-09-24")], now);
+test("Neue Ausschussentscheidung traegt begrenzte Beobachtung, keine Prognose", () => {
+  const alt = doc("alt", "2026-09-22", {
+    summary: "Der Ausschuss für Verkehr berät den Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs." });
+  const neu = doc("neu", "2026-09-24", {
+    summary: "Der Ausschuss für Verkehr hat den Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs beschlossen." });
+  const s = B.beobachtung([alt, neu], now);
   assert.equal(s.sourceCount, 2);
-  assert.match(s.text, /1 weitere Artikel zu 1 zuvor/);
+  assert.equal(s.publishedAt, neu.published_at);
   assert.match(s.text, /noch kein politischer Trend/);
+});
+test("Mehr Artikel mit demselben Sachstand erzeugen keine neue Radarentwicklung", () => {
+  const summary = "Der Ausschuss für Verkehr berät den Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs.";
+  const alt = doc("alt", "2026-09-22", { summary });
+  for (const text of [summary, summary.toUpperCase(), summary + " Lesen Sie hier den vollständigen Bericht."]) {
+    assert.equal(B.beobachtung([alt, doc("neu", "2026-09-24", { title: "Die Beratung im Überblick", summary: text })], now), null);
+  }
+  const beschlossen = doc("beschlossen", "2026-09-23", {
+    summary: "Der Ausschuss für Verkehr hat den Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs angenommen." });
+  const paraphrase = doc("paraphrase", "2026-09-24", {
+    summary: "Die Mitglieder des Verkehrsausschusses haben den Vorschlag über die Finanzierung des öffentlichen Nahverkehrs gebilligt." });
+  assert.equal(B.beobachtung([alt, beschlossen, paraphrase], now), null);
+  const geplant = doc("geplant", "2026-09-24", {
+    summary: "Der Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs soll im zuständigen Ausschuss beschlossen werden." });
+  assert.equal(B.beobachtung([alt, geplant], now), null);
+  const unklar = doc("unklar", "2026-09-24", {
+    summary: "Es ist weiterhin unklar, ob der Ausschuss den Entwurf zur Finanzierung des öffentlichen Nahverkehrs beschlossen hat." });
+  assert.equal(B.beobachtung([alt, unklar], now), null);
+});
+test("Geaenderte Zahlen sind beobachtbar, andere Datums- und Zahlenformate allein nicht", () => {
+  const alt = doc("zahl-alt", "2026-09-22", {
+    summary: "Der Ausschuss für Verkehr beziffert am 22.09.2026 den Anteil der Bundesmittel am öffentlichen Nahverkehr auf 10 Prozent." });
+  const text = "Der Ausschuss für Verkehr nennt für den öffentlichen Nahverkehr am 2026-09-22 einen Bundesanteil von ";
+  const quelle = wert => doc("zahl-neu", "2026-09-24", { summary: text + wert + "." });
+  assert.equal(B.beobachtung([alt, quelle("10 %")], now), null);
+  assert.equal(B.beobachtung([alt, quelle("12 %")], now).publishedAt, "2026-09-24T08:00:00Z");
+  const geld = (wert, tag) => doc("geld-" + tag, tag, {
+    summary: "Das Land stellt für die Förderung des öffentlichen Nahverkehrs " + wert + " Euro bereit." });
+  for (const wert of ["1000", "1 000", "1.000,00"]) {
+    assert.equal(B.beobachtung([geld("1.000", "2026-09-22"), geld(wert, "2026-09-24")], now), null);
+  }
+  assert.ok(B.beobachtung([geld("1.000", "2026-09-22"), geld("1.050,00", "2026-09-24")], now));
 });
 test("Zeitgleiche Bestandsquellen sind keine neue Dynamik", () => {
   assert.equal(B.beobachtung([doc("a", "2026-09-24"), doc("b", "2026-09-24")], now), null);
@@ -315,6 +351,52 @@ test("BT und LT: gleiche Originalfrist braucht denselben belegten Fachbezug", ()
     assert.equal(a.beleg.text, docs[0].summary); assert.ok(a.profilbezug.belege.length);
     assert.equal(B.istTagesauftrag(B.tagesAnlass(docs, now, null, k, { ...p, focusTopics: ["Gesundheit"], topics: [] })), false);
   }
+});
+test("BT und LT: belegte Schlusszeiten gelten bis zum exakten Zeitpunkt", () => {
+  for (const [day, zeit, cutoff] of [
+    ["2026-09-24", "24.09.2026 um 12:10 Uhr", "2026-09-24T10:10:00Z"],
+    ["2026-01-24", "24.01.2026 um 12:10 Uhr", "2026-01-24T11:10:00Z"],
+    ["2026-09-24", "24.09.2026 um 10:10 Uhr UTC", "2026-09-24T10:10:00Z"],
+    ["2026-01-24", "2026-01-24T12:10:00+01:00", "2026-01-24T11:10:00Z"],
+    ["2026-09-24", "23.09.2026 um 23:30 Uhr UTC", "2026-09-23T23:30:00Z"]
+  ]) {
+    const k = { ...ko(), deadline: day };
+    const ds = [doc("schlusszeit", day, {
+      published_at: new Date(Date.parse(cutoff) - 3600000).toISOString(),
+      summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am " + zeit + " beim Parlament." })];
+    for (const parliamentType of ["Bundestag", "Landtag"]) {
+      const p = { ...profile, parliamentType };
+      assert.equal(B.istTagesauftrag(B.tagesAnlass(ds, new Date(Date.parse(cutoff) - 1), null, k, p)), true, zeit);
+      assert.equal(B.istTagesauftrag(B.tagesAnlass(ds, new Date(cutoff), null, k, p)), false, zeit);
+    }
+  }
+});
+test("Widerspruechliche und bei der Zeitumstellung uneindeutige Schlusszeiten sperren Handlungsauftrag", () => {
+  const quelle = (id, time) => doc(id, "2026-10-24", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 25.10.2026 um " + time + " beim Parlament." });
+  const k = { ...ko(), deadline: "2026-10-25" }, jetzt = new Date("2026-10-25T00:20:00Z");
+  for (const docs of [[quelle("ohne-zone", "02:30 Uhr")], [quelle("unbekannt", "02:30 Uhr PST")],
+    [quelle("eins", "02:30 Uhr MESZ"), quelle("zwei", "02:30 Uhr MEZ")]]) {
+    assert.equal(B.istTagesauftrag(B.tagesAnlass(docs, jetzt, null, k, profile)), false);
+  }
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([quelle("explizit", "02:30 Uhr MESZ")], jetzt, null, k, profile)), true);
+  const iso = s => doc("iso", "2026-10-24", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am " + s + " beim Parlament." });
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("2026-10-25T12:00:00Z oder um 16:00 Uhr Berliner Zeit")],
+    jetzt, null, k, profile)), false);
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("25.10.2026 um 13:00 Uhr +01:00")], jetzt, null, k, profile)), true);
+  for (const zone of ["PST", "pst", "PsT", "IST", "ist", "IsT"]) {
+    const normal = doc("fremde-zone", "2026-09-23", { summary:
+      "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um 15:00 Uhr " + zone + " beim Parlament." });
+    assert.equal(B.istTagesauftrag(B.tagesAnlass([normal], now, null, { ...ko(), deadline: "2026-09-24" }, profile)), false);
+  }
+  const berlin = doc("berliner-ortszeit", "2026-09-23", { summary:
+    "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um 15:00 Uhr Berliner Zeit beim Parlament." });
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([berlin], now, null, { ...ko(), deadline: "2026-09-24" }, profile)), true);
+  const sprung = doc("sommerzeit", "2026-03-28", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 29.03.2026 um 02:30 Uhr beim Parlament." });
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([sprung], new Date("2026-03-29T00:40:00Z"), null,
+    { ...ko(), deadline: "2026-03-29" }, profile)), false);
 });
 test("Niedriger bewertete heutige Frist steht vor neuer belegter Vorbereitung mit hohem Score", () => {
   const a = { ...ko(), deadline: "2026-09-24" }, b = ko("b");

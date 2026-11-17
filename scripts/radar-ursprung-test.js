@@ -10,6 +10,12 @@ const terms = R.radarProfileTerms(profile);
 const source = (host, extra = {}) => ({ id: "d-" + host, url: `https://${host}/presse/ein-antrag`,
   title: "Ein Antrag wird beraten", source_name: "Unzuverlaessige Metadaten", source_type: "media",
   published_at: "2026-09-24T08:00:00Z", ...extra });
+// Technische Fiktion: erst Beratung, dann ein belegter Verfahrensbeschluss.
+const vorigerStand = source("vorbericht.example.org", {
+  summary: "Das zuständige Gremium berät im laufenden Verfahren die Vorlage und prüft die Folgen für die betroffenen Einrichtungen.",
+  published_at: "2026-09-23T08:00:00Z"
+});
+const beschluss = "Das zuständige Gremium hat im dokumentierten Verfahren einen weiteren Beratungstermin für das betroffene Vorhaben beschlossen.";
 function state(docs) {
   return R.buildCurrentRadarState({ profile, now, knowledgeObjects: [ko], kosById: { k: ko },
     decisions: [{ knowledge_object_id: "k", matched_features: [{ type: "partei", value: "SPD" }] }],
@@ -33,8 +39,8 @@ test("Registrierte Partei und Fraktion haben getrennte Belegtypen", () => {
 test("Der verlinkte Ursprung bleibt trotz neuerem Fremdbericht erhalten", () => {
   for (const [host, type, label] of [["spd.de", "party", "Partei: SPD"],
     ["spdfraktion.de", "faction", "Fraktion: SPD-Bundestagsfraktion"]]) {
-    const d = source(host), newer = source("example.org", { published_at: "2026-09-25T08:00:00Z" });
-    for (const docs of [[d, newer], [newer, d]]) {
+    const d = source(host, { summary: beschluss }), newer = source("example.org", { published_at: "2026-09-25T08:00:00Z" });
+    for (const docs of [[vorigerStand, d, newer], [newer, d, vorigerStand]]) {
       const item = state(docs).anzeige.environment.party[0];
       A.equal(item.sourceUrl, d.url); A.equal(item.relationType, type); A.equal(item.relationLabel, label);
       A.equal(item.ursprungsBeleg.documentId, d.id); A.equal(item.ursprungsBeleg.url, d.url);
@@ -43,12 +49,13 @@ test("Der verlinkte Ursprung bleibt trotz neuerem Fremdbericht erhalten", () => 
   }
 });
 test("Fraktionssignal wird durch Artikelentdopplung nicht zur Partei umetikettiert", () => {
-  const d = source("spdfraktion.de"), old = source("example.org", { published_at: "2026-09-23T08:00:00Z" });
-  const item = state([d, old]).anzeige.environment.party[0];
+  const d = source("spdfraktion.de", { summary: beschluss });
+  const item = state([d, vorigerStand]).anzeige.environment.party[0];
   A.ok(item.relationTypes.includes("faction")); A.ok(!item.relationTypes.includes("party"));
 });
 test("Die wirkliche Anzeige nennt den Fraktionsursprung im gemeinsamen Umfeldreiter", () => {
-  const s = state([source("spdfraktion.de"), source("example.org", { published_at: "2026-09-25T08:00:00Z" })]);
+  const s = state([vorigerStand, source("spdfraktion.de", { summary: beschluss }),
+    source("example.org", { published_at: "2026-09-25T08:00:00Z" })]);
   const html = render({ currentHelmutState: { status: "empty" }, currentRadarState: s }, now.toISOString()).html.radar;
   A.ok(html.includes("Partei / Fraktion")); A.ok(html.includes("Fraktion: SPD-Bundestagsfraktion"));
   A.ok(!html.includes("Betrifft deine Partei"));
@@ -79,9 +86,9 @@ test("Medienartikel braucht eigenen expliziten Parteibeleg und keine zitierte Ri
     A.equal(R.radarParteiArtikelbeleg(source("deutschlandfunk.de", { title }), keys), true, title);
 });
 test("Echte eigene Medienquelle bleibt trotz neuerem fremden Parteibericht gebunden", () => {
-  const own = source("deutschlandfunk.de", { title: "SPD fordert eine Reform", id: "d-eigene-medienquelle" });
+  const own = source("deutschlandfunk.de", { title: "SPD fordert eine Reform", id: "d-eigene-medienquelle", summary: beschluss });
   const other = source("deutschlandfunk.de", { title: "CDU beschliesst einen Antrag", id: "d-fremde-medienquelle", url: "https://deutschlandfunk.de/presse/anderer-antrag", published_at: "2026-09-25T08:00:00Z" });
-  for (const docs of [[own, other], [other, own]]) {
+  for (const docs of [[vorigerStand, own, other], [other, own, vorigerStand]]) {
     const s = state(docs);
     A.equal(s.environment.party[0].documentId, own.id);
     A.equal(s.anzeige.environment.party[0].documentId, own.id);
@@ -115,10 +122,13 @@ const wkKo = { id: "wk", vorgang_id: "vw", status: "neu", understanding_status: 
   display_title: "Investitionen im Wahlkreis", mentioned_locations: ["Salzgitter-Wolfenbüttel"],
   best_source_url: "https://example.org/ko-wahlkreis" };
 const wkFeature = [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }];
+const ortVorlage = { ...vorigerStand,
+  summary: "Der Rat berät die geplanten Investitionen in Salzgitter-Wolfenbüttel und prüft die Finanzierung der betroffenen Verkehrsprojekte." };
 const ortDoc = source("sz-online.de", { id: "d-ort", title: "Investitionen in Salzgitter-Wolfenbüttel",
-  published_at: "2026-09-24T08:00:00Z" });
+  published_at: "2026-09-24T08:00:00Z",
+  summary: "Der Rat hat die Investitionen in Salzgitter-Wolfenbüttel und die Finanzierung der betroffenen Verkehrsprojekte beschlossen." });
 test("Wahlkreis-Ursprung bleibt trotz neuerem Fremdbericht am konkreten Ort", () => {
-  for (const docs of [[ortDoc, fremd], [fremd, ortDoc]]) {
+  for (const docs of [[ortVorlage, ortDoc, fremd], [fremd, ortDoc, ortVorlage]]) {
     const s = build(wkProfile, wkKo, wkFeature, docs);
     const item = s.environment.constituency[0];
     A.equal(item.sourceUrl, ortDoc.url); A.equal(item.documentId, "d-ort");
@@ -141,10 +151,13 @@ const ckKo = { id: "ck", vorgang_id: "vc", status: "neu", understanding_status: 
   display_title: "Anhörung im Ausschuss für Arbeit und Soziales",
   ausschuesse: ["Ausschuss für Arbeit und Soziales"], best_source_url: "https://example.org/ko-ausschuss" };
 const ckFeature = [{ type: "ausschuss", value: "Ausschuss für Arbeit und Soziales" }];
+const ausschussVorlage = { ...vorigerStand,
+  summary: "Im Ausschuss für Arbeit und Soziales wird beraten, welche Sachverständigen zu einer Anhörung zum Bürgergeld eingeladen werden." };
 const ausschussDoc = source("dip.bundestag.de", { id: "d-ausschuss",
-  title: "Ausschuss für Arbeit und Soziales: Anhörung zum Bürgergeld", published_at: "2026-09-24T08:00:00Z" });
+  title: "Ausschuss für Arbeit und Soziales: Anhörung zum Bürgergeld", published_at: "2026-09-24T08:00:00Z",
+  summary: "Der Ausschuss für Arbeit und Soziales hat die Liste der eingeladenen Sachverständigen für die Anhörung zum Bürgergeld beschlossen." });
 test("Ausschuss-Ursprung bleibt am Ausschussdokument, nicht am neueren Fremdbericht", () => {
-  for (const docs of [[ausschussDoc, fremd], [fremd, ausschussDoc]]) {
+  for (const docs of [[ausschussVorlage, ausschussDoc, fremd], [fremd, ausschussDoc, ausschussVorlage]]) {
     const s = build(ckProfile, ckKo, ckFeature, docs);
     const item = s.environment.committees[0];
     A.equal(item.sourceUrl, ausschussDoc.url); A.equal(item.documentId, "d-ausschuss");

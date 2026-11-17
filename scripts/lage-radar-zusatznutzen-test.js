@@ -45,8 +45,10 @@ test("Vollstaendig abgedeckte Sammelkarte entfernt keine Originalquelle", () => 
 const now=new Date("2026-11-13T10:00:00Z");
 const ko={id:"ko-test",vorgang_id:"vg-test",status:"neu",understanding_status:"complete",headline:"Neue Regelungen zur Pflegeversorgung",
   was_ist_passiert:"Eine neue Pflegereform betrifft die Pflegeversicherung.",created_at:now.toISOString(),updated_at:now.toISOString(),confidence_score:90};
+const vorlage="Der Gesundheitsausschuss berät den Gesetzentwurf zu den Leistungen der Pflegeversicherung und prüft die möglichen Folgen für Versicherte.";
+const beschluss="Der Gesundheitsausschuss hat den Gesetzentwurf zu den Leistungen der Pflegeversicherung mit den neuen Regeln für Versicherte angenommen.";
 const docs=[0,1,2].map((i)=>({id:`d-${i}`,url:s(String(i)).url,title:"Debatte ueber die Pflegereform",
-  summary:"Die Pflegeversicherung wird reformiert.",source_type:"media",source_name:"Testquelle",published_at:`2026-11-${11+i}T08:00:00Z`}));
+  summary:i===2?beschluss:vorlage,source_type:"media",source_name:"Testquelle",published_at:`2026-11-${11+i}T08:00:00Z`}));
 function radar(profile, sources=docs, change={}) {
   const k={...ko,...change};
   return R.buildCurrentRadarState({profile:{id:"synthetisch",fullName:"Alex Beispiel",...profile},knowledgeObjects:[k],kosById:{[k.id]:k},
@@ -54,12 +56,17 @@ function radar(profile, sources=docs, change={}) {
 }
 for (const parliamentType of ["Bundestag","Landtag"]) test(`${parliamentType}: belegtes Fachthema mit echter Entwicklung passiert ohne Parteinennung`,()=>{
   const r=radar({parliamentType,reportingTopics:["Pflege"]});
-  A.equal(r.dynamics.length,1); A.match(r.dynamics[0].evidence,/weitere Artikel/);
+  A.equal(r.dynamics.length,1); A.match(r.dynamics[0].evidence,/belegt einen neuen Sachstand/);
+  A.equal(r.dynamics[0].sourceUrl,docs[2].url);
+  A.equal(r.dynamics[0].beobachtungsBeleg.publishedAt,docs[2].published_at);
   A.equal(r.dynamics[0].summary,""); A.equal(r.articles.length,0);
   A.ok(r.dynamics[0].relationTypes.includes("subject"));
 });
 test("Nur Thema ohne zeitliche Veraenderung erzeugt kein Radar",()=>{
   A.equal(radar({focusTopics:["Pflege"]},docs.map(d=>({...d,published_at:docs[2].published_at}))).dynamics.length,0);
+  const gleicheMeldungen=docs.map(d=>({...d,summary:"Die Pflegeversicherung wird reformiert."}));
+  A.equal(radar({focusTopics:["Pflege"]},gleicheMeldungen).dynamics.length,0);
+  A.equal(radar({focusTopics:["Pflege"]},docs.map(d=>({...d,summary:vorlage}))).dynamics.length,0);
 });
 test("KO-Behauptung ohne passenden Quellenbeleg und fremde Fachthemen bleiben draussen",()=>{
   A.equal(radar({focusTopics:["Pflege"]},docs.map(d=>({...d,title:"Neue Software",summary:"Softwarepflege und Datenpflege."}))).dynamics.length,0);

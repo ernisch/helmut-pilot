@@ -368,6 +368,37 @@ function bindeTeststand(f) {
       A.equal(gesperrt.currentHelmutState.recommendation, ""); A.deepEqual([...f.rows], vorher);
     }
   });
+  await test("Gespeicherte Schlusszeit sperrt die Empfehlung exakt beim Ablauf", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), C = require("../lib/helmut/briefingContract");
+    const text = `Die Einreichungsfrist für Stellungnahmen zur Pflegereform endet am ${day} um 14:30 Uhr beim Parlament.`;
+    const ko = { id: "ko-synth-2", vorgang_id: "vg-synth-2", headline: "Stellungnahmen zur Pflegereform",
+      was_ist_passiert: text, status: "neu", understanding_status: "complete", deadline: day };
+    const doc = { id: "rd-synth-2", title: ko.headline, summary: text,
+      url: "https://example.invalid/dokument/2", published_at: day + "T05:00:00Z" };
+    row.payload.briefing.currentHelmutState = C.buildCurrentHelmutState({ profile, now, kosById: { [ko.id]: ko },
+      decisions: [{ knowledge_object_id: ko.id, decision: "Beobachten", score: 50 }], sourcesByVorgang: { [ko.vorgang_id]: [doc] } });
+    A.equal(row.payload.briefing.currentHelmutState.tagesAnlass.art, "heutige-frist");
+    bindeTeststand(f); const before = clone([...f.rows]);
+    const offen = (await f.read({ now: new Date(day + "T12:29:59.999Z") })).briefing;
+    A.equal(offen.currentHelmutState.primaryVorgangId, ko.vorgang_id);
+    const abgelaufen = (await f.read({ now: new Date(day + "T12:30:00Z") })).briefing;
+    A.equal(abgelaufen.currentHelmutState.primaryItem, null);
+    A.equal(abgelaufen.currentHelmutState.recommendation, "");
+    A.equal(abgelaufen.paketStatus.quittungGebunden, true);
+    A.deepEqual(abgelaufen.lageBriefing.paragraphs, offen.lageBriefing.paragraphs);
+    A.deepEqual([...f.rows], before);
+    // Altes Paket: ausgewählter Satz bestätigt nur den Tag, das weitere
+    // Original desselben Vorgangs trägt die Uhrzeit.
+    row.payload.briefing.currentHelmutState.tagesAnlass.beleg.text = text.replace(" um 14:30 Uhr", "");
+    row.payload.briefing.items.find(i => i.vorgangId === ko.vorgang_id).sources.push({
+      url: "https://example.invalid/dokument/amtliche-bekanntmachung", title: "Amtliche Fristbekanntmachung",
+      summary: text, publishedAt: doc.published_at
+    });
+    bindeTeststand(f); const alterStand = clone([...f.rows]), spaet = (await f.read({ now: new Date(day + "T12:31:00Z") })).briefing;
+    A.equal(spaet.currentHelmutState.primaryItem, null);
+    A.equal(spaet.paketStatus.quittungGebunden, true);
+    A.deepEqual([...f.rows], alterStand);
+  });
   await test("Heutiger Beratungstermin bleibt im nativen Cache ein Verfahrensschritt und wird keine Abgabefrist", async () => {
     const f = await state(), row = f.rows.get(f.row.id), C = require("../lib/helmut/briefingContract");
     const text = `Die öffentliche Beratung zur Pflegereform findet am ${day} statt und endet nach den Stellungnahmen der Verbände.`;
