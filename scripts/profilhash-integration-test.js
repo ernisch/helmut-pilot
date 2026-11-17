@@ -113,6 +113,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert(start > 0 && end > start);
     const dependencies = Object.freeze({
       "./lib/helmut/briefing-speicher": B,
+      "./lib/helmut/parlamentsbelege-produkt": require("../lib/helmut/parlamentsbelege-produkt"),
       "./lib/helmut/publication-eligibility": require("../lib/helmut/publication-eligibility")
     });
     assert.equal(dependencies["./lib/helmut/publication-eligibility"].current().hash, null,

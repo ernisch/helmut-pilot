@@ -94,6 +94,12 @@ Abhaengigkeitsmenge; die bestehende Publikationswache wuerde sie ohne KO ablehne
 Gezielt zuerst rot, dann diese geschlossenen Quellenmetadaten-Namensraeume
 vom internen Kennungssammler getrennt. Politische Vorgangs-/Quellen-/Paketwachen
 bleiben erhalten. Produktgruppen danach16/16, vorhandene Tagespaketsuite22/22.
+Erster Folge-Kernjob endet nach gruenen Standard-/DB-Stufen mit genau
+`profilhash-integration-test.js`: seine VM-Whitelist kennt den neuen realen
+App-Lesehelfer noch nicht. Nur diesen echten Helfer als Abhaengigkeit geladen;
+Profil-/Hash-/Historienassertionen unveraendert, danach18/18 gruen.
+Der Browserfehler bleibt der separat korrigierte Prosa-Harness. Beide
+Erstfehler werden nicht umgewertet; gemeinsamer Endkopf braucht neue exakte CI.
 
 ## Belegkette
 
