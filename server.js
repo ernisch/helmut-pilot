@@ -4899,7 +4899,9 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
   const stale = hasState
     ? (state.staleState === true || state.status === "stale" || state.errorState === true || state.status === "error")
     : isBriefingStaleForBerlin(briefing);
-  const hasDecisionItems = Number(briefing.items?.filter((item) => item.decision !== "Ignorieren").length || 0) > 0;
+  const hasDecisionItems = hasState
+    ? state.status !== "empty" && Boolean(state.primaryItem)
+    : Number(briefing.items?.filter((item) => item.decision !== "Ignorieren").length || 0) > 0;
   const hasSituationalItems = Number(briefing.situationalBriefing?.length || 0) > 0;
   const versorgungsHinweis = hasState && state.versorgung?.version === 1
     ? state.versorgung.zustand === "offen"

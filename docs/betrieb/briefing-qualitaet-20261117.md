@@ -77,4 +77,4 @@ Eine letzte echte API-Inkonsistenz verbleibt: decorateBriefingFreshness
 zaehlt fuer den Erklaerungstext noch globale Altitems und behauptet daher
 aktuelle politische Entscheidungen trotz qualifiziert leerem CurrentState.
 Der gleiche qualifizierteState soll auch diesen Erklaerungstext bestimmen;
-Alt-/NichtV3-Rueckfall erhalten. Separatekleine Korrektur in Vorbereitung.
+Alt-/NichtV3-Rueckfall erhalten. PR1247 korrigiert genau diese Ableitung aus dem qualifizierten CurrentState; Altpfad ohne State bleibt unveraendert. Header30/30 und Versorgung14/14 gruen; echte gespeicherte Antwort offline bestaetigt Quellenhinweis statt falscher Entscheidungsmeldung, Originalantwort unveraendert. Rollout-/Livebelege am PR.

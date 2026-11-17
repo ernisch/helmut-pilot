@@ -145,9 +145,12 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
   });
   await test("Historisches positives Komplettpaket bleibt erhalten ohne heutige Vollbestaetigung", async () => {
     const id = `bf-${profile.id}-mandatsbriefing-${tag}`, row = structuredClone(rows.get(id));
+    const quelle = { ...doc, title: "Beratung der Pflegeversorgung", published_at: "2026-11-09T03:00:00Z",
+      summary: "Die öffentliche Beratung zur Pflegeversorgung findet am 2026-11-10 mit den beteiligten Verbänden im Parlament statt." };
+    const fachKo = { ...ko, headline: quelle.title, was_ist_passiert: quelle.summary };
     const positive = C.toBriefingContractV3({ profile, decisions: [{ knowledge_object_id: ko.id,
       vorgang_id: ko.vorgang_id, decision: "Reagieren", priority_type: "risk", score: 90, matched_features: [] }],
-      kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [{ ...doc, published_at: "2026-11-09T03:00:00Z" }] }, now });
+      kosById: { [ko.id]: fachKo }, sourcesByVorgang: { [ko.vorgang_id]: [quelle] }, now });
     A(positive.currentHelmutState.primaryItem); row.payload.briefing = positive;
     row.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(row.payload, row.payload.quellenStand.sicherheitsHash);
     row.payload.inhaltHash = B.inhaltHash(row.payload); rows.set(id, row);
