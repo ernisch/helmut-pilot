@@ -198,6 +198,44 @@ test("Offene Rechte verhindern belegte automatische Versorgung", () => {
   assert.equal(r.packages[0].healthyPathCount, 1);
   assert(r.findings.some((f) => f.code === "zugriffsrechte_ungeklaert"));
 });
+test("Geteilter Datenfeed belegt jede Fachversorgung nur mit einem einschlägigen frischen Original", () => {
+  const wirtschaft = "fach-wirtschaft-energie", digital = "fach-digitales-staatsmodernisierung";
+  const { FACHPAKETE } = require("../lib/helmut/quellenarchitektur/seeds/fach-parteiquellen");
+  const catalog = fixture();
+  catalog.publishers[0].evidence_role = "data_source";
+  catalog.retrievalPaths[0].coverageClasses = ["amtliche_daten"];
+  catalog.packages.push(...FACHPAKETE.filter(p => [wirtschaft, digital].includes(p.key))
+    .map(p => ({ ...p, status: "active" })));
+  catalog.packagePaths.push(...[wirtschaft, digital].map(key => ({ package_id: "pkg-" + key, retrieval_path_id: "rp-amt" })));
+  const insolvenzen = doc("amt", 1, { title: "Zahl der Unternehmensinsolvenzen",
+    excerpt: "Die amtliche Wirtschaftsstatistik verzeichnet im August mehr Unternehmensinsolvenzen im verarbeitenden Gewerbe und bei gastronomischen Betrieben." });
+  const digitalisierung = doc("amt", 1, { title: "Erhebung bei Behörden",
+    excerpt: "Die amtliche Erhebung zur Digitalisierung von Behörden beziffert den Anteil der Anträge, die über Verwaltungsportale eingereicht wurden." });
+  const pruefe = (...daten) => run({ catalog,
+    profiles: [{ ...profile, focusTopics: ["Digitalisierung", "Wirtschaftspolitik"] }],
+    documents: [...daten, doc("redaktion", 1)] });
+  const paket = (r, key) => r.packages.find(p => p.key === key);
+
+  for (const daten of [[insolvenzen], [{ ...insolvenzen, title: "Digitalisierung im Titel" }],
+    [insolvenzen, { ...digitalisierung, published_at: date(30) }]]) {
+    const bericht = pruefe(...daten), wirtschaftspaket = paket(bericht, wirtschaft), digitalpaket = paket(bericht, digital);
+    assert.equal(path(bericht).state, "gesund");
+    assert.equal(path(bericht).documents.status, "belegt");
+    assert.equal(digitalpaket.technicalHealthyPathCount, 1);
+    assert.equal(digitalpaket.healthyPathCount, 0);
+    assert(digitalpaket.activeDemand && digitalpaket.unprovenRoles.includes("data_source"));
+    assert(digitalpaket.unprovenClasses.includes("amtliche_daten"));
+    assert.equal(wirtschaftspaket.healthyPathCount, 1);
+    assert(!wirtschaftspaket.unprovenRoles.includes("data_source"));
+  }
+  const beide = pruefe(insolvenzen, digitalisierung);
+  for (const key of [wirtschaft, digital]) {
+    assert.equal(paket(beide, key).healthyPathCount, 1);
+    assert(!paket(beide, key).unprovenRoles.includes("data_source"));
+    assert(!paket(beide, key).unprovenClasses.includes("amtliche_daten"));
+  }
+  assert.equal(paket(pruefe(digitalisierung), wirtschaft).healthyPathCount, 0);
+});
 test("Ausgabe ist begrenzt, Gesamtsumme und Limit bleiben ehrlich", () => {
   const c = fixture(); c.packagePaths = [];
   const r = run({ catalog: c, maxFindings: 1 });
