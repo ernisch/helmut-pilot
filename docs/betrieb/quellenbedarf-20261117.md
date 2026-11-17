@@ -189,6 +189,10 @@ Navigation. Dieser Erstfehler bleibt erhalten; kein gruener Altlauf behauptet.
 Fuer diesen reinen Anzeigefix laeuft stattdessen die vorhandene gezielte
 Quellenhinweissuite wirklich im Chromium, einschliesslich routenlosem Namespace,
 24 sichtbaren Hinweisen und sicheren Links. Keine Anwendungsregel wird gelockert.
+Ein zweiter CI-Versuch44096149470 stoppte vor dem Browserstart am bereits
+vorhandenen anderen Chromium-Launcher. Der kurzlebige Runner sichert diesen
+jetzt fuer die Suite und stellt ihn per EXIT-Trap auch bei Fehler wieder her;
+Browserpin und Netzisolation bleiben erhalten. Kein Browser-PASS dieses Versuchs.
 Merge, Pflicht-CI und regulaeres Deployment werden am exakten Kopf im PR belegt.
 
 Genau ein naechster Schritt nach gruener Integration: beim naechsten regulaeren
