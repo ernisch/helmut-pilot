@@ -1,7 +1,7 @@
 "use strict";
 
 // Enger Destatis-Anzeigefix aus Thread B und Quellenbelege von Thread A, PR1251.
-// Beide Pflichtjobs bleiben: Schnellkern, RSS-/Renderervertrag, echter isolierter Quellenhinweis-Browser.
+// Beide Pflichtjobs bleiben: Schnellkern, RSS-/Renderervertrag, echte Kundenansicht im Chromium.
 // Jeder andere Runtime-/Testblob oder Restbaum stoppt vor der Auswahl.
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
@@ -51,7 +51,7 @@ function validate({ event, repository, ref, headRef, before, message, pr, head, 
   return { mode: "destatisanzeige", reason: "Exakt gebundener Destatis-Quellenhinweis im bestehenden Kundenrenderer",
     standard: false, core: true, area: false, database: false, browser: true, syntax: true, npm: true,
     destatisanzeige: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
-    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Vorhandene RSS- und Quellenhinweisvertraege", "Echter isolierter Quellenhinweis- und Prosa-Browser; gezielter lokaler Mobilbeleg von B erhalten"],
+    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Vorhandene RSS- und Quellenhinweisvertraege", "Echter Kundenansicht- und Prosa-Browser; isolierten lokalen Quellenhinweis-Mobilbeleg von B explizit wiederverwenden"],
     limits: ["Nur exakt gepruefte Quellenhinweisanzeige; keine Auth-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Altzeilenkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
 }
 function git(args) { return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 10000 }); }

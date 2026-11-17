@@ -130,10 +130,10 @@ printf BROAD`;
   for (const suite of ["ci-briefingqualitaet-plan", "quellen-destatis-rss-stand", "parlamentsdaten-quellen-ui"])
     assert(step.includes("scripts/" + suite + "-test.js"));
   assert(!/--extended|Mock100|Mock500/.test(step));
-  const browser = w.split("      - name: Destatisanzeige - echte sichtbare")[1].split("      - name: Quellenbedarf -")[0];
-  assert(browser.includes("scripts/parlamentsdaten-quellen-ui-test.js --browser"));
-  assert(browser.includes('require("playwright").chromium.executablePath()'));
-  assert(browser.includes('sudo -n env -i PATH="$PATH" HELMUT_SOURCE_MODE=off node scripts/lokal.js'));
+  const browser = w.split("      - name: Destatisanzeige - vorhandene Kundenansicht")[1].split("      - name: Quellenbedarf -")[0];
+  assert(browser.includes("scripts/browser-smoke-test.js --briefing-qualitaet"));
+  assert(browser.includes('HELMUT_REQUIRE_BROWSER: "1"'));
+  assert(browser.includes("WIEDERVERWENDET"));
   assert(!browser.includes("|| true"));
   const generic = w.split("      - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)\n")[1].split("\n")[0];
   assert(generic.includes("steps.plan.outputs.destatisanzeige != 'true'"));

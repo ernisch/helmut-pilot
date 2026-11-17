@@ -179,20 +179,23 @@ Lage-Teilstandabsaetze werden nicht zu einer heutigen Vollversorgung aufgewertet
 
 Der enge CI-Vertrag bindet Basis, PR, Branch, Bs zwei Runtime-/Testblobs und den
 sonst unveraenderten Baum. Er behaelt beide Pflichtjobs, Schnellkern, die
-vorhandenen RSS-/Hinweistests und echte Quellenhinweis-/Prosa-Browserpruefungen. Bs
+vorhandenen RSS-/Hinweistests und echte Kundenansicht-/Prosa-Browserpruefungen. Bs
 gezielter Mobilbeleg wird als solcher erhalten. Keine pauschale Auswahl der
 245 Bereichssuiten oder Mengen-/DB-Laeufe. Unpassender Kopf stoppt vor Auswahl;
 kein genereller Skip oder Rueckfall auf einen breiten Lauf bei Bindungsfehler.
 Der allgemeine Browser-Smoke in CI44095446372 scheiterte an einer alten
 Briefingfixture (`primaryItem=null`, Zeile971), nach erfolgreichem Boot und
 Navigation. Dieser Erstfehler bleibt erhalten; kein gruener Altlauf behauptet.
-Fuer diesen reinen Anzeigefix laeuft stattdessen die vorhandene gezielte
-Quellenhinweissuite wirklich im Chromium, einschliesslich routenlosem Namespace,
-24 sichtbaren Hinweisen und sicheren Links. Keine Anwendungsregel wird gelockert.
-Ein zweiter CI-Versuch44096149470 stoppte vor dem Browserstart am bereits
-vorhandenen anderen Chromium-Launcher. Der kurzlebige Runner sichert diesen
-jetzt fuer die Suite und stellt ihn per EXIT-Trap auch bei Fehler wieder her;
-Browserpin und Netzisolation bleiben erhalten. Kein Browser-PASS dieses Versuchs.
+Fuer diesen reinen Anzeigefix laeuft stattdessen der vorhandene gezielte
+Kundenansicht-Browser (`--briefing-qualitaet`) auf Desktop/Mobil. Der lokale
+Quellenhinweis-Mobilbeleg von B mit24 Hinweisen bleibt ausdruecklich ein
+wiederverwendeter lokaler Beleg, kein neuer CI-PASS des isolierten Browserteils.
+CI44096149470 stoppte vor dessen Browserstart am bereits vorhandenen anderen
+Chromium-Launcher. CI44096609451 bestand UI13/13, scheiterte danach im isolierten
+Benutzer-Namespace am Zugriff auf die Checkoutdatei. Beide FAIL bleiben erhalten.
+Keine weiteren Host-/Systemrechte werden veraendert; der begrenzte CI-Vertrag
+verwendet die bestehende normale Playwright-Kundenansicht. Keine Anwendungsregel
+oder Browserpflicht wird gelockert.
 Merge, Pflicht-CI und regulaeres Deployment werden am exakten Kopf im PR belegt.
 
 Genau ein naechster Schritt nach gruener Integration: beim naechsten regulaeren

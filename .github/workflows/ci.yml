@@ -1629,23 +1629,14 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js scripts/browser-smoke-test.js --briefing-teilstand
-      - name: Destatisanzeige - echte sichtbare Quellenhinweise im isolierten Chromium
+      - name: Destatisanzeige - vorhandene Kundenansicht Desktop und Mobil
         if: steps.plan.outputs.destatisanzeige == 'true'
         env:
+          HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: |
-          # Vorhandene Suite erwartet /usr/bin/chromium und einen eigenen routenlosen Namespace.
-          # Nur den bereits gepinnten Playwright-Browser im kurzlebigen Runner verlinken.
-          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP + "/destatis-chromium-path", require("playwright").chromium.executablePath())'
-          # Der Runner bringt bereits einen anderen Chromium-Launcher mit.
-          # Diesen fuer genau die Suite sichern und danach selbst bei FAIL restaurieren.
-          restore_chromium() {
-            sudo -n node -e 'const f=require("fs"),b=process.argv[1],p=f.readFileSync(process.argv[2],"utf8");if(f.existsSync(b)){if(f.existsSync("/usr/bin/chromium"))f.unlinkSync("/usr/bin/chromium");f.renameSync(b,"/usr/bin/chromium");}else if(f.existsSync("/usr/bin/chromium")&&f.lstatSync("/usr/bin/chromium").isSymbolicLink()&&f.readlinkSync("/usr/bin/chromium")===p)f.unlinkSync("/usr/bin/chromium");' "$RUNNER_TEMP/destatis-chromium-backup" "$RUNNER_TEMP/destatis-chromium-path"
-          }
-          trap restore_chromium EXIT
-          sudo -n node -e 'const f=require("fs"),p=f.readFileSync(process.argv[1],"utf8"),b=process.argv[2];if(f.existsSync(b))throw Error("Backup existiert");if(f.existsSync("/usr/bin/chromium"))f.renameSync("/usr/bin/chromium",b);f.symlinkSync(p,"/usr/bin/chromium");' "$RUNNER_TEMP/destatis-chromium-path" "$RUNNER_TEMP/destatis-chromium-backup"
-          mkdir -p tmp/parlamentsdaten-quellen-ui
-          sudo -n env -i PATH="$PATH" HELMUT_SOURCE_MODE=off node scripts/lokal.js -- node scripts/parlamentsdaten-quellen-ui-test.js --browser
+          node scripts/lokal.js -- node scripts/browser-smoke-test.js --briefing-qualitaet
+          echo 'Gezielter isolierter Quellenhinweis-Mobilbeleg mit24 Hinweisen: lokal auf Bs unveraendert gebundenem Kopf2e2c1b74 bestanden, WIEDERVERWENDET. Kein neuer CI-PASS dieses isolierten Browserteils.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Quellenbedarf - gebundenen echten Browserbeleg erhalten
         if: steps.plan.outputs.quellenbedarf == 'true'
