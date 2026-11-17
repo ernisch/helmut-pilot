@@ -30,7 +30,9 @@ regulaerer Rollout und neuer regulaerer Verarbeitungsbeleg noch offen.**
    oeffentliche DIP-Staende. Produktlesen laedt keine amtlichen Daten nach.
    Quellen-ID, Original-URL, Vorgangskennung, Vorgangstyp und Hash muessen passen.
 6. Der gemeinsame `quellen-hinweis.js`-DTO erreicht bestehende Quellenzeilen
-   von Lage, Radar und Briefing. `client.js` zeigt Vorgangsidentitaet,
+   von Lage, Radar und Briefing. Radar-/Briefingmapper erhalten die Felder
+   auch nach ihrer bisherigen Verengung und erneutem Artikelwechsel.
+   `client.js` zeigt Vorgangsidentitaet,
    DIP-Stand, Abrufdatum und getrennte Originalbelege; historische Schritte
    sind aufklappbar. Keine neue Prioritaet, KI-Aussage oder Handlung daraus.
 
@@ -62,12 +64,13 @@ gesperrtem Browsernetz, ohne Productionzugriff oder Modellaufruf:
 
 | Pruefung | Ergebnis / Reichweite |
 | --- | --- |
-| `dip-beratungsstand-test.js` | 15/15 Gruppen: echter Faktenleser, unveraenderliche Ablage/Readback, Auftrags- und Produktaufrufer, Cachefortschritt/Anbietersperre, Identitaets-/Zeit-/Hashfehler und drei echte Quellenrenderer |
-| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten, sichtbarer Folgestandhinweis, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `5b85cf6bc897b7efde38d7def0031ef10cb50c8f878794b3100c982939f9f157` |
+| `dip-beratungsstand-test.js` | 16/16 Gruppen: echter Faktenleser, unveraenderliche Ablage/Readback, Auftrags- und Produktaufrufer, Cachefortschritt/Anbietersperre, Identitaets-/Zeit-/Hashfehler, Servermapper und sichtbarer Radarvertrag vor den echten Quellenrenderern |
+| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten plus Radar- und Briefing-Haupt-/Folgeitem, Folgestandhinweis, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `3e68b7eacbacb5a77f58bcb707240b1004c631d7e6d19b0ac69d841dffe5f4e0` |
 | Vorhandene Faktenleser-/amtliche-/Profilpruefung | 18/18, 4/4 Gruppen mit elf aufgezeichneten amtlichen Einzelaussagen, 11/11 |
 | Vorhandene Quellfelder-/Vorgangsbezugspruefung | 16/16 und 10/10 |
 | Vorhandene Parlamentsdaten-Quellen-UI | 13/13 einschliesslich unveraenderter Destatis-/iRights-Hinweise |
 | Vorhandener schneller Kernschutz | 14/14 |
+| Vorhandener Radar-/Bereichsvertrag | 117/117 Assertions und 46/46 Faelle; keine neue Prioritaet allein durch Beratungsstand |
 | `seed-drift-test.js` | Generiertes Repoartefakt stimmt wieder bytegenau mit unveraendertem Generator ueberein; keine SQL-Ausfuehrung |
 
 Die neue Integrationssuite verwendet aufgezeichnete amtliche Positionen aus der
@@ -82,6 +85,10 @@ scheiterte zunaechst an `stand-bindung`; Feldrueckfuehrung und optionale
 Nullfelder korrigiert, danach obige Integrationspruefung erfolgreich.
 Ein lokaler Sockettest benoetigte ausserhalb der Sandbox dieselbe unveraenderte
 Pruefung; die zunaechst fehlende VM-URL-Umgebung war ein Testharnessfehler.
+Eigene Integrationsluecke vor Reviewabschluss erkannt: direkter Quellenrenderer
+belegte noch nicht die Feldweitergabe durch Radar und Briefing-Hauptitem.
+Mapper, erneute Artikelbindung und tatsaechliche Haupt-/Folgeanzeigen sind jetzt
+ergaenzt; der obige Endnachweis ersetzt diese unvollstaendige Vorannahme.
 
 ## Koordinierte Integration und fehlende Betriebsbestaetigung
 
@@ -91,6 +98,10 @@ auf unveraendertem Main bestaetigt. E uebernimmt seine drei Transport-/Deadline-
 Testvertraege, D das bestehende generierte Bund-Seed-Artefakt. Deren Unterschied
 ist ausschliesslich die bereits im Modell enthaltene **pausierte** BMG-Meldungen-
 Zeile mit zwei Paketbindungen. Kein CI-Gate oder Generator wird abgeschwaecht.
+Es separater Testfix `487ea37c` wurde von D vollstaendig unabhaengig gelesen:
+EventEmitter-/destroy-Semantik der HTTP-Attrappe, exakte AbortError-/signal.reason-
+Bindung sowie dynamischer Deadline-Stopp vor Netz und gueltiges Direktfeed-RSS.
+Keine Runtimeaenderung; die neue Erwartung prueft den vorhandenen Schutz strenger.
 
 Integration ausschliesslich durch D, nacheinander, nach unabhaengigem Review
 und beiden gruenen Pflichtchecks am jeweiligen Endkopf. Danach regulaeres
@@ -98,9 +109,11 @@ Git-Deployment und lesender Nachweis; kein CLI-Deploy oder Productionwrite.
 Rueckweg: gezielter Code-Revert nach denselben Regeln; immutable Belege
 muessen nicht zurueckgespielt oder geloescht werden.
 
-Der bisherige Productionbeleg von 14:10 UTC bestaetigt weiterhin keinen neuen
+Der neue rein lesende Productionbeleg von 15:23 UTC bestaetigt weiterhin keinen neuen
 regulaeren Verarbeitungsabschluss nach den damaligen Reparaturen. Ein spaeterer
 READY-Rollout allein bestaetigt weder neue DIP-Staende noch Mandatsauslieferung.
+`process_runs`: null Abschluesse seit PR1251 (13:56:37 UTC);
+`helmut_store`: null `main-dipstand-*`-Belege vor dem neuen Rollout.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 

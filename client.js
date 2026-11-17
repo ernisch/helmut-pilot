@@ -6605,7 +6605,7 @@ function renderUiBriefingHero(state, details = "") {
       <h2>${escapeHtml(title)}</h2>
       ${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
       ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
-      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}` : ""}
+      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}${renderDipBeratungsstand(item, hstandQuelleHref(item))}` : ""}
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
@@ -6786,6 +6786,7 @@ function renderHstandPrimary(state) {
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
       ${quelle ? renderSourceNotice(p, quelle) : ""}
+      ${quelle ? renderDipBeratungsstand(p, quelle) : ""}
       ${briefingLageVerweis(p)}
     </section>`;
 }
@@ -6853,6 +6854,7 @@ function renderHstandItems(state) {
         ${why ? `<p class="hstand-rel-why">${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+        ${quelle ? renderDipBeratungsstand(i, quelle) : ""}
       </li>`;
   };
   // Ohne Frischeklassen (Altpfad/Vertrag aus) unveraendert EINE Liste.
@@ -11882,8 +11884,10 @@ function renderDipBeratungsstand(source, articleHref) {
       const url=pdf(p.originalUrl);
       if (!url || !/^\d{4}-\d\d-\d\d$/.test(p.datum||"") || typeof p.phase!=="string"
         || !Array.isArray(p.beschluesse) || !Array.isArray(p.ueberweisungen)) return "";
-      const b=p.beschluesse.map(v=>Object.entries(v).filter(([,x])=>x!==null)
-        .map(([k,v])=>`${k}: ${String(v)}`).join("; "));
+      const labels={beschlusstenor:"Beschluss",dokumentnummer:"Vorlage",seite:"Seite",abstimmungsart:"Abstimmungsart",
+        abstimm_ergebnis_bemerkung:"Abstimmungsergebnis",grundlage:"Grundlage",mehrheit:"Mehrheit"};
+      const b=p.beschluesse.map(v=>Object.entries(v).filter(([k,x])=>Object.hasOwn(labels,k) && x!==null)
+        .map(([k,v])=>`${labels[k]}: ${String(v)}`).join("; "));
       const u=p.ueberweisungen.map(v=>`${v.ausschuss} (${v.ausschuss_kuerzel}), ${v.federfuehrung===true ? "mit Federführung" : "ohne Federführung"}${v.ueberweisungsart ? `; ${v.ueberweisungsart}` : ""}`);
       return `<p>${escapeHtml(`${p.datum}: ${p.phase}; ${p.dokumentnummer}`)} <a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Originalbeleg</a>${[...b,...u].map(v=>`<br>${escapeHtml(v)}`).join("")}</p>`;
     }).join("");

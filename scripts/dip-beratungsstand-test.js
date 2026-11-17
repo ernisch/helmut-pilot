@@ -54,7 +54,7 @@ function client() {
   // Vorhandenen Client-Bootstrap statt eines zweiten UI-Mocks verwenden.
   const root=path.resolve(__dirname,".."), source=fs.readFileSync(path.join(__dirname,"parlamentsdaten-quellen-ui-test.js"),"utf8");
   const code=source.slice(source.indexOf("function loadClient()"),source.indexOf("\nconst api = loadClient();"))
-    .replace("{ renderSourceNotice,","{ renderDipBeratungsstand, renderSourceNotice,");
+    .replace("{ renderSourceNotice,","{ renderDipBeratungsstand, renderUiBriefingHero, renderHstandItems, renderSourceNotice,");
   return vm.runInNewContext(code+"\nloadClient()",{root,fs,vm,assert,console,path,URL,URLSearchParams,Intl,Date});
 }
 async function main() {
@@ -144,13 +144,45 @@ async function main() {
   await test("Echter Lage-/Briefing-/Radar-Quellenrenderer zeigt Datum, Beschluss, Ueberweisung und getrennte sichere Links",async()=>{
     const s=await read(), d={...doc(),dipBeratungsstaende:[s]}, view=H.quellenhinweisFelder(d,d.url);
     const dto={...d,...view,name:"DIP",sourceName:"DIP",sourceUrl:d.url,itemUrl:d.url,href:d.url,publishedAt:d.published_at};
-    const ui=client();for(const render of [ui.lageSourceRow,ui.vsheetSourceRow,ui.renderRadarArticleRow]){
-      const html=render(dto);assert(html.includes("data-dip-beratungsstand"));assert(html.includes("Spätere Änderungen sind nicht bestätigt"));
+    const L=require("../lib/helmut/lage"), C=require("../lib/helmut/briefingContract"), R=require("../lib/helmut/radarState");
+    const ko={id:"offline-ko",vorgang_id:"offline-vorgang",understanding_status:"complete",status:"neu",display_title:d.title};
+    const contract=R.buildCurrentRadarState({profile:{id:"offline-mandat"},now:new Date(now()),
+      decisions:[{knowledge_object_id:ko.id,score:50,decision:"Beobachten",matched_features:[]}],
+      kosById:{[ko.id]:ko},sourcesByVorgang:{[ko.vorgang_id]:[d]}});
+    const radar=contract.articles[0];assert(radar);
+    assert.deepEqual(radar.dipBeratungsstaende,view.dipBeratungsstaende);
+    assert.deepEqual(C.oeffnendeHelmutQuelle(ko,[d]).dipBeratungsstaende,view.dipBeratungsstaende);
+    const ui=client();for(const [render,serverDto] of [[ui.lageSourceRow,L.mapSource(d)],
+      [ui.vsheetSourceRow,C.buildSources(ko,[d])[0]],[ui.renderRadarArticleRow,radar]]){
+      const html=render(serverDto);assert(html.includes("data-dip-beratungsstand"));assert(html.includes("Spätere Änderungen sind nicht bestätigt"));
       assert(html.includes("2026-09-08"));assert(html.includes("mit Federführung"));assert(html.includes("ohne Federführung"));
-      assert(html.includes("beschlusstenor: Überweisung"));assert(html.includes("Originalbeleg"));
+      assert(html.includes("Beschluss: Überweisung"));assert(html.includes("Originalbeleg"));
       browserHtml+=html;
     }
     const bad=copy(dto);bad.dipBeratungsstaende[0].originalUrl="https://fremd.example/";assert.equal(ui.renderDipBeratungsstand(bad,d.url),"");
+  });
+  await test("Sichtbarer Radarvertrag behaelt DIP-Stand auch nach erneuter Artikelbindung",async()=>{
+    // Deklarierte synthetische Drucksache, amtliche Positionsfixture unveraendert.
+    payload.datum="2026-09-19";const s=await read();
+    const fresh=D.toRawDocumentRow(Scheduler.dipDocToRawItem(DIP.normalizeDrucksache({...original,
+      titel:"Alex Beispiel zu Haushalt und Soziales",datum:"2026-09-19"})));
+    const d={...fresh,dipBeratungsstaende:[s]}, R=require("../lib/helmut/radarState"), C=require("../lib/helmut/briefingContract");
+    const ko={id:"offline-person-ko",vorgang_id:"offline-person-vorgang",understanding_status:"complete",status:"neu",
+      display_title:d.title,mentioned_people:["Alex Beispiel"]};
+    const args={profile:{id:"offline-mandat",fullName:"Alex Beispiel"},now:new Date(now()),
+      decisions:[{knowledge_object_id:ko.id,score:50,decision:"Beobachten",matched_features:[]}],
+      kosById:{[ko.id]:ko},sourcesByVorgang:{[ko.vorgang_id]:[d]}};
+    const r=R.buildCurrentRadarState(args), visible=r.anzeige.mentions[0];assert(visible);
+    assert.deepEqual(visible.dipBeratungsstaende,H.quellenhinweisFelder(d,d.url).dipBeratungsstaende);
+    const ui=client(), html=ui.renderRadarMentionCard(visible);assert(html.includes("Beschluss: Überweisung"));
+    const source=C.oeffnendeHelmutQuelle(ko,[d]);
+    const sourceItem={...source,title:d.title,sourceUrl:source.url};
+    assert(ui.renderHstandPrimary({primaryItem:sourceItem}).includes("Beschluss: Überweisung"));
+    assert(ui.renderUiBriefingHero({primaryItem:sourceItem}).includes("Beschluss: Überweisung"));
+    assert(ui.renderHstandItems({items:[sourceItem]}).includes("Beschluss: Überweisung"));
+    browserHtml+=html+ui.renderUiBriefingHero({primaryItem:sourceItem})+ui.renderHstandItems({items:[sourceItem]});
+    // Ein Beratungsstand oder eine Nennung allein darf keine Tagesprioritaet erzeugen.
+    assert.equal(C.buildCurrentHelmutState(args).primaryItem,null);
   });
   if(process.argv.includes("--browser")) {
     const {spawn}=require("node:child_process");
@@ -176,10 +208,10 @@ async function main() {
         await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:844,deviceScaleFactor:1,mobile:width<500},sessionId);
         await cdp.send("Page.setDocumentContent",{frameId:frameTree.frame.id,html:`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><style>${css}</style><main style="padding:16px;max-width:800px">${browserHtml}</main>`},sessionId);
         const state=await cdp.evaluate(sessionId,"({count:document.querySelectorAll('[data-dip-beratungsstand]').length,nested:document.querySelectorAll('a a').length,text:document.body.innerText,width:document.documentElement.scrollWidth,view:innerWidth})");
-        assert.equal(state.count,3);assert.equal(state.nested,0);assert(state.text.includes("Spätere Änderungen sind nicht bestätigt"));
+        assert.equal(state.count,6);assert.equal(state.nested,0);assert(state.text.includes("Spätere Änderungen sind nicht bestätigt"));
         assert(state.width<=state.view,JSON.stringify({width:state.width,view:state.view}));
       }
-      console.log("PASS echter Chromium Desktop/Mobil: drei Quellenansichten, sichtbarer Folgestandhinweis, sichere getrennte Links, kein Ueberlauf; Renderer-Netz offline.");
+      console.log("PASS echter Chromium Desktop/Mobil: drei Quellenansichten plus sichtbarer Radar und Briefing-Haupt-/Folgeitem, Folgestandhinweis, sichere getrennte Links, kein Ueberlauf; Renderer-Netz offline.");
     } finally {await cdp.send("Browser.close").catch(()=>{});chrome.kill("SIGTERM");fs.rmSync(dir,{recursive:true,force:true});}
   }
   await test("Regulaerer DIP-Aufrufer bindet Anbieterwache, wirklichen Faktenleser, Originalablage und Produktleser",async()=>{
