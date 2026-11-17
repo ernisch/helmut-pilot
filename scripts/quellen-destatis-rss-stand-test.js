@@ -118,8 +118,19 @@ test("Vorliegendes Archiv kann nur mit exaktem RSS-/Finding-Beleg rein neu gebun
   const result = R.fromArchive(record, args); assert(result);
   assert.equal(D.toRawDocumentRow(result).id, row.id); assert.equal(D.toRawDocumentRow(result).summary, row.summary);
   assert.equal(JSON.stringify({ record, args }), untouched);
+  for (const optional of [null, undefined]) {
+    const legacy = clone(args);
+    if (optional === undefined) delete legacy.finding.retrieval_path_id;
+    else legacy.finding.retrieval_path_id = optional;
+    const previous = JSON.stringify(legacy), bound = R.fromArchive(record, legacy);
+    assert(bound, "Optionaler fehlender Alt-Finding-Pfad sperrt keinen exakt belegten amtlichen Stand");
+    assert.equal(D.toRawDocumentRow(bound).id, row.id);
+    assert.equal(JSON.stringify(legacy), previous, "Fehlender Altpfad wird nicht nachtraeglich eingetragen");
+  }
   for (const change of [x => x.record.data.dokument.summary += " Manipuliert.", x => x.record.id += "f",
     x => x.args.finding.source_id = "news-destatis-soziales", x => x.args.finding.retrieval_path_id = "rp-fremd",
+    x => x.args.finding.retrieval_path_id = "", x => x.args.finding.retrieval_path_id = false,
+    x => x.args.finding.retrieval_path_id = 0,
     x => x.args.finding.original_url += "?fremd", x => x.args.item.publishedAt = old.published_at,
     x => x.args.item.rssRights = ["Nur privat"], x => x.args.item.content = item.content.replace("3 248", "9 999")]) {
     const x = clone({ record, args }); change(x); assert.equal(R.fromArchive(x.record, x.args), null);
