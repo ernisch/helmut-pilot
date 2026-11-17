@@ -162,6 +162,8 @@ async function main() {
       assert(html.includes("2026-09-08"));assert(html.includes("mit Federführung"));assert(html.includes("ohne Federführung"));
       assert(html.includes("Beschluss: Überweisung"));assert(html.includes("Originalbeleg"));
       assert(html.includes("Deutscher Bundestag · Plenarprotokoll"));
+      assert(html.includes("Deutscher Bundestag/Bundesrat – DIP"));assert(html.includes("Originaldaten kostenlos"));
+      assert(html.includes("für diese Anzeige ausgewählt und gegliedert"));
       browserHtml+=html;
     }
     const bad=copy(dto);bad.dipBeratungsstaende[0].originalUrl="https://fremd.example/";assert.equal(ui.renderDipBeratungsstand(bad,d.url),"");

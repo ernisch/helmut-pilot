@@ -36,6 +36,9 @@ regulaerer Rollout und neuer regulaerer Verarbeitungsbeleg noch offen.**
    `client.js` zeigt Vorgangsidentitaet,
    DIP-Stand, Abrufdatum und getrennte Originalbelege; historische Schritte
    sind aufklappbar. Keine neue Prioritaet, KI-Aussage oder Handlung daraus.
+   Die bereits belegten DIP-Bedingungen bleiben sichtbar: Quelle Deutscher
+   Bundestag/Bundesrat – DIP, kostenloser Originaldatenlink und Kennzeichnung
+   der Auswahl/Gliederung fuer die Anzeige; keine neue Rechtsfreigabe.
 
 ## Konservative Grenzen
 
@@ -66,7 +69,7 @@ gesperrtem Browsernetz, ohne Productionzugriff oder Modellaufruf:
 | Pruefung | Ergebnis / Reichweite |
 | --- | --- |
 | `dip-beratungsstand-test.js` | 17/17 Gruppen: echter Faktenleser, unveraenderliche Ablage/Readback, Auftrags- und Produktaufrufer, Cachefortschritt/Anbietersperre, Identitaets-/Zeit-/Hashfehler, Servermapper, sichtbarer Radarvertrag und Institution/Fortsetzung/Nachtrag bis zum Renderer |
-| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten plus Radar- und Briefing-Haupt-/Folgeitem, Folgestandhinweis, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `8801e206000025ca65c3f3c8673583996c5117cfdbc99f79981ec4d9659c7dc6` |
+| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten plus Radar- und Briefing-Haupt-/Folgeitem, Folgestandhinweis, DIP-Pflichtattribution, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `983d2709d1f8b9ea24fbef36da34c1dd6e0f37f1062b6d73091257c8217bbae5` |
 | Vorhandene Faktenleser-/amtliche-/Profilpruefung | 18/18, 4/4 Gruppen mit elf aufgezeichneten amtlichen Einzelaussagen, 11/11 |
 | Vorhandene Quellfelder-/Vorgangsbezugspruefung | 16/16 und 10/10 |
 | Vorhandene Parlamentsdaten-Quellen-UI | 13/13 einschliesslich unveraenderter Destatis-/iRights-Hinweise |

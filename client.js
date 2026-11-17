@@ -11895,7 +11895,7 @@ function renderDipBeratungsstand(source, articleHref) {
         p.fortsetzung ? "Fortsetzung" : "",p.nachtrag ? "Nachtrag" : ""].filter(Boolean).join(" · ");
       return `<p>${escapeHtml(`${p.datum}: ${kontext}; ${p.phase}; ${p.dokumentnummer}`)} <a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Originalbeleg</a>${[...b,...u].map(v=>`<br>${escapeHtml(v)}`).join("")}</p>`;
     }).join("");
-    return `<div class="source-notice" data-dip-beratungsstand><a href="${escapeAttribute(s.originalUrl)}" target="_blank" rel="noopener noreferrer">DIP-Vorgang ${escapeHtml(s.vorgangId)}</a>: ${escapeHtml(s.titel)}<p>Beratungsstand laut DIP: ${escapeHtml(s.stand)}.${escapeHtml(read)} ${escapeHtml(dates)}</p><p>Spätere Änderungen sind nicht bestätigt.</p>${s.positionenVollstaendig===false ? '<p>Der Verfahrensverlauf ist nicht vollständig belegt.</p>' : ""}${details ? `<details><summary>Belegte Verfahrensschritte</summary>${details}</details>` : ""}</div>`;
+    return `<div class="source-notice" data-dip-beratungsstand><p>Quelle: Deutscher Bundestag/Bundesrat – DIP. <a href="${escapeAttribute(s.originalUrl)}" target="_blank" rel="noopener noreferrer">DIP-Vorgang ${escapeHtml(s.vorgangId)} · Originaldaten kostenlos</a>. Strukturierte Angaben für diese Anzeige ausgewählt und gegliedert.</p>${escapeHtml(s.titel)}<p>Beratungsstand laut DIP: ${escapeHtml(s.stand)}.${escapeHtml(read)} ${escapeHtml(dates)}</p><p>Spätere Änderungen sind nicht bestätigt.</p>${s.positionenVollstaendig===false ? '<p>Der Verfahrensverlauf ist nicht vollständig belegt.</p>' : ""}${details ? `<details><summary>Belegte Verfahrensschritte</summary>${details}</details>` : ""}</div>`;
   }).join("");
 }
 
