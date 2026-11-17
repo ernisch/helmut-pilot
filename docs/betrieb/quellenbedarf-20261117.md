@@ -20,8 +20,15 @@ Keine Gesamtproduktabnahme; historische Erfolgsdaten und Quoten bleiben erhalten
    native/globale Deduplizierung, Speicherung und Herkunftsreader erhalten.
    Vorhandene Google-Zeilen und deren Erfolge bleiben unveraendert.
 
-Die zweite Reparatur ist in Bearbeitung; Integration und Wirkungsnachweis sind
-erst nach unabhaengigem Review und gruener exakter Pflicht-CI bestaetigt.
+Beide Reparaturen sind implementiert. Die Destatis-Suite besteht 9/9 Gruppen:
+echter 320-Zeichen-Auszug, SQL-/JSONB-Roundtrip, Manipulations- und Rechtefaelle,
+beide Dedup-Richtungen, Attribution in Lage/Radar/Briefing, exakter Archivadapter
+und wirklicher Storage-/Queue-/Archivaufrufer mit ersetztem HTTP. Die alte
+Google-Zeile bleibt bytegleich; das neue Dokument wird kein kanonisches URL-Ziel.
+Bestehende Fach-/Parteiquellen-, Dedupkontext-10/10-, globale Dedup-39/39- und
+EUR-Auszug-17/17-Pruefungen bestehen ebenfalls; kein externer Aufruf.
+Integration und Wirkungsnachweis sind erst nach unabhaengigem Review und gruener
+exakter Pflicht-CI bestaetigt. Der Integrations-PR ist #1249.
 Keine Anzahl wiederhergestellter Livequellen aus Offlinefaellen ableiten.
 
 ## Vorhandener Originalbeleg statt neuer Verarbeitung
