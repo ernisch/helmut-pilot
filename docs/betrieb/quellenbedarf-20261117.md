@@ -27,8 +27,14 @@ und wirklicher Storage-/Queue-/Archivaufrufer mit ersetztem HTTP. Die alte
 Google-Zeile bleibt bytegleich; das neue Dokument wird kein kanonisches URL-Ziel.
 Bestehende Fach-/Parteiquellen-, Dedupkontext-10/10-, globale Dedup-39/39- und
 EUR-Auszug-17/17-Pruefungen bestehen ebenfalls; kein externer Aufruf.
-Integration und Wirkungsnachweis sind erst nach unabhaengigem Review und gruener
-exakter Pflicht-CI bestaetigt. Der Integrations-PR ist #1249.
+PR #1249 ist unabhaengig geprueft und mit beiden gruenen Pflichtjobs am Kopf
+`06a63b39b1f0ae25da99ffdbbdc297f57209eaf4` integriert; CI44085591443.
+Merge `5c01f345f9bde2542c724c27abd90ef2989d463a`, MainCI44086115971 ebenfalls
+beide Pflichtjobs gruen. Vercel `dpl_GL6m4WkkaSUsxx8KZSrsW6GVFWpP` regulaer
+ProductionREADY; oeffentlicher Alias HTTP200/client.js?v=5c01f345 bestaetigt.
+Schnellkern und sechs betroffene Suiten, keine Mengen-/DB-Pruefung. Der echte
+Chromium-Desktop-/Mobilbeleg aus PR1246 wird fuer unveraenderte UI wiederverwendet;
+kein neuer Chromiumlauf oder Browser-PASS behauptet.
 Keine Anzahl wiederhergestellter Livequellen aus Offlinefaellen ableiten.
 
 ## Vorhandener Originalbeleg statt neuer Verarbeitung
@@ -43,7 +49,13 @@ Destatis-RSS bestaetigt denselben Satzpraefix; kein Modell-/Productionlauf.
 Feed-SHA256: `3b9ce21c99c55a373e8f8080d58cbfc2786a41b2224f767df42709c9e1e0ee31`.
 Das Archiv allein ersetzt keinen artikelweisen Rechtebeleg. Ein reiner Adapter
 verlangt zusaetzlich den exakten amtlichen Fund und den vorliegenden passenden
-RSS-Eintrag. Noch keine neue Analyse, Speicherung oder Abschlussquittung behauptet.
+RSS-Eintrag. Der lesende echte Archivabgleich bestaetigt den nativen SHA256
+`ead997ecc3e43032e68f606d21ec9127146a68fe415036c2e353e20709edae90`,
+Titel, Datum und Text. Das gespeicherte offizielle Original-Finding besitzt
+jedoch `retrieval_path_id=NULL`; der erste Adapter weist diesen Altfall ab.
+Eine eng begrenzte Kompatibilitaet wird gegen den bestehenden optionalen
+Finding-Vertrag geprueft, kein fremder nichtleerer Abrufpfad zugelassen.
+Noch keine neue Analyse, Speicherung oder Abschlussquittung behauptet.
 
 ## Amtliche Alternativen und Rechte
 
