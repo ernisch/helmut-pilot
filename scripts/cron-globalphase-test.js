@@ -579,14 +579,18 @@ function sechsProfile() {
       erwartet.join("|") === ids.join("|"));
     // EHRLICH BENANNT: fuer ein SPAETERES Profil kann sich die relative Lage zweier GETEILTER
     // Wege gegenueber seinem eigenen Plan verschieben — ein Weg, den ein frueheres Profil
-    // eingebracht hat, steht vorn. Das ist deterministisch und ohne fachliche Folge, weil der
-    // Abruf selbst NICHT zeitbudgetiert ist: `crawlAllSources` kennt keine Deadline und ruft
-    // jede aktive Quelle ab. Die Reihenfolge entscheidet also nicht darueber, WELCHE Quelle
-    // abgerufen wird — nur in welcher Reihenfolge Gate-Slots vergeben werden.
-    const crawlerSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "crawler.js"), "utf8");
-    check("2.11d die Reihenfolge entscheidet NICHT ueber die Versorgung: der Abruf hat keine Deadline",
-      /async function crawlAllSources/.test(crawlerSrc)
-      && !/deadline|budgetMs/i.test(crawlerSrc.slice(crawlerSrc.indexOf("async function crawlAllSources"), crawlerSrc.indexOf("async function crawlAllSources") + 4000)));
+    // eingebracht hat, steht vorn. Die Planmenge bleibt gleich, eine begrenzte
+    // Ausfuehrung garantiert jedoch keinen vollstaendigen Abruf. Die echte
+    // Deadline muss unabhaengig von der Planreihenfolge vor dem Netz stoppen.
+    let netzaufrufe = 0;
+    const gestoppt = await require(path.join(ROOT, "lib/helmut/crawler.js")).crawlAllSources([
+      { id: "fixture-frist", name: "Deklarierte Offlinequelle", active: true,
+        crawlMethod: "rss", url: "https://example.test/feed.xml" }
+    ], { now: () => BASIS_MS, deadlineMs: BASIS_MS,
+      fetchUrl: async () => { netzaufrufe++; throw Error("kein-Netz-erlaubt"); } });
+    check("2.11d abgelaufene Ausfuehrungsfrist stoppt vor Netz, ohne einen Abruf zu behaupten",
+      netzaufrufe === 0 && gestoppt.results.length === 1 && gestoppt.results[0].ok === false
+      && gestoppt.results[0].error === "quellenabruf-zeitbudget" && gestoppt.rawItems.length === 0);
     check("2.11e eine ANDERE Profilreihenfolge aendert nur die Reihenfolge, nicht die MENGE",
       (() => {
         const gedreht = G.planGlobaleQuellen({ profilQuellen: [...profilQuellen].reverse() });

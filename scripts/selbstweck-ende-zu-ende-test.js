@@ -71,8 +71,10 @@ process.env.HELMUT_KLASSEN_GRENZEN = "on";
 process.env.HELMUT_JOB_DISPATCH_MODE = "queue";
 process.env.HELMUT_JOB_TRANSPORT = "selbstweck";
 process.env.HELMUT_WAKE_TIMEOUT_MS = "3000";
-// Kurzes Drain-Budget: der Vertrag ist unveraendert, nur die Testlaufzeit wird ertraeglich.
-process.env.HELMUT_DRAIN_BUDGET_MS = "8000";
+// Derselbe 60-s-Default wie im Verbraucher: 8 s reichen seit der Quellen-
+// Restzeitwache nicht fuer zwei Speicherreserven plus Abschluss. Die Attrappe
+// wartet nur ihre expliziten 0/900 ms; das Budget erzeugt keine zusaetzliche Arbeit.
+process.env.HELMUT_DRAIN_BUDGET_MS = "60000";
 process.env.HELMUT_WORKER_BATCH = "10";
 // `HELMUT_SOURCE_MODE=off` wuerde den Auftragstyp `source_fetch` aus der Typmenge des Workers
 // nehmen (worker-betrieb: TYPEN_MIT_ABRUF) — dann liefe die Kette ins Leere. Der Abruf selbst
