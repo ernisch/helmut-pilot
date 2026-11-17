@@ -62,3 +62,121 @@ neue-quelle, zwei gespeicherte gepruefte Lageabsaetze erhalten. Einziger
 struktureller Restfehler: quellenversorgung-unvollstaendig. Keine Duplikattexte.
 Damit ist die Morgenfenster-Reparatur aus PR1241 nun im echten Lauf bestaetigt;
 Quellenabnahme bleibt partial. Kosten und gespeicherte Alt-Erfolge erhalten.
+
+## Konkrete zulässige Aktivierung: nur Titel-/Linkmetadaten
+
+Nach unabhängigem Review wird ausschließlich der Meldungen-Feed mit dem
+bestehenden geschlossenen Herkunfts-/DTO-Kanal eingebunden. Inhalt und
+content:encoded werden nicht übernommen; keine Bilder, Logos, Beschreibung,
+Zitat- oder Trainingsrechte. Die erklärte kommerzielle Freigabe im Quellcode
+betrifft nur title_link_metadata. Fremde Artikelhosts, Root-/Servicepfade,
+fehlende Itemdaten, manipulierte Feedidentitäten oder Herkunft sperren.
+Aktuelle eigene Artikel haben direkte Slugs; ein fremder Altlink im Feed
+wird einzeln verworfen, ohne gültige Nachbarn zu verlieren.
+
+Vorwerte17Nov: BMG-Herausgeber vorhanden, active/ministry/official_primary/hoch;
+AS-Paket active, Gesundheit prepared; neuer RSS-Pfad und alle seine Links fehlen.
+Kleinste Productionaktion: genau zwei Katalogzeilen (ein RSS-Pfad plus eine
+AS-Paketkante). Kein Paketstatus, Publisher, bisheriger Googleweg, Profil, Cron,
+Budget oder Quota wird verändert. Gesundheitskatalog bleibt vorbereitet.
+AGENTS.md15Nov erlaubt diese kleine reversible Aktivierung im belegten Umfang;
+keine gesonderte Verarbeitungsfreigabe und kein zusätzlicher Quellenlauf daraus.
+
+Erst nach grüner exakter Pflicht-CI, Review und regulärem Deployment wird die
+folgende idempotente, kurz begrenzte Transaktion angewandt:
+
+```sql
+BEGIN;
+SET LOCAL statement_timeout = '5s';
+SET LOCAL lock_timeout = '1s';
+LOCK TABLE public.helmut_jobs IN SHARE MODE NOWAIT;
+LOCK TABLE public.retrieval_paths, public.package_paths IN SHARE ROW EXCLUSIVE MODE NOWAIT;
+DO $bmg$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.helmut_jobs WHERE status='running'
+      AND lease_expires_at>now() AND job_type IN ('source_fetch','document_understanding')) THEN
+    RAISE EXCEPTION 'BMG: laufende Originalverarbeitung';
+  END IF;
+  PERFORM 1 FROM public.publishers
+    WHERE id='publisher-bundesgesundheitsministerium.de'
+      AND canonical_domain='bundesgesundheitsministerium.de'
+      AND name='Bundesministerium für Gesundheit'
+      AND publisher_type='ministry' AND evidence_role='official_primary'
+      AND trust='hoch' AND lifecycle_status='active' AND entity_id='ministry-bmg'
+    FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'BMG: Herausgebervorwert abweichend'; END IF;
+  PERFORM 1 FROM public.source_packages
+    WHERE id='pkg-arbeit-und-soziales' AND key='arbeit-und-soziales'
+      AND status='active' AND is_base=false AND political_level='bund'
+      AND geography_id='geo-bund' FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'BMG: Paketvorwert abweichend'; END IF;
+  IF EXISTS (SELECT 1 FROM public.retrieval_paths
+      WHERE id<>'rp-bmg-meldungen-rss' AND (legacy_source_id='bmg-meldungen-rss'
+        OR url='https://www.bundesgesundheitsministerium.de/meldungen.xml')) THEN
+    RAISE EXCEPTION 'BMG: andere Pfadidentitaet mit demselben Feed';
+  END IF;
+  INSERT INTO public.retrieval_paths
+    (id,publisher_id,legacy_source_id,name,method,url,query,parser,priority,
+     status,activation_mode,is_critical,max_items,expected_frequency,represents_type)
+  VALUES ('rp-bmg-meldungen-rss','publisher-bundesgesundheitsministerium.de',
+    'bmg-meldungen-rss','Bundesministerium für Gesundheit — aktuelle Meldungen',
+    'rss','https://www.bundesgesundheitsministerium.de/meldungen.xml',NULL,
+    'rss-regex',80,'needs_review','auto',false,12,NULL,NULL)
+  ON CONFLICT (id) DO NOTHING;
+  IF NOT EXISTS (SELECT 1 FROM public.retrieval_paths
+      WHERE id='rp-bmg-meldungen-rss'
+        AND publisher_id='publisher-bundesgesundheitsministerium.de'
+        AND legacy_source_id='bmg-meldungen-rss' AND name='Bundesministerium für Gesundheit — aktuelle Meldungen'
+        AND method='rss' AND url='https://www.bundesgesundheitsministerium.de/meldungen.xml'
+        AND query IS NULL AND parser='rss-regex' AND priority=80
+        AND status IN ('needs_review','healthy') AND activation_mode='auto'
+        AND is_critical=false AND max_items=12
+        AND expected_frequency IS NULL AND represents_type IS NULL) THEN
+    RAISE EXCEPTION 'BMG: Pfad fehlt oder Vorwert abweichend';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.package_paths
+      WHERE retrieval_path_id='rp-bmg-meldungen-rss'
+        AND package_id<>'pkg-arbeit-und-soziales') THEN
+    RAISE EXCEPTION 'BMG: unerwartete Paketkante';
+  END IF;
+  INSERT INTO public.package_paths (package_id,retrieval_path_id)
+    VALUES ('pkg-arbeit-und-soziales','rp-bmg-meldungen-rss')
+    ON CONFLICT (package_id,retrieval_path_id) DO NOTHING;
+END;
+$bmg$;
+SELECT id,publisher_id,legacy_source_id,method,url,parser,status,activation_mode,
+  max_items,last_success_at,error_streak FROM public.retrieval_paths
+  WHERE id='rp-bmg-meldungen-rss';
+SELECT package_id,retrieval_path_id FROM public.package_paths
+  WHERE retrieval_path_id='rp-bmg-meldungen-rss';
+COMMIT;
+```
+
+Rückweg: nur den neuen Pfad bei unverändert belegter Identität und ohne laufenden
+zugehörigen Originalauftrag auf status paused/activation_mode manual setzen.
+Keine Erfolgsdaten, Archive, Kosten oder Quittungen löschen; Paketkante darf
+inaktiv erhalten bleiben. Keine automatische Wiederholung eines unbekannten
+Transaktionsausgangs; zuerst gezielter Readback. Kein Vollseed und keine Migration.
+
+Kostenbeleg nach echtem Morgenabschluss: unverändert0,731491USD Tag /
+5,025191USD gesamt gebunden,67 heutige Buchungen einschließlich einer
+ungeklärten Reservierung. Keine zusätzlichen Modellkosten.
+
+Die kurzen NOWAIT-Sperren verhindern einen Claim zwischen Ruhepruefung und
+Mutation sowie konkurrierende doppelte Feed-/Paketidentitaeten. Bei belegter
+Parallelitaet oder abweichenden Vorwerten stoppt die gesamte Transaktion.
+Ein befuellter Feed ohne gueltige Metadaten meldet einen Parserfehler, keine
+ruhige Quellenlage; gute Nachbarn bleiben erhalten. Google-/Personen-/Bild-
+Nachladepfade werden fuer die direkte BMG-Identitaet vollstaendig ausgelassen.
+
+## Gezielter Integrationsnachweis
+
+Datumsvertrag12/12 und bestehende Metadaten-/RSS-/DTO-Suite36/36 lokal
+bestanden. Unabhaengiger finaler Review ohne offene Findings, einschliesslich
+CET/CEST, fremdem Googleproxy bei manipuliertem Personentyp, Canonical-www-
+Projektion, Date-/Scope-Manipulation, all-invalid-Parserfehler und guter Nachbarn.
+Nur synthetischer Transport/Loopback, keine Datenbank- oder Modelltests und
+keine Mengenlaeufe. Beide Pflichtchecks werden an den finalen Dateibaum gebunden;
+Deployment, Aktivierung und rein lesender Readback stehen am PR1242.
+Die neue Quelle ist erst technisch vorbereitet; ein echter regulaerer BMG-
+Folgebeleg wird nicht durch die lokale Feedpruefung oder Katalogzeile ersetzt.

@@ -23,8 +23,12 @@ const K = require("../lib/helmut/artikelkontext-beschaffung");
 const E = require("../lib/helmut/quellen-auszug");
 const { resolveProfilePackages } = require("../lib/helmut/quellenarchitektur/profile-packages");
 const { v1Sources } = require("../lib/helmut/sources");
-const { PARLAMENTSDATEN_QUELLEN: sources } = require("../lib/helmut/quellenarchitektur/seeds/parlamentsdaten-quellen");
+const { PARLAMENTSDATEN_QUELLEN: registeredSources, BMG_SOURCE_ID } = require("../lib/helmut/quellenarchitektur/seeds/parlamentsdaten-quellen");
+// Die beiden vorhandenen Originalfixtures gehoeren ausschliesslich zu diesen IDs.
+const sources = ["eurlex-amtsblatt-l-rss", "bundespuls-vorgaenge-rss"]
+  .map(id => registeredSources.find(source => source.id === id));
 const [eurlex, bundespuls] = sources;
+const bmg = registeredSources.find(source => source.id === BMG_SOURCE_ID);
 const catalog = buildCatalog();
 const read = name => fs.readFileSync(path.join(__dirname, "fixtures/parlamentsdaten-20261106", name), "utf8");
 function pruefeFehlerwege(calls, source) {
@@ -33,6 +37,12 @@ function pruefeFehlerwege(calls, source) {
   if (calls.length === 2) assert(calls[1].startsWith("https://publications.europa.eu/webapi/rdf/sparql?"));
 }
 const feeds = [read("eurlex-amtsblatt-l.xml"), read("bundespuls-vorgaenge.xml")];
+const bmgUrl = "https://www.bundesgesundheitsministerium.de/dialogforum-kinder-und-jugendsport";
+const bmgTitle = "Gemeinsam für mehr Bewegung bei Kindern und Jugendlichen";
+function bmgItem({ url = bmgUrl, title = bmgTitle, date = "Mon, 16 Nov 2026 00:00:00 CET" } = {}) {
+  return `<item><title>${title}</title><link>${url.replaceAll("&", "&amp;")}</link>${date === null ? "" : `<pubDate>${date}</pubDate>`}<description>NICHT_FREIGEGEBENE_BMG_BESCHREIBUNG</description><content:encoded><![CDATA[<p>NICHT_FREIGEGEBENER_BMG_VOLLTEXT</p>]]></content:encoded><enclosure url="https://example.org/bild.jpg" type="image/jpeg"/><dc:creator>Fremde Behauptung</dc:creator></item>`;
+}
+const bmgXml = (...items) => `<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><pubDate>Tue, 17 Nov 2026 08:57:59 +0100</pubDate>${items.join("")}</channel></rss>`;
 const irights = { id: "fach-irights-rss", name: "iRights.info", type: "media", priority: 80,
   url: "https://irights.info/feed", crawlMethod: "rss", active: false };
 const irightsUrl = "https://irights.info/artikel/ki-und-offenheit-vereinen-open-source-llms-im-bildungsbereich/32946";
@@ -321,7 +331,7 @@ async function transport(body, status, fn) {
       assert(other.content.startsWith("Zusätzlicher Volltext."));
     }
   });
-  await test("Nur zwei vorbereitete Wege, trotz passendem Profil und Basisbindung inaktiv", async () => {
+  await test("Beide bisherigen Wege bleiben trotz passendem Profil und Basisbindung inaktiv", async () => {
     assert.equal(sources.length, 2);
     for (const source of sources) {
       assert.equal(source.active, false); assert.equal(source.preparedOnly, true);
@@ -513,6 +523,118 @@ async function transport(body, status, fn) {
     const radar = docs => R.buildDynamics(selection, { [ko.id]: { ...ko, source_document_count: docs.length } }, { [ko.vorgang_id]: docs }, now);
     assert.deepEqual(radar([dip]), []); assert.deepEqual(radar([dip, bp]), []);
     assert.equal(radar([dip, media])[0].signalType, "broadening");
+  });
+  await test("BMG Direktfeed ist ausschliesslich vorbereitet und an seine zwei Fachpakete gebunden", () => {
+    assert.equal(registeredSources.length, 3);
+    assert.equal(bmg.active, false); assert.equal(bmg.preparedOnly, true);
+    assert.equal(bmg.maxItems, 12);
+    assert.equal(bmg.rightsReviewRequired, false);
+    assert.equal(bmg.usagePolicy.scope, "metadata_only");
+    assert.equal(bmg.usagePolicy.commercialUseApproved, true);
+    for (const key of ["fullTextAllowed", "imagesAllowed", "aiTrainingAllowed"]) assert.equal(bmg.usagePolicy[key], false);
+    assert.equal(bmg.usagePolicy.legalExcerptAllowed, undefined);
+    assert.equal(v1Sources.filter(s => s.id === bmg.id).length, 1);
+    const entry = catalog.retrievalPaths.find(p => p.legacy_source_id === bmg.id);
+    assert.equal(entry.method, "rss"); assert.equal(entry.status, "paused"); assert.equal(entry.activation_mode, "manual");
+    assert.deepEqual(catalog.packagePaths.filter(p => p.retrieval_path_id === entry.id).map(p => p.package_id).sort(),
+      ["pkg-arbeit-und-soziales", "pkg-fach-gesundheit"]);
+    assert.equal(M.isPathActive(entry, ["pkg-arbeit-und-soziales", "pkg-fach-gesundheit"]), false);
+  });
+  await test("BMG RSS wird ohne Artikelabruf mit CET Itemdatum zu titelgebundenen Metadaten und DTOs", async () => {
+    const xml = bmgXml(bmgItem(), bmgItem({ url: "https://www.bundesgesundheitsministerium.de/deutscher-pflegetag-2026",
+      title: "Linnemann: Pflege geht über reine Versorgung hinaus", date: "Thu, 12 Nov 2026 00:00:00 CET" }));
+    await transport(xml, 200, async calls => {
+      const rawItems = await C.crawlSource(bmg);
+      assert.deepEqual(calls, [bmg.url]); assert.equal(rawItems.length, 2);
+      assert.deepEqual(rawItems.map(r => r.publishedAt), ["2026-11-15T23:00:00.000Z", "2026-11-11T23:00:00.000Z"]);
+      for (const raw of rawItems) {
+        assert.equal(raw.content, raw.title); assert.equal(raw.excerpt, raw.title.slice(0, 240));
+        assert.equal(raw.imageUrl, null); assert.equal(raw.author, bmg.name);
+        assert.equal(raw.originalUrl, "");
+        for (const stored of [D.toRawDocumentRow(raw), G.planDedupWrites([raw], []).persists[0]]) {
+          const doc = JSON.parse(JSON.stringify(stored));
+          assert.equal(doc.summary ?? null, null);
+          const origin = H.leseParlamentsdatenHerkunft(doc), notice = H.parlamentsdatenQuellenhinweis(doc);
+          assert(origin); assert.equal(origin.identifier.kind, "BMG-Meldung");
+          assert.equal(origin.publicationTime, doc.published_at); assert.equal(origin.scope, "title_link_metadata");
+          assert.equal(origin.evidenceRole, "official_primary");
+          assert.equal(notice.originalUrl, doc.url); assert.equal(notice.licenseUrl, "https://www.bundesgesundheitsministerium.de/impressum");
+          assert(notice.text.includes("Bundesministerium für Gesundheit")); assert(!JSON.stringify(notice).includes("CC0"));
+          for (const dto of [L.mapSource(doc), B.buildSources({}, [doc])[0], R.pickPrimarySource({}, [doc]), B.oeffnendeHelmutQuelle({}, [doc])])
+            assert.deepEqual(dto.sourceNotice, { ...notice, articleUrl: dto.url });
+          assert(H.leseParlamentsdatenHerkunft({ ...doc, url: doc.canonical_url }), "Exakte kanonische Originalprojektion bleibt gebunden");
+          assert(!JSON.stringify(doc).includes("NICHT_FREIGEGEBEN"));
+          const alias = { ...doc, parlamentsdatenHerkunft: doc.raw.parlamentsdatenHerkunft,
+            published_at: doc.published_at.replace(".000Z", "+00:00") };
+          delete alias.raw;
+          assert(H.leseParlamentsdatenHerkunft(alias), "Gleicher Zeitwert nach PostgREST bleibt gebunden");
+        }
+      }
+    });
+  });
+  await test("BMG Feedidentitaet, lange Titel, fehlende Itemzeit und fremde Artikelziele bleiben geschlossen", async () => {
+    const item = C.parseRssItems(bmgXml(bmgItem()))[0];
+    for (const source of [{ ...bmg, url: "https://example.org/feed" }, { ...bmg, rssUrl: "https://example.org/feed" },
+      { ...bmg, rssUrls: [bmg.url, "https://example.org/feed"] }, { ...bmg, rssUrls: "ungueltig" }, { ...bmg, crawlMethod: "html" }]) {
+      assert.equal(C.normalizeRawItem(item, source), null);
+      await transport("<html>Kein Fallback</html>", 200, async calls => {
+        await assert.rejects(C.crawlSource(source), /bmg-feed-identitaet-nicht-freigegeben/); assert.deepEqual(calls, []);
+      });
+    }
+    for (const altered of [{ ...item, title: "a".repeat(301) }, { ...item, publishedAt: null },
+      { ...item, publishedAt: "ungueltig" }, ...["https://example.org/fremder-artikel", "https://www.bundesgesundheitsministerium.de/",
+        "https://www.bundesgesundheitsministerium.de/impressum", bmgUrl + "?fremd=1", bmgUrl + "#fremd",
+        "https://www.bundesgesundheitsministerium.de.example.org/falscher-artikel"].map(url => ({ ...item, url }))])
+      assert.equal(C.normalizeRawItem(altered, bmg), null);
+    assert.equal(C.normalizeRawItem({ ...item, title: "a".repeat(300) }, bmg).title.length, 300);
+    assert.equal(C.normalizeRawItem(C.parseRssItems(bmgXml(bmgItem({ date: null })))[0], bmg), null,
+      "KanalpubDate ersetzt keine Itempublikation");
+    await transport(bmgXml(bmgItem({ url: "https://www.sozialwahl.de/fremde-meldung" }), bmgItem()), 200, async calls => {
+      const items = await C.crawlSource(bmg);
+      assert.equal(items.length, 1); assert.equal(items[0].url, bmgUrl); assert.deepEqual(calls, [bmg.url]);
+    });
+  });
+  await test("BMG Herkunft bindet Datum, Host und Umfang ohne spaeteren Originaltextpfad", async () => {
+    const raw = C.normalizeRawItem(C.parseRssItems(bmgXml(bmgItem()))[0], bmg);
+    const doc = D.toRawDocumentRow(raw);
+    for (const mutate of [d => d.source_id = "andere-quelle", d => d.title = "Anderer Titel",
+      d => d.published_at = "2026-11-14T23:00:00Z", d => d.published_at = null,
+      d => d.url += "?fremd=1", d => d.canonical_url += "?fremd=1", d => d.canonical_url = "https://example.org/fremder-artikel",
+      d => d.raw.parlamentsdatenHerkunft.scope = "licensed_rss_excerpt",
+      d => d.raw.parlamentsdatenHerkunft.publicationTime = "2026-11-14T23:00:00.000Z",
+      d => d.raw.parlamentsdatenHerkunft.fullText = "Ungeprueft"] ) {
+      const changed = structuredClone(doc); mutate(changed);
+      assert.equal(H.leseParlamentsdatenHerkunft(changed), null);
+      assert.throws(() => D.toRawDocumentRow(changed), /parlamentsdaten-herkunft/);
+    }
+    let io = 0;
+    const forbidden = () => { io++; throw new Error("Kein IO erlaubt"); };
+    assert.deepEqual(await K.beschaffeArtikelkontext(doc, { versuch: true }, {
+      fetchUrl: forbidden, speicher: { lesen: forbidden, reservieren: forbidden, abschliessen: forbidden }
+    }), { ok: false, reason: "quelle-nur-metadaten" });
+    assert.deepEqual(E.fromHtml(doc, { body: "<article>Unbestellter Volltext</article>", finalUrl: doc.url }), { ok: false, reason: "quelle-nur-metadaten" });
+    assert.deepEqual(E.fromMirror(doc, [{ ...raw, content: "Unbestellter Volltext" }]), { ok: false, reason: "quelle-nur-metadaten" });
+    assert.equal(io, 0);
+  });
+  await test("BMG unterscheidet fehlende Metadatenbestaetigung von echtem Leerfeed und gueltigem Nachbarn", async () => {
+    await transport(bmgXml(bmgItem({ date: null }), bmgItem({ url: "https://example.org/fremde-meldung" })), 200, async calls => {
+      await assert.rejects(C.crawlSource(bmg), /RSS parser: bmg-metadaten-nicht-bestaetigt/);
+      assert.deepEqual(calls, [bmg.url], "Kein HTML- oder Originalnachladen nach verworfenen Metadaten");
+    });
+    await transport(bmgXml(), 200, async calls => {
+      assert.deepEqual(await C.crawlSource(bmg), []); assert.deepEqual(calls, [bmg.url]);
+    });
+    await transport(bmgXml(bmgItem({ date: null }), bmgItem()), 200, async calls => {
+      const items = await C.crawlSource(bmg);
+      assert.equal(items.length, 1); assert.equal(items[0].url, bmgUrl); assert.deepEqual(calls, [bmg.url]);
+    });
+    await transport(bmgXml(bmgItem({ url: "https://news.google.com/rss/articles/CBMiFremderNachbar" }), bmgItem()), 200, async calls => {
+      const items = await C.crawlSource({ ...bmg, type: "person", name: "Fremde Herausgeberbehauptung" });
+      assert.equal(items.length, 1); assert.equal(items[0].url, bmgUrl);
+      assert.equal(items[0].sourceName, bmg.name); assert.equal(items[0].sourceType, "official");
+      assert.equal(items[0].author, bmg.name); assert.equal(items[0].imageUrl, null);
+      assert.deepEqual(calls, [bmg.url], "Kein Google-, Original- oder Bildabruf fuer BMG-Metadaten");
+    });
   });
   console.log(`\n${passed}/${passed} Prüfgruppen bestanden; kein Netz, keine DB, kein Modell.`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

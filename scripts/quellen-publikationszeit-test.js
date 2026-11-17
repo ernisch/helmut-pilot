@@ -31,12 +31,40 @@ function lage(doc) { return L.baueEingabe([{ vorgang_id: "vg-datum" }], { "vg-da
     ];
     for (const [input, expected] of cases) assert.equal(publikationszeit(input), expected, input);
   });
+  await test("Explizite CET und CEST behalten festen Offset und echte UTC Tagesgrenzen", () => {
+    const cases = [
+      // Genau die gelieferten Publikationsangaben der beiden amtlichen BMG Feeds.
+      ["Mon, 09 Nov 2026 00:00:00 CET", "2026-11-08T23:00:00.000Z"],
+      ["Mon, 16 Nov 2026 00:00:00 CET", "2026-11-15T23:00:00.000Z"],
+      ["Sun, 12 Apr 2026 00:00:00 CEST", "2026-04-11T22:00:00.000Z"],
+      ["Sun, 12 Apr 2026 00:00:00 CET", "2026-04-11T23:00:00.000Z"],
+      ["Thu, 01 Jan 2026 00:00:00 cet", "2025-12-31T23:00:00.000Z"]
+    ];
+    for (const [input, expected] of cases) assert.equal(publikationszeit(input), expected, input);
+  });
+  await test("RSS Import verwendet CET Itemdatum statt neuem Kanal oder Abrufdatum", () => {
+    for (const [date, expected] of [
+      ["Mon, 09 Nov 2026 00:00:00 CET", "2026-11-08T23:00:00.000Z"],
+      ["Mon, 16 Nov 2026 00:00:00 CET", "2026-11-15T23:00:00.000Z"]
+    ]) {
+      const xml = `<rss><channel><pubDate>Tue, 17 Nov 2026 08:57:59 +0100</pubDate><item><title>${item.title}</title><link>${item.url}</link><pubDate>${date}</pubDate><description>${item.content}</description></item></channel></rss>`;
+      const normalized = C.normalizeRawItem(C.parseRssItems(xml)[0], source);
+      assert.equal(normalized.publishedAt, expected);
+      const doc = D.toRawDocumentRow(normalized);
+      assert.equal(doc.published_at, expected);
+      assert.equal(doc.url, item.url);
+      assert.equal(doc.summary, item.content);
+    }
+  });
   await test("Unmoegliche oder uneindeutige Datumsangaben erzeugen keine Zeit", () => {
     for (const bad of [null, undefined, "", 12, "12", "04/12/26", "12 Apr 26 10:00 GMT",
       "2026-02-30T12:00:00Z", "2026-02-29", "Mon, 30 Feb 2026 12:00:00 GMT",
       "Mon, 12 Apr 2026 10:00:00 GMT", "12 Apr 2026 24:00 GMT", "12 Apr 2026 12:99 GMT",
       "12 Apr 2026 10:00 +0260", "12 Apr 2026 10:00", "2026-04-12T10:00:00",
-      "ungueltiges Datum", "2026-04-12T10:00:00+24:00"])
+      "ungueltiges Datum", "2026-04-12T10:00:00+24:00",
+      "16.11.2026 00:00 CET", "11/16/2026 00:00 CET", "16 Nov 26 00:00 CET",
+      "Tue, 16 Nov 2026 00:00:00 CET", "29 Feb 2026 00:00 CET", "16 Nov 2026 24:00 CEST",
+      "16 Nov 2026 00:00 MEZ", "16 Nov 2026 00:00 MESZ", "16 Nov 2026 00:00 Europe/Berlin"])
       assert.equal(publikationszeit(bad), null, String(bad));
   });
   await test("Normalisierung und globale Neuanlage erfinden bei fehlendem Datum keine Publikation", () => {
