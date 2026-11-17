@@ -886,6 +886,7 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: |
           node scripts/lokal.js -- node scripts/ci-pruefplan-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-auszug-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-native-datum-test.js
 
@@ -902,6 +903,8 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/abdeckungspruefung-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-cellar-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-hardening-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-quellenkontext-test.js
+          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-findings-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-dedupe-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/briefing-quellenpflicht-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/briefing-artikelidentitaet-test.js
@@ -923,9 +926,6 @@ jobs:
         run: |
           node scripts/lokal.js -- node scripts/ci-briefingqualitaet-plan-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-destatis-rss-stand-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-quellenkontext-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-findings-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
 
       - name: Quellenreadback - JSON-Speicherung, Ersatzvorstand und bestehende HTTP-Integration
         if: steps.plan.outputs.quellenreadback == 'true'
