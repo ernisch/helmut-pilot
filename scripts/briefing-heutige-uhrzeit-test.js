@@ -15,15 +15,16 @@ const ko = {
   id: "ko-uhrzeit", vorgang_id: "vg-uhrzeit", status: "active", understanding_status: "complete",
   headline: "Ausschuss beraet den elektronischen Ausweis",
   display_title: "Ausschuss beraet den elektronischen Ausweis",
-  was_ist_passiert: "Der Ausschuss beraet den elektronischen Ausweis.",
+  was_ist_passiert: "Der Innenausschuss beraet den elektronischen Ausweis.",
   warum_wichtig: "Digitale Identitaet betrifft die Verwaltung.",
   recommendation: "Die Unterlagen zur Beratung vorbereiten.",
   updated_at: "2026-09-13T12:00:00Z",
+  deadline: "2026-09-13",
   action_items_struct: [{ title: "Unterlagen einreichen", description: "Die Einladung nennt die Abgabefrist.",
     dueHint: "heute 16 Uhr", priority: "high", actionType: "delegate" }]
 };
 const doc = { id: "d-uhrzeit", title: ko.headline,
-  summary: "Die Unterlagen zur Ausweisberatung sind am 13.09.2026 bis 16 Uhr Berliner Zeit einzureichen.",
+  summary: "Die Unterlagen zur Ausweisberatung im Innenausschuss sind am 13.09.2026 bis 16 Uhr Berliner Zeit einzureichen.",
   url: "https://www.bundestag.de/dokumente/beispiel-ausweisfrist",
   source_name: "Deutscher Bundestag", source_type: "parliament", published_at: "2026-09-13T08:00:00Z" };
 let input = structuredClone(ko), docs = [structuredClone(doc)];
@@ -68,7 +69,9 @@ const withHint = dueHint => ({ ...ko, action_items_struct: [{ ...ko.action_items
     const b = await server.__buildV3Briefing(profile, profile.id, { now: before });
     assert.equal(b.items.length, 1);
     assert.equal(b.personalizedRecommendations[0].actionItems[0].dueHint, "heute 16 Uhr");
-    assert.equal(b.currentHelmutState.actionItems[0].dueHint, "heute 16 Uhr");
+    assert.equal(b.currentHelmutState.tagesAnlass.art, "heutige-frist");
+    assert.equal(b.currentHelmutState.tagesAnlass.beleg.documentId, doc.id);
+    assert.deepEqual(b.currentHelmutState.actionItems, [], "Belegter Pruefanlass ist keine automatische Einreichungspflicht");
   });
   for (const hint of ["heute 16 Uhr", "heute 18 Uhr"])
     await test("Echter Builder verbreitet keine abgelaufene Frist: " + hint, async () => {
