@@ -75,6 +75,25 @@ Danach19/19 Vorschaugruppen mit echtem Chromium320/390/1280, hell/dunkel,
 gruen. Anfangs lokal nur das nicht installierte Playwright-Bundle verhindert;
 vorhandenen Systemchromium verwendet, kein Browserdownload oder Gate-Skip.
 Alter CI-Kopf bleibt waehrend laufender Kernpruefung unveraendert.
+Realer reiner Betreiber-Appabruf19:24:20UTC, vorhandener GET ohne tag/modus:
+HTTP200/availabletrue,690831Bytes, Antwortsha256
+`dab75d4b0b6fbca11a727adbbcbd312b1eceaa911f49d62a68bd7c6900bf2c0c`.
+Paket6ae73360 unveraendert, zwei Lageabsaetze/elf Karten, keine Tagesprioritaet,
+Radarstale; Fehler Quellenversorgung/Handlungsbeleg bleiben ehrlich erhalten.
+Absatztextsha256 `a12a2a0210f38944244317c4acdddcfae0b39f92fd616e7a2229d950ae910c89`.
+Kein neuer Verarbeitungs- oder angemeldeter Kundenbrowsernachweis.
+Ungekuerzte Antwort bleibt privat ausserhalbGit.
+
+Dieser echte Antworttyp enthaelt auch verdeckte Altitems und Paketabhaengigkeiten.
+Eine weitere enge Gegenprobe belegt deren faelschlichen Vorrang im neuen
+Metadatenleser vor den wirklich sichtbaren Vorgangskennungen. Auswahl jetzt
+aus Lage, qualifiziertem Helmutstand und angezeigtem Radar; keine neuen
+Kandidaten oder Aenderung der Tagespriorisierung. Zusaetzlich gelangt die
+amtliche `dipBeratungsstaende[].vorgangId` sonst in die interne Tagespaket-
+Abhaengigkeitsmenge; die bestehende Publikationswache wuerde sie ohne KO ablehnen.
+Gezielt zuerst rot, dann diese geschlossenen Quellenmetadaten-Namensraeume
+vom internen Kennungssammler getrennt. Politische Vorgangs-/Quellen-/Paketwachen
+bleiben erhalten. Produktgruppen danach16/16, vorhandene Tagespaketsuite22/22.
 
 ## Belegkette
 

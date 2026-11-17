@@ -62,10 +62,24 @@ async function main(){
   await test("Default ohne reale Nutzungsfreigabe: null Kontext, null Speicherzugriffe",async()=>{
     const d=doc();A.equal(await T.leseKontext(profile,deps()),null);A.deepEqual(await T.mitGespeichertenStaenden([d],deps()),[d]);A.equal(calls.length,0);
   });
+  await test("Amtliche DIP-Vorgangsnummern sind keine internen Tagespaket-Abhaengigkeiten",async()=>{
+    const ids=require("../lib/helmut/tagespaket-auslieferung").vorgangIds({vorgangId:"interner-sichtbarer-vorgang",
+      sources:[{dipBeratungsstaende:[{vorgangId:"99988119"}]}]});
+    A.deepEqual([...ids],["interner-sichtbarer-vorgang"]);
+  });
   require.cache[seedPath].exports={...seed,ZUSAETZLICHE_QUELLEN:[...seed.ZUSAETZLICHE_QUELLEN,approval]};
   const oldRequest=S.supabaseRequest,oldCatalog=S.listSourceArchitectureRows;
   S.supabaseRequest=request;S.listSourceArchitectureRows=katalog;
   try{
+    await test("Metadaten lesen sichtbare Vorgangskennungen vor versteckten Altitems/Paketmetadaten",async()=>{
+      let angefordert;
+      const cached={items:Array.from({length:60},(_,i)=>({vorgangId:"verdeckter-altvorgang-"+i})),
+        lageBriefing:{vorgaenge:[{vorgangId:"sichtbare-lage"}]},currentHelmutState:{primaryVorgangId:"sichtbares-briefing"},
+        currentRadarState:{anzeige:{articles:[{vorgangId:"sichtbarer-radar"}]},articles:[{vorgangId:"verdeckter-rohradar"}]},
+        paketStatus:{quellenStand:{abhaengigkeiten:[{vorgang_id:"reine-paketabhaengigkeit"}]}}};
+      await T.ergaenzeAusgabe(cached,profile,{...deps(),storage:{getPruefSourcesByVorgaenge:async kos=>{angefordert=kos.map(k=>k.vorgang_id);return{};}}});
+      A.deepEqual(angefordert,["sichtbare-lage","sichtbares-briefing","sichtbarer-radar"]);
+    });
     await test("Neuester exakter gespeicherter Originalstand traegt GET-/Hash-/Zeitbindung",async()=>{
       A(E.freigabe(q,katalog()),"Deklarierte Zulassungsfixture muss den echten Vertrag bestehen");
       E.leseStand(stored[0].data);
