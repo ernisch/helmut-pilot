@@ -199,17 +199,22 @@ function zeilenSpeicher() {
   // F2 — „Neu" folgt dem BELEGTEN Meldungszeitpunkt, nie Helmuts Schreibzeitpunkt
   // =============================================================================
   const FENSTER = f.frischeFenster({ jetzt: JETZT }); // Vorabend-Standard: 14.07. 16:00 Berlin
+  // Deklarierte Original-Fiktion fuer die positiven Zeitfaelle. Die echte
+  // Anlassqualifikation bleibt aktiv; Zeitstempel allein erzeugen kein Primary.
+  const originalSatz = "Bei der ersten Beratung des Arbeitszeitentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
+  const testProfil = { id: MANDAT, committee: "Ausschuss für Arbeit und Soziales", focusTopics: ["Arbeitszeit"] };
+  const originalQuelle = (d, title = "Beratung des Arbeitszeitentwurfs") => ({ ...d, title, summary: originalSatz });
   const basisKo = {
     status: "understood", understanding_status: "complete",
-    was_ist_passiert: "passiert", warum_wichtig: "wichtig", why_relevant: "relevant",
+    was_ist_passiert: originalSatz, warum_wichtig: "wichtig", why_relevant: "relevant",
     recommendation: "Linie festlegen.", zeitdruck: "hoch", confidence_score: 80,
     // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
     // Die Datums-/Frischesemantik dieses Tests bleibt unberuehrt (Fallback-Quelle ohne Datum).
     best_source_url: "https://beispiel.de/politik/audit-artikel", best_link_type: "direct"
   };
   const baue = (ko, docs) => contract.toBriefingContractV3({
-    profile: { id: MANDAT }, decisions: [{ knowledge_object_id: ko.id, score: 90, decision: "Sofort reagieren" }],
-    kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: docs || [] },
+    profile: testProfil, decisions: [{ knowledge_object_id: ko.id, score: 90, decision: "Sofort reagieren" }],
+    kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: (docs || []).map(d => originalQuelle(d, ko.display_title)) },
     now: JETZT, briefingType: "morning", knowledgeObjects: [ko], frischeFenster: FENSTER
   }).currentHelmutState;
 
@@ -254,11 +259,11 @@ function zeilenSpeicher() {
   // =============================================================================
   const fensterGestern = f.frischeFenster({ jetzt: JETZT, letzterErfolgAt: "2026-07-14T04:00:00Z" });
   const gestrigesBriefing = contract.toBriefingContractV3({
-    profile: { id: MANDAT },
+    profile: testProfil,
     decisions: [{ knowledge_object_id: "g", score: 90, decision: "Sofort reagieren" }],
     kosById: { g: { ...basisKo, id: "g", vorgang_id: "vg-g", display_title: "Gestern frueh",
       created_at: "2026-07-14T05:00:00Z", updated_at: "2026-07-14T05:00:00Z" } },
-    sourcesByVorgang: { "vg-g": [{ id: "d4", url: "https://beispiel.de/politik/d4", published_at: "2026-07-14T05:00:00Z" }] },
+    sourcesByVorgang: { "vg-g": [originalQuelle({ id: "d4", url: "https://beispiel.de/politik/d4", published_at: "2026-07-14T05:00:00Z" }, "Gestern frueh")] },
     now: JETZT, briefingType: "morning",
     knowledgeObjects: [{ ...basisKo, id: "g", vorgang_id: "vg-g", created_at: "2026-07-14T05:00:00Z", updated_at: "2026-07-14T05:00:00Z" }],
     frischeFenster: fensterGestern
@@ -288,10 +293,10 @@ function zeilenSpeicher() {
 
   // Gegenprobe: eine heutige Quelle ist explizit heute, unabhaengig vom Slot-Namen.
   const heutigesBriefing = contract.toBriefingContractV3({
-    profile: { id: MANDAT }, decisions: [{ knowledge_object_id: "h", score: 90, decision: "Sofort reagieren" }],
+    profile: testProfil, decisions: [{ knowledge_object_id: "h", score: 90, decision: "Sofort reagieren" }],
     kosById: { h: { ...basisKo, id: "h", vorgang_id: "vg-h", display_title: "Heute frueh",
       created_at: "2026-07-15T03:10:00Z", updated_at: "2026-07-15T03:10:00Z" } },
-    sourcesByVorgang: { "vg-h": [{ id: "d5", url: "https://beispiel.de/politik/d5", published_at: "2026-07-15T03:10:00Z" }] },
+    sourcesByVorgang: { "vg-h": [originalQuelle({ id: "d5", url: "https://beispiel.de/politik/d5", published_at: "2026-07-15T03:10:00Z" }, "Heute frueh")] },
     now: JETZT, briefingType: "morning", frischeFenster: FENSTER
   });
   const antwortHeute = server.__prepareBriefingResponse(heutigesBriefing, {
