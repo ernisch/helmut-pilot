@@ -2,7 +2,7 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise,21:55UTC: PR1253/1252/1254 regulaer live und lesend bestaetigt.
+**Teilweise,23:26UTC: PR1252/1253/1254/1255 regulaer live und lesend bestaetigt.
 Technische Lesekorrekturen wirken; laufende Vollversorgung und Kunden-/Rechtsabnahme offen.**
 
 Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
@@ -42,6 +42,16 @@ Parlamentskontext aus denfuenf rechtlichinaktivenE-Wegen. Kein neuer
 Verarbeitungsabschluss oder angemeldeter visueller Kunden-/Fachnachweis.
 Ungekuerzte Antworten bleiben privat ausserhalbGit; keine Secrets im Bericht.
 
+
+Berliner Tageswechsel separat kontrolliert, noch VOR1255: reiner normaler
+AppGET17Nov23:03:05.658UTC (=18Nov00:03Berlin),HTTP200/availablefalse,
+Paketstatusfehlt, null Lageabsaetze/Karten und Radarsignale, kein Pakethash.
+AntwortSHA256 `7474263c46b837a05204eb816c581474697ea9f349fa7e51b1ad7a52b1aee031`.
+Kundenstart ruft denselben Leser auf und uebernimmt diesen ehrlichen fehlenden
+Tagesstatus. Eine spaetere leere Anzeige nach1255 beweist deshalb keine
+Radar-/Fristwirkung; dafuer fehlt das neue regulaere Tagespaket. Kein
+Tageslauf oder kuenstliches Paket zum Erzeugen eines positiven Nachweises.
+
 ### Verbleibender Bedarf des geprueften Bundestagspiloten
 
 | Bereich | Tatsaechlicher Rest | Kleinster zulaessiger Abschluss |
@@ -57,15 +67,84 @@ Ungekuerzte Antworten bleiben privat ausserhalbGit; keine Secrets im Bericht.
 D bleibt alleiniger Integrator und exklusiver Autor von CURRENT_STATE und diesem
 Dossier. [G-Zuschnitt bestaetigt22:03](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962281586):
 G bearbeitet die zwei vom Betreiber benannten Fachkorrekturen zur Radar-Neuigkeit
-und abgelaufenen Briefing-Schlusszeit; Fehlerbelege, gezielte Pruefungen und
-D-Endabnahme stehen noch aus. G besitzt exklusiv briefing-bereichsvertrag.js,
+und abgelaufenen Briefing-Schlusszeit. Fehlerbelege/gezielte Pruefungen liegen vor;
+Ds Codeendabnahme zu b987a0c6 und beide exakten Pflichtchecks sind gruen;
+PR1255 ist integriert und sein regulaerer Rollout lesend bestaetigt. G besitzt exklusiv briefing-bereichsvertrag.js,
 briefing-fristbeleg.js, briefing-orientierung.js, tagespaket-auslieferung.js und
 die bestehenden Bereichsvertrag-/Tagespakettests sowie den bestehenden Radar-
-Einzelartikel-Titelbindungstest (Zusatzreservierung6962321699); weitere Pfade vorher abgleichen.
+Einzelartikel-Titelbindungstest (6962321699) und Lage-Radar-Zusatznutzentest
+(6962544954) sowie Radar-Zusammenfassung-/Ursprungstests (6963118407);
+weitere Pfade vorher abgleichen.
 D schreibt dort nicht und uebernimmt unabhaengiges Review/Integration.
 E bestaetigt im eigenen Quellenbereich keinen weiteren notwendigen Codefehler.
 Der reine Statusabschluss wird nach gemeinsamer Integration zusammengefuehrt;
 keine Runtime, Konfiguration, Daten, Rechteflags oder neuen Tests dadurch.
+
+
+### Gemeinsame Fachkorrektur mit G: integriert, Betriebswirkung am neuen Tagespaket offen
+
+PR1255, eingefrorener2584d747 gegen eb75356a: D hat den vollstaendigen
+acht-Dateien-Diff und Producer-/Paket-/Client-Aufruferkontext gelesen.
+Gs bereits gruene gezielte Suiten werden uebernommen. D fuehrte nur zwei
+kleine isolierte Gegenproben ueber scripts/lokal.js mit deklarierten
+Fiktiveingaben aus; keine Quellen-, Modell-, Datenbank- oder Productionaktion.
+Vier konkrete Blocker wurden G zur Korrektur uebergeben:
+
+- 1.000Euro/1000Euro wird faelschlich als neuer Wert gewertet.
+- Ein ausdruecklich unklarer Beschluss wird durch das Wort beschlossen positiv.
+- ISO-Schlusszeit mit widersprechender weiterer Uhrzeit wird eindeutig ausgegeben.
+- Unbekanntes PST sperrt, kleingeschriebenes pst wird faelschlich Berliner Zeit.
+
+Die getrennte Publikationsdatum-only-Gegenprobe blieb korrektnull; kein Befund
+daraus. [Erste drei Faelle](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962725449),
+[Zeit-Schreibweise](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962783788).
+Erstlauf44188519620 auf2584 beendet/FAILURE: Browser gruen, Standard-/DB-Stufen
+gruen; Bereichsregression genau radar-zusammenfassung-bestand-test.js und
+radar-ursprung-test.js. D hat die Fehlerannotationen nur gelesen; G bestaetigt
+die alten synthetischen Titel-/Zaehlpositiven gezielt rot. Beide Testdateien
+sind G zusaetzlich zugeordnet, vorhandene Schutzassertions bleiben. Die vier
+Codekorrekturen liegen laut G lokalcf72d5ae vor, fuenf gezielte Suiten gruen;
+Der gemeinsame c055-Nachtrag schliesst diese vier Faelle, fuehrt aber eine
+IST/Satzwortkollision ein: case-insensitives ist wird als deutscher Anschluss
+angenommen. D bestaetigte genau IST/ist einmal lokal, keine Suitekopie.
+Lauf44192744427 wurde daraufhin als ueberholt sicher beendet (completed/cancelled),
+bevor der Kopf wechselte; daraus kein Erfolg. Letzter b987-Delta schliesst
+diese Kollision konservativ und erhaelt die BerlinerZeit-Positive.
+D hat alle notwendigen Enddeltas vollstaendig nachabgenommen:
+[Codeabnahme6963346267](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6963346267).
+Exakt b987a0c6ab042867dbc9928762eae372d98bbe70, genau zehn abgestimmteDateien,
+keine offenen Codebefunde. Pflichtlauf44193840298 completed/success auf genau
+diesemKopf: Kern134429930794 und Browserpflichtjob134429931289 erfolgreich.
+Browserausfuehrung laut unveraendertem Plan bewusstskipped; unveraenderte
+Client-/Browserbelege wiederverwendet, vollerMock100 ebenfalls bewusstskipped.
+PR1255 SHA-gebunden auf `02f5680d93ac25d8ecc30b471e35136fa12756dc` integriert,
+Mainbaum exakt b987. Normaler Gitrollout `dpl_6BzKc8ys9JbDDJBzkWKF4PJ4LVRZ`
+READY, Alias/Root/ClientHTTP200, Version02f5680d, ClientSHA09d3ec9c unveraendert.
+Echter normaler AppGET23:26:36.381UTC: HTTP200/availablefalse,3574Bytes,
+AntwortSHA256 `313436e358ebfd4a6050b84fe7f6c89e5f860747bdcc1c5a25f84c21f8357f0d`.
+Der Tagesstand18Nov fehlt wie VOR1255; null Absatz/Karte/Signal, kein Pakethash.
+Kein positiver G-Funktionsnachweis aus der Leere. Regulaerer Original- und
+Kundenausgabebeleg bleibt offen. Keine Zusatzlaeufe oder Datenwrites.
+
+
+### Notwendiger separater Folgepunkt C-02
+
+G hat [6962664646](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962664646)
+mit den realen Fachpaketvertraegen und einer synthetischen Insolvenzenmeldung
+isoliert reproduziert: Ein geteilter amtlicher RSS-Weg bestaetigt Wirtschaft
+UND Digitales als fachlich belegt, obwohl der gelesene Inhalt nur Wirtschaft
+traegt. Der bestehende Rechner prueft Dokumentqualitaet global je Abrufweg,
+uebernimmt dessen Rollen/Klassen dann fuer jedes verknuepfte Paket. Das ist
+von der separat fehlenden realen Digitalversorgung zu trennen.
+Nach1255-Rollout [zwei Dateien exklusiv G](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6964068458):
+quellenarchitektur/abdeckungspruefung.js und scripts/abdeckungspruefung-test.js.
+D prueft den Endkopf unabhaengig und integriert allein nach beiden gruenen
+Pflichtchecks. Technischen Abruf/Lesbarkeit erhalten, fachliche Versorgung
+artikelbezogen und bei Unklarheit unbekannt. Kein neuer Katalog, keine neue
+Taxonomie, Quellen-/Paket-/Rechteaktivierung oder Modelle. D hat die echten
+Verwaltungs-/Cron-Aufrufer samt relationaler Projektion lesend geprueft;
+G muss die Wirkung auch durch diesen bestehenden Wrapper erhalten. Weitere
+Projektionsdateien erst nach konkretem Zuschnitt. C-02 ist noch offen.
 
 ## Integration und notwendiger Folgeanschluss
 
@@ -377,5 +456,5 @@ nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 
-**Naechster Schritt:** Gs unveraenderten Endkopf mit den echten Fehler- und
-gezielten Pruefbelegen unabhaengig abnehmen.
+**Naechster Schritt:** Gs C-02-Endkopf fuer artikelbezogene Fachabdeckung
+unabhaengig abnehmen.
