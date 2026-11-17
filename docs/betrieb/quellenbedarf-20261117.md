@@ -107,3 +107,71 @@ Keine Volltextaktivierung und keine externe Kontaktaufnahme erfolgt.
 Abnahmestatus: offen. Bereits belegte BMG-Metadaten, Lage-/Morgenquittungen,
 Archive und Kosten bleiben erhalten. Diese Reparaturen ersetzen keine
 vollstaendige inhaltliche Kundenabnahme.
+
+## Anschlusspruefung A: parlamentarische Originale am 17.11.
+
+Basis `main 1a797c6c`, Koordination und Dateireservierung in
+[#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6949297979).
+PR1249/1250 werden nicht wiederholt. A integriert allein und nacheinander;
+B bearbeitet nach C-01 nur den reservierten Kundenrenderer und seinen bestehenden
+Quellenhinweistest; C bleibt unabhaengig lesend. Keine neuen Quellenfenster,
+Jobstarts, Modellaufrufe, Profilwrites oder Paketaktivierungen.
+
+Die aktuelle amtliche Mandatsbiografie wurde mit den benoetigten Rollen
+abgeglichen: ordentliche und stellvertretende Mitgliedschaften getrennt behandeln;
+Landeslisteneinzug ist kein Direktmandat. Der geografische Wahlkreisbezug und die
+Bundestagsebene ersetzen einander nicht. Individuelle Profil-/Betriebsdaten werden
+hier nicht veroeffentlicht. Es erfolgte keine Profilkorrektur.
+
+### Direkt lesbare amtliche Alternativen
+
+Die Ausschussseiten verlinken eigene Tagesordnungsseiten. Deren HTML enthaelt
+zunaechst eine leere Tabelle; die jeweilige Seite benennt ihren oeffentlichen
+`/ajax/filterlist/...`-Endpunkt. Dessen Antwort liefert konkrete Original-PDFs,
+einschliesslich Wirtschaft/Energie, das im gemeinsamen RSS fehlte. Die hier
+geoeffneten PDFs wurden lokal als Text gelesen, nicht nur auf HTTP200 geprueft.
+Das ist eine begrenzte Primaerpruefung, kein Quellenimport oder Produktbeleg.
+
+| Bedarf | Primaerbeleg und tatsaechlicher Inhalt | Kleinster noch noetiger Schritt / Grenze |
+| --- | --- | --- |
+| Arbeit/Soziales: naechste Ausschusssitzung | [Amtliche Liste](https://www.bundestag.de/ausschuesse/a11_arbeit_soziales/tagesordnungen), [Original-PDF](https://www.bundestag.de/resource/blob/1231704/TO-45-Sitzung.pdf): Mitteilung vom 06.11., Termin 26.11., 08:00 Uhr, TOP aktuelle arbeits-/sozialpolitische Themen | **Quellenwiderspruch erhalten:** Listentitel/Dateiname nennen die 45., der PDF-Inhalt die 44. Sitzung. Keine Nummer still korrigieren oder als eindeutig ausgeben. Termin ist keine persoenliche Anwesenheitspflicht. |
+| Wirtschaft/Energie: geaenderte Tagesordnung | [Amtliche Liste](https://www.bundestag.de/ausschuesse/a09_wirtschaft/wp21_a09_Tagesordnung), [Grundfassung](https://www.bundestag.de/resource/blob/1231438/to_59_11-11-2026.pdf) vom 05.11. und [4. Ergaenzung](https://www.bundestag.de/resource/blob/1232506/to_59_11-11-2026_4-ergaenzung.pdf) vom 10.11.: 59. Sitzung am 11.11.; Beginn von 10:30 auf 09:00 Uhr geaendert | Grundfassung und Ergaenzungen zusammen lesen; alter Beginn ist ueberholt. Oeffentlich gelistete letzte Sitzung ist kein Nachweis, dass keine weitere geplant ist. |
+| Digitales/Staatsmodernisierung: TOP und Voten | [Amtliche Liste](https://www.bundestag.de/ausschuesse/a23_digitales_staatsmodernisierung/tagesordnungen), [Grundfassung](https://www.bundestag.de/resource/blob/1230840/TO-38-Sitzung.pdf) vom 06.11., [1. Ergaenzung](https://www.bundestag.de/resource/blob/1232288/TO-38-Sitzung-1-Ergaenzungsmitteilung.pdf) vom 10.11.: 38. Sitzung, 11.11., 14:30 Uhr; TOP12 Cybersicherheit, 21/6585 und 21/7406, Votenfrist 11.11. | Vergangene Frist nicht zu heutigem Handlungsauftrag machen; Mitberatung ist keine Federfuehrung. Ergaenzung ist kein Beschluss-/Erledigungsnachweis. |
+| Plenum: kommende Beratungen | [Tagesordnungsseite](https://www.bundestag.de/parlament/plenum/tagesordnungen), [komplettes Original](https://www.bundestag.de/resource/blob/473452/Tagesordnung-komplett.pdf), Stand 12.11.: Sitzungen110–113 am 24.–27.11.; Haushaltsberatung2027 mit konkreten Drucksachen | Standdatum, jeweiliger Beginn und Beratungsgegenstand getrennt erhalten; geplanter TOP belegt keinen gefassten Beschluss. Die stabile PDF-URL allein identifiziert keine unveraenderliche Fassung. |
+| Sitzungswochen | [Kalenderseite](https://www.bundestag.de/parlament/plenum/sitzungskalender), [amtlich verlinktes ICS2026](https://www.bundestag.de/resource/blob/1103938/Parlamentstermine_2026_ics.ics): naechste Woche23.–27.11. (`DTSTART=20261123`, exklusives `DTEND=20261128`) | Ganztages-Zeitraum und exklusives Ende beachten. `DTSTAMP` ist kein Publikations-/Sitzungsdatum. Wochenkalender ersetzt weder konkrete Ausschusstermine noch Tagesordnung. |
+| Verfahrens-/Beratungsstand | Bestehende DIP-Dokumente tragen Vorgangskennungen. `lib/helmut/dip-vorgangsfakten.js` kann explizite Positionen als Beschlusstenor/Ueberweisung samt Federfuehrung lesen; im geprueften main existiert ausser Tests kein Aufrufer dieses Lesers | Technisch vorbereitet, keine produktiv belegte Standversorgung. Keine neue Runtimeverdrahtung allein aus diesem Bestand ableiten; Dokumenttyp/ID und Titel sind kein aktueller Verfahrensabschluss. |
+
+SHA256 der tatsaechlich gelesenen Originalbytes, nicht einer Textkonvertierung:
+
+- Arbeit/Soziales: `1f01c77ff3b12bc49e302ede6fb27dc77a145616a385f7529b0dfb68b60c4c82`.
+- Wirtschaft Grundfassung: `126552de8e940d0d84741400c643301e519f46db058595d2a184283b7382f0cb`;
+  vierte Ergaenzung: `f47afe252992381f46635a1309502cb16be52342e81580bcbbbf150a9fc7d02b`.
+- Digitales Grundfassung: `e37ed0b817c77a95ef7cd1b904a18d0c307d697a3533c2c52fb3e2335b8cb713`;
+  erste Ergaenzung: `ae2a030b007026b4c4c7cbee2ce1b0096c1fea99c7cb7ec443c0603db7c5d632`.
+- Plenartagesordnung: `f5dc7efd944695a2dbc6fa73ae68c09fd88d8c0a98f2fd230a5b40a5f123a75c`.
+- ICS2026: `0b134ea87f2029efd7e164be3d5b98d52009464a7b57f6beca4008fa92a0fc37`.
+
+### Abnahme und Rechte bleiben getrennt
+
+**Katalog / technisch vorbereitet / aktiv / regulaer abgerufen / lesbar /
+rechtlich nutzbar / im Produkt belegt sind sieben verschiedene Aussagen.**
+Die obige manuelle Lesbarkeit schliesst keine fehlende Stufe der Produktkette.
+Insbesondere umfasst der primaer belegte §5-Hinweis zu Drucksachen und
+Plenarprotokollen nicht automatisch sonstige Ausschuss-PDFs, Webseiten, hib oder
+RSS-Texte. Ohne konkret belegten Nutzungsumfang keine kommerzielle Textaktivierung.
+Die amtlichen Termin-/TOP-Fakten und Originalverweise sind jetzt eingegrenzt;
+vollstaendige laufende Aufnahme, Fassungskette, Leserecht und Kundenanzeige bleiben
+offen. Nichtoeffentliche Sitzung und oeffentlich abrufbare Tagesordnung ebenfalls
+auseinanderhalten; keine nicht veroeffentlichten Sitzungsinhalte behaupten.
+
+C hat unabhaengig [C-01 und C-02](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6949411072)
+abgegrenzt: der Client verwirft den transportierten Destatis-Hinweis; ein
+Destatis-Dokument im Digitalpaket belegt ausserdem noch keinen Digitalthemenbezug.
+C-01 ist eine gezielte neue technische Reparatur durch B, C-02 eine fachliche
+Beleggrenze und kein Anlass fuer neue Pruefinfrastruktur. Vorhandene echte
+DIP-/BMAS-Abschluesse vom15.11. bleiben erhalten. BMG-Metadaten, Archive und zwei
+Lage-Teilstandabsaetze werden nicht zu einer heutigen Vollversorgung aufgewertet.
+
+Genau ein naechster Schritt: den von B exklusiv bearbeiteten Destatis-Anzeigefix
+am exakten Diff unabhaengig pruefen und mit den erforderlichen Pflichtchecks
+nacheinander integrieren; keine neue Verarbeitungsserie ausloesen.
