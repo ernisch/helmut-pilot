@@ -1,31 +1,25 @@
 "use strict";
 
-// Exakt gepruefte zentrale Briefingqualifikation und gebundene Cacheausgabe PR1246.
-// Beide Pflichtjobs bleiben. Neuer gezielter Chromiumlauf fuer die geaenderte Anzeige;
+// Exakt gepruefte Statusableitung aus qualifiziertem Tagesstand PR1247.
+// Beide Pflichtjobs bleiben. Unveraenderte Browser-/UI-Belege aus PR1246 erhalten;
 // Runtime-/Testblobs und unveraenderter restlicher Baum sind geschlossen gebunden.
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
-const REPOSITORY = "ernisch/helmut-pilot", PR = 1246;
-const BRANCH = "codex/briefing-qualitaet-20261117";
-const BASE = "1587d0fee65ea60488cf9bee3d2eb84fd72df0f8";
-const EVIDENCE = "6d6d07e7bdb27e7385dae07c014b8b450fee9688";
-const MERGE_TITLE = "fix(briefing): Tagesprioritäten an Mandat und belegten Handlungsanlass binden (#1246)";
+const REPOSITORY = "ernisch/helmut-pilot", PR = 1247;
+const BRANCH = "codex/briefing-status-20261117";
+const BASE = "2877e265ce0860da9362e20a6a9d6f4c4f46fc6b";
+const EVIDENCE = "03e58cf970f5509b13f5255a736c654f4d1744ff";
+const MERGE_TITLE = "fix(briefing): Statusbegründung aus qualifiziertem Tagesstand ableiten (#1247)";
 const BLOBS = Object.freeze({
-  "client.js": "10cc9c0012d3cf7dc7fc14af691a97db48eb3da7",
-  "lib/helmut/briefing-bereichsvertrag.js": "b59e0633b1536c44098f32dc3086bc4875e790d5",
-  "lib/helmut/briefingContract.js": "8da1e01b5cb3b9365683935ae1aa60f549025abd",
-  "lib/helmut/tagespaket-auslieferung.js": "9da6c1d42938276918b9613a24706480890baf30",
-  "scripts/briefing-bereichsvertrag-test.js": "a6bbde50b03361c222f95127db39af04992dcbae",
-  "scripts/briefing-orientierung-test.js": "d6ba43706cf0f85a26f1085ae8ce42660b0b797c",
-  "scripts/tagespaket-auslieferung-test.js": "606d97a8e2917b17da33d6b6f1b72470e834bece",
-  "scripts/browser-smoke-test.js": "bb0c1bda32095e22ae10766aad099d2ec50afa4a",
-  "scripts/quellenpflicht-vertrag-test.js": "2a83c313b5fb4e4f434cf28d35519b80f8571d30"
+  "server.js": "639c6560f4670d600bdbc8af9970146fc4d9efe6",
+  "scripts/briefing-freshness-header-test.js": "b5f147c97ef80dde258972243ea6612f79f6b7a3",
+  "scripts/quellen-versorgungsstand-test.js": "5b9e65f0a80ea404d208f33a533470d70eb93ce0"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-briefingqualitaet-plan.js", "scripts/ci-briefingqualitaet-plan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellen-abnahme-20261117.md", "docs/betrieb/briefing-qualitaet-20261117.md"]);
 const sha = s => typeof s === "string" && /^[a-f0-9]{40}$/.test(s);
 const same = (a, b) => a?.mode === b?.mode && a?.type === b?.type && a?.oid === b?.oid;
-function need(ok, reason) { if (!ok) throw Error("briefingqualitaet-ci:" + reason); }
+function need(ok, reason) { if (!ok) throw Error("briefingstatus-ci:" + reason); }
 function regular(row) { return row?.mode === "100644" && row.type === "blob" && sha(row.oid); }
 
 function validate({ event, repository, ref, headRef, before, message, pr, head, parents = [], baseTree, evidenceTree, headTree, prHeadTree }) {
@@ -55,11 +49,11 @@ function validate({ event, repository, ref, headRef, before, message, pr, head, 
     need(same(baseTree.get(file), headTree.get(file)) && same(evidenceTree.get(file), headTree.get(file)),
       "unerwarteter-diff:" + file);
   }
-  return { mode: "briefingqualitaet", reason: "Exakt gebundene Mandats-/Anlassqualifikation mit Cache- und Browsernachweis",
-    standard: false, core: true, area: false, database: false, browser: true, syntax: true, npm: true,
-    briefingqualitaet: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
-    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte Quellen-/Mandatsqualifikation, Tagesrangfolge und Paketlesevertraege", "Neuer Desktop-/Mobilnachweis Briefingqualitaet im vorhandenen Chromiumharness"],
-    limits: ["Keine Server-/Auth-/Schema-/Migrations-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Persistenzkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
+  return { mode: "briefingstatus", reason: "Exakt gebundene Statuskorrektur mit Header- und Versorgungstest",
+    standard: false, core: true, area: false, database: false, browser: false, syntax: true, npm: true,
+    briefingstatus: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
+    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte Kopf-/Versorgungs- und Legacyvertraege", "Unveraenderten echten Desktop-/Mobilbeleg aus PR1246 wiederverwenden"],
+    limits: ["Nur Statusdekoration im Server; keine Auth-/UI-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Persistenzkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
 }
 function git(args) { return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 10000 }); }
 function tree(ref) {
@@ -95,7 +89,7 @@ function main() {
   const args = process.argv.slice(2);
   need(args.length === 2 && args[0] === "--github-output" && Boolean(args[1]), "argumente-ungueltig");
   const p = fromCheckout();
-  const keys = ["standard", "core", "area", "database", "browser", "syntax", "npm", "briefingqualitaet"];
+  const keys = ["standard", "core", "area", "database", "browser", "syntax", "npm", "briefingstatus"];
   fs.appendFileSync(args[1], keys.map(k => `${k}=${p[k]}\n`).join("") + `mode=${p.mode}\n`);
   console.log(JSON.stringify(p));
 }

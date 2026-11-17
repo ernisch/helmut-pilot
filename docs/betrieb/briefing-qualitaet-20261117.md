@@ -62,3 +62,23 @@ positive Fixture besass nur Link/Zaehler, aber keinen neuen Original-/Mandats-
 Handlungsbeleg. Nur die positive Fixture passend qualifiziert; alle bisherigen
 Quellenpflichtassertionen behalten und negativen Link-ohne-Auftrag ergaenzt.
 Gezielt61/61 gruen, keine Abschwaechung der Quellenpflicht.
+
+## Echter Livebeleg nach PR1246
+
+Finaler Kopf45dffd60: beidePflichtchecksCI44065530896 gruen,
+inklusiveechtemChromium11/11; unabhaengigeReviews/Pins ohne offeneBefunde.
+Normaler Merge2877e265, VercelREADY dpl_7PHDFKQcUw88w8bpN5PHNbbv9m5B,
+oeffentlicherAliasliefert2877e265. Appreader17Nov10:33:52HTTP200:
+availabletrue, keineungeprueftePrioritaet/Empfehlung/Why, zweiweiterhingebundene
+Teilstandabsaetze. Lageobjekt und Originalpakethash unveraendert,
+Morgenquittungweiterhingebunden. Keine KI-/Quellen-/Datenschreibaufrufe.
+
+Eine letzte echte API-Inkonsistenz verbleibt: decorateBriefingFreshness
+zaehlt fuer den Erklaerungstext noch globale Altitems und behauptet daher
+aktuelle politische Entscheidungen trotz qualifiziert leerem CurrentState.
+Der gleiche qualifizierteState soll auch diesen Erklaerungstext bestimmen;
+Alt-/NichtV3-Rueckfall erhalten. PR1247 korrigiert genau diese Ableitung aus dem qualifizierten CurrentState; Altpfad ohne State bleibt unveraendert. Header30/30 und Versorgung14/14 gruen; echte gespeicherte Antwort offline bestaetigt Quellenhinweis statt falscher Entscheidungsmeldung, Originalantwort unveraendert. Rollout-/Livebelege am PR.
+
+Abschlussreview praezisiert den positiven Status: ein bestaetigter Handlungs-
+oder Vorbereitungsanlass ist keine politische Entscheidung. Genau dieser
+belegte Anlass wird im V3-Status genannt; Legacywortlaut ohne State bleibt.

@@ -89,3 +89,16 @@ Teilstatus bleibt erhalten. Kein kompletter Quellen-/Verkaufs-PASS.
 Naechster beauftragter Schritt: bestehende Briefingauswahl/-ausgabe gegen
 Issue1244 und Produktvertrag pruefen und belegte zentrale Qualitaetsluecken
 fuer Bundestag und Landtage beheben, vor allgemeiner Erweiterung aus1218.
+
+## Getrennte Partei-/Fraktionswege abschliessend bestaetigt
+
+Lesender Code-/Katalog-/Jobabgleich17Nov10:41–10:44 bestaetigt:
+die-linke ist tatsaechlichGoogleNews und korrekt wegen Minutengrenzevertagt.
+Der separate linksfraktion-Weg verwendet den geprueften direkten
+www.dielinkebt.de/presse/pressemitteilungen/feed.rss, besitzt dieselbe aktive
+Paketkante pkg-die-linke-bund und sein heutiger Auftrag ist erledigt/1Versuch.
+Die Schutzschluessel trennen google|news von quelle|www.dielinkebt.de;
+BMG hat eigenen Hostkey. Kein GoogleSchutzschalter auf nativeRSS, keine
+Limitausweitung/Katalogreparatur begruendet. Kein erneuter Abruf oder Test.
+Dies ist keine weitere neu wiederhergestellte Quelle und keine vollstaendige
+inhaltliche Quellenabnahme.

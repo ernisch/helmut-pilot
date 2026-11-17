@@ -32,7 +32,8 @@ const profile = { id: "u-1", tenantId: "t-1", firstName: "Test", party: "SPD", c
 function fullKo(id, vg, updatedAt, extra = {}) {
   return {
     id, vorgang_id: vg, status: "neu", understanding_status: "complete",
-    display_title: "Bundesregierung legt Pflegereform vor", was_ist_passiert: "Reform vorgestellt.",
+    headline: "Nachbesserungen zur Pflegereform angekündigt", display_title: "Nachbesserungen zur Pflegereform angekündigt",
+    was_ist_passiert: "Bei der Beratung der Pflegereform wurden Nachbesserungen angekündigt.",
     warum_wichtig: "Millionen betroffen.", why_relevant: "Betrifft deinen Ausschuss.", recommendation: "Heute nicht zuspitzen.",
     risk_of_no_action: "Uneinheitliche Kommunikation.", opportunity_summary: "Soziale Entlastung besetzen.",
     risk_level: "high", opportunity_level: "high",
@@ -49,7 +50,9 @@ function decisionFor(id, vg, score = 88) {
 }
 function stateFor(ko) {
   return contract.buildCurrentHelmutState({
-    profile, decisions: [decisionFor(ko.id, ko.vorgang_id)], kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [{ id: "rd-" + ko.id, url: ko.best_source_url, published_at: ko.created_at }] }, now: NOW
+    profile, decisions: [decisionFor(ko.id, ko.vorgang_id)], kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [{ id: "rd-" + ko.id,
+      title: ko.headline, summary: "Bei der ersten Beratung der Pflegereform wurden Schwachstellen eingeräumt und Nachbesserungen für die weitere parlamentarische Arbeit angekündigt.",
+      url: ko.best_source_url, published_at: ko.created_at }] }, now: NOW
   });
 }
 // Kopf-Frische liest currentHelmutState + items/situational; generatedAt=now (V3-Realität).
@@ -71,6 +74,8 @@ const CARD_LABEL = { fresh: "Aktuell", stale: "Nicht aktuell", error: "Stand nic
 const freshState = stateFor(fullKo("ko-f", "vg-f", "2026-07-15T07:00:00Z"));
 check("Vorbedingung: frischer Stand -> currentHelmutState.status 'fresh'", freshState.status === "fresh", freshState.status);
 check("FRISCH: Kopf zeigt 'Aktuell'", decorate(briefingWith(freshState)).status === "Aktuell");
+check("FRISCH: qualifizierter Hauptvorgang traegt den Hinweis auch ohne alte Kandidatenliste",
+  /belegten Handlungs- oder Vorbereitungsanlass/.test(decorate(briefingWith(freshState, { items: [] })).freshness.reason));
 
 // === 2) VERALTET: gestriger Datenstand -> Karte stale, Kopf NIE "Aktuell" =====
 const staleState = stateFor(fullKo("ko-s", "vg-s", "2026-06-20T07:00:00Z"));
@@ -84,9 +89,11 @@ check("Vorbedingung: alter Stand ohne Tagesanlass -> empty",
   check("LEER: kein als veraltet getarntes Tagesbriefing", dec.freshness && dec.freshness.isStale === false);
 }
 
-// === 3) FEHLGESCHLAGENER NACHTLAUF (understanding failed) -> nie "Aktuell" ====
-const errorState = stateFor(fullKo("ko-e", "vg-e", "2026-07-15T07:00:00Z", { understanding_status: "failed" }));
-check("Vorbedingung: understanding failed -> currentHelmutState.status 'error'/errorState",
+// === 3) FEHLERSTATE -> nie "Aktuell" ========================================
+// Headervertrag des vorhandenen V3-Fehlerzustands. Nicht aus einem unqualifizierten
+// KO erzeugen: der Producer haelt diesen seit der Originalpruefung frueher zurueck.
+const errorState = { ...freshState, status: "error", errorState: true };
+check("Vorbedingung: bestehender V3-Fehlerstate -> status 'error'/errorState",
   errorState.status === "error" && errorState.errorState === true, errorState.status);
 check("FEHLLAUF: Kopf zeigt NIEMALS 'Aktuell' (ruhig 'Veraltet')",
   decorate(briefingWith(errorState)).status === "Veraltet");
@@ -112,6 +119,20 @@ check("Vorbedingung: leerer Stand -> currentHelmutState.status 'empty'", emptySt
 {
   const dec = decorate(briefingWith(emptyState, { items: [] }));
   check("LEER: Kopf zeigt keine 'Aktuell'-Meldung", dec.status !== "Aktuell", dec.status);
+}
+{
+  const state = { ...emptyState, versorgung: { version: 1, zustand: "offen" },
+    emptyState: { kind: "gap", headline: "Keine belegte Tagespriorität", detail: "Ein persönlicher Handlungsanlass ist nicht ausreichend bestätigt." } };
+  const b = briefingWith(state, { items: [{ decision: "Sofort reagieren", id: "alter-kandidat" }] });
+  const before = JSON.stringify(b), out = decorate(b);
+  check("LEER/GAP: alte Kandidaten behaupten keine aktuellen politischen Entscheidungen",
+    !/aktuelle politische Entscheidungen|belegten Handlungs- oder Vorbereitungsanlass/.test(out.freshness.reason), out.freshness.reason);
+  check("LEER/GAP: Quellenluecke bleibt sichtbar trotz alter nichtignorierter Kandidaten",
+    /Quellenverarbeitung ist noch nicht abgeschlossen/.test(out.freshness.reason), out.freshness.reason);
+  check("LEER/GAP: Status, qualifizierte Leere und alte Daten bleiben unveraendert",
+    out.status !== "Aktuell" && out.currentHelmutState.primaryItem === null
+      && out.currentHelmutState.items.length === 0 && JSON.stringify(out.items) === JSON.stringify(b.items)
+      && JSON.stringify(b) === before);
 }
 
 // === 5) Alter Inhalt bleibt lesbar: der Decorator LÖSCHT keine Items ==========
