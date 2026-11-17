@@ -519,6 +519,7 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-sn-regierung-medienservice', 'publisher-medienservice.sachsen.de', 'sn-regierung-medienservice', 'Medienservice Sachsen — Medieninformationen der Pressestellen', 'structured_download', 'https://www.medienservice.sachsen.de/medien/news/search.json?search%5Bfilter%5D%5B%5D=press_releases', null, 'sachsen-medienservice-json-v1', 65, 'paused', 'manual', false, 12, null),
   ('rp-eurlex-amtsblatt-l-rss', 'publisher-eur-lex.europa.eu', 'eurlex-amtsblatt-l-rss', 'EUR-Lex — Amtsblatt L (Rechtsakte)', 'rss', 'https://eur-lex.europa.eu/DE/display-feed.rss?rssId=222', null, 'rss-regex', 80, 'paused', 'manual', false, null, null),
   ('rp-bundespuls-vorgaenge-rss', 'publisher-bundespuls.de', 'bundespuls-vorgaenge-rss', 'Bundespuls — parlamentarische Vorgänge (DIP-Aufbereitung)', 'rss', 'https://bundespuls.de/feed/vorgang', null, 'rss-regex', 60, 'paused', 'manual', false, null, null),
+  ('rp-bmg-meldungen-rss', 'publisher-bundesgesundheitsministerium.de', 'bmg-meldungen-rss', 'Bundesministerium für Gesundheit — aktuelle Meldungen', 'rss', 'https://www.bundesgesundheitsministerium.de/meldungen.xml', null, 'rss-regex', 80, 'paused', 'manual', false, 12, null),
   ('rp-dip', 'publisher-dip.bundestag.de', 'dip', 'DIP — Dokumentations- und Informationssystem (Bundestag)', 'api', 'https://search.dip.bundestag.de/api/v1', null, 'dip-json', 96, 'healthy', 'always_on', true, null, null)
 on conflict (id) do update set publisher_id = excluded.publisher_id, method = excluded.method, status = excluded.status, priority = excluded.priority;
 
@@ -800,6 +801,8 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-sachsen-basis', 'rp-sn-regierung-medienservice'),
   ('pkg-fach-europaeische-union', 'rp-eurlex-amtsblatt-l-rss'),
   ('pkg-bund-basis', 'rp-bundespuls-vorgaenge-rss'),
+  ('pkg-arbeit-und-soziales', 'rp-bmg-meldungen-rss'),
+  ('pkg-fach-gesundheit', 'rp-bmg-meldungen-rss'),
   ('pkg-bund-basis', 'rp-dip')
 on conflict (package_id, retrieval_path_id) do nothing;
 

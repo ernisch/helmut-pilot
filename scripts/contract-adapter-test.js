@@ -76,7 +76,10 @@ const kos = [
   { id: "ko-4", vorgang_id: "vg-4", status: "pending", understanding_status: "pending" }
 ];
 const sourcesByVorgang = {
-  "vg-1": [{ url: "https://bmg.bund.de/pflege", source_name: "BMG", link_type: "direct", published_at: "2026-07-06T07:00:00Z" }],
+  // Deklarierter Originalanlass, keine erfundene Ministeriumsveroeffentlichung.
+  "vg-1": [{ id: "rd-contract-pflege", url: "https://example.test/pflege-original", source_name: "Synthetische Quelle",
+    title: "Beratung des Pflegeentwurfs", summary: "Bei der ersten Beratung des Pflegeentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.",
+    link_type: "direct", published_at: "2026-07-06T07:00:00Z" }],
   "vg-2": [{ url: "https://example.org/klima", source_name: "Beispiel", link_type: "direct" }]
 };
 const profile = { id: "u-health", fullName: "Test Abgeordnete", firstName: "Test", party: "SPD", committee: "Gesundheit", focusTopics: ["Pflege"] };
@@ -168,7 +171,7 @@ check("Keine Profil-PII in der Vertragsausgabe (nur öffentliche Vorgangsdaten +
 // --- 10) primarySource/sources korrekt geformt ------------------------------
 const it1 = briefing.items.find((i) => i.vorgangId === "vg-1");
 check("Item mit Quelle: primarySource gesetzt, sources nicht leer, linkType direct",
-  it1 && it1.primarySource && it1.primarySource.url === "https://bmg.bund.de/pflege" && it1.sources.length >= 1 && it1.linkType === "direct");
+  it1 && it1.primarySource && it1.primarySource.url === "https://example.test/pflege-original" && it1.sources.length >= 1 && it1.linkType === "direct");
 
 // --- 12) Regression: robuste Titel-/Quellen-Fallbacks (Step-4-Nachschliff) ---
 // KO OHNE display_title/headline -> Titel darf NIE leer, "Thema" oder ein roher

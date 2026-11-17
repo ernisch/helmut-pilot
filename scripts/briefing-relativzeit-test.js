@@ -57,9 +57,14 @@ assert.equal(contract.koTitle({ display_title: "Unveränderter absoluter Titel" 
 // Der belegte spaete Vorabend kann noch im Briefingfenster liegen, aber nicht
 // als "heute" datiert werden. Auch der eigene displayTitle-Headline-Pfad muss sperren.
 const previousEvening = "2026-10-07T21:30:00Z";
-const lateKo = { ...ko, display_title: "DOSB trifft heute eine Entscheidung", headline: "DOSB-Entscheidung", updated_at: previousEvening };
-const lateArgs = { ...args, kosById: { [ko.id]: lateKo },
-  sourcesByVorgang: { [ko.vorgang_id]: [{ ...docs[0], published_at: previousEvening }] },
+// Deklarierter synthetischer Verfahrensanlass, kein aus Datum/Score erzeugtes Primary.
+const lateOriginal = "Für die weitere parlamentarische Beratung der Olympia-Bewerbung wurden Nachbesserungen angekündigt.";
+const lateKo = { ...ko, understanding_status: "complete", was_ist_passiert: lateOriginal,
+  display_title: "DOSB trifft heute eine Entscheidung", headline: "DOSB-Entscheidung", updated_at: previousEvening };
+const lateArgs = { ...args, profile: { ...profile, focusTopics: ["Olympia"] }, kosById: { [ko.id]: lateKo },
+  sourcesByVorgang: { [ko.vorgang_id]: [{ ...docs[0], id: "fixture-olympia-original",
+    url: "https://example.test/parlament/olympia", published_at: previousEvening,
+    summary: summary + " " + lateOriginal }] },
   decisions: [{ knowledge_object_id: ko.id, score: 70, decision: "Sofort reagieren", matched_features: [{ type: "thema", value: "Verkehr" }] }] };
 const lateView = contract.toBriefingContractV3(lateArgs);
 assert.ok(lateView.currentHelmutState.primaryItem, "late previous-evening fixture must reach actual primary headline");

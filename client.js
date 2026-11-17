@@ -6605,7 +6605,7 @@ function renderUiBriefingHero(state, details = "") {
       <h2>${escapeHtml(title)}</h2>
       ${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
       ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
-      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}` : ""}
+      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}${renderDipBeratungsstand(item, hstandQuelleHref(item))}` : ""}
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
@@ -6786,6 +6786,7 @@ function renderHstandPrimary(state) {
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
       ${quelle ? renderSourceNotice(p, quelle) : ""}
+      ${quelle ? renderDipBeratungsstand(p, quelle) : ""}
       ${briefingLageVerweis(p)}
     </section>`;
 }
@@ -6853,6 +6854,7 @@ function renderHstandItems(state) {
         ${why ? `<p class="hstand-rel-why">${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+        ${quelle ? renderDipBeratungsstand(i, quelle) : ""}
       </li>`;
   };
   // Ohne Frischeklassen (Altpfad/Vertrag aus) unveraendert EINE Liste.
@@ -11856,7 +11858,45 @@ function renderSourceNotice(source, articleHref = source && (source.itemUrl || s
 
 function withSourceNotice(markup, source, articleHref) {
   const notice = renderSourceNotice(source, articleHref);
-  return notice ? `<div class="source-with-notice">${markup}${notice}</div>` : markup;
+  const dip = renderDipBeratungsstand(source, articleHref);
+  return notice || dip ? `<div class="source-with-notice">${markup}${notice}${dip}</div>` : markup;
+}
+
+function renderDipBeratungsstand(source, articleHref) {
+  const values=source?.dipBeratungsstaende;
+  if (!Array.isArray(values) || values.length>20) return "";
+  const pdf=value=>{
+    try { const u=new URL(value); return u.protocol==="https:" && u.hostname==="dserver.bundestag.de"
+      && !u.username && !u.password && !u.port && !u.search && /^\/(?:bt[dp]|br[dp])\/\d{2}\/.+\.pdf$/.test(u.pathname) ? u.href : ""; }
+    catch { return ""; }
+  };
+  if (!values.length) return source.dipDokumentUrl===articleHref && pdf(articleHref)
+    ? '<p class="source-notice" data-dip-beratungsstand>Aktueller Beratungsstand unbekannt: Eine amtliche Vorgangszuordnung ist zu diesem Dokument noch nicht belegt.</p>' : "";
+  return values.map(s=>{
+    if (s?.version!==1 || !/^[1-9]\d{0,11}$/.test(s.vorgangId||"") || s.artikelUrl!==articleHref
+      || s.originalUrl!==`https://dip.bundestag.de/vorgang/-/${s.vorgangId}` || s.folgestand!=="unbekannt"
+      || typeof s.titel!=="string" || typeof s.stand!=="string" || !Array.isArray(s.schritte) || s.schritte.length>12
+      || s.gelesenAm!==null && !Number.isFinite(Date.parse(s.gelesenAm))) return "";
+    const read=s.gelesenAm ? ` Zuletzt abgerufen: ${s.gelesenAm}.` : " Kein gespeicherter Abrufbeleg vorhanden.";
+    const dates=[s.dokumentdatum ? `Dokumentstand: ${s.dokumentdatum}` : "",
+      s.aktualisiert ? `DIP-Aktualisierung: ${s.aktualisiert}` : ""].filter(Boolean).join(" · ");
+    const details=s.schritte.map(p=>{
+      const url=pdf(p.originalUrl);
+      if (!url || !/^\d{4}-\d\d-\d\d$/.test(p.datum||"") || typeof p.phase!=="string"
+        || !["BT","BR"].includes(p.zuordnung) || !["Drucksache","Plenarprotokoll"].includes(p.dokumentart)
+        || typeof p.fortsetzung!=="boolean" || typeof p.nachtrag!=="boolean"
+        || !Array.isArray(p.beschluesse) || !Array.isArray(p.ueberweisungen)) return "";
+      const labels={beschlusstenor:"Beschluss",dokumentnummer:"Vorlage",seite:"Seite",abstimmungsart:"Abstimmungsart",
+        abstimm_ergebnis_bemerkung:"Abstimmungsergebnis",grundlage:"Grundlage",mehrheit:"Mehrheit"};
+      const b=p.beschluesse.map(v=>Object.entries(v).filter(([k,x])=>Object.hasOwn(labels,k) && x!==null)
+        .map(([k,v])=>`${labels[k]}: ${String(v)}`).join("; "));
+      const u=p.ueberweisungen.map(v=>`${v.ausschuss} (${v.ausschuss_kuerzel}), ${v.federfuehrung===true ? "mit Federführung" : "ohne Federführung"}${v.ueberweisungsart ? `; ${v.ueberweisungsart}` : ""}`);
+      const kontext=[p.zuordnung==="BT" ? "Deutscher Bundestag" : "Bundesrat",p.dokumentart,
+        p.fortsetzung ? "Fortsetzung" : "",p.nachtrag ? "Nachtrag" : ""].filter(Boolean).join(" · ");
+      return `<p>${escapeHtml(`${p.datum}: ${kontext}; ${p.phase}; ${p.dokumentnummer}`)} <a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Originalbeleg</a>${[...b,...u].map(v=>`<br>${escapeHtml(v)}`).join("")}</p>`;
+    }).join("");
+    return `<div class="source-notice" data-dip-beratungsstand><p>Quelle: Deutscher Bundestag/Bundesrat – DIP. <a href="${escapeAttribute(s.originalUrl)}" target="_blank" rel="noopener noreferrer">DIP-Vorgang ${escapeHtml(s.vorgangId)} · Originaldaten kostenlos</a>. Strukturierte Angaben für diese Anzeige ausgewählt und gegliedert.</p>${escapeHtml(s.titel)}<p>Beratungsstand laut DIP: ${escapeHtml(s.stand)}.${escapeHtml(read)} ${escapeHtml(dates)}</p><p>Spätere Änderungen sind nicht bestätigt.</p>${s.positionenVollstaendig===false ? '<p>Der Verfahrensverlauf ist nicht vollständig belegt.</p>' : ""}${details ? `<details><summary>Belegte Verfahrensschritte</summary>${details}</details>` : ""}</div>`;
+  }).join("");
 }
 
 function renderSourceBasis(item) {

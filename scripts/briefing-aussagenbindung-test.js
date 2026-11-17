@@ -125,7 +125,8 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); passed+
       { now, aussagenEingabe: true, aussagenAuslassungen: ["vg-b"] });
     A.equal(clean.briefing.items.length, 1); A.equal(clean.briefing.items[0].vorgangId, "vg-a");
     A(!JSON.stringify(clean.briefing).includes("Unbelegt")); A(!JSON.stringify(clean.briefing).includes("Staatsfinanzen"));
-    A.equal(clean.briefing.currentHelmutState.primaryVorgangId, "vg-a");
+    A.equal(clean.briefing.currentHelmutState.primaryVorgangId, null,
+      "Quellengebundener Sachstand ohne belegten Tagesauftrag wird keine Prioritaet");
     A.equal(JSON.stringify({ ko, bad, doc }), before);
     A.equal(Q.pruefe(clean.eingabe, urteil(original.eingabe)).bereit, false);
   });

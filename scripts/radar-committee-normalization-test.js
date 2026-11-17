@@ -220,7 +220,7 @@ check("9d Fuer Arbeit-und-Soziales (kein Kollisionsfall) liefern beide Funktione
     { knowledge_object_id: "kp", vorgang_id: "vp", score: 60, matched_features: mfParty },
     { knowledge_object_id: "kr", vorgang_id: "vr", score: 58, matched_features: [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }] }
   ];
-  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { kp: koParty, kr: koRegion }, knowledgeObjects: [koParty, koRegion], sourcesByVorgang: { vp: [{ source_type: "party", url: "https://example.org/p", published_at: iso(3600e3) }], vr: [docSalzgitter] }, now: nowDate });
+  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { kp: koParty, kr: koRegion }, knowledgeObjects: [koParty, koRegion], sourcesByVorgang: { vp: [{ title: koParty.display_title, source_type: "party", url: "https://example.org/p", published_at: iso(3600e3) }], vr: [docSalzgitter] }, now: nowDate });
   check("10 Partei-Segment unveraendert funktionsfaehig (unabhaengig von Ausschuss-Fix)", st.environment.party.some((e) => e.vorgangId === "vp"));
   check("10b Wahlkreis-Segment unveraendert funktionsfaehig (unabhaengig von Ausschuss-Fix)", st.environment.constituency.some((e) => e.vorgangId === "vr"));
 }

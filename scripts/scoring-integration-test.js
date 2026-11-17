@@ -120,10 +120,18 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
     { knowledge_object_id: "aaa", vorgang_id: "aaa", decision: "Sofort reagieren", score: 90, matched_features: [] },
     { knowledge_object_id: "zzz", vorgang_id: "zzz", decision: "Sofort reagieren", score: 90, matched_features: [] }
   ];
-  const helmProfile = { id: "u1", fullName: "Test MdB", party: "SPD" };
+  const helmProfile = { id: "u1", fullName: "Test MdB", party: "SPD",
+    committees:["Ausschuss für Arbeit und Soziales"], focusTopics: ["Arbeitszeit"] };
+  // Beide positiven Rangfaelle haben einen ausdruecklich synthetischen,
+  // auch im KO erfassten Originalanlass. Das Fachgate wird nicht ersetzt.
+  const originalSatz = "Bei der ersten Beratung des Arbeitszeitentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
+  for (const k of Object.values(kosById)) Object.assign(k,
+    { status:"neu",understanding_status:"complete",was_ist_passiert:originalSatz });
 
   const helmSources = Object.fromEntries(Object.values(kosById).map(k => [k.vorgang_id,
-    [{ id:"rd-" + k.id, url:k.best_source_url, published_at:iso(1 * H) }]]));
+    [{ id:"rd-" + k.id, url:k.best_source_url, published_at:iso(1 * H),
+      title:"Synthetische Beratung des Arbeitszeitentwurfs",
+      summary:originalSatz }]]));
   const helmOff = withFlag(undefined, () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: helmSources, now: NOW }));
   const helmOn = withFlag("on", () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: helmSources, now: NOW }));
   check("Helmut Flag AUS: Alt-Tiebreak waehlt 'aaa' als Primary", helmOff.primaryVorgangId === "aaa");

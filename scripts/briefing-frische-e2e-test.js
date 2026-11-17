@@ -39,12 +39,16 @@ function check(name, cond, detail = "") {
 const JETZT = new Date("2026-07-15T04:10:00Z");
 const HEUTE = f.berlinTagKey(JETZT);
 const MANDAT = "mandat-pruef";
+const TESTPROFIL = { id: MANDAT, name: "Testmandat", committee: "Ausschuss für Arbeit und Soziales", focusTopics: ["Arbeitszeit"] };
+// Nur die beiden positiven Zeitfaelle haben einen ausdruecklich synthetischen
+// Originalanlass. Die unveraenderte Produktqualifikation entscheidet weiter selbst.
+const ORIGINALSATZ = "Bei der ersten Beratung des Arbeitszeitentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
 
 function ko(id, updatedAt, titel) {
   return {
     id, vorgang_id: `vg-${id}`, status: "understood", understanding_status: "complete",
     display_title: titel, display_summary: `${titel} — Sachstand.`,
-    was_ist_passiert: `${titel} ist passiert.`, warum_wichtig: "Betrifft den Ausschuss.",
+    was_ist_passiert: ["heute","vorabend"].includes(id) ? ORIGINALSATZ : `${titel} ist passiert.`, warum_wichtig: "Betrifft den Ausschuss.",
     why_relevant: "Betrifft den Ausschuss.", recommendation: "Linie festlegen.",
     risk_of_no_action: "Ohne Reaktion entsteht eine Lücke.", risk_level: "mittel",
     opportunity_summary: "Eigene Position sichtbar machen.", opportunity_level: "mittel",
@@ -66,7 +70,8 @@ const KOS = [
   ko("aelter", "2026-07-10T09:00:00Z", "Anhoerung im Ausschuss"),
   ko("hintergrund", "2026-05-02T09:00:00Z", "Gesetz im Bundesrat")
 ];
-const SOURCES = Object.fromEntries(KOS.map(k => [k.vorgang_id, [{ id: "rd-" + k.id, url: k.best_source_url, published_at: k.created_at }]]));
+const SOURCES = Object.fromEntries(KOS.map(k => [k.vorgang_id, [{ id: "rd-" + k.id, url: k.best_source_url, published_at: k.created_at,
+  title: k.display_title, summary: ["heute","vorabend"].includes(k.id) ? ORIGINALSATZ : null }]]));
 const KOS_BY_ID = Object.fromEntries(KOS.map((k) => [k.id, k]));
 const DECISIONS = [
   entscheidung("heute", 82), entscheidung("vorabend", 74),
@@ -77,7 +82,7 @@ const FENSTER = f.frischeFenster({ jetzt: JETZT }); // Vorabend-Standard: 14.07.
 
 function baueBriefing({ fenster = FENSTER } = {}) {
   return contract.toBriefingContractV3({
-    profile: { id: MANDAT, name: "Testmandat", committee: "Ausschuss für Arbeit und Soziales", focusTopics: ["Arbeit"] },
+    profile: TESTPROFIL,
     decisions: DECISIONS, kosById: KOS_BY_ID, sourcesByVorgang: SOURCES, now: JETZT,
     briefingType: "morning", knowledgeObjects: KOS, frischeFenster: fenster
   });
@@ -110,12 +115,12 @@ check("1i Ohne Fenster keine Frischeklassen (Altverhalten)",
 // Der Vorabend-Vorgang darf mit Fenster NICHT als 'stale' den Kopf herabstufen —
 // ohne Fenster (reiner Kalendertag) waere er es. Gegenprobe mit Primary=Vorabend.
 const nurVorabend = contract.toBriefingContractV3({
-  profile: { id: MANDAT }, decisions: [entscheidung("vorabend", 90)],
+  profile: TESTPROFIL, decisions: [entscheidung("vorabend", 90)],
   kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: SOURCES, now: JETZT,
   briefingType: "morning", knowledgeObjects: [KOS_BY_ID.vorabend], frischeFenster: FENSTER
 });
 const nurVorabendOhne = contract.toBriefingContractV3({
-  profile: { id: MANDAT }, decisions: [entscheidung("vorabend", 90)],
+  profile: TESTPROFIL, decisions: [entscheidung("vorabend", 90)],
   kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: SOURCES, now: JETZT,
   briefingType: "morning", knowledgeObjects: [KOS_BY_ID.vorabend]
 });
@@ -140,7 +145,8 @@ const kontext = (over = {}) => ({
 const antwortOk = server.__prepareBriefingResponse(baueBriefing(), { frischeKontext: kontext() });
 check("2a Belegter heutiger Lauf + frische Daten -> 'Aktuell'", antwortOk.status === "Aktuell", antwortOk.status);
 check("2b Vertrag liegt maschinenlesbar in der Antwort", antwortOk.freshness.vertrag.aktuell === true);
-check("2c Kopfzustand bleibt unveraendert", antwortOk.currentHelmutState.status === "fresh", antwortOk.currentHelmutState.status);
+check("2c Quellen-/Lauf-Frische macht den belegten Vorbereitungsstand nicht zur Vollabnahme",
+  antwortOk.currentHelmutState.status === "fresh" && antwortOk.currentHelmutState.qualityStatus === "partial", antwortOk.currentHelmutState.status);
 
 const faelle = [
   ["kein Lauf", kontext({ lauf: null }), f.GRUND.LAUF_FEHLT],
@@ -268,16 +274,16 @@ check("2k Kompakte Antwort traegt denselben Vertrag",
   check("4k Kein 'Aktuell'-Chip bei fehlendem Lauf",
     !/hstand-status hstand-status--ok">Aktuell/.test(htmlOffen));
 
-  // Ruhelage: heutiger Lauf, aber keine neue Meldung.
+  // Keine neue Meldung im spaeteren Fenster; der belegte Pruefanlass bleibt.
   const ruheFenster = f.frischeFenster({ jetzt: JETZT, letzterErfolgAt: "2026-07-15T03:30:00Z" });
   const ruheBriefing = baueBriefing({ fenster: ruheFenster });
   api.setBriefing(server.__prepareBriefingResponse(ruheBriefing, {
     frischeKontext: kontext({ fenster: ruheFenster, lauf: { ...erfolgsLauf, fensterStart: ruheFenster.start } })
   }));
   const htmlRuhe = api.render();
-  check("4l Ruhelage benennt die fehlende Tagespriorität ohne Meldungen auszublenden",
-    htmlRuhe.includes("Keine neue Tagespriorität")
-    && !htmlRuhe.includes("Ältere Vorgänge stehen als weiterhin relevant oder Hintergrund darunter."));
+  check("4l Spaeteres Fenster verbirgt den belegten Vorbereitungsanlass nicht",
+    htmlRuhe.includes("Ankündigung vom 2026-07-15") && htmlRuhe.includes("nicht bestätigt")
+    && htmlRuhe.includes("Heute liegt keine neue Meldung vor."));
   check("4m Ruhelage zeigt keine 'neu'-Gruppe", !htmlRuhe.includes('data-frische-klasse="neu"'));
 
   // ===========================================================================

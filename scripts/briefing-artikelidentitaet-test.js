@@ -103,13 +103,13 @@ test("Widerspruch wird weder durch Analysezeit noch Ersterfassung zu heutiger Fr
   }
 });
 
-test("Ein anderer widerspruchsfreier Artikel kann den Meldungszeitpunkt belegen", () => {
+test("Ein anderer Artikel belegt seine Zeit, aber ohne Mandatsauftrag keine Tagesprioritaet", () => {
   const other = { ...docs[0], id: "rd-c", url: "https://example.org/bericht", published_at: "2026-09-17T06:00:00Z" };
   const b = make([...docs, other]);
   A.equal(b.items[0].sourceCount, 2);
-  A.equal(b.currentHelmutState.primaryItem.sourceCount, 2);
-  A.equal(b.currentHelmutState.primaryItem.meldungAt, other.published_at);
-  A.equal(b.currentHelmutState.datenstandVonHeute, true);
+  A.equal(b.items[0].sources.find(s => s.url === other.url).publishedAt, other.published_at);
+  A.equal(b.currentHelmutState.primaryItem, null);
+  A.equal(b.currentHelmutState.status, "empty");
 });
 
 test("Eingabereihenfolge waehlt keine der widerspruechlichen Zeiten aus", () => {
