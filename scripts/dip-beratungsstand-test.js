@@ -140,6 +140,10 @@ async function main() {
     const dto={...d,...H.quellenhinweisFelder(d,d.url)};
     assert(client().lageSourceRow(dto).includes("Aktueller Beratungsstand unbekannt"));
     calls=[];assert.deepEqual(await B.mitGespeichertenStaenden([d]),[d]);assert.equal(calls.length,0);
+    const legacy=copy(d);delete legacy.raw.helmutDipQuellfelder;
+    assert(client().lageSourceRow({...legacy,...H.quellenhinweisFelder(legacy,legacy.url)}).includes("Aktueller Beratungsstand unbekannt"));
+    assert.equal(B.anzeige(legacy,"https://fremd.example/"),null);
+    assert.equal(B.anzeige({...legacy,source_id:"fremd"}),null);
   });
   await test("Echter Lage-/Briefing-/Radar-Quellenrenderer zeigt Datum, Beschluss, Ueberweisung und getrennte sichere Links",async()=>{
     const s=await read(), d={...doc(),dipBeratungsstaende:[s]}, view=H.quellenhinweisFelder(d,d.url);

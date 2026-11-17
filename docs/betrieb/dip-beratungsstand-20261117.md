@@ -89,6 +89,8 @@ Eigene Integrationsluecke vor Reviewabschluss erkannt: direkter Quellenrenderer
 belegte noch nicht die Feldweitergabe durch Radar und Briefing-Hauptitem.
 Mapper, erneute Artikelbindung und tatsaechliche Haupt-/Folgeanzeigen sind jetzt
 ergaenzt; der obige Endnachweis ersetzt diese unvollstaendige Vorannahme.
+Auch Alt-DIP-PDFs ohne Quellfelderbeleg zeigen nur die fehlende amtliche
+Vorgangszuordnung; keine Rekonstruktion oder neue Quellenlesung.
 
 ## Koordinierte Integration und fehlende Betriebsbestaetigung
 
@@ -103,6 +105,21 @@ EventEmitter-/destroy-Semantik der HTTP-Attrappe, exakte AbortError-/signal.reas
 Bindung sowie dynamischer Deadline-Stopp vor Netz und gueltiges Direktfeed-RSS.
 Keine Runtimeaenderung; die neue Erwartung prueft den vorhandenen Schutz strenger.
 
+PR1253 / `ae6102cc` ist von E unabhaengig vollstaendig gelesen
+([Codeabnahme](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6952692411)).
+Erste regulaere Pflicht-CI44115174998: Browser bootet, scheitert aber in der
+unveraenderten alten Smoke-Fixture an `primaryItem=null`. Die Testkorrektur
+liefert nun einen deklarierten synthetischen Originalsatz und ein Profilthema
+an den unveraenderten Fachvertrag, statt einen Erfolgs-DTO einzusetzen. Die
+Erwartung prueft die datierte Ankuendigung und den unbekannten Vollzug.
+Ein zunaechst fehlender Assert-Import im Testnachtrag wurde korrigiert.
+Der anschliessende isolierte Admin-Browserfall fand einen zweiten alten
+Fixturefehler: negativer Operator-Authfall hatte die synthetische Session
+abgemeldet gelassen. Nur der Testreset wird vervollstaendigt; Produkt-Auth
+bleibt unveraendert. Danach **25/25** gezielte Admin-/Browserfaelle bestanden.
+Der alte vollstaendige Smoke blieb bis zur End-CI ausdruecklich rot;
+keine lokale Gesamtgruenaussage aus diesen Teilbelegen.
+
 Integration ausschliesslich durch D, nacheinander, nach unabhaengigem Review
 und beiden gruenen Pflichtchecks am jeweiligen Endkopf. Danach regulaeres
 Git-Deployment und lesender Nachweis; kein CLI-Deploy oder Productionwrite.
@@ -114,6 +131,9 @@ regulaeren Verarbeitungsabschluss nach den damaligen Reparaturen. Ein spaeterer
 READY-Rollout allein bestaetigt weder neue DIP-Staende noch Mandatsauslieferung.
 `process_runs`: null Abschluesse seit PR1251 (13:56:37 UTC);
 `helmut_store`: null `main-dipstand-*`-Belege vor dem neuen Rollout.
+Lesende Bestandszaehlung 15:32 UTC: 317 DIP-Dokumente, davon 49 mit
+Quellfelderversion2 und 37 mit Version1. Altbestand ohne Beleg wird nicht
+nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 

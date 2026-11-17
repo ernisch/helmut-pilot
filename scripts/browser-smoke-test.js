@@ -963,10 +963,16 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         fixture.kosById["ko-review-1"].mentioned_people = [fixture.profile.fullName];
         // Eine KO-Markierung allein belegt keine persoenliche Artikelnennung.
         // Auch der tatsaechlich verlinkte Fixture-Artikel traegt den vollen Namen.
+        // Der heutige Vertrag verlangt fuer ein Hauptitem zudem einen wirklich
+        // aus dem synthetischen Original qualifizierten Vorbereitungsanlass.
+        fixture.profile.focusTopics = ["Arbeitszeit"];
         fixture.sourcesByVorgang["vg-review-1"][0].summary =
-          `${fixture.profile.fullName} erlaeutert den vorgelegten Arbeitszeitentwurf.`;
+          `${fixture.profile.fullName} erlaeutert den vorgelegten Arbeitszeitentwurf. `
+          + "Bei der ersten Beratung des Arbeitszeitentwurfs wurden Schwachstellen eingeräumt und Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
         const data = contract.toBriefingContractV3({ ...fixture, now: at });
         const state = data.currentHelmutState;
+        require("node:assert/strict").ok(state.primaryItem && state.tagesAnlass?.recommendation,
+          "Synthetisches Original muss den bestehenden Vorbereitungsvertrag erfuellen");
         data.lageBriefing = { available: true, latestUpdatedAt: new Date().toISOString(), vorgaenge: [{
           id: state.primaryItem.id, vorgangId: state.primaryItem.id,
           title: state.primaryItem.title, displayTitle: state.primaryItem.displayTitle,
@@ -1027,7 +1033,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
           await page.locator(".vsheet-title").count() === 0 && await page.locator(".ui-briefing-hero").count() === 1);
         check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
-          (await page.locator(".ui-recommendation-why").innerText()).includes("heutigen Arbeitstag")
+          (await page.locator(".ui-recommendation-why").innerText()).includes("Ankündigung vom 2026-07-15")
+            && (await page.locator(".ui-recommendation-why").innerText()).includes("nicht bestätigt")
             && !(await page.locator(".ui-recommendation-why").innerText()).includes("Arbeitsgebiet des Mandats"));
         const primaryTitle = state.primaryItem.displayTitle || state.primaryItem.title;
         check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
