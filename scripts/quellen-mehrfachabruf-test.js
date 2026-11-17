@@ -15,7 +15,9 @@
 //   Es wird ausschliesslich als `timeout` an `client.get(...)` (`fetchUrl`, `fetchText`,
 //   `fetchPardokText`) und `client.request(...)` (`postForm`) durchgereicht. Das ist ein
 //   Node-Socket-Timeout je EINZELNER Anfrage (und dort ein INAKTIVITAETS-, kein
-//   Gesamtdauer-Limit). Es begrenzt weder `crawlSource` noch eine Quelle noch eine Stufe.
+//   Gesamtdauer-Limit). Ohne gesonderte absolute Frist begrenzt es weder
+//   `crawlSource` noch eine Quelle noch eine Stufe. Eine ausdrueckliche Deadline
+//   ist ein eigener Schutzvertrag und wird vor jedem Folgeabruf geprueft.
 //
 // DIE ANFRAGENKETTE EINER GOOGLE-NEWS-QUELLE, am Code abgelesen:
 //   1  je Feed-URL: ein Feed-Abruf (`parseRssFeed` -> `fetchText` -> `fetchUrl`)
@@ -107,6 +109,9 @@ function antwortFuer(url, method) {
   if (method === "POST") return ")]}'\n\n[[\"wrb.fr\",\"Fbv4je\",\"[]\"]]"; // liefert KEINE brauchbare URL
   if (/news\.google\.com\/rss\/search/.test(url)) return rssFeed(FEED_ITEMS);
   if (/news\.google\.com\/rss\/articles/.test(url)) return ARTIKEL_HTML;
+  if (/^https:\/\/amtdirekt-[\d]+\.example\.org\/feed\.xml$/.test(url))
+    return `<rss><channel><item><title>Direktmeldung</title><link>${url.replace("feed.xml","meldung.html")}</link>`
+      + "<pubDate>Sun, 03 Aug 2026 06:00:00 GMT</pubDate></item></channel></rss>";
   return "<html><head><title>Direkt</title></head><body>ok</body></html>";
 }
 
@@ -294,8 +299,14 @@ function abrufUntergrenze(dauern, g) {
       /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/.test(src) && /await postForm\(/.test(src));
     check("1.4 `enrichPersonArticleImages` ist eine SEQUENZIELLE Schleife mit Netzarbeit je Eintrag",
       /for \(const item of items\) \{[\s\S]{0,900}?await resolveArticleUrl\([\s\S]{0,900}?await fetchText\(/.test(src));
-    check("1.5 es gibt in `crawlSource` KEINE Restzeit-/Deadlinepruefung",
-      !/async function crawlSource[\s\S]{0,4000}?(deadline|verbleibendMs|restMs)/.test(src));
+    installiereHttpErsatz();
+    let deadlineError = null;
+    try {
+      try { await crawler.crawlSource(direkteQuelle("deadline"), { deadlineMs: 10, now: () => 10 }); }
+      catch (error) { deadlineError = error; }
+      check("1.5 eine gesonderte abgelaufene Deadline stoppt VOR jedem Netzaufruf",
+        deadlineError?.code === "HELMUT_SOURCE_DEADLINE" && anfragen.length === 0);
+    } finally { entferneHttpErsatz(); }
   }
 
   // ────────────────────────────────────────────────────────────────────────────────────────
