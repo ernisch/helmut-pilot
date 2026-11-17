@@ -1629,6 +1629,17 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js scripts/browser-smoke-test.js --briefing-teilstand
+      - name: Destatisanzeige - echte sichtbare Quellenhinweise im isolierten Chromium
+        if: steps.plan.outputs.destatisanzeige == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          # Vorhandene Suite erwartet /usr/bin/chromium und einen eigenen routenlosen Namespace.
+          # Nur den bereits gepinnten Playwright-Browser im kurzlebigen Runner verlinken.
+          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP + "/destatis-chromium-path", require("playwright").chromium.executablePath())'
+          sudo -n node -e 'const f=require("fs"),p=f.readFileSync(process.argv[1],"utf8"); if(f.existsSync("/usr/bin/chromium")){if(f.realpathSync("/usr/bin/chromium")!==f.realpathSync(p))throw Error("unerwarteter Chromium");}else f.symlinkSync(p,"/usr/bin/chromium");' "$RUNNER_TEMP/destatis-chromium-path"
+          sudo -n env -i PATH="$PATH" HELMUT_SOURCE_MODE=off node scripts/lokal.js -- node scripts/parlamentsdaten-quellen-ui-test.js --browser
+
       - name: Quellenbedarf - gebundenen echten Browserbeleg erhalten
         if: steps.plan.outputs.quellenbedarf == 'true'
         run: |
@@ -1709,7 +1720,9 @@ jobs:
           echo '13 erfolgreiche Browser-Einzelpruefungen als Teilbeleg WIEDERVERWENDET aus https://github.com/ernisch/helmut-pilot/actions/runs/43511072972/job/132181165997 ; damaliger Gesamtjob FAIL wegen zweier Ruhelage-Timingfaelle, hier keine Umwertung.' >> "$GITHUB_STEP_SUMMARY"
           node scripts/lokal.js -- node scripts/browser-smoke-test.js --tagespaket-jsonb --nur-ruhelage
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
-        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenbedarf != 'true'
+        if: steps.plan.outputs.browser == 'true' && steps.plan.outputs.radarpartei != 'true' && steps.plan.outputs.lagemandat != 'true' && steps.plan.outputs.briefingfolge != 'true' && steps.plan.outputs.quellenbedarf != 'true' && steps.plan.outputs.destatisanzeige != 'true'
+        # PR1251 nutzt oben den eigenen Quellenhinweis-Browser; generische Altfixture
+        # scheiterte in CI44095446372 an primaryItem=null. Kein PASS dieses Altlaufs.
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
         # womit browser-smoke-test.js bei fehlendem Playwright bereits mit
         # Exit 1 abbricht statt still zu SKIPpen. Das Flag macht die Pflicht

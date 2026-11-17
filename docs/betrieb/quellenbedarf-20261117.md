@@ -179,10 +179,16 @@ Lage-Teilstandabsaetze werden nicht zu einer heutigen Vollversorgung aufgewertet
 
 Der enge CI-Vertrag bindet Basis, PR, Branch, Bs zwei Runtime-/Testblobs und den
 sonst unveraenderten Baum. Er behaelt beide Pflichtjobs, Schnellkern, die
-vorhandenen RSS-/Hinweistests und echte Browser-Smoke-/Prosa-Pruefungen. Bs
+vorhandenen RSS-/Hinweistests und echte Quellenhinweis-/Prosa-Browserpruefungen. Bs
 gezielter Mobilbeleg wird als solcher erhalten. Keine pauschale Auswahl der
 245 Bereichssuiten oder Mengen-/DB-Laeufe. Unpassender Kopf stoppt vor Auswahl;
 kein genereller Skip oder Rueckfall auf einen breiten Lauf bei Bindungsfehler.
+Der allgemeine Browser-Smoke in CI44095446372 scheiterte an einer alten
+Briefingfixture (`primaryItem=null`, Zeile971), nach erfolgreichem Boot und
+Navigation. Dieser Erstfehler bleibt erhalten; kein gruener Altlauf behauptet.
+Fuer diesen reinen Anzeigefix laeuft stattdessen die vorhandene gezielte
+Quellenhinweissuite wirklich im Chromium, einschliesslich routenlosem Namespace,
+24 sichtbaren Hinweisen und sicheren Links. Keine Anwendungsregel wird gelockert.
 Merge, Pflicht-CI und regulaeres Deployment werden am exakten Kopf im PR belegt.
 
 Genau ein naechster Schritt nach gruener Integration: beim naechsten regulaeren
