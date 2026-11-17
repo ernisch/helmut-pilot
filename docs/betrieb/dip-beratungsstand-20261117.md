@@ -2,27 +2,70 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise,20:50UTC: PR1253/1252 regulaer live; PR1254/69e85a3f
-beide Pflichtchecks gruen, Merge wegen fehlender E-Endabnahme blockiert.
-Neue Textwege ohne Nutzungsfreigabe inaktiv, regulaere Kundenwirkung offen.**
+**Teilweise,21:55UTC: PR1253/1252/1254 regulaer live und lesend bestaetigt.
+Technische Lesekorrekturen wirken; laufende Vollversorgung und Kunden-/Rechtsabnahme offen.**
 
-Abschliessender Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
+Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
 ist completed/success, exakt an69e85a3f9e949613c94184f7c7c6a00dbc5a8895
 gebunden: Kern134340080967 und Browser134340081326 erfolgreich; voller
-Mock100 bewusstskipped, kein neuer Sonderlauf. PR1254 konfliktfrei gegen
-Main6c1af21a, Es drei Quellblobs unveraendert zu42909cb0. Keine PR-Reviews
-oder E-Endabnahme der neuen D-Deltas in1218 vorhanden. Kein Merge/Deployment
-und kein Production-Wirkungsnachweis von1254 behauptet.
-Productionlesung20:50:14UTC: null Abschluesse seit1251, null DIP-/Terminstandzeilen,
-keine neue gebundene Destatis-Fassung. Letzter regulaerer Quellenabschluss
-weiterhin cron-crawl-20261117044523-onl6r,04:49:09.506UTC,partial.
-Der aktuelle Betreiber-Appbeleg bleibt der echte gespeicherte Abruf19:24UTC;
-keine neue Verarbeitung, keine angemeldete visuelle Kundenabnahme.
+Mock100 bewusstskipped. E hat den vollstaendigen21-Dateien-Diff einschliesslich
+aller D-Deltas und den getrennten alten Doku-Stand5e568bef
+[unabhaengig abgenommen](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6961901035).
+Der zum Stand20:50 belegte Endreviewblocker ist damit geschlossen.
+PR1254 SHA-gebunden auf `eb75356a2bc74fd5997690fd0c650c2f98897f42` gemergt;
+Mainbaum exakt identisch69e85a3f, Es drei Quellblobs unveraendert42909cb0.
+Normaler Git-Productionrollout `dpl_7ee7zt4ePwQdiiQqyiLMQ2B2Fcpb` READY,
+Alias/Root/Client HTTP200, Versioneb75356a, ClientSHA256
+`09d3ec9cca3e1aef2ca181662d624392474e26ada1e7a89b67592ca6d3beb055`.
+Kein CLI-Deploy, keine Daten-/Quellenaktivierung oder Retentionausfuehrung.
 
-Der abschliessende reine Doku-Stand liegt getrennt vom eingefrorenen
-Runtimekopf auf codex/quellenabschlussstatus-d-20261117. Nach Es Endabnahme
-und Runtimeintegration ist ausschliesslich dieser Dokucommit fuer den einen
-abschliessenden Dokumentations-PR bestimmt; diesen Ref nicht direkt mergen.
+Echter reiner Betreiber-AppGET21:55:25.953UTC, normaler gespeicherter Pfad:
+HTTP200/availabletrue,699460Bytes, AntwortSHA256
+`aadb97ca7b0df5d39e1971826111a05909bc2a7da9511287b07a152fb33110f8`.
+PaketinhaltHash6ae73360, kompletter gespeicherterNachweis/Paketstatus und beide
+Lageabsaetze exakt zum echten Vorabruf19:24 erhalten; AbsatzSHA256
+`a12a2a0210f38944244317c4acdddcfae0b39f92fd616e7a2229d950ae910c89`.
+Jetzt11 verschachtelte DIP-DTO-Knoten, keine11 neuen Vorgaenge oder Standbelege:
+sichtbare Drucksache21/9191 korrekt an amtlichen Vorgang340926/Original gebunden,
+Stand/Folgestand/Abrufdatum ausdruecklich unbekannt. Die unbelegte Millionen-
+Einordnung der Altersvorsorgekarte ist tatsaechlich entfernt; bestehender
+belegter Warum-Fallback und Sachtext erhalten. Diese beiden Produktwirkungen
+sind real bestaetigt; kein fingierter Erfolgsdatensatz.
+
+Productionlesung21:55:59UTC: null Abschluesse seit1251, null DIP-/Terminstandzeilen,
+keine neue gebundene Destatis-Fassung. Letzter regulaerer Quellenabschluss
+weiterhin cron-crawl-20261117044523-onl6r,04:49:09.506UTC,partial. Der09:58-
+Zusatzabschluss bleibt davon getrennt. Lage2Absaetze/11Karten, Radarstale,
+Briefingempty/keineTagesprioritaet, Paketpartial mit Quellenversorgungs-/
+Handlungsbelegluecke; Quittunggebunden, fachlicheVollabnahmefalse. Kein
+Parlamentskontext aus denfuenf rechtlichinaktivenE-Wegen. Kein neuer
+Verarbeitungsabschluss oder angemeldeter visueller Kunden-/Fachnachweis.
+Ungekuerzte Antworten bleiben privat ausserhalbGit; keine Secrets im Bericht.
+
+### Verbleibender Bedarf des geprueften Bundestagspiloten
+
+| Bereich | Tatsaechlicher Rest | Kleinster zulaessiger Abschluss |
+| --- | --- | --- |
+| DIP-Beratungsstaende | Anschluss bis normalem App-GET wirkt, aber null gespeicherte neue Staende; aktueller Stand unbekannt | Naechsten ohnehin stattfindenden regulaeren DIP-Abschluss bis Original/Stand/Anzeige abnehmen; keinen Zusatzlauf starten. |
+| Destatis | PR1249–1251 erledigt; gebundene16Nov-Fassung rd-635871ad noch ohne Speicherung/Analyse/Ausgabe | Dieselbe Kette im naechsten regulaeren Abschluss nachweisen; keine erneute Reparatur ohne neuen Fehler. |
+| Arbeit/Soziales | Originale/Parser/Produktleser vorhanden; neuer Weg ohne Q2-Recht inaktiv, Nummer44/45 bleibt Konflikt | Konkrete externe Nutzungsfreigabe fuer benoetigte Fakten/Archiv-/Ausgabeform; erst danach eng freigegebene Aktivierung und regulaerer Nachweis. |
+| Wirtschaft/Energie und Digitales | Stellvertretungen getrennt angebunden; Wege ohne Q2-Recht inaktiv, Digitalfrist11Nov historisch | Dieselbe konkrete Q2-Entscheidung; keine persoenliche Frist oder Mitgliedschaft erfinden. |
+| Plenum/Sitzungswochen | Vier Beginne/ICS-Ende und unbekannte Einzel-TOP-Zuordnung technisch erhalten, beide Wege rechtlich inaktiv | Q2-Entscheidung und danach regulaere Aufnahme; Wochenplan nicht als individueller Termin ausgeben. |
+| Ressorts/Region/ergaenzende Medien | Elf ausgegebene Dokumentkanten und Kernaussagen abgeglichen, keine vollstaendige aktuelle Fach-/Regionalabdeckung; konkrete BMAS/BMG-/Medienarchivrechte offen | Vorhandenen erlaubten Umfang und reale neue Betriebsbelege nutzen; weitere benoetigte Nutzung einzeln durch Q3/Q4 entscheiden lassen. |
+| Lage/Radar/Briefing und zahlender Kunde | Echte Teilanzeige, kein neuer Handlungs-/Radarbeleg, keine angemeldete visuelle Abnahme; Fs externe Anbieter-/Vertrags-/Datenschutzentscheidungen offen | Keine Prioritaeten fuellen. Reale Folgeausgabe fachlich abnehmen; Rechtsentscheidungen gemaess F-Dossier durch Verantwortliche treffen lassen. |
+
+D bleibt alleiniger Integrator und exklusiver Autor von CURRENT_STATE und diesem
+Dossier. [G-Zuschnitt bestaetigt22:03](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6962281586):
+G bearbeitet die zwei vom Betreiber benannten Fachkorrekturen zur Radar-Neuigkeit
+und abgelaufenen Briefing-Schlusszeit; Fehlerbelege, gezielte Pruefungen und
+D-Endabnahme stehen noch aus. G besitzt exklusiv briefing-bereichsvertrag.js,
+briefing-fristbeleg.js, briefing-orientierung.js, tagespaket-auslieferung.js und
+die bestehenden Bereichsvertrag-/Tagespakettests sowie den bestehenden Radar-
+Einzelartikel-Titelbindungstest (Zusatzreservierung6962321699); weitere Pfade vorher abgleichen.
+D schreibt dort nicht und uebernimmt unabhaengiges Review/Integration.
+E bestaetigt im eigenen Quellenbereich keinen weiteren notwendigen Codefehler.
+Der reine Statusabschluss wird nach gemeinsamer Integration zusammengefuehrt;
+keine Runtime, Konfiguration, Daten, Rechteflags oder neuen Tests dadurch.
 
 ## Integration und notwendiger Folgeanschluss
 
@@ -334,5 +377,5 @@ nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 
-**Naechster Schritt:** Es unabhaengige Endabnahme des exakten
-PR1254-Kopfes69e85a3f nachweisen.
+**Naechster Schritt:** Gs unveraenderten Endkopf mit den echten Fehler- und
+gezielten Pruefbelegen unabhaengig abnehmen.
