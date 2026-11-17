@@ -124,6 +124,26 @@ bleibt unveraendert. Danach **25/25** gezielte Admin-/Browserfaelle bestanden.
 Der alte vollstaendige Smoke blieb bis zur End-CI ausdruecklich rot;
 keine lokale Gesamtgruenaussage aus diesen Teilbelegen.
 
+Der abgeschlossene erste Lauf44115174998 bestaetigt die Standard-Offlinesuite,
+scheitert in der Bereichsregression aber an zehn alten Briefingvertraegen.
+GitHub-Fehlerannotationen nennen sie eindeutig; der externe Azure-Logdownload
+war nicht erreichbar. Zwei repraesentative Faelle auf isoliertem **unveraendertem
+main2023dfd5** scheitern identisch: Artikelidentitaet erwartet unbelegten Primary,
+Teilstandtest erwartet dessen Verdrängung durch eine blosse ID-Markierung.
+Keine neue DIP-Regression daraus. D korrigiert nur die fuenf reservierten Tests:
+Artikel-/FR-Belegzeit bleibt am vorhandenen Sachstandeintrag geprueft;
+Quellenbindung/Aussagenbereinigung allein erzeugen keinen Tagesauftrag;
+unbelegter Primary verdraengt keinen wirklich geprueften Teilstand.
+Gezielt danach **11/11, 6/6, 15/15, 50/50, 10/10** erfolgreich.
+E uebernimmt getrennt die fuenf verbleibenden Zeit-/Korrekturvertraege.
+Keine Runtime-, Fachwachen- oder CI-Aenderung fuer diese Altfehler.
+
+Es Aufnahme60526304 samt korrigierter Nutzungsbindung6346e7b5 ist von D
+vollstaendig unabhaengig gelesen und ohne Konflikt sequenziell uebernommen;
+alle zehn E-Dateiblobs stimmen exakt mit Es abgenommenem Endkopf ueberein.
+Die gemeinsame Endkopf-CI ersetzt einen zweiten vollen CI-Plan fuer denselben
+unveraenderten Kern. F1252 wird danach getrennt auf gruener Basis integriert.
+
 Integration ausschliesslich durch D, nacheinander, nach unabhaengigem Review
 und beiden gruenen Pflichtchecks am jeweiligen Endkopf. Danach regulaeres
 Git-Deployment und lesender Nachweis; kein CLI-Deploy oder Productionwrite.
