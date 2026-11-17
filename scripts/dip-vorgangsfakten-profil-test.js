@@ -57,7 +57,61 @@ async function main() {
   const snapshot=await lese({positionIds:ids,tag,profile:basic});
   assert.deepEqual(seen,[p.id,"699347"]); assert.equal(snapshot.quellen.length,2);
   console.log("PASS Validierte Positionsauswahl kann waehrend des Abrufs weder ersetzt noch erweitert werden");
-  console.log("8/8 begrenzte Profil und Aufnahmegruppen bestanden; kein individueller Auftrag und keine 36er Fachabnahme.");
+  const DIP = require("../lib/helmut/dip");
+  const dokumente = [
+    { id: "990001", titel: "Arbeit und Soziales: Bericht", datum: "2026-11-16" },
+    { id: "990002", titel: "Neue Förderprogramme", datum: "2026-11-16", ressort: [{ titel: "Wirtschaft und Energie" }] },
+    { id: "990003", titel: "Digitales und Staatsmodernisierung: Bericht", datum: "2026-11-16" },
+    { id: "990004", titel: "Sachstand zum Naturschutz", datum: "2026-11-16" },
+    { id: "990005", titel: "", datum: "2026-11-16", ressort: [{ titel: "Wirtschaft und Energie" }] }
+  ];
+  const normalisiert = dokumente.map(DIP.normalizeDrucksache).filter(Boolean);
+  const deputy = [" Wirtschaft und Energie ", "Digitales und Staatsmodernisierung"];
+  // Eingangsrelevanz liefert auch fuer LT amtlichen Hintergrund. Sie bestaetigt
+  // KEINE Mitgliedschaft in einem Bundesausschuss; die acht obigen Grenzen bleiben.
+  for (const parliamentType of ["Bundestag", "Landtag"]) {
+    for (const field of ["deputyCommittees", "stellvertretende_ausschuesse"]) {
+      const profil = { id: "source-filter-test", parliamentType, [field]: deputy }, before = JSON.stringify(profil);
+      assert.deepEqual(DIP.filterForProfile(normalisiert, profil).map(d => d.id), ["990002", "990003"]);
+      assert.equal(JSON.stringify(profil), before);
+    }
+  }
+  console.log("PASS BT/LT Stellvertretungsfelder erreichen bestaetigte Titel-/Ressorttreffer ohne Rollenaufwertung");
+  for (const profil of [{}, { deputyCommittees: [] }, { stellvertretende_ausschuesse: ["Recht"] }, { deputyCommittees: ["Wi"] }])
+    assert.deepEqual(DIP.filterForProfile(normalisiert, profil), []);
+  assert.equal(normalisiert.length, 4, "Fehlender amtlicher Titel wird nicht durch Ressorttreffer ersetzt");
+  assert.deepEqual(DIP.filterForProfile(normalisiert, { committee: "ARBEIT UND SOZIALES" }).map(d => d.id), ["990001"]);
+  console.log("PASS Fehlender oder unpassender Beleg bleibt gesperrt, Hauptausschuss und Normalisierung bleiben erhalten");
+  const provider = require("../lib/helmut/anbieter-steuerung");
+  const originalProvider = { reserviere: provider.reserviere, melde: provider.melde, starteLeaseWache: provider.starteLeaseWache };
+  let zeit = Date.parse("2026-11-17T12:00:00Z"), requests = 0;
+  const env = { DIP_API_KEY: "declared-offline-source-filter", HELMUT_ANBIETER_STEUERUNG: "on" };
+  provider.reserviere = async () => ({ erlaubt: true }); provider.melde = async () => ({});
+  provider.starteLeaseWache = () => ({ signal: new AbortController().signal, verloren: () => false, beenden() {} });
+  const response = async (url, options) => {
+    requests++; assert.equal(new URL(url).origin, "https://search.dip.bundestag.de");
+    assert.equal(new URL(url).searchParams.has("apikey"), false);
+    assert.equal(options.headers.Authorization, "ApiKey " + env.DIP_API_KEY);
+    return new Response(JSON.stringify({ documents: dokumente }), { headers: { "content-type": "application/json" } });
+  };
+  const lesen = (profil, request = response) => DIP.getQueueDocuments(profil, {
+    deadlineMs: zeit + 30000, now: () => zeit, env, fetch: request });
+  try {
+    assert.deepEqual((await lesen({ committee: "Arbeit und Soziales" })).map(d => d.id), ["990001"]);
+    assert.equal(requests, 1);
+    for (const parliamentType of ["Bundestag", "Landtag"]) for (const field of ["deputyCommittees", "stellvertretende_ausschuesse"]) {
+      const hit = await lesen({ parliamentType, [field]: deputy }, () => assert.fail("Globaler Cache braucht keinen neuen Abruf"));
+      assert.deepEqual(hit.map(d => d.id), ["990002", "990003"]);
+    }
+    assert.deepEqual(await lesen({ deputyCommittees: ["Recht"] }, () => assert.fail("Kein Abruf bei leerem Profiltreffer")), []);
+    assert.equal(requests, 1, "Geteilter Cache behaelt auch vorher nicht ausgewaehlte Dokumente");
+    // Regulärer TTL-Ablauf statt Cacheloeschung oder Invalidierung.
+    zeit += 31 * 60000;
+    assert.deepEqual((await lesen({ stellvertretende_ausschuesse: deputy })).map(d => d.id), ["990002", "990003"]);
+    assert.equal(requests, 2);
+  } finally { Object.assign(provider, originalProvider); }
+  console.log("PASS Nativer API- und Globalcachepfad filtern Stellvertretungen ohne Cache-Reset oder Zusatzabruf");
+  console.log("11/11 begrenzte Profil und Aufnahmegruppen bestanden; kein individueller Auftrag und keine 36er Fachabnahme.");
 }
 main().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{
   global.fetch=orig; if(key===undefined)delete process.env.DIP_API_KEY;else process.env.DIP_API_KEY=key;

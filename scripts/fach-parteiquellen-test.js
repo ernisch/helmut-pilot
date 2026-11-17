@@ -309,7 +309,10 @@ const socialSamples = [
 const bezug = require("../lib/helmut/lage-profilbezug");
 for (const sample of socialSamples) {
   const original = CR.normalizeRawItem(sample, destatis), stored = DD.toRawDocumentRow(original);
-  assert.equal(stored.id, sample.id);
+  assert.equal(DD.toRawDocumentRow({ ...original, parlamentsdatenHerkunft: undefined }).id, sample.id,
+    "Historische URL-Identitaet bleibt unveraendert ableitbar");
+  assert.notEqual(stored.id, sample.id, "Gepruefter RSS-Auszug erhaelt seine eigene unveraenderliche Identitaet");
+  assert.equal(stored.id, "rd-" + require("../lib/helmut/quellen-destatis-rss-stand").read(stored).standHash);
   assert.equal(stored.source_id, destatis.id); assert.equal(stored.source_type, "official");
   assert.equal(stored.source_name, destatis.name); assert.equal(original.author, destatis.name);
   assert.equal(stored.url, sample.url); assert.equal(stored.canonical_url, sample.url.replace("www.", ""));
