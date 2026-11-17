@@ -10,11 +10,10 @@
 // String-Funktion (keine DOM-Mutation) -> im vm exakt und stabil pruefbar.
 //
 // Geprueft:
-//   - App-Code laedt, Helmut-Tab rendert mit vollstaendigem currentHelmutState
+//   - App-Code laedt, Helmut-Tab rendert einen nativ belegten Pruefanlass
 //   - rendert mit leerem currentHelmutState (neutraler Leerzustand, kein Crash)
-//   - alle geforderten Felder werden aus currentHelmutState angezeigt
-//   - recommendedCommunication + actionItems bleiben strukturiert sichtbar
-//   - riskLevel/opportunityLevel werden angezeigt
+//   - Original, Mandatsbezug und unbekannter Vollzug bleiben sichtbar
+//   - unbelegte Kommunikation/Handlung/Risiko-/Chancenwerte werden nicht erzwungen
 //   - status/staleState/qualityStatus werden angezeigt
 //   - Mobil-Reihenfolge (DOM-Reihenfolge = Flex-Column-Reihenfolge): Vorschlag zuerst
 //   - KEINE Kostenwerte im Markup, KEINE Personen-Logik/Partei im Leerzustand, KEINE LLM-Calls
@@ -93,10 +92,14 @@ function loadClient() {
 
 // --- Echte V3-Daten (fiktiv) -> echter Adapter -> UI -------------------------
 const NOW = new Date("2026-07-07T08:30:00Z");
-const profile = { id: "u-1", tenantId: "t-1", firstName: "Test", party: "SPD", committee: "Gesundheit", focusTopics: ["Pflege"] };
+const profile = { id: "u-1", tenantId: "t-1", firstName: "Test", party: "SPD",
+  committee: "Ausschuss für Arbeit und Soziales", focusTopics: ["Fördermittel"] };
+// Deklarierte Original-Fiktionen fuer die nativen positiven Anlasspfade.
+const arbeitsOriginal = "Bei der ersten Beratung des Arbeitszeitentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
+const foerderOriginal = "Für die weitere parlamentarische Beratung der Fördermittel wurden Nachbesserungen angekündigt.";
 const koPrimary = {
   id: "ko-vg-1", vorgang_id: "vg-1", status: "neu", understanding_status: "complete",
-  display_title: "Gesetzentwurf zur Regelung von Arbeitszeit", was_ist_passiert: "Entwurf vorgelegt.", warum_wichtig: "Betrifft viele.",
+  display_title: "Gesetzentwurf zur Regelung von Arbeitszeit", was_ist_passiert: arbeitsOriginal, warum_wichtig: "Betrifft viele.",
   why_relevant: "Die Debatte gewinnt an Dynamik und beruehrt Wahlkreis und Ausschussarbeit.",
   recommendation: "Heute nicht oeffentlich zuspitzen. Intern abstimmen. Linie vorbereiten.",
   ausschuesse: ["Arbeit & Soziales"], policy_field: ["Gesetzgebung"], parteien: ["Koalition"], tags: ["Arbeitszeit"],
@@ -117,15 +120,15 @@ const koPrimary = {
 };
 const koRelated = {
   id: "ko-vg-2", vorgang_id: "vg-2", status: "neu", understanding_status: "complete",
-  display_title: "Laender fordern mehr Foerdermittel", was_ist_passiert: "Programm angekuendigt.", warum_wichtig: "Mittel fuer Kommunen.",
+  display_title: "Laender fordern mehr Foerdermittel", was_ist_passiert: foerderOriginal, warum_wichtig: "Mittel fuer Kommunen.",
   why_relevant: "Chance fuer deinen Wahlkreis.", ausschuesse: ["Kommunales"], tags: ["Foerderung"],
   zeitdruck: "mittel", confidence_score: 70, source_document_count: 4, updated_at: "2026-07-06T09:00:00Z",
   // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
   best_source_url: "https://beispiel.de/politik/foerdermittel-2", best_link_type: "direct"
 };
 const sources = {
-  "vg-1": [{ id: "rd-a", url: koPrimary.best_source_url, published_at: "2026-07-07T07:45:00Z" }, { id: "rd-b", url: "https://beispiel.de/politik/weiterer-beleg", published_at: "2026-07-06T10:00:00Z" }],
-  "vg-2": [{ id: "rd-c", url: koRelated.best_source_url, published_at: "2026-07-07T07:00:00Z" }]
+  "vg-1": [{ id: "rd-a", title:koPrimary.display_title, summary:arbeitsOriginal, url: koPrimary.best_source_url, published_at: "2026-07-07T07:45:00Z" }, { id: "rd-b", url: "https://beispiel.de/politik/weiterer-beleg", published_at: "2026-07-06T10:00:00Z" }],
+  "vg-2": [{ id: "rd-c", title:koRelated.display_title, summary:foerderOriginal, url: koRelated.best_source_url, published_at: "2026-07-07T07:00:00Z" }]
 };
 const decisions = [
   { knowledge_object_id: "ko-vg-1", vorgang_id: "vg-1", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "Uneinheitliche Aussagen", chance: "Profilierung", matched_features: [] },
@@ -136,7 +139,7 @@ const kosById = { "ko-vg-1": koPrimary, "ko-vg-2": koRelated };
 const fullState = contract.buildCurrentHelmutState({ profile, decisions, kosById, sourcesByVorgang: sources, now: NOW });
 const emptyState = contract.buildCurrentHelmutState({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, now: NOW });
 const staleSources = { "vg-1": [{ id:"rd-alt-frist", url:koPrimary.best_source_url,
-  published_at:"2026-01-01T00:00:00Z", summary:"Die Abgabefrist endet am 07.07.2026." }] };
+  published_at:"2026-01-01T00:00:00Z", summary:"Die Einreichungsfrist für Stellungnahmen zum Arbeitszeitentwurf im Ausschuss für Arbeit und Soziales endet am 07.07.2026; Unterlagen können beim Ausschuss eingereicht werden." }] };
 const staleState = contract.buildCurrentHelmutState({
   profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z", deadline:"2026-07-07T00:00:00Z" } },
   decisions: [decisions[0]], sourcesByVorgang: staleSources, now: NOW
@@ -157,7 +160,7 @@ try { api = loadClient(); }
 catch (e) { console.error("FAIL  client.js im vm laden:", e && e.message); process.exit(1); }
 check("client.js laedt im vm (Boot ohne echten Browser)", Boolean(api && api.render));
 
-// === 1) Vollstaendiger Zustand ===
+// === 1) Nativ belegter Pruefanlass; keine vorgetaeuschte Vollabnahme ===
 api.setBriefing(briefingWith(fullState));
 const html = api.render();
 
@@ -165,50 +168,45 @@ check("Voll: rendert den Stand (.hstand), nicht den Leerzustand",
   /class="hstand"/.test(html) && !/hstand--state/.test(html));
 check("Neuer Kopf: persönliches Briefing",
   html.includes("Ihr Briefing. Was jetzt Ihre Aufmerksamkeit braucht.") && !html.includes("Dein aktueller Stabschefstand"));
-check("Briefing: Begruendung steht sichtbar neben dem naechsten Schritt",
-  html.includes("Begründung:"));
-check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte",
-  /hstand-risk[\s\S]*?hstand-level--risk/.test(html) && /hstand-chance[\s\S]*?hstand-level--chance/.test(html));
-check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
-  (html.match(/hstand-kico/g) || []).length >= 5);
-check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
-  html.includes("hstand-comms-formats-label\">Formate<") && html.includes("hstand-comms-formats"));
+check("Briefing: Mandatsbezug und Quellenanlass stehen beim belegten Pruefschritt",
+  html.includes("Mandatsbezug und Anlass:"));
+check("Unbelegte Risiko-/Chancenbadges werden nicht aus globalen KO-Feldern erzeugt",
+  !/hstand-level--risk|hstand-level--chance/.test(html));
+check("Sektionsmarke bleibt am tatsaechlich belegten Stand sichtbar",
+  (html.match(/hstand-kico/g) || []).length >= 1);
+check("Ohne belegte Kommunikation keine Format-Vorschlaege",
+  !html.includes("hstand-comms-formats-label"));
 {
   const commsBlock = (html.match(/hstand-comms"[\s\S]*?<\/section>/) || [""])[0];
-  check("Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)",
-    commsBlock.includes("hstand-comms-rec-k") && commsBlock.includes(">Empfohlen<") && commsBlock.includes("Pressemitteilung · Presse"));
+  check("Ohne Kommunikationsbeleg wird keine Pressemeldung empfohlen", commsBlock === "");
 }
 {
-  const prop = (html.match(/class="ui-briefing-hero[^"]*"[\s\S]*?<\/section>/) || [""])[0];
-  // Nur echte Chips zählen (jeder trägt einen --Modifier); NICHT den Container hstand-chiprow.
-  const chipN = (prop.match(/hstand-chip--/g) || []).length;
-  check("Feinschliff: Mein Vorschlag zeigt höchstens 3 Chips (ruhiger Kopf)",
-    chipN <= 3 && prop.includes("Hohe Dringlichkeit") && !prop.includes(">Arbeitszeit<"), `chips=${chipN}`);
+  // Den Hero ohne die separat gerenderten ausfuehrlichen Quelldetails pruefen.
+  const prop = api.hero(fullState);
+  const chipN = (prop.match(/<span class="hstand-chip /g) || []).length;
+  check("Vorbereitungsanlass zeigt hoechstens drei Chips und keine unbelegte hohe Dringlichkeit",
+    chipN <= 3 && !prop.includes("Hohe Dringlichkeit") && !prop.includes(">Arbeitszeit<"), `chips=${chipN}`);
 }
-check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)",
-  html.includes('hstand-chip hstand-chip--out'));
+check("Ohne belegten Kommunikationsauftrag keine Output-Chips", !html.includes('hstand-chip--out'));
 check("Feinschliff: Quellenstand ist auch mobil als Quelle beschriftet",
   html.includes("hstand-mk-short") && html.includes(">Quelle<") && html.includes(">Quellenstand<"));
-check("Voll: Mein Vorschlag zeigt die recommendation",
-  html.includes("Ihr nächster Schritt") && html.includes("Intern abstimmen"));
+check("Pruefanlass zeigt die aus dem Original abgeleitete begrenzte Empfehlung",
+  html.includes("Möglicher nächster Schritt") && html.includes("ob die angekündigten Nachbesserungen inzwischen vorliegen"));
 check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",
-  html.includes("Begründung:") && html.includes("heutigen Arbeitstag") && !html.includes("Die Debatte gewinnt an Dynamik"));
-check("Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'",
-  html.includes("Risiko bei Nichtreaktion") && /hstand-risk[\s\S]*?Hoch/.test(html));
-check("Voll: Chance + Chancenstufe 'Hoch'",
-  html.includes(">Chance<") && /hstand-chance[\s\S]*?Hoch/.test(html));
-check("Voll: recommendedCommunication strukturiert (Format + Kanal + Outputs)",
-  html.includes("Empfohlene Kommunikation") && html.includes("Pressemitteilung") && html.includes("Presse") &&
-  html.includes("Q&amp;A") /* suggestedOutput qa -> Q&A escaped */);
-check("Voll: actionItems strukturiert (Schritte mit Titel + dueHint)",
-  html.includes("Was Sie jetzt tun sollten") && html.includes("Bis 14:00 Linie intern abstimmen") && html.includes("bis 14:00"));
+  html.includes("Ankündigung vom 2026-07-07") && html.includes("nicht bestätigt") && !html.includes("Die Debatte gewinnt an Dynamik"));
+check("Pruefanlass erfindet kein Risiko bei Nichtreaktion", !html.includes("Risiko bei Nichtreaktion"));
+check("Pruefanlass erfindet keine hohe Chance", !/hstand-chance/.test(html));
+check("Pruefanlass erzeugt keine unbelegte Presse-/Formatanweisung",
+  !html.includes("Empfohlene Kommunikation") && !html.includes("Pressemitteilung"));
+check("Pruefanlass erzeugt keine persoenliche 14-Uhr-Aufgabe", !html.includes("Bis 14:00 Linie intern abstimmen"));
 const stepCount = (html.match(/class="hstand-step"/g) || []).length;
-check("Voll: wenige Schritte (1..4)", stepCount >= 1 && stepCount <= 4, `n=${stepCount}`);
-check("Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet",
-  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && html.includes(">18<") && html.includes("Vollständig"));
+check("Ohne belegte Einzelpflicht keine Aufgabenliste", stepCount === 0, `n=${stepCount}`);
+check("Belegter Vorgang zaehlt die eine Originalquelle statt behaupteter18",
+  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && fullState.primaryItem.sourceCount === 1
+    && fullState.qualityStatus === "partial" && !html.includes(">18<"));
 const relCount = (html.match(/class="hstand-rel"/g) || []).length;
 check("Voll: weitere relevante Vorgaenge (1..3)", relCount >= 1 && relCount <= 3, `n=${relCount}`);
-check("Voll: Quellen-Fußzeile zeigt '18 Quellen'", html.includes("18 Quellen"));
+check("Quellen-Fusszeile bestaetigt keine behaupteten18 Quellen", !html.includes("18 Quellen") && html.includes("1 Quelle"));
 check("Voll: Kopf-Status 'Aktuell' (fresh)", html.includes(">Aktuell<"));
 
 // Ein belegter Tagesanlass braucht keine gespeicherte Handlungsempfehlung.
@@ -221,19 +219,19 @@ for (const [name, state] of [
   ["toBriefingContractV3", contract.toBriefingContractV3(ohneEmpfehlungInput).currentHelmutState]
 ]) {
   check(`${name}: echter Tagesanlass und Primaervorgang trotz leerer Empfehlung`,
-    Boolean(state.primaryItem && state.whyItMatters) && state.recommendation === "");
+    Boolean(state.primaryItem && state.whyItMatters) && state.recommendation === state.tagesAnlass.recommendation);
   api.setBriefing(briefingWith(state));
   const ohneEmpfehlungHtml = api.render();
   const hero = api.hero(state);
   check(`${name}: gespeicherter Anlass wird als Warum heute relevant angezeigt`,
-    ohneEmpfehlungHtml.includes("Warum heute relevant:")
+    ohneEmpfehlungHtml.includes("Mandatsbezug und Anlass:")
     && hero.includes(api.esc(api.sie(state.whyItMatters))));
-  check(`${name}: keine erfundene Handlungs- oder Bueroaufforderung ohne Empfehlung`,
+  check(`${name}: aus Original gewonnene Pruefempfehlung ist keine automatische Bueroaufforderung`,
     !/data-briefing-office|Ihr nächster Schritt|Entwurf im Büro öffnen|Begründung:|KI-Empfehlung/.test(hero)
     && !hero.includes("Prüfen Sie die Einordnung und Quellen zu diesem Vorgang."));
   const ohneWarum = api.hero({ ...state, whyItMatters: "" });
   check(`${name}: leeres Warum erzeugt keinen Relevanzplatzhalter`,
-    !/Warum heute relevant:|Begründung:|ui-recommendation-why/.test(ohneWarum));
+    !/Warum heute relevant:|Mandatsbezug und Anlass:|Begründung:|ui-recommendation-why/.test(ohneWarum));
 }
 api.setBriefing(briefingWith(fullState));
 
@@ -242,14 +240,10 @@ api.setBriefing(briefingWith(fullState));
 // Warum -> Risiko/Chance -> ... -> Quellen.
 const idx = (s) => html.indexOf(s);
 check("Mobil-Reihenfolge: Hauptvorgang mit nächstem Schritt, Kontext und Quellen",
-  idx("ui-briefing-hero") < idx("Ihr nächster Schritt") &&
-  idx("Ihr nächster Schritt") < idx("Begründung:") &&
-  idx("Begründung:") < idx("Risiko bei Nichtreaktion") &&
-  idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
-  idx("Empfohlene Kommunikation") < idx("Was Sie jetzt tun sollten") &&
-  // Design 06.11.2026: „18 Quellen“ steht zusaetzlich in der Hero-Meta-Zeile; die
-  // Quellen-Fusszeile (letztes Vorkommen) muss weiterhin ganz am Ende stehen.
-  idx("Was Sie jetzt tun sollten") < html.lastIndexOf("18 Quellen"));
+  idx("ui-briefing-hero") >= 0 && idx("ui-briefing-hero") < idx("Möglicher nächster Schritt") &&
+  idx("Möglicher nächster Schritt") < idx("Mandatsbezug und Anlass:") &&
+  idx("Mandatsbezug und Anlass:") < idx("Beleg für die Vorbereitung") &&
+  idx("Beleg für die Vorbereitung") < html.lastIndexOf("1 Quelle"));
 
 // KEINE Kostenwerte im Markup.
 check("Voll: KEINE Kostenwerte/Token im Markup",
@@ -262,7 +256,7 @@ const htmlStale = api.render();
 check("Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)",
   htmlStale.includes("Nicht aktuell") && !htmlStale.includes("Nicht mehr ganz frisch"));
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
-  htmlStale.includes("Ihr nächster Schritt"));
+  htmlStale.includes("Möglicher nächster Schritt"));
 
 // === 2a) Kopf-Chip: Slot-Name NUR bei frischem Stand, sonst 'Letzter Stand' ===
 // Der Slot-NAME (z. B. „Mittagsbriefing") kommt aus der aktuellen Uhrzeit. Bei einem
@@ -285,11 +279,9 @@ check("Kopf: alter Quellenstand bleibt als Quellenstand erkennbar",
 check("Kopf: stale Stand mischt KEINEN aktuellen Slot-Namen mit altem Datum",
   !/Mittagsbriefing|Morgenbriefing|Abendlage|Tagesbriefing/.test(htmlStaleMidday));
 
-// === 2b) PRODUKTIONS-REPRO: aelteres KO (nur V3-Kern, KEINE neuen Stabschef-Felder) ===
-// Genau der Production-Fall: available=true + primaryItem vorhanden, aber die vier neuen
-// Stabschef-Felder sind leer (KO wurde vor deren Einfuehrung verstanden). Frueher wurde
-// das faelschlich als "empty" versteckt. Jetzt: partial -> status fresh -> voller Stand
-// mit dem vorhandenen Vorschlag (aus handlungsempfehlung) + ehrlichem "teilweise"-Hinweis.
+// === 2b) Erhaltener historischer Legacy-Fall, keine neue Productionaussage ===
+// Der aktuelle Produktvertrag verlangt einen Original-/Mandatsauftrag.
+// Globale Alt-KO-Empfehlungen allein erzeugen deshalb keine Tagesprioritaet.
 const koOld = {
   id: "ko-old-1", vorgang_id: "vg-old-1", status: "neu", understanding_status: "complete",
   display_title: "Antrag zur Anpassung der Ausschussarbeit",
@@ -306,18 +298,15 @@ const oldState = contract.buildCurrentHelmutState({
   decisions: [{ knowledge_object_id: "ko-old-1", vorgang_id: "vg-old-1", score: 72, decision: "Sofort reagieren", priority_type: "risk", risk: "", chance: "", matched_features: [] }],
   sourcesByVorgang: { "vg-old-1": [{ id:"rd-old", url:koOld.best_source_url, published_at:NOW.toISOString() }] }, now: NOW
 });
-check("Prod-Repro: aelteres KO (nur V3-Kern) -> qualityStatus partial, status fresh (nicht empty)",
-  oldState.qualityStatus === "partial" && oldState.status === "fresh" && Boolean(oldState.primaryItem));
-check("Prod-Repro: recommendation aus handlungsempfehlung durchgereicht (echter Motor-Inhalt)",
-  oldState.recommendation === "Intern kurz abstimmen und die Linie festhalten.");
+check("Legacy-KO ohne Originalauszug belegt keinen persoenlichen Tagesauftrag",
+  oldState.status === "empty" && oldState.primaryItem === null);
+check("Alte globale Handlungsempfehlung wird nicht zum unbelegten Tagesauftrag", oldState.recommendation === "");
 api.setBriefing(briefingWith(oldState));
 const htmlOld = api.render();
-check("Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand",
-  /class="hstand"/.test(htmlOld) && !/hstand--state/.test(htmlOld) && !htmlOld.includes("Heute kein Handlungsbedarf"));
-check("Prod-Repro: Vorschlag sichtbar (ui-hero-next mit Motor-Empfehlung)",
-  htmlOld.includes("ui-hero-next") && htmlOld.includes("Intern kurz abstimmen"));
-check("Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)",
-  htmlOld.includes("Nur teilweise vollständig"));
+check("Legacy-KO erhaelt ehrlichen Leerzustand", /hstand--state/.test(htmlOld));
+check("Legacy-KO erfindet keinen Vorschlag", !htmlOld.includes("ui-hero-next") && !htmlOld.includes("Intern kurz abstimmen"));
+check("Legacy-KO benennt die offene fachliche Zuordnung", htmlOld.includes("Fachliche Einordnung noch offen")
+  && htmlOld.includes("keine geprüfte Ruhelage"));
 check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)",
   !/hstand-risk|hstand-chance|hstand-comms|hstand-actions/.test(htmlOld));
 
@@ -383,20 +372,24 @@ check("Review: Flag ist per Default AUS (in Produktion inert)",
 // Status würde fälschlich "stale". Mittags 12:00 Berlin hält Primär-KO und now am selben Tag.
 const REVIEW_NOW = new Date("2026-07-15T10:00:00Z"); // 12:00 Europe/Berlin
 const fx = reviewFixture.buildReviewFixture(REVIEW_NOW);
+// Nur diese deklarierte Testkopie erhaelt einen wirklichen synthetischen
+// Originalanlass; die produktive Review-Fixture und ihre Inertsperre bleiben.
+fx.profile.focusTopics = ["Arbeitszeit"];
+Object.assign(fx.sourcesByVorgang["vg-review-1"][0], { summary:arbeitsOriginal,
+  title:"Synthetische Beratung des Arbeitszeitentwurfs", source_name:"Synthetische Quelle",
+  url:"https://example.test/arbeitszeit-review",canonical_url:"https://example.test/arbeitszeit-review" });
 const fxBriefing = contract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: REVIEW_NOW });
 const fxState = fxBriefing.currentHelmutState;
-check("Review: liefert einen VOLLEN currentHelmutState (status fresh, qualityStatus valid)",
-  fxState.status === "fresh" && fxState.qualityStatus === "valid");
-check("Review: alle Abnahme-Felder befüllt",
-  Boolean(fxState.recommendation) && Boolean(fxState.whyItMatters) && Boolean(fxState.riskOfNoAction) &&
-  fxState.riskLevel === "high" && Boolean(fxState.opportunitySummary) && fxState.opportunityLevel === "high" &&
-  Boolean(fxState.recommendedCommunication.communicationLine) && fxState.actionItems.length >= 1 &&
-  fxState.primaryItem && fxState.primaryItem.sourceCount === 18 && fxState.sourceIds.length >= 1 &&
-  Boolean(fxState.sourcesSummary.lastUpdated) && fxState.qualityStatus === "valid");
+check("Review: nativer belegter Pruefanlass bleibt partial", fxState.status === "fresh" && fxState.qualityStatus === "partial");
+check("Review: Originalbeleg vorhanden; keine erfundenen Risiken und Handlungspflichten",
+  Boolean(fxState.recommendation) && Boolean(fxState.whyItMatters) && Boolean(fxState.tagesAnlass?.beleg?.documentId)
+  && !fxState.riskOfNoAction && !fxState.opportunitySummary && fxState.actionItems.length === 0
+  && fxState.primaryItem && fxState.primaryItem.sourceCount === 1 && fxState.sourceIds.length >= 1
+  && Boolean(fxState.sourcesSummary.lastUpdated));
 api.setBriefing(fxBriefing);
 const fxHtml = api.render();
 check("Review: rendert den vollen Stand (kein Leerzustand)",
-  /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("heutigen Arbeitstag"));
+  /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("Ankündigung vom 2026-07-15") && fxHtml.includes("nicht bestätigt"));
 check("Review: KEINE Kostenwerte im gerenderten Review-Stand",
   !/cost|estimat|token|pipelineStep|€\s?\d|\$\d/i.test(fxHtml));
 check("Review: keine hartkodierte Partei / keine Personen-Logik im Fixture",
@@ -412,7 +405,7 @@ const geteilterVorgang = {
 api.setBriefing({ ...fxBriefing, lageBriefing: { available: true, vorgaenge: [geteilterVorgang] } });
 const getrennt = api.render();
 const lageCard = api.lageCard(geteilterVorgang), lageSheet = api.lageSheet(geteilterVorgang);
-check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("ui-briefing-hero") && getrennt.includes("Ihr nächster Schritt"));
+check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("ui-briefing-hero") && getrennt.includes("Möglicher nächster Schritt"));
 check("Lage Karte und Detail wiederholen keine Empfehlung", !lageCard.includes("Empfehlung")
   && !lageSheet.includes('class="vsheet-reco"') && !lageSheet.includes(fxState.recommendation));
 check("Briefing verweist auf genau den vorhandenen Lage Vorgang", getrennt.includes(`data-vorgang="${geteilterVorgang.id}"`));
@@ -459,11 +452,11 @@ check("Lage Detail erklaert die zeitliche Grenze des Status",
 const profilbezug = require("../lib/helmut/lage-profilbezug");
 for (const [ebene, mandat, sachverhalt, grund] of [
   ["Bund", { parliamentType: "Bundestag", committees: ["Ausschuss für Arbeit und Soziales"] },
-    "Der Bundestag berät das Rentengesetz.", "Deine Hauptzuständigkeit"],
+    "Der Bundestag berät das Rentengesetz.", "Für Ihre Arbeit im Ausschuss für Arbeit und Soziales relevant"],
   ["Berlin", { parliamentType: "Landtag", state: "Berlin", reportingTopics: ["Pflege"] },
-    "Berlin stärkt die Pflegeversorgung.", "Deine konkrete Fachaufgabe"],
+    "Berlin stärkt die Pflegeversorgung.", "Für Ihre Fachaufgabe „Pflege“ relevant"],
   ["Brandenburg", { parliamentType: "Landtag", state: "Brandenburg", constituency: "Potsdam" },
-    "Potsdam eröffnet eine Beratungsstelle.", "Dein Wahlkreis"]
+    "Potsdam eröffnet eine Beratungsstelle.", "Für Ihren Wahlkreis „Potsdam“ relevant"]
 ]) {
   const persoenlich = profilbezug.bewerte({ headline: sachverhalt }, mandat).erklaerung;
   const v = { ...pflegeVorgang, id: `vg-synthetisch-${ebene}`, vorgangId: `vg-synthetisch-${ebene}`,

@@ -155,6 +155,17 @@ Readbackphase nach Verlust/Frist und keine Erfolgsbehauptung bei UNKNOWN.
 Unveraenderte Queue-Schutzsuite **29/29** und erweiterte DIP-Suite **17/17**
 danach gruen. Kein bestehender Schutzfall wird angepasst oder entfernt.
 
+Die weiteren reservierten Altvertraege sind gezielt nachgefuehrt: Schwerpunkt
+65/65, Satzgrenze8/8, Vertragsadapter31/31, Scoring24/24 und native UI130/130.
+Positive Faelle erhalten deklarierte synthetische Originalanlaesse und einen
+passenden Mandatsbezug; der echte Adapter und seine Fachwachen bleiben aktiv.
+Der UI-Vertrag bestaetigt Teilstand, unbekannten Vollzug und keine erfundenen
+Risiken, Kommunikationspflichten oder18Quellen. Keine Runtimeaenderung dafuer.
+Es getrennte Zeitfaelle (32/40/68/16 sowie Relativzeit) und vier weitere
+Vertraege (194/34/31/64) sind unabhaengig gelesen und uebernommen; ihre
+gezielten Belege werden nicht durch identische Wiederholungen ersetzt.
+Der zweite reguläre Pflicht-CI-Lauf am fertigen Kopf bleibt erforderlich.
+
 Es Aufnahme60526304 samt korrigierter Nutzungsbindung6346e7b5 ist von D
 vollstaendig unabhaengig gelesen und ohne Konflikt sequenziell uebernommen;
 alle zehn E-Dateiblobs stimmen exakt mit Es abgenommenem Endkopf ueberein.

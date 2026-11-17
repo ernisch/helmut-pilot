@@ -6,7 +6,14 @@ const assert = require('node:assert/strict');
 const C = require('../lib/helmut/briefingContract');
 const A = require('../lib/helmut/briefing-aussagenbindung');
 const now = new Date('2026-09-12T13:12:47Z');
-const profile = { id: 'test-schwerpunkt', committees: ['Haushaltsausschuss'] };
+const profile = { id: 'test-schwerpunkt', committees: ['Haushaltsausschuss'], focusTopics: ['Haushalt'] };
+// Positive Hauptitemfaelle brauchen einen deklarierten Originalanlass;
+// Zeitpunkt und Score allein bleiben in den Negativfaellen unzureichend.
+function mitAnlass(row) {
+  row.docs[0].summary = 'Bei der ersten Beratung des Haushaltsentwurfs wurden Nachbesserungen für die weitere parlamentarische Beratung angekündigt.';
+  row.ko.was_ist_passiert = row.docs[0].summary;
+  return row;
+}
 let checks = 0;
 function eq(actual, expected) { assert.deepEqual(actual, expected); checks++; }
 function make(id, timestamp, score = 42, extra = {}) {
@@ -40,7 +47,9 @@ function aligned(b, vg) {
   eq(b.themeOfDay.vorgangId, vg);
   eq(b.helmutAssessment.recommendation, b.themeOfDay.recommendedAction);
   eq(b.helmutAssessment.whyImportant, b.themeOfDay.whyItMatters);
-  eq(b.helmutAssessment.recommendation, b.currentHelmutState.recommendation);
+  // Der persoenliche Pruefauftrag stammt aus Original + Profil; die globale
+  // Analyseempfehlung darf nicht als derselbe Text ausgegeben werden.
+  eq(b.currentHelmutState.recommendation, b.currentHelmutState.tagesAnlass.recommendation);
   eq(b.homeSections.topTasks[0].id, b.items[0].id);
   eq(b.personalizedRecommendations[0].recommended_action, b.items[0].recommendedAction);
 }
@@ -56,7 +65,7 @@ eq(b.items.map(i => i.finalScore), [42, 42]);
 // Kein Quellenbonus oder Scoreboost: heutiger relevanter Vorgang wird durch
 // die bestehende Frischeauswahl vor den älteren hoch bewerteten gesetzt.
 const high = make('a-hoch', '2026-09-11T08:00:00Z', 90);
-const fresh = make('z-heute', '2026-09-12T08:00:00Z', 42);
+const fresh = mitAnlass(make('z-heute', '2026-09-12T08:00:00Z', 42));
 b = build([high, fresh]); aligned(b, 'vg-z-heute');
 eq(b.status, 'Aktuell');
 eq(b.items.map(i => i.finalScore), [42, 90]);
@@ -85,7 +94,7 @@ const invalid = make('kaputtes-datum', 'kein-datum');
 b = build([invalid]); eq(b.status, 'Keine aktuellen Vorgänge'); eq(b.currentHelmutState.status, 'empty');
 // Bereits vorhandenes Briefingfenster bleibt wirksam: Vorabend seit letztem
 // Briefing darf frisch sein und behält sein tatsächliches Datum.
-const evening = make('vorabend', '2026-09-11T20:00:00Z');
+const evening = mitAnlass(make('vorabend', '2026-09-11T20:00:00Z'));
 b = build([evening], { frischeFenster: { start: '2026-09-11T05:00:00Z' } });
 eq(b.status, 'Aktuell'); eq(b.currentHelmutState.datenstandTag, '2026-09-11');
 eq(b.currentHelmutState.datenstandVonHeute, false);
@@ -93,5 +102,6 @@ eq(b.currentHelmutState.datenstandVonHeute, false);
 b = build([]); eq(b.status, 'Keine aktuellen Vorgänge'); eq(b.themeOfDay, null);
 eq(b.helmutAssessment.recommendation, '');
 b = build([make('fehlgeschlagen', '2026-09-12T08:00:00Z', 42, { understanding_status: 'failed' })]);
-eq(b.status, 'Stand nicht verfügbar');
+eq(b.status, 'Keine aktuellen Vorgänge'); // Analysefehler ohne belegten Auftrag ist keine Tagesprioritaet.
+eq(b.currentHelmutState.primaryItem, null);
 console.log(`${checks}/${checks} Prüfungen bestanden: gemeinsamer Schwerpunkt und belegter Datenstatus.`);
