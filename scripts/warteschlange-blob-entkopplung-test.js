@@ -242,8 +242,13 @@ async function main() {
       (wbQuelle.match(/saveRawItems/g) || []).length >= 1
       && (wbQuelle.match(/speichereBlob\(/g) || []).length === 1);
     const serverQuelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+    const cronQuelle = serverQuelle.slice(serverQuelle.indexOf("async function runCronUeberWarteschlange("),
+      serverQuelle.indexOf("\nasync function ", serverQuelle.indexOf("async function runCronUeberWarteschlange(") + 1));
     check("1.6 runCronUeberWarteschlange schreibt Start- UND Abschlussquittung",
-      (serverQuelle.match(/schreibeWarteschlangenLaufquittung\(/g) || []).length === 2);
+      /const startQuittung = await storageModul\.schreibeWarteschlangenLaufquittung\([\s\S]{0,250}status: "running"/.test(cronQuelle)
+      && /const endQuittung = await storageModul\.schreibeWarteschlangenLaufquittung\([\s\S]{0,350}finishedAt:/.test(cronQuelle));
+    check("1.6a Operatorabbruch hinterlaesst ebenfalls eine Fehlerabschlussquittung",
+      /const ende = await storageModul\.schreibeWarteschlangenLaufquittung\([\s\S]{0,450}status: "failed"[\s\S]{0,450}operator-planung-nicht-bestaetigt/.test(cronQuelle));
 
     // MUTATIONSPROBE M1: eine Quelltextfassung, die den Blob-Write je Auftrag wieder
     // einbaut, MUSS von Waechter 1.1 erkannt werden — der Waechter ist tragend.

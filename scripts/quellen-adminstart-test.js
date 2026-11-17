@@ -320,6 +320,7 @@ async function main() {
     if (process.argv.includes("--browser")) {
       const { browserCheck } = require("./quellen-adminstart-browser-cases");
       await browserCheck({ base, check, request, reset() {
+        user = { id: "synthetic-admin", role: "admin" };
         now = Date.parse("2026-11-11T14:20:00Z"); leaseBis = 0; counts.clear();
       }, setHold(value) { hold = value; }, advance, plans: () => plans,
       seedRunning(a) { const r = { runId: admin.laufId(a), process: "warteschlange-crawl", status: "running",

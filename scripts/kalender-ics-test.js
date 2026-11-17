@@ -712,18 +712,28 @@ function ersterTermin(ergebnis) { return ergebnis.termine[0]; }
       quellen.every((q) => !verbotene.test(q)));
   }
   {
-    // Die Komponente darf von keinem aktiven Production-Pfad aufgerufen werden.
+    // Persoenliche Kalenderkomponenten bleiben inaktiv. Der amtliche
+    // PDF-Leser darf allein den reinen Berliner Wanduhrhelfer wiederverwenden;
+    // dies bindet weder Einladungen noch Terminverwaltung an Production an.
     const fs = require("fs");
     const path = require("path");
     const wurzel = path.join(__dirname, "..");
-    const aktive = ["server.js", "client.js", "api/index.js"]
-      .map((f) => fs.readFileSync(path.join(wurzel, f), "utf8"));
+    const aktive = ["server.js", "client.js", "api/index.js"];
     const libDateien = fs.readdirSync(path.join(wurzel, "lib", "helmut"))
       .filter((f) => f.endsWith(".js"))
-      .map((f) => fs.readFileSync(path.join(wurzel, "lib", "helmut", f), "utf8"));
+      .map((f) => "lib/helmut/" + f);
     const ruft = /kalender\//;
-    check("M kein aktiver Production-Pfad ruft die Kalenderkomponente auf",
-      aktive.every((q) => !ruft.test(q)) && libDateien.every((q) => !ruft.test(q)));
+    const amtlicherLeser = "lib/helmut/quellen-bundestag-termine.js";
+    const reinerZeithelfer = 'require("./kalender/zeitzonen").wanduhrZuUtc';
+    const gesperrt = (datei, code) => ruft.test(datei === amtlicherLeser
+      ? code.replace(reinerZeithelfer, "REINER_BERLINER_ZEITHELFER") : code);
+    check("M kein Production-Pfad aktiviert persoenlichen Kalender; nur amtlicher Zeithelfer erlaubt",
+      [...aktive, ...libDateien].every(f => !gesperrt(f, fs.readFileSync(path.join(wurzel, f), "utf8"))));
+    const original = fs.readFileSync(path.join(wurzel, amtlicherLeser), "utf8");
+    check("M Zeithelferausnahme erlaubt keine Einladung im selben Leser",
+      gesperrt(amtlicherLeser, original + '\nrequire("./kalender/ics-einladung")'));
+    check("M Zeithelferausnahme gilt nicht fuer andere Production-Dateien",
+      gesperrt("server.js", reinerZeithelfer));
   }
 
   console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Kalender-Assertions`);

@@ -75,7 +75,8 @@ test("Briefing, Empfehlung und Detailstand teilen Zaehler und ehrlichen Zeitbele
   const other = { ...docs[0], id: "rd-fr-c", url: url("dritter", "87654321"), published_at: "2026-09-17T07:00:00Z" };
   const withOther = make([...docs, other]);
   A.equal(withOther.items[0].sourceCount, 2);
-  A.equal(withOther.currentHelmutState.primaryItem.meldungAt, other.published_at);
+  A.equal(withOther.items[0].sources.find(s => s.url === other.url).publishedAt, other.published_at);
+  A.equal(withOther.currentHelmutState.primaryItem, null, "Artikelzeit allein ist kein persoenlicher Tagesauftrag");
 });
 
 test("Andere Herausgeber bleiben getrennt, WELT Vertrag bleibt erhalten", () => {

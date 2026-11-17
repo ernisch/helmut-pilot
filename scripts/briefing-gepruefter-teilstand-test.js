@@ -124,9 +124,13 @@ async function main(){
       const f=await fixture();change(f);A.equal((await f.read()).briefing.vorlaeufigerBriefingstand,null);
     }
   });
-  await test("Voller Stand Ruhelage Fehler Altstatus und unbekannte Versorgung bekommen keine Ersatzkarte",async()=>{
-    for(const change of [s=>{s.status="fresh";s.primaryItem={id:"vg-synth-1"};s.primaryVorgangId="vg-synth-1";},
-      s=>{s.emptyState.kind="quiet";},s=>{s.errorState=true;},s=>{s.status="error";},
+  await test("Unbelegte Primarymarkierung heilt keinen Auftrag; Ruhelage Fehler und unbekannte Versorgung bleiben gesperrt",async()=>{
+    const claimed=await fixture(),state=claimed.row.payload.briefing.currentHelmutState;
+    state.status="fresh";state.primaryItem={id:"vg-synth-1"};state.primaryVorgangId="vg-synth-1";claimed.rebind();
+    const out=(await claimed.read()).briefing;
+    A.equal(out.currentHelmutState.primaryItem,null,"Native Fachpruefung verwirft den nur behaupteten Primary");
+    A.ok(out.vorlaeufigerBriefingstand,"Der wirklich gepruefte Teilstand bleibt zulaessig");
+    for(const change of [s=>{s.emptyState.kind="quiet";},s=>{s.errorState=true;},s=>{s.status="error";},
       s=>{s.staleState=true;},s=>{s.versorgung.zustand="unbekannt";},s=>{s.tenantId="fremd";}]){
       const f=await fixture();change(f.row.payload.briefing.currentHelmutState);f.rebind();
       A.equal((await f.read()).briefing.vorlaeufigerBriefingstand,null);

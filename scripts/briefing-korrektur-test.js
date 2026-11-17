@@ -200,7 +200,9 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
       entscheidung: "Beobachten", begruendung: "Begruendete interne Pruefreihenfolge fuer dieses Mandat." }));
     const b = await build({ aussagenKorrektur: k });
     A.deepEqual(b.briefing.items.map(i => i.vorgangId), ["vg-b", "vg-a"]);
-    A.equal(b.briefing.currentHelmutState.primaryVorgangId, "vg-b");
+    A.equal(b.briefing.currentHelmutState.primaryVorgangId, null);
+    A.equal(b.briefing.currentHelmutState.primaryItem, null,
+      "Redaktionelle Reihenfolge erzeugt keinen im Original fehlenden Tagesauftrag");
     A(b.briefing.items.every(i => i.decision === "Beobachten" && i.finalScore === 40));
     A.equal(b.korrekturBasis.kos[0].confidence_score, null);
     A.equal(Q.pruefe(b.eingabe).bereit, false);

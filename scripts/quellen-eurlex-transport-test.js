@@ -66,7 +66,8 @@ async function mock(responses, fn) {
       assert.rejects(C.fetchUrl(F.itemUrl, 0, opts("zip")), /abgebrochen|mock-response-error/));
     const abort = new AbortController(); abort.abort();
     await mock([], async calls => {
-      await assert.rejects(C.fetchUrl(F.itemUrl, 0, { ...opts("zip"), abbruchSignal: abort.signal }), /abgebrochen/);
+      await assert.rejects(C.fetchUrl(F.itemUrl, 0, { ...opts("zip"), abbruchSignal: abort.signal }),
+        error => error === abort.signal.reason && error.name === "AbortError");
       assert.equal(calls.length, 0);
     });
   });

@@ -43,11 +43,14 @@ test("Fehlende Sachtexte behalten den ehrlichen bisherigen Ersatz", () => {
 });
 test("Briefing, Empfehlungen, Startkarten und Detailstand tragen denselben ganzen Titel", () => {
   const ko = { id: "ko-test", vorgang_id: "vg-test", status: "neu", understanding_status: "complete",
-    display_summary: first + rest, source_document_count: 1, created_at: source.published_at };
+    display_summary: first + rest, was_ist_passiert: first + rest, source_document_count: 1, created_at: source.published_at };
   const decision = { knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id, score: 70,
     decision: "Sofort reagieren", priority_type: "action", matched_features: [], risk: "", chance: "" };
-  const input = { profile: { id: "test-titel" }, decisions: [decision], kosById: { [ko.id]: ko },
-    sourcesByVorgang: { [ko.vorgang_id]: [source] }, now: new Date("2026-09-17T08:00:00Z") };
+  // Deklarierter positiver Originalanlass; der lange KO-Titel bleibt unveraendert.
+  const original = { ...source, id: "rd-titel", summary: source.summary
+    + " Für die weitere parlamentarische Beratung der Finanzierung wurden Nachbesserungen angekündigt." };
+  const input = { profile: { id: "test-titel", focusTopics: ["Finanzierung"] }, decisions: [decision], kosById: { [ko.id]: ko },
+    sourcesByVorgang: { [ko.vorgang_id]: [original] }, now: new Date("2026-09-17T08:00:00Z") };
   const before = JSON.stringify(input);
   const b = B.toBriefingContractV3(input);
   A.equal(b.items[0].title, first);

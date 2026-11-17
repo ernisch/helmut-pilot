@@ -98,7 +98,8 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
     const b = await server.__buildV3Briefing(profile, profile.id);
     assert.equal(b.items.length, 1);
     assert.equal(b.items[0].vorgangId, ko.vorgang_id);
-    assert.equal(b.currentHelmutState.primaryVorgangId, ko.vorgang_id);
+    assert.equal(b.currentHelmutState.primaryVorgangId, null,
+      "Quellenbindung allein belegt noch keinen Mandatsauftrag");
     assert(!JSON.stringify(b).includes(ohne.display_title));
   });
   await test("Die Lesepruefung veraendert keinen gespeicherten Inhalt", () => assert.equal(JSON.stringify({ ko, ohne, doc }), original));
