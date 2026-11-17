@@ -102,3 +102,19 @@ BMG hat eigenen Hostkey. Kein GoogleSchutzschalter auf nativeRSS, keine
 Limitausweitung/Katalogreparatur begruendet. Kein erneuter Abruf oder Test.
 Dies ist keine weitere neu wiederhergestellte Quelle und keine vollstaendige
 inhaltliche Quellenabnahme.
+
+## Aktuelle Abschlussbilanz nach Briefingfolge
+
+PR1246/1247 sind gruen gemergt und regulaer live; letzteRuntimeaenderung
+189da49f. UngueltigerHandlungsauftrag und falscheStatusbegruendung entfernt,
+echterAppreader mit zwei geprueftenTeilstandabsaetzen, unveraendertemLageobjekt/
+Originalhash und gebundenerMorgenquittung. Fuenf zentrale Quellenursachen
+behoben, ein neuer amtlicher BMG-Abrufweg real bestaetigt; zweiweitere
+bestehende Wege im Abschluss erfolgreich. ZusaetzlicheQuellenwirkung nicht
+belastbarbezifferbar; kein Vollstaendigkeits-PASS aus Warnungs-/Auftragszahlen.
+Endkontrolle0aktiveJobs, Kosten0,789020USDTag/5,082720gesamt,
+76heutigeBuchungen/einealteUNKNOWN unveraendert; keine weiterenbezahltenLaeufe.
+Abnahmestatus ersterKunde offen: echteQuellen-/Lesebelegluecken,
+unbestaetigteAusschuss-/Terminvollstaendigkeit und offeneTextrechte.
+Genau ein naechsterSchritt: gezielte menschlicheKundenabnahme des vorhandenen
+Pilotzugangs einschliesslich dieser dokumentierten Grenzen.

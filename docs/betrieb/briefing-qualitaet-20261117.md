@@ -82,3 +82,16 @@ Alt-/NichtV3-Rueckfall erhalten. PR1247 korrigiert genau diese Ableitung aus dem
 Abschlussreview praezisiert den positiven Status: ein bestaetigter Handlungs-
 oder Vorbereitungsanlass ist keine politische Entscheidung. Genau dieser
 belegte Anlass wird im V3-Status genannt; Legacywortlaut ohne State bleibt.
+
+## Abschliessender Livebeleg PR1247
+
+FinalerKopf6d9fda1d: beidePflichtchecksCI44068269688 gruen; unabhaengige
+Runtime-/Wortlaut-/Hashreviews ohneBefund. Merge189da49f, MainCI44068581061
+mitbeidenPflichtchecksgruen. NormalerRollout dpl_GcHxCeaNAwfsBsPenSe5cksptopC
+READY; oeffentlicherAlias bestaetigt189da49f.
+EchterlesenderAppnachweisHTTP200/availabletrue: keineunbelegteHandlung,
+keinepolitischeEntscheidungsmeldung; korrekterHinweis aufunvollstaendige
+Quellenverarbeitung. ZweiTeilstandabsaetze,Lageobjekt,Originalpakethash und
+gebundeneMorgenquittungunveraendert. Kein zusaetzlicherModell-/Quellenlauf,
+keineProductiondatenkorrektur. Codeabschluss belegt, fachlicheKundenabnahme
+und Quellenvollstaendigkeit bleibenoffen. Livebeleg ebenfalls im PR1247.
