@@ -66,6 +66,15 @@ Schnellkern: elf Suiten direkt erfolgreich; drei weitere zunaechst nur durch
 Sandbox-`listen EPERM` verhindert. Mit erlaubtem lokalen Loopback gezielt
 danach Vertrags-Snapshot19/19, P1-Sicherheit347/347 und Mandant39/39 gruen;
 insgesamt alle14 Schnellkernsuiten belegt, keine Wiederholung der elf Erfolge.
+Erster regulaerer Folge-PR1254-Lauf44156031805 auf9ec48604 scheitert im
+Browserjob am Prosa-Harness: dessen selektive Funktionsextraktion kennt
+`renderLageViewInhalt` noch nicht. Nur die drei neuen Clientabhaengigkeiten
+ergaenzt, alle Prosaassertionen erhalten. Optionaler lokaler Chromium-Pfad
+wie in vorhandenen Browserpruefungen, CI-Standardbrowser unveraendert.
+Danach19/19 Vorschaugruppen mit echtem Chromium320/390/1280, hell/dunkel,
+gruen. Anfangs lokal nur das nicht installierte Playwright-Bundle verhindert;
+vorhandenen Systemchromium verwendet, kein Browserdownload oder Gate-Skip.
+Alter CI-Kopf bleibt waehrend laufender Kernpruefung unveraendert.
 
 ## Belegkette
 
