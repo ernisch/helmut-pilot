@@ -8,17 +8,18 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1246;
 const BRANCH = "codex/briefing-qualitaet-20261117";
 const BASE = "1587d0fee65ea60488cf9bee3d2eb84fd72df0f8";
-const EVIDENCE = "292c59abeada0797f4bd7ce3f1415003f910045c";
+const EVIDENCE = "6d6d07e7bdb27e7385dae07c014b8b450fee9688";
 const MERGE_TITLE = "fix(briefing): Tagesprioritäten an Mandat und belegten Handlungsanlass binden (#1246)";
 const BLOBS = Object.freeze({
   "client.js": "10cc9c0012d3cf7dc7fc14af691a97db48eb3da7",
-  "lib/helmut/briefing-bereichsvertrag.js": "5e3272d479af8bfbdfe1d683cf2af283fd7d4b88",
+  "lib/helmut/briefing-bereichsvertrag.js": "b59e0633b1536c44098f32dc3086bc4875e790d5",
   "lib/helmut/briefingContract.js": "8da1e01b5cb3b9365683935ae1aa60f549025abd",
   "lib/helmut/tagespaket-auslieferung.js": "9da6c1d42938276918b9613a24706480890baf30",
   "scripts/briefing-bereichsvertrag-test.js": "a6bbde50b03361c222f95127db39af04992dcbae",
   "scripts/briefing-orientierung-test.js": "d6ba43706cf0f85a26f1085ae8ce42660b0b797c",
-  "scripts/tagespaket-auslieferung-test.js": "045dee463f223c2a4bf8c235d28357f399d890ed",
-  "scripts/browser-smoke-test.js": "bb0c1bda32095e22ae10766aad099d2ec50afa4a"
+  "scripts/tagespaket-auslieferung-test.js": "606d97a8e2917b17da33d6b6f1b72470e834bece",
+  "scripts/browser-smoke-test.js": "bb0c1bda32095e22ae10766aad099d2ec50afa4a",
+  "scripts/quellenpflicht-vertrag-test.js": "2a83c313b5fb4e4f434cf28d35519b80f8571d30"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-briefingqualitaet-plan.js", "scripts/ci-briefingqualitaet-plan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellen-abnahme-20261117.md", "docs/betrieb/briefing-qualitaet-20261117.md"]);
