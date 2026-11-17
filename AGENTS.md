@@ -63,6 +63,13 @@ Admin-UI, echte Adminsession und CSRF-Schutz bleiben erhalten. Keine neue
 Infrastruktur, Secrets oder Crontermine. Vor Livebetrieb gelten weiterhin
 gruene exakte Pflicht-CI, unabhaengiger Review und regulaeres Deployment.
 
+Die umfassende Fortsetzungsfreigabe umfasst den einmaligen Ersatz des belegten
+Fehlstarts17Nov09:43 (Run-ID admin-quellen-2026-11-17-5d84f123-2e13-4163-a6f9-4b6e2d82827b):
+echte Fehlerquittung auf3e174583, null Workerarbeit und9/2700 belegen. Nach
+Readbackreparatur genau ein weiterer atomarer Zusatzkey, additiv10/3000/16;
+vorherige Reservierung erhalten, kein Reset, kein Retry bei UNKNOWN. Gleiche
+Geldgrenzen und Sicherheitspruefungen; keine allgemeine Wiederholungserlaubnis.
+
 Die Quellen- und Verarbeitungsfreigabe ist keine Lizenz fuer fremde Inhalte,
 keine Aufhebung externer Zugriffssperren und keine Freigabe fuer Massentests
 oder zusaetzliche kostenpflichtige Tests. Sonstige Schutzregeln bleiben.

@@ -41,3 +41,31 @@ Beide Pflichtjobs bleiben; nur kleine betroffene Suiten plus Schnellkern.
 Unveraenderte UI: vorhandener Browserbeleg PR1240, kein neu behaupteter
 Chromiumlauf. Keine 500er-Pruefungen oder zusaetzlichen bezahlten Tests.
 Echte Betriebsabnahme nach regularem Deployment bleibt vor dem Start offen.
+
+## Echter Fehlstart und eng begrenzte Korrektur
+
+PR1243 auf3e174583 gemergt/live, beide PR-/Main-Pflichtchecks gruen.
+Lauf17Nov09:43:16.581–09:43:19.390, Run-ID
+admin-quellen-2026-11-17-5d84f123-2e13-4163-a6f9-4b6e2d82827b:
+BMG-Auftrag89dd9752-f517-40d0-ba72-d32beeb1c772 korrekt gespeichert,
+wartend/0Versuche; danach echte Fehlerquittung operator-planung-nicht-bestaetigt,
+zielmenge0/processed0/fehlgeschlagen0. Keine Quellen-/Modellarbeit.
+
+Ursache: Compilerobjekt enthaelt category:undefined; JSON-Transport entfernt
+das Feld. Der neue Readback verglich die untransportierte Form und lehnte
+dadurch eine korrekte Speicherung ab. Nur den erwarteten Wert kanonisieren;
+echte Ruecklesedaten weiterhin strikt pruefen. Offlinefake muss denselben
+JSON-Roundtrip wie Production abbilden, bestehender Auftrag darf kein zweites
+Enqueue erzeugen.
+
+9/2700 und alter Einmalkey bleiben konservativ verbraucht. Innerhalb des GO
+zur vollstaendigen Reparatur ein einziger Ersatzstart bis300s: vorhandener
+atomarer Ausnahmeweg, neuer einmaliger Key,10/3000/16 nur nach exaktem
+9/2700-Vorstand und dieser echten Vor-Worker-Fehlerquittung. Kein Geldlimit
+veraendern, kein unbekanntes Ergebnis kompensieren und keine weitere Schleife.
+
+Gezielte Korrekturpruefung: realer JSON-Test zuerst rot am identischen
+Readbackfehler, danach11/11 Planungsgruppen gruen. Fenster29/29 einschliesslich
+quittungsgebundenem Ersatz, verfremdeten/fehlenden Belegen, UNKNOWN und
+Doppelzustellung. Zwei unabhaengige Reviews ohne offene P1/P2. CI-Guard17/17;
+Server-/UI-/Auth-/Geldcode unveraendert an3e174583 gebunden.

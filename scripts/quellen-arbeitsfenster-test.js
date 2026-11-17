@@ -61,6 +61,32 @@ function operatorWelt(time = "2026-11-17T09:16:00Z") {
 const operatorLauf = (w, arbeit = async () => ({ ok: true }), auftrag = operatorAuftrag(), env = ENV) =>
   fenster.fuehreAus({ env, deps: w.deps, arbeit, adminAuftrag: auftrag });
 
+const ERSATZ_KEY = "quellenarbeit|operatorreadback-20261117";
+function ersatzWelt() {
+  const w = operatorWelt("2026-11-17T10:00:00Z");
+  for (const [key,wert] of [[fenster.SCHLUESSEL.fenster,9],[fenster.SCHLUESSEL.sekunden,2700],[OPERATOR_KEY,1]])
+    w.konten.set(`2026-11-17|${key}`,wert);
+  w.quittung = [{ status:"failed", target_count:0,processed_count:0,failed_count:0,
+    reason:"operator-planung-nicht-bestaetigt",error_class:"planung-nicht-bestaetigt",
+    commit_ref:"3e174583dc8a8c66a3e129a7df57ce0ac9706f66",
+    started_at:"2026-11-17T09:43:16.581Z",finished_at:"2026-11-17T09:43:19.390Z" }];
+  w.job = [{id:"89dd9752-f517-40d0-ba72-d32beeb1c772"}];
+  w.deps.request = async url => {
+    if (url.startsWith("/rest/v1/helmut_anbieter_fenster?")) return w.staende ||
+      [...w.konten].filter(([k])=>k.startsWith("2026-11-17|quellenarbeit|") && !k.includes("|slot|"))
+        .map(([k,verbraucht])=>({schluessel:k.slice(11),verbraucht}));
+    if (url.startsWith("/rest/v1/process_runs?")) {
+      assert.match(url,/run_id=eq.admin-quellen-2026-11-17-5d84f123-2e13-4163-a6f9-4b6e2d82827b/);
+      assert.match(url,/process=eq.warteschlange-crawl/);return structuredClone(w.quittung);
+    }
+    assert.match(url,/^\/rest\/v1\/helmut_jobs\?id=eq.89dd9752-f517-40d0-ba72-d32beeb1c772/);
+    assert.match(url,/job_type=eq.source_fetch&tenant_id=is.null&status=eq.wartend&attempts=eq.0/);
+    assert.match(decodeURIComponent(url),/idempotency_key=eq.source_fetch\|geteilt\|c3152336a40919745fd39b17b819a230\|2026-11-17T00Z/);
+    assert.match(url,/select=id&limit=2$/);return structuredClone(w.job);
+  };
+  return w;
+}
+
 async function main() {
   await check("ausgeschaltet ohne jede Reservierung", async () => {
     const w = welt();
@@ -300,6 +326,46 @@ async function main() {
         assert.equal(arbeiten, 0);
       } else assert.equal(w.rpcs.some(o => o.schluessel === OPERATOR_KEY), false);
     }
+  });
+  await check("genau ein beleggebundenes Ersatzfenster erhaelt alte9/2700 und Original16", async () => {
+    const w=ersatzWelt();let n=0;
+    const r=await operatorLauf(w,async()=>{n++;return{ok:true};});
+    assert.equal(r.ok,true);assert.equal(r.arbeitsfenster.einmalausnahme.grund,"operatorreadback-20261117");
+    assert.equal(w.stand(fenster.SCHLUESSEL.fenster),10);assert.equal(w.stand(fenster.SCHLUESSEL.sekunden),3000);
+    assert.equal(w.stand(fenster.SCHLUESSEL.originale),16);assert.equal(w.stand(OPERATOR_KEY),1);assert.equal(w.stand(ERSATZ_KEY),1);
+    assert.equal((await fenster.reserviereOriginal({env:ENV,deps:w.deps})).erlaubt,false);
+    w.weiter(361000);
+    await operatorLauf(w,()=>assert.fail("Kein zweites Ersatzfenster"),operatorAuftrag("2026-11-17","2"));
+    assert.equal(n,1);assert.equal(w.stand(ERSATZ_KEY),1);assert.equal(w.stand(fenster.SCHLUESSEL.fenster),10);
+  });
+  await check("Ersatz braucht exakten vollstaendigen Quotenvorstand ohne UNKNOWN oder Doppelzeilen",async()=>{
+    for(const mutate of [w=>w.konten.set("2026-11-17|"+fenster.SCHLUESSEL.fenster,8),
+      w=>w.konten.set("2026-11-17|"+fenster.SCHLUESSEL.sekunden,2400),
+      w=>w.konten.set("2026-11-17|"+OPERATOR_KEY,2),w=>w.konten.set("2026-11-17|"+ERSATZ_KEY,1),
+      w=>w.konten.set("2026-11-17|"+fenster.SCHLUESSEL.originale,17),
+      w=>w.konten.delete("2026-11-17|"+fenster.SCHLUESSEL.originale),
+      w=>w.staende=[],w=>w.deps.request=async()=>{throw Error("UNKNOWN");}]){
+      const w=ersatzWelt();mutate(w);let arbeit=0;await operatorLauf(w,async()=>{arbeit++;});
+      assert.equal(arbeit,0);assert(!w.rpcs.some(r=>r.schluessel===ERSATZ_KEY));
+    }
+  });
+  await check("Ersatz verlangt echte nullarbeits Fehlerquittung und exakt wartenden Erstauftrag",async()=>{
+    for(const mutate of [w=>w.quittung=[],w=>w.quittung.push(w.quittung[0]),
+      ...["status","reason","error_class","commit_ref","started_at","finished_at"].map(k=>w=>w.quittung[0][k]="fremd"),
+      ...["target_count","processed_count","failed_count"].flatMap(k=>[w=>w.quittung[0][k]=1,w=>w.quittung[0][k]=null]),
+      w=>w.job=[],w=>w.job=[{id:"fremd"}],w=>w.job.push(w.job[0])]){
+      const w=ersatzWelt();mutate(w);await operatorLauf(w,()=>assert.fail("Fehlender Erstbeleg"));
+      assert(!w.rpcs.some(r=>r.schluessel===ERSATZ_KEY));
+    }
+  });
+  await check("UNKNOWN beim Ersatzkey bleibt verbraucht ohne nachtraeglichen Worker oder Erstattung",async()=>{
+    const w=ersatzWelt(), reserve=w.deps.reserviere;
+    w.deps.reserviere=async o=>{const r=await reserve(o);return o.schluessel===ERSATZ_KEY?null:r;};
+    await operatorLauf(w,()=>assert.fail("UNKNOWN startet keine Arbeit"));
+    assert.equal(w.stand(ERSATZ_KEY),1);assert.equal(w.stand(fenster.SCHLUESSEL.fenster),9);
+    assert.equal(w.stand(fenster.SCHLUESSEL.sekunden),2700);
+    w.weiter(361000);await operatorLauf(w,()=>assert.fail("UNKNOWN bleibt ohne Retry"),operatorAuftrag("2026-11-17","2"));
+    assert.equal(w.stand(ERSATZ_KEY),1);assert.equal(w.stand(fenster.SCHLUESSEL.fenster),9);
   });
   console.log(`PASS ${pass}/${pass} Quellen-Arbeitsfenster; keine Productionaufrufe`);
 }

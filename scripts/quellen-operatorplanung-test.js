@@ -5,6 +5,7 @@ const { PARLAMENTSDATEN_QUELLEN, BMG_SOURCE_ID } = require("../lib/helmut/quelle
 const FEED = PARLAMENTSDATEN_QUELLEN.find(s => s.id === BMG_SOURCE_ID);
 const ZEIT = Date.parse("2026-11-17T09:30:00Z"), ID = "00000000-0000-4000-8000-000000000001";
 const clone = value => structuredClone(value);
+const persistenzJson = value => JSON.parse(JSON.stringify(value));
 let pass = 0;
 async function check(name, fn) { await fn(); console.log("PASS " + name); pass++; }
 function welt() {
@@ -25,9 +26,9 @@ function welt() {
     legacySources: []
   };
   w.row = auftrag => ({ id: ID, job_type: auftrag.jobType, idempotency_key: auftrag.idempotencyKey,
-    freshness_window: auftrag.freshnessWindow, tenant_id: auftrag.tenantId, status: "wartend",
+    freshness_window: auftrag.freshnessWindow, tenant_id: auftrag.tenantId, status: "wartend", attempts: 0,
     priority: auftrag.priority, max_attempts: auftrag.maxAttempts, first_due_at: auftrag.dueAt,
-    due_at: auftrag.dueAt, payload: clone(auftrag.payload) });
+    due_at: auftrag.dueAt, payload: persistenzJson(auftrag.payload) });
   w.deps = {
     env: { HELMUT_SOURCE_MODE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SUPABASE_TIMEOUT_MS: "10000" },
     now: () => zeit,
@@ -71,6 +72,10 @@ async function main() {
     assert.deepEqual(w.auftrag.payload.quelle.rssUrls, [FEED.url]);
     assert.equal(w.auftrag.payload.quelle.maxItems, 12);
     assert.equal(w.auftrag.payload.quelle.usagePolicy, undefined);
+    assert.equal(Object.hasOwn(w.auftrag.payload.quelle, "category"), true);
+    assert.equal(w.auftrag.payload.quelle.category, undefined);
+    assert.equal(Object.hasOwn(w.jobs[0].payload.quelle, "category"), false, "JSON-Persistenz laesst undefined weg");
+    assert.equal(w.jobs[0].status, "wartend"); assert.equal(w.jobs[0].attempts, 0);
     const gespeichert = clone(w.jobs);
     assert.deepEqual(await w.run(), { ok: true, neu: 0, auftragId: ID });
     assert.equal(w.writes, 1); assert.deepEqual(w.jobs, gespeichert);
@@ -121,6 +126,7 @@ async function main() {
     for (const edit of [w => w.jobs.push(clone(w.jobs[0])), w => w.jobs[0].payload.quelle.rssUrls.push("https://example.invalid"),
       w => w.jobs[0].freshness_window = "2026-11-17T08Z", w => w.jobs[0].tenant_id = "fremdes-mandat",
       w => w.jobs[0].priority = 80, w => w.jobs[0].payload.quelle.maxItems = 500,
+      w => w.jobs[0].payload.quelle.category = null,
       w => { w.jobs[0].freshness_window = "2026-11-16T00Z"; w.jobs[0].last_seen_window = "2026-11-16T00Z"; },
       w => w.jobs[0].job_type = "document_understanding",
       w => w.jobs[0].first_due_at = "2026-11-17T02:59:59Z",
