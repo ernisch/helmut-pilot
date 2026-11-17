@@ -67,6 +67,25 @@ async function main(){
       sources:[{dipBeratungsstaende:[{vorgangId:"99988119"}]}]});
     A.deepEqual([...ids],["interner-sichtbarer-vorgang"]);
   });
+  await test("Normaler gespeicherter Apppfad entfernt unbelegte Mengen auch ohne DIP und Rechteaktivierung",async()=>{
+    const card={id:"synthetische-vorsorge",vorgangId:"synthetische-vorsorge",displaySummary:"Bestehende Vertraege laufen weiter.",
+      whyRelevant:"Die Reform betrifft Millionen Vertraege.",summary:{warumWichtig:"Die Reform aendert neue Vorsorgeprodukte."},
+      sources:[{name:"Synthetische Quelle",url:"https://example.test/vorsorge"}]};
+    const paket={lageBriefing:{paragraphs:[{text:"Bestehender gepruefter Absatz"}],vorgaenge:[card]},
+      gespeicherterNachweis:{inhaltHash:"deklarierter-originalhash"},paketStatus:{zustand:"partial"}};
+    const before=copy(paket),old=S.getPruefSourcesByVorgaenge;let reads=0;
+    S.getPruefSourcesByVorgaenge=async kos=>{reads++;A.deepEqual(kos.map(k=>k.vorgang_id),[card.id]);
+      return {[card.id]:[{id:"synthetisches-dokument",url:card.sources[0].url,title:"Synthetische Vorsorge",
+        summary:"Neue Vorsorgeprodukte werden vorgestellt. Bestehende Vertraege laufen weiter."}]};};
+    try{
+      const out=await normaleAppAusgabe(paket);
+      A.equal(reads,1);A.equal(out.lageBriefing.vorgaenge[0].whyRelevant,"");
+      A.equal(out.lageBriefing.vorgaenge[0].summary.warumWichtig,card.summary.warumWichtig);
+      A.deepEqual(out.lageBriefing.paragraphs,paket.lageBriefing.paragraphs);
+      A.deepEqual(out.gespeicherterNachweis,paket.gespeicherterNachweis);A.deepEqual(out.paketStatus,paket.paketStatus);
+      A.deepEqual(paket,before);A.equal(out.lageBriefing.parlamentsKontext,undefined);A.equal(calls.length,0);
+    }finally{S.getPruefSourcesByVorgaenge=old;}
+  });
   require.cache[seedPath].exports={...seed,ZUSAETZLICHE_QUELLEN:[...seed.ZUSAETZLICHE_QUELLEN,approval]};
   const oldRequest=S.supabaseRequest,oldCatalog=S.listSourceArchitectureRows;
   S.supabaseRequest=request;S.listSourceArchitectureRows=katalog;

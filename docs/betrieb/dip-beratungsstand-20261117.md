@@ -43,7 +43,7 @@ Der erweiterte Quellenauftrag belegt drei notwendige Folgepunkte:
 Der normale App-Einstieg liefert das gepruefte gespeicherte Tagespaket, nicht
 den frischen V3-Producer. Die neue Ausgabe-Kopie erhaelt deshalb nur exakt
 gebundene aktuelle Quellenmetadaten nach den unveraenderten Paketwachen.
-Texte, Reihenfolge, Empfehlungen, Originalpaket und Hash-/Quittungsobjekte
+Gepruefte Absatztexte, Reihenfolge, Empfehlungen, Originalpaket und Hash-/Quittungsobjekte
 bleiben erhalten. Explizite Historie wird nicht nachtraeglich angereichert.
 Produktlesen ausschliesslich GET; maximal50 angezeigte Vorgangskennungen,
 je40 vorhandene Quellkanten und maximalzwei Beobachtungen je Quelle.
@@ -100,6 +100,26 @@ App-Lesehelfer noch nicht. Nur diesen echten Helfer als Abhaengigkeit geladen;
 Profil-/Hash-/Historienassertionen unveraendert, danach18/18 gruen.
 Der Browserfehler bleibt der separat korrigierte Prosa-Harness. Beide
 Erstfehler werden nicht umgewertet; gemeinsamer Endkopf braucht neue exakte CI.
+
+Weiterer enger Fachbefund im echten Apppayload: die Altersvorsorgekarte
+nennt in `whyRelevant` Millionen gefoerderte Vertraege. Weder der gespeicherte
+269-Zeichen-Auszug (`rd-7335dc85`, MD5 `3d3f99a0f92e4234aa7e390d077fd988`)
+noch der einzeln rein lesend geoeffnete amtliche
+[Originalartikel](https://www.bundesregierung.de/breg-de/aktuelles/reform-private-altersvorsorge-2400072)
+belegen diese Menge. Der Originalartikel bestaetigt den Fortbestand alter
+Riester-Vertraege. Keine neue Archivierung oder Verarbeitung des Artikels.
+Die bestehende Kartenwache liess nach irgendeinem vorhandenen Auszug alle
+KO-Einordnungen durch. Begrenzte neue Wache entfernt unbelegte sprachliche
+Groessenordnungen aus `whyRelevant` und seinem alten Warum-Fallback,
+auch in der Ausgabekopie des normalen gespeicherten Apppakets. Nur dessen
+tatsaechlich angezeigte Original-URLs duerfen sie belegen; keine neue Quelle,
+keine Aenderung gepruefter Lageabsaetze, Prioritaeten oder gespeicherter Pakete.
+Gueltiger alter Warum-Fallback bleibt erhalten. Das ist keine allgemeine
+semantische Faktenpruefung. Erste gezielte Gegenprobe rot, nach Korrektur
+Artikelkontext14/14 und parlamentarischer Produktpfad17/17 lokal gruen.
+Endreview/exakte Pflicht-CI und Productionwirkung auch dieses Deltas offen.
+Unveraenderter Zwischenkopf f4128b89 wird bis Ende seines Pflichtlaufs nicht
+ueberschrieben; der kleine Nachtrag liegt zunaechst auf separatem D-Branch.
 
 ## Belegkette
 

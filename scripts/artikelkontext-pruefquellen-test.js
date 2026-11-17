@@ -60,6 +60,25 @@ async function transport(target, options = {}) {
   return new Response(JSON.stringify(ids ? projection.filter(r => JSON.parse("[" + ids.slice(4, -1) + "]").includes(r.raw_document_id)) : projection));
 }
 (async () => {
+  await test("Auszug allein belegt keine erfundene Groessenordnung in der Bedeutungseinordnung", () => {
+    const K = require("../lib/helmut/lage-kartenbeleg");
+    const original = [{ title: "Synthetische Vorsorgereform", url: "https://example.test/vorsorge",
+      summary: "Die Regierung stellt neue Produkte fuer die private Vorsorge vor. Bestehende Vertraege laufen weiter." }];
+    const card = { displaySummary: "Bestehende Vertraege laufen weiter.",
+      whyRelevant: "Die Reform betrifft Millionen gefoerderte Vertraege.",
+      summary: { warumWichtig: "Die Reform aendert die Regeln fuer neue Vorsorgeprodukte." } };
+    const before = structuredClone(card), result = K.begrenze(card, original);
+    assert.equal(result.whyRelevant, "");
+    assert.equal(result.summary.warumWichtig, card.summary.warumWichtig);
+    assert.equal(result.displaySummary, card.displaySummary);
+    assert.deepEqual(card, before);
+    for (const word of ["Millionen", "Milliarden", "Tausende"]) {
+      const s = { ...card, whyRelevant: `Das betrifft ${word} Vertraege.`, summary: { warumWichtig: `${word} sind betroffen.` } };
+      const rejected = K.begrenze(s, original);
+      assert.equal(rejected.whyRelevant, ""); assert.equal(rejected.summary.warumWichtig, "");
+      assert.equal(K.begrenze(s, [{ ...original[0], summary: `Die Quelle meldet ${word} betroffene Vertraege.` }]).whyRelevant, s.whyRelevant);
+    }
+  });
   await test("Vollstaendiger DGB-Artikel erreicht Lage und Briefing samt fuenftem Absatz; Altcache bleibt ohne Neuabruf", async () => {
     const old = rows.get(key(dgb));
     const verboten = () => { throw new Error("Kein neuer Originalversuch fuer Altcache"); };
