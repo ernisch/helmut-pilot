@@ -63,3 +63,9 @@ zur vollstaendigen Reparatur ein einziger Ersatzstart bis300s: vorhandener
 atomarer Ausnahmeweg, neuer einmaliger Key,10/3000/16 nur nach exaktem
 9/2700-Vorstand und dieser echten Vor-Worker-Fehlerquittung. Kein Geldlimit
 veraendern, kein unbekanntes Ergebnis kompensieren und keine weitere Schleife.
+
+Gezielte Korrekturpruefung: realer JSON-Test zuerst rot am identischen
+Readbackfehler, danach11/11 Planungsgruppen gruen. Fenster29/29 einschliesslich
+quittungsgebundenem Ersatz, verfremdeten/fehlenden Belegen, UNKNOWN und
+Doppelzustellung. Zwei unabhaengige Reviews ohne offene P1/P2. CI-Guard17/17;
+Server-/UI-/Auth-/Geldcode unveraendert an3e174583 gebunden.
