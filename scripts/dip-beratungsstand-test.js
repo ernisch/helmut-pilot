@@ -161,9 +161,21 @@ async function main() {
       const html=render(serverDto);assert(html.includes("data-dip-beratungsstand"));assert(html.includes("Spätere Änderungen sind nicht bestätigt"));
       assert(html.includes("2026-09-08"));assert(html.includes("mit Federführung"));assert(html.includes("ohne Federführung"));
       assert(html.includes("Beschluss: Überweisung"));assert(html.includes("Originalbeleg"));
+      assert(html.includes("Deutscher Bundestag · Plenarprotokoll"));
       browserHtml+=html;
     }
     const bad=copy(dto);bad.dipBeratungsstaende[0].originalUrl="https://fremd.example/";assert.equal(ui.renderDipBeratungsstand(bad,d.url),"");
+  });
+  await test("Bundesratsbeschluss, Fortsetzung und Nachtrag verlieren ihre Institution und Einschraenkung nicht",async()=>{
+    // Deklarierter synthetischer Gegenfall, kein neuer amtlicher Bundesratsbeleg.
+    const p=list.documents[0];p.zuordnung="BR";p.fundstelle.herausgeber="BR";
+    p.fundstelle.pdf_url="https://dserver.bundestag.de/brp/26/0000-26.pdf";
+    p.fortsetzung=true;p.nachtrag=true;
+    const s=await read(),d={...doc(),dipBeratungsstaende:[s]}, dto={...d,...H.quellenhinweisFelder(d,d.url)};
+    const html=client().lageSourceRow(dto);
+    assert(html.includes("Bundesrat · Plenarprotokoll · Fortsetzung · Nachtrag"));
+    assert(!html.includes("Deutscher Bundestag · Plenarprotokoll"));
+    assert(html.includes(p.fundstelle.pdf_url));assert(html.includes("Beschluss: Überweisung"));
   });
   await test("Sichtbarer Radarvertrag behaelt DIP-Stand auch nach erneuter Artikelbindung",async()=>{
     // Deklarierte synthetische Drucksache, amtliche Positionsfixture unveraendert.

@@ -18,7 +18,8 @@ regulaerer Rollout und neuer regulaerer Verarbeitungsbeleg noch offen.**
    Reihenfolge oder historischem Beschluss errechneter Endstand.
    `datum` des Vorgangs bleibt **letztes Dokumentdatum**; Positionsdatum,
    DIP-Entitaetsaktualisierung und tatsaechlicher Abrufzeitpunkt bleiben getrennt.
-   Ueberweisungen, Federfuehrung, Beschluesse und ihre Einschraenkungen stammen
+   Ueberweisungen, Federfuehrung, Beschluesse, Institution, Dokumentart sowie
+   Fortsetzung/Nachtrag und weitere Einschraenkungen stammen
    aus derselben bereits vorhandenen strengen Positionsnormalisierung.
 4. `dip-beratungsstand.js` legt validierte Hashbelege insert-only im vorhandenen
    globalen `helmut_store` ab: `<storeId>-dipstand-<VorgangId>-<Hash>`.
@@ -64,8 +65,8 @@ gesperrtem Browsernetz, ohne Productionzugriff oder Modellaufruf:
 
 | Pruefung | Ergebnis / Reichweite |
 | --- | --- |
-| `dip-beratungsstand-test.js` | 16/16 Gruppen: echter Faktenleser, unveraenderliche Ablage/Readback, Auftrags- und Produktaufrufer, Cachefortschritt/Anbietersperre, Identitaets-/Zeit-/Hashfehler, Servermapper und sichtbarer Radarvertrag vor den echten Quellenrenderern |
-| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten plus Radar- und Briefing-Haupt-/Folgeitem, Folgestandhinweis, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `3e68b7eacbacb5a77f58bcb707240b1004c631d7e6d19b0ac69d841dffe5f4e0` |
+| `dip-beratungsstand-test.js` | 17/17 Gruppen: echter Faktenleser, unveraenderliche Ablage/Readback, Auftrags- und Produktaufrufer, Cachefortschritt/Anbietersperre, Identitaets-/Zeit-/Hashfehler, Servermapper, sichtbarer Radarvertrag und Institution/Fortsetzung/Nachtrag bis zum Renderer |
+| Derselbe Test `--browser` | Echter Chromium bei 390/1280 Pixeln; drei Quellenansichten plus Radar- und Briefing-Haupt-/Folgeitem, Folgestandhinweis, getrennte Links, kein Ueberlauf; Client-Bytes SHA256 `8801e206000025ca65c3f3c8673583996c5117cfdbc99f79981ec4d9659c7dc6` |
 | Vorhandene Faktenleser-/amtliche-/Profilpruefung | 18/18, 4/4 Gruppen mit elf aufgezeichneten amtlichen Einzelaussagen, 11/11 |
 | Vorhandene Quellfelder-/Vorgangsbezugspruefung | 16/16 und 10/10 |
 | Vorhandene Parlamentsdaten-Quellen-UI | 13/13 einschliesslich unveraenderter Destatis-/iRights-Hinweise |
@@ -91,6 +92,9 @@ Mapper, erneute Artikelbindung und tatsaechliche Haupt-/Folgeanzeigen sind jetzt
 ergaenzt; der obige Endnachweis ersetzt diese unvollstaendige Vorannahme.
 Auch Alt-DIP-PDFs ohne Quellfelderbeleg zeigen nur die fehlende amtliche
 Vorgangszuordnung; keine Rekonstruktion oder neue Quellenlesung.
+Die Institutions-Gegenprobe ist ausdruecklich synthetisch. Die originale
+BT-Fixture ist ein Plenarprotokoll; die zunaechst falsche neue Erwartung
+„Drucksache“ wurde im Test berichtigt, das amtliche Original blieb unveraendert.
 
 ## Koordinierte Integration und fehlende Betriebsbestaetigung
 

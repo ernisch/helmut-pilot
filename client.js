@@ -11883,13 +11883,17 @@ function renderDipBeratungsstand(source, articleHref) {
     const details=s.schritte.map(p=>{
       const url=pdf(p.originalUrl);
       if (!url || !/^\d{4}-\d\d-\d\d$/.test(p.datum||"") || typeof p.phase!=="string"
+        || !["BT","BR"].includes(p.zuordnung) || !["Drucksache","Plenarprotokoll"].includes(p.dokumentart)
+        || typeof p.fortsetzung!=="boolean" || typeof p.nachtrag!=="boolean"
         || !Array.isArray(p.beschluesse) || !Array.isArray(p.ueberweisungen)) return "";
       const labels={beschlusstenor:"Beschluss",dokumentnummer:"Vorlage",seite:"Seite",abstimmungsart:"Abstimmungsart",
         abstimm_ergebnis_bemerkung:"Abstimmungsergebnis",grundlage:"Grundlage",mehrheit:"Mehrheit"};
       const b=p.beschluesse.map(v=>Object.entries(v).filter(([k,x])=>Object.hasOwn(labels,k) && x!==null)
         .map(([k,v])=>`${labels[k]}: ${String(v)}`).join("; "));
       const u=p.ueberweisungen.map(v=>`${v.ausschuss} (${v.ausschuss_kuerzel}), ${v.federfuehrung===true ? "mit Federführung" : "ohne Federführung"}${v.ueberweisungsart ? `; ${v.ueberweisungsart}` : ""}`);
-      return `<p>${escapeHtml(`${p.datum}: ${p.phase}; ${p.dokumentnummer}`)} <a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Originalbeleg</a>${[...b,...u].map(v=>`<br>${escapeHtml(v)}`).join("")}</p>`;
+      const kontext=[p.zuordnung==="BT" ? "Deutscher Bundestag" : "Bundesrat",p.dokumentart,
+        p.fortsetzung ? "Fortsetzung" : "",p.nachtrag ? "Nachtrag" : ""].filter(Boolean).join(" · ");
+      return `<p>${escapeHtml(`${p.datum}: ${kontext}; ${p.phase}; ${p.dokumentnummer}`)} <a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Originalbeleg</a>${[...b,...u].map(v=>`<br>${escapeHtml(v)}`).join("")}</p>`;
     }).join("");
     return `<div class="source-notice" data-dip-beratungsstand><a href="${escapeAttribute(s.originalUrl)}" target="_blank" rel="noopener noreferrer">DIP-Vorgang ${escapeHtml(s.vorgangId)}</a>: ${escapeHtml(s.titel)}<p>Beratungsstand laut DIP: ${escapeHtml(s.stand)}.${escapeHtml(read)} ${escapeHtml(dates)}</p><p>Spätere Änderungen sind nicht bestätigt.</p>${s.positionenVollstaendig===false ? '<p>Der Verfahrensverlauf ist nicht vollständig belegt.</p>' : ""}${details ? `<details><summary>Belegte Verfahrensschritte</summary>${details}</details>` : ""}</div>`;
   }).join("");
