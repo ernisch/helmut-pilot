@@ -6592,7 +6592,7 @@ function renderUiBriefingHero(state, details = "") {
   const why = hstandText(state.whyItMatters);
   const orientierung = state.tagesAnlass?.recommendation && state.tagesAnlass?.beleg;
   const stale = state.status === "stale" || state.staleState === true || state.datenstandVonHeute === false || state.frischeVertrag?.aktuell === false;
-  const eyebrow = orientierung ? "Für Ihre Vorbereitung" : stale ? "Letzter Stand" : state.status === "fresh" ? "Heute entscheidend" : "Aktueller Vorgang";
+  const eyebrow = stale ? "Letzter Stand" : orientierung ? "Für Ihre Vorbereitung" : "Für Ihren Arbeitstag";
   const urgency = hstandUrgencyChip(state.urgency || item.urgency);
   const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
   const v = lageVorgangZumBriefing(item);
@@ -6609,9 +6609,9 @@ function renderUiBriefingHero(state, details = "") {
       ${briefingLageVerweis(item)}
     </div>
     <div class="ui-hero-next">
-      ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
-        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Ihr nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>` : ""}
-      ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Begründung:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
+      ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
+        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>` : ""}
+      ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Mandatsbezug und Anlass:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
       ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
       ${orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
         : `<p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>`}

@@ -34,10 +34,11 @@ const tagespaketJsonb = process.argv.includes("--tagespaket-jsonb");
 const tagespaketTeilstand = process.argv.includes("--tagespaket-teilstand");
 const radarFrischeklarheit = process.argv.includes("--radar-frischeklarheit");
 const kundenansichten = process.argv.includes("--kundenansichten");
-const briefingTeilstand = process.argv.includes("--briefing-teilstand");
+const briefingQualitaet = process.argv.includes("--briefing-qualitaet");
+const briefingTeilstand = process.argv.includes("--briefing-teilstand") || briefingQualitaet;
 const radarArtikelbindung = process.argv.includes("--radar-artikelbindung");
 if (radarArtikelbindung && process.argv.slice(2).some(arg => arg !== "--radar-artikelbindung")) throw Error("Radar-Artikelbindung ist ein eigener gezielter Tagespaketfall");
-if (briefingTeilstand && process.argv.slice(2).some(arg => arg !== "--briefing-teilstand")) throw Error("Briefing-Teilstand ist ein eigener gezielter Tagespaketfall");
+if (briefingTeilstand && process.argv.slice(2).some(arg => arg !== (briefingQualitaet ? "--briefing-qualitaet" : "--briefing-teilstand"))) throw Error("Briefing-Teilstand ist ein eigener gezielter Tagespaketfall");
 if (kundenansichten && process.argv.slice(2).some(arg => arg !== "--kundenansichten")) throw Error("Kundenansichten sind ein eigener gezielter Tagespaketfall");
 const tagespaketRuhelageOnly = process.argv.includes("--nur-ruhelage");
 if (tagespaketRuhelageOnly && !tagespaketJsonb) throw Error("--nur-ruhelage braucht --tagespaket-jsonb");
@@ -449,6 +450,48 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
           assert(methods.every(method => method === "GET"));
           check(`${label}: Teilbriefing verbirgt fremde ungebundene leere Fehler- und Ruhelageinhalte und voller Stand behaelt Vorrang`, limits.every(Boolean));
+          if (briefingQualitaet) {
+            // Bestehender echter Producer mit synthetischem Originalsatz, keine
+            // erfundene qualifizierte DTO-Markierung und kein Modellaufruf.
+            const ko = { id: "ko-synth-1", vorgang_id: "vg-synth-1", understanding_status: "complete", status: "neu",
+              headline: "Haushaltsentwurf: Nachbesserungen angekuendigt", display_title: "Haushaltsentwurf: Nachbesserungen angekuendigt",
+              was_ist_passiert: "Zum Haushaltsentwurf wurden Nachbesserungen angekuendigt.", source_document_count: 1,
+              created_at: day + "T05:00:00Z", updated_at: day + "T05:00:00Z" };
+            const original = "Bei der ersten Beratung des Haushaltsentwurfs wurden Schwachstellen eingeräumt und Nachbesserungen für die weitere parlamentarische Beratung angekündigt.";
+            const doc = { id: "rd-synth-1", title: ko.headline, summary: original,
+              url: "https://example.invalid/dokument/1", source_name: "Synthetische Quelle", published_at: day + "T05:00:00Z" };
+            const qualifiziert = require("../lib/helmut/briefingContract").buildCurrentHelmutState({
+              profile: { ...profile, focusTopics: ["Haushalt"] }, now,
+              decisions: [{ knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id, decision: "Ignorieren", score: 10, matched_features: [] }],
+              kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [doc] } });
+            assert(qualifiziert.primaryItem, "Vorbereitung muss aus nativer Original-/Profilqualifikation stammen");
+            await page.evaluate(state => {
+              briefing.currentHelmutState = state; currentView = 'helmut'; render();
+            }, qualifiziert);
+            const hero = page.locator('.ui-briefing-hero'); await hero.waitFor({ state: 'visible' });
+            const visible = await hero.innerText();
+            check(`${label}: belegte Vorbereitung bleibt kurz, optional und ohne behauptete Tagesentscheidung`,
+              visible.includes("Möglicher nächster Schritt") && visible.includes("Prüfen Sie")
+              && !visible.includes("Heute entscheidend") && !visible.includes("Ihr nächster Schritt")
+              && !visible.includes("aktuellen Briefingfenster"));
+            await hero.locator('.ui-evidence-note summary').click();
+            check(`${label}: fachliche Begruendung und tragender Originalsatz sind getrennt sichtbar`,
+              visible.includes("Mandatsbezug und Anlass:") && await hero.locator('blockquote').isVisible()
+              && await hero.locator('blockquote').textContent() === original
+              && await hero.locator('a[href="https://example.invalid/dokument/1"]').count() > 0);
+            const escaped = await page.evaluate(() => {
+              const saved = structuredClone(briefing.currentHelmutState);
+              try {
+                const raw = '<img data-unerlaubt src=x onerror="window.unerlaubt=true">';
+                briefing.currentHelmutState.recommendation = raw;
+                briefing.currentHelmutState.tagesAnlass.beleg.text = raw;
+                const el = document.createElement('div'); el.innerHTML = renderUiBriefingHero(briefing.currentHelmutState);
+                return !el.querySelector('img') && el.textContent.includes(raw);
+              } finally { briefing.currentHelmutState = saved; }
+            });
+            check(`${label}: Option und Originalbeleg bleiben gegen HTML-Ausfuehrung geschuetzt`, escaped);
+            assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
+          }
           continue; // Nur neue Teilbriefingfaelle; keine historischen Browsergruppen.
         }
         if (kunden) {
@@ -764,7 +807,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
 
   if (tagespaketOnly) {
     await tagespaketSmoke(playwright, { jsonb: tagespaketJsonb, ruhelageOnly: tagespaketRuhelageOnly, teilstand: tagespaketTeilstand, radarFrische: radarFrischeklarheit, kunden: kundenansichten, teilbriefing: briefingTeilstand, radarArtikel: radarArtikelbindung });
-    console.log(`\n${passed} PASS, ${failed} FAIL (${radarArtikelbindung ? "nur neue Radar-Artikelbindung" : briefingTeilstand ? "nur neuer vorlaeufiger Briefingstand" : kundenansichten ? "nur neue Kundenansichten" : radarFrischeklarheit ? "nur neue Radar-Frischeklarheit" : tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
+    console.log(`\n${passed} PASS, ${failed} FAIL (${radarArtikelbindung ? "nur neue Radar-Artikelbindung" : briefingQualitaet ? "nur Briefingqualitaet und gepruefter Teilstand" : briefingTeilstand ? "nur neuer vorlaeufiger Briefingstand" : kundenansichten ? "nur neue Kundenansichten" : radarFrischeklarheit ? "nur neue Radar-Frischeklarheit" : tagespaketTeilstand ? "nur neuer gepruefter Teilstand" : tagespaketRuhelageOnly ? "nur zwei Ruhelageanzeigen" : tagespaketJsonb ? "nur neuer JSONB-Gegenfall" : "nur Tagespaket"}, Desktop/Mobil)`);
     process.exit(failed ? 1 : 0);
   }
 

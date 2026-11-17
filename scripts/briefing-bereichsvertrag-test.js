@@ -6,7 +6,7 @@ const C = require("../lib/helmut/briefingContract");
 const L = require("../lib/helmut/lage");
 const F = require("../lib/helmut/briefing-fachurteil");
 const now = new Date("2026-09-24T10:00:00Z");
-const profile = { id: "abgrenzung-synthetisch", fullName: "Alex Beispiel", party: "Testpartei", committees: [], topics: ["Verkehr"] };
+const profile = { id: "abgrenzung-synthetisch", fullName: "Alex Beispiel", party: "Testpartei", committees: [], topics: ["Verkehr"], focusTopics: ["Verkehr"] };
 const doc = (id, day, extra = {}) => ({ id, url: `https://example.org/bericht/${id}`, title: "Alex Beispiel spricht über Verkehr",
   summary: "Alex Beispiel spricht über den Vorschlag zum Verkehr.", published_at: `${day}T08:00:00Z`, source_type: "media", ...extra });
 const ko = (id = "a") => ({ id: `ko-${id}`, vorgang_id: `vg-${id}`, status: "neu", understanding_status: "complete",
@@ -20,16 +20,16 @@ const input = (ks, sources) => ({ profile, now, decisions: ks.map(decision), kos
   knowledgeObjects: ks, sourcesByVorgang: sources });
 let count = 0;
 const test = (name, fn) => { fn(); count++; console.log(`PASS ${name}`); };
-test("Lage behält Sachstand; Briefing kopiert auch umformulierte Einordnung nicht", () => {
+test("Lage behält Sachstand; neue Quelle und globale Empfehlung sind noch kein persönlicher Auftrag", () => {
   const k = ko(), ds = [doc("a", "2026-09-24")];
   const card = L.koToVorgangCard(k, ds, now);
   const b = C.toBriefingContractV3(input([k], { "vg-a": ds }));
   assert.equal(card.displaySummary, k.display_summary);
-  assert.equal(b.currentHelmutState.primaryVorgangId, "vg-a");
-  assert.equal(b.currentHelmutState.recommendation, k.recommendation);
-  assert.notEqual(b.currentHelmutState.whyItMatters, k.why_relevant);
-  assert.match(b.currentHelmutState.whyItMatters, /heutigen Arbeitstag/);
-  assert.deepEqual(b.currentHelmutState.tagesAnlass.documentIds, ["a"]);
+  assert.equal(b.currentHelmutState.primaryVorgangId, null);
+  assert.equal(b.currentHelmutState.recommendation, "");
+  assert.equal(b.currentHelmutState.whyItMatters, "");
+  assert.equal(b.items[0].recommendedAction, k.recommendation);
+  assert.deepEqual(B.tagesAnlass(ds, now).documentIds, ["a"]);
 });
 test("Reprocessing und hoher Score machen alte Quellen nicht zur Tagespriorität", () => {
   const b = C.toBriefingContractV3(input([ko()], { "vg-a": [doc("alt", "2026-09-01")] }));
@@ -129,7 +129,7 @@ test("Zukünftige Frist ist Radar; heutige Frist trägt Briefing auch mit älter
   assert.equal(B.tagesAnlass(ds, now, null, k), null);
   const r = R.buildCurrentRadarState(input([k], { "vg-a":ds }));
   assert.equal(r.anzeige.mentions[0].beobachtungsBeleg.art, "kommende-frist");
-  k.deadline = "2026-09-24"; ds[0].summary = "Die Einreichungsfrist endet am 24.09.2026.";
+  k.deadline = "2026-09-24"; ds[0].summary = "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026; die Unterlagen können beim Ausschuss eingereicht werden.";
   const b = C.toBriefingContractV3(input([k], { "vg-a":ds }));
   assert.equal(b.currentHelmutState.tagesAnlass.art, "heutige-frist");
 });
@@ -152,7 +152,7 @@ test("Verschieden formulierte Lage-Einordnungen werden nie zum Briefinggrund ode
 });
 test("Rollenhinweise brauchen gebundene Ausgabeurteile, Handlung bleibt Quellen-Fachaussage", () => {
   const Q = require("../lib/helmut/briefing-aussagenbindung");
-  const k = ko(), ds = [doc("a", "2026-09-24")], args = input([k], { "vg-a":ds });
+  const k = ko(), ds = [doc("a", "2026-09-24", { summary: "Die öffentliche Beratung zum Verkehr findet am 24.09.2026 mit den beteiligten Verbänden im Parlament statt." })], args = input([k], { "vg-a":ds });
   const briefing = C.toBriefingContractV3(args);
   const e = Q.baueEingabe({ briefing, sourcesByVorgang:args.sourcesByVorgang, profile,
     userId:profile.id, day:"2026-09-24", kos:[k] });
@@ -163,7 +163,7 @@ test("Rollenhinweise brauchen gebundene Ausgabeurteile, Handlung bleibt Quellen-
 });
 test("Hoch priorisierte heutige Frist wird nicht von bloßer Artikelfrische verdrängt", () => {
   const a = { ...ko(), deadline:"2026-09-24" }, b = ko("b");
-  const args = input([a,b], { "vg-a":[doc("frist", "2026-09-20", { summary:"Die Abgabefrist endet am 24.09.2026." })],
+  const args = input([a,b], { "vg-a":[doc("frist", "2026-09-20", { summary:"Die Abgabefrist für Stellungnahmen zum Verkehr endet am 24.09.2026; die Unterlagen können beim Ausschuss eingereicht werden." })],
     "vg-b":[doc("aktuell", "2026-09-24")] });
   args.decisions[0].score = 95;
   const state = C.toBriefingContractV3(args).currentHelmutState;
@@ -217,13 +217,9 @@ for (const art of standArten) {
       assert.ok(anlass); assert.deepEqual(anlass.documentIds, [d.id]);
       assert.match(anlass.text, /Quellenstand: 2026-11-09/);
       const state = C.toBriefingContractV3(args).currentHelmutState;
-      assert.equal(state.primaryVorgangId, "vg-a");
-      assert.equal(state.primaryItem.meldungAt, null);
-      assert.equal(state.primaryItem.lastUpdated, null);
-      assert.equal(state.primaryItem.zeitLabel, null);
-      assert.notEqual(state.status, "fresh");
-      assert.equal(state.datenstandTag, null);
-      assert.equal(state.datenstandVonHeute, false);
+      assert.equal(state.primaryVorgangId, null);
+      assert.equal(state.primaryItem, null);
+      assert.equal(state.status, "empty");
       assert.equal(C.toBriefingContractV3(args).items[0].primarySource.publishedAt, null);
       assert.equal(require("../lib/helmut/lage-quellenbeleg").baueEingabe([k], args.sourcesByVorgang, tageJetzt).length, 1);
       assert.equal(JSON.stringify(quelle), before); assert.equal(quelle.published_at, null);
@@ -282,7 +278,9 @@ test("Tagesanlass: gültige Duplikate zählen einmal, Zeitstempel behalten ihre 
   // nur die interne KO-Zeit darf keinen solchen Beleg ersetzen.
   const k = { ...ko(), created_at: tageJetzt.toISOString(), updated_at: tageJetzt.toISOString() };
   const args = { ...input([k], { "vg-a": [d, normal] }), now: tageJetzt, frischeFenster: tageFenster };
-  assert.equal(C.toBriefingContractV3(args).currentHelmutState.primaryItem.meldungAt, normal.published_at);
+  const ausgabe = C.toBriefingContractV3(args);
+  assert.equal(ausgabe.currentHelmutState.primaryItem, null);
+  assert.ok(ausgabe.items[0].sources.some(s => s.publishedAt === normal.published_at));
 });
 test("Ganze Artikelstandtage folgen unverändert den bestehenden Berliner Sommer-/Winterzeitgrenzen", () => {
   for (const [tag, start, ende] of [["2026-03-29", "2026-03-28T23:00:00Z", "2026-03-29T22:00:00Z"],
@@ -300,12 +298,66 @@ test("Kaputter optionaler Stand wirft nicht den ganzen Briefingvertrag und erlau
   for (const quellen of [[kaputt, normal], [normal, kaputt], [d, kaputt, normal], [normal, d, kaputt]]) {
     const args = { ...input([k], { "vg-a": quellen }), now: tageJetzt, frischeFenster: tageFenster };
     const before = JSON.stringify(args), state = C.toBriefingContractV3(args).currentHelmutState;
-    assert.equal(state.primaryVorgangId, "vg-a");
-    assert.ok(!state.tagesAnlass.documentIds.includes(kaputt.id));
-    assert.equal(state.primaryItem.meldungAt, null);
-    assert.equal(state.primaryItem.lastUpdated, null);
+    assert.equal(state.primaryVorgangId, null);
+    assert.ok(!B.tagesAnlass(quellen, tageJetzt, tageFenster).documentIds.includes(kaputt.id));
+    assert.equal(state.primaryItem, null);
     assert.notEqual(state.status, "fresh");
     assert.equal(JSON.stringify(args), before);
   }
+});
+test("BT und LT: gleiche Originalfrist braucht denselben belegten Fachbezug", () => {
+  const k = { ...ko(), deadline: "2026-09-24" }, docs = [doc("frist-bezug", "2026-09-20", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026; die Unterlagen können beim Ausschuss eingereicht werden." })];
+  for (const parliamentType of ["Bundestag", "Landtag"]) {
+    const p = { ...profile, id: "belegtes-testmandat-" + parliamentType, parliamentType };
+    const a = B.tagesAnlass(docs, now, null, k, p);
+    assert.equal(B.istTagesauftrag(a), true); assert.equal(a.art, "heutige-frist");
+    assert.equal(a.beleg.text, docs[0].summary); assert.ok(a.profilbezug.belege.length);
+    assert.equal(B.istTagesauftrag(B.tagesAnlass(docs, now, null, k, { ...p, focusTopics: ["Gesundheit"], topics: [] })), false);
+  }
+});
+test("Niedriger bewertete heutige Frist steht vor neuer belegter Vorbereitung mit hohem Score", () => {
+  const a = { ...ko(), deadline: "2026-09-24" }, b = ko("b");
+  const args = input([b, a], { "vg-a": [doc("frist-heute", "2026-09-20", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026; die Unterlagen können beim Ausschuss eingereicht werden." })],
+    "vg-b": [doc("neue-vorbereitung", "2026-09-24", {
+      summary: "Für das neue Verkehrsgesetz wurden Nachbesserungen zur weiteren parlamentarischen Beratung angekündigt." })] });
+  args.decisions[0].score = 99; args.decisions[1].score = 41;
+  const scoring = process.env.HELMUT_SCORING_MODE;
+  try {
+    for (const mode of ["off", "on"]) {
+      process.env.HELMUT_SCORING_MODE = mode;
+      const state = C.toBriefingContractV3(args).currentHelmutState;
+      assert.equal(state.primaryVorgangId, "vg-a"); assert.equal(state.tagesAnlass.art, "heutige-frist");
+      assert.equal(state.items[0].id, "vg-b");
+      assert.equal(C.buildPrimarySelectionDebug({ ...args, decisionsAfter: args.decisions, state }).selectedPrimary.vorgang_id, "vg-a");
+    }
+  } finally { if (scoring === undefined) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = scoring; }
+});
+test("Persönliche Originalnennung mit Frist braucht keinen erfundenen Fachtreffer", () => {
+  const p = { ...profile, focusTopics: [], topics: [], committees: [] }, k = { ...ko(), deadline: "2026-09-24" };
+  const ds = [doc("persoenliche-frist", "2026-09-23", { title: "Persönliche Stellungnahme",
+    summary: "Alex Beispiel kann die Unterlagen einreichen; die Einreichungsfrist für diese Stellungnahme endet am 24.09.2026 beim Parlament." })];
+  const anlass = B.tagesAnlass(ds, now, null, k, p);
+  assert.equal(B.istTagesauftrag(anlass), true); assert.equal(anlass.profilbezug.belege[0].art, "persoenlich");
+  assert.equal(B.istTagesauftrag(B.tagesAnlass(ds, now, null, k, { ...p, fullName: "Robin Muster" })), false);
+  const ohneBezug = [{ ...ds[0], summary: "Alex Beispiel nahm an der Sitzung teil. Die Einreichungsfrist für diese Stellungnahme endet am 24.09.2026 beim Parlament." }];
+  assert.equal(B.istTagesauftrag(B.tagesAnlass(ohneBezug, now, null, k, p)), false);
+});
+test("Frische Parteimeldung und Kommunikationsfloskel erzeugen keinen persönlichen Auftrag", () => {
+  const k = { ...ko(), headline: "Ein Ausschlussantrag liegt vor", was_ist_passiert: "Die Fraktion berät einen Ausschlussantrag.",
+    recommendation: "Die Fraktion sollte bei Entscheidungsfindung transparente Verfahrenskommunikation sicherstellen.", parteien: [profile.party] };
+  const ds = [doc("parteimeldung", "2026-09-24", { title: k.headline,
+    summary: "In der Fraktion liegt ein Ausschlussantrag vor. Eine Entscheidung oder eine Frist sind bisher nicht bestätigt." })];
+  const b = C.toBriefingContractV3(input([k], { "vg-a": ds }));
+  assert.equal(b.currentHelmutState.primaryItem, null); assert.equal(b.currentHelmutState.recommendation, "");
+  assert.equal(b.items[0].recommendedAction, k.recommendation); // Datenerhalt, kein persoenlicher Auftrag.
+});
+test("Höchstens drei belegte Tagesprioritäten, keine Auffüllung und keine Eingabemutation", () => {
+  const ks = ["eins", "zwei", "drei", "vier"].map(ko), sources = Object.fromEntries(ks.map((k, i) => [k.vorgang_id,
+    [doc("vorbereitung-" + i, "2026-09-24", { summary: "Für das Verkehrsgesetz wurden Nachbesserungen zur weiteren parlamentarischen Beratung angekündigt." })]]));
+  const args = input(ks, sources), before = JSON.stringify(args), b = C.toBriefingContractV3(args);
+  assert.ok(b.currentHelmutState.primaryItem); assert.equal(b.currentHelmutState.items.length, 2);
+  assert.equal(b.items.length, 4); assert.equal(JSON.stringify(args), before);
 });
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);

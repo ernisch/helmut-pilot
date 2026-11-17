@@ -322,5 +322,69 @@ function bindeTeststand(f) {
       A.equal((await get("/api/app/start", "")).status, 401); A.equal(forbidden, 0);
     } finally { D.lese = original; }
   });
+  await test("Gespeicherte frische Fremdoption wird ohne Lage-, Quittungs-, Hash- oder Speicherverlust zurueckgehalten", async () => {
+    const f = await state({ partial: true }), row = f.rows.get(f.row.id);
+    row.payload.briefing.currentHelmutState = { profileId: profile.id, status: "fresh", qualityStatus: "partial",
+      versorgung: { version: 1, zustand: "offen" }, generatedAt: now.toISOString(),
+      primaryVorgangId: "vg-synth-1", primaryItem: { id: "vg-synth-1", title: "Fraktionsausschluss beantragt",
+        sourceUrl: "https://example.invalid/dokument/1", sourceIds: ["rd-synth-1"], sourceCount: 1 }, items: [],
+      recommendation: "Die Fraktion sollte transparente Verfahrenskommunikation sicherstellen.",
+      whyItMatters: "Neue Quellen im aktuellen Briefingfenster.", urgency: "hoch", riskOfNoAction: "Unbelegter persoenlicher Nachteil",
+      riskSummary: "Alte Risikobehauptung", riskLevel: "high", opportunitySummary: "Alte Chance", opportunityLevel: "high",
+      recommendedCommunication: { communicationLine: "Unbelegte persoenliche Linie" }, actionItems: [{ title: "Unbelegter Auftrag" }],
+      tagesAnlass: { art: "neue-quelle", documentIds: ["rd-synth-1"], text: "Neue Quellen im aktuellen Briefingfenster." } };
+    bindeTeststand(f); const before = clone([...f.rows]), result = (await f.read()).briefing, h = result.currentHelmutState;
+    A.equal(h.status, "empty"); A.equal(h.primaryItem, null); A.equal(h.recommendation, ""); A.equal(h.whyItMatters, "");
+    A.equal(h.urgency, "unknown"); A.equal(h.riskOfNoAction, ""); A.equal(h.riskSummary, ""); A.equal(h.opportunitySummary, "");
+    A.deepEqual(h.actionItems, []); A.equal(h.recommendedCommunication.communicationLine, "");
+    A.equal(result.paketStatus.vollstaendig, false); A(result.paketStatus.fehler.includes("briefing-handlungsbeleg-fehlt"));
+    A.equal(result.paketStatus.quittungGebunden, true);
+    A.deepEqual(result.items, row.payload.briefing.items); A.deepEqual([...f.rows], before);
+    A.deepEqual(result.lageBriefing.paragraphs.map(p => p.text), f.lageAnsicht.paragraphs.map(p => p.text));
+    A.equal(result.gespeicherterNachweis.inhaltHash, row.payload.inhaltHash); A.equal(f.reads.length, 2);
+  });
+  await test("Gespeicherter Originalauftrag ohne Frist bleibt fuer dasselbe Mandat sichtbar", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), C = require("../lib/helmut/briefingContract");
+    const ko = { id: "ko-synth-2", vorgang_id: "vg-synth-2", headline: "Pflegereform: Nachbesserungen angekündigt",
+      was_ist_passiert: "Bei der Beratung der Pflegereform wurden Nachbesserungen angekündigt.",
+      status: "neu", understanding_status: "complete", zeitdruck: "keiner" };
+    const doc = { id: "rd-synth-2", title: ko.headline, url: "https://example.invalid/dokument/2", published_at: day + "T05:00:00Z",
+      summary: "Bei der Beratung der Pflegereform wurden Schwachstellen eingeräumt und Nachbesserungen für die weitere parlamentarische Arbeit angekündigt." };
+    row.payload.briefing.currentHelmutState = C.buildCurrentHelmutState({ profile, now, kosById: { [ko.id]: ko },
+      decisions: [{ knowledge_object_id: ko.id, decision: "Beobachten", score: 50 }], sourcesByVorgang: { [ko.vorgang_id]: [doc] } });
+    A.equal(row.payload.briefing.currentHelmutState.tagesAnlass.art, "angekuendigter-schritt");
+    bindeTeststand(f); const before = clone([...f.rows]), out = (await f.read()).briefing;
+    A.equal(out.currentHelmutState.primaryVorgangId, ko.vorgang_id);
+    A.equal(out.currentHelmutState.tagesAnlass.beleg.text, doc.summary);
+    A(out.currentHelmutState.recommendation); A(out.currentHelmutState.tagesAnlass.profilbezug.belege.length);
+    A.equal(out.paketStatus.quittungGebunden, true); A.deepEqual([...f.rows], before);
+    const bestaetigt = clone(f.rows.get(f.row.id));
+    for (const mutate of [h => h.primaryItem.sourceIds = ["fremde-quelle"],
+      h => h.primaryItem.sourceUrl = "https://example.invalid/fremder-artikel",
+      h => h.tagesAnlass.beleg.publishedAt = day + "T04:00:00Z"]) {
+      f.rows.set(f.row.id, clone(bestaetigt)); mutate(f.rows.get(f.row.id).payload.briefing.currentHelmutState);
+      bindeTeststand(f); const vorher = clone([...f.rows]), gesperrt = (await f.read()).briefing;
+      A.equal(gesperrt.currentHelmutState.primaryItem, null);
+      A.equal(gesperrt.currentHelmutState.recommendation, ""); A.deepEqual([...f.rows], vorher);
+    }
+  });
+  await test("Heutiger Beratungstermin bleibt im nativen Cache ein Verfahrensschritt und wird keine Abgabefrist", async () => {
+    const f = await state(), row = f.rows.get(f.row.id), C = require("../lib/helmut/briefingContract");
+    const text = `Die öffentliche Beratung zur Pflegereform findet am ${day} statt und endet nach den Stellungnahmen der Verbände.`;
+    const ko = { id: "ko-synth-2", vorgang_id: "vg-synth-2", headline: "Beratung der Pflegereform",
+      was_ist_passiert: text, status: "neu", understanding_status: "complete", zeitdruck: "keiner" };
+    const doc = { id: "rd-synth-2", title: ko.headline, summary: text,
+      url: "https://example.invalid/dokument/2", published_at: day + "T05:00:00Z" };
+    const native = C.buildCurrentHelmutState({ profile, now, kosById: { [ko.id]: ko },
+      decisions: [{ knowledge_object_id: ko.id, decision: "Beobachten", score: 50 }], sourcesByVorgang: { [ko.vorgang_id]: [doc] } });
+    A.equal(native.tagesAnlass.art, "bevorstehender-schritt"); A.equal(native.tagesAnlass.termin, day);
+    row.payload.briefing.currentHelmutState = native; bindeTeststand(f);
+    const before = clone([...f.rows]), out = (await f.read()).briefing;
+    A.equal(out.currentHelmutState.primaryVorgangId, ko.vorgang_id);
+    A.equal(out.currentHelmutState.tagesAnlass.art, "bevorstehender-schritt");
+    A.equal(out.currentHelmutState.tagesAnlass.beleg.text, text);
+    A.equal(out.currentHelmutState.recommendation, native.recommendation);
+    A.equal(out.paketStatus.quittungGebunden, true); A.deepEqual([...f.rows], before);
+  });
   console.log(`\n${n} PASS, 0 FAIL`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

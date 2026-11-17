@@ -65,7 +65,7 @@ test("Kommende belegte Frist erlaubt Vorbereitung ohne heutige Dringlichkeit",()
 test("Anzeige enthält Prüfauftrag und Originalbeleg statt Leerkarte/Lagekopie",()=>{
   const s=state(), b={currentHelmutState:s,currentRadarState:{},lageBriefing:{paragraphs:[{text:"NICHT KOPIEREN"}],vorgaenge:[]}};
   const r=render(b,now.toISOString()); A.equal(r.fachinhalt.briefing,true);
-  const h=r.html.briefing; A(h.includes("Für Ihre Vorbereitung")); A(h.includes("Prüfen Sie"));
+  const h=r.html.briefing; A(h.includes("Letzter Stand")); A(h.includes("Prüfen Sie"));
   A(h.includes(doc.summary)); A(!h.includes("NICHT KOPIEREN")); A(!h.includes("hstand-state-card--quiet"));
   A(!h.includes("Heute entscheidend")); A(!h.includes("data-briefing-office")); A(h.includes("Quellenstand"));
   A.equal(s.primaryItem.meldungAt,doc.published_at);
@@ -97,14 +97,14 @@ test("Quelldaten, Entscheidung und Profil bleiben unverändert",()=>{
   const before=JSON.stringify({profile,alt,neu,documents});
   const bewertet=D.decideForUser(profile,active,{userId:profile.id});
   const aktuell=await build();
-  test("Aktuelle zulässige Ausschussmeldung ersetzt alte undatierte Ankündigung als Hauptvorgang",()=>{
+  test("Neue Fachmeldung ohne konkrete Option verdrängt keinen belegten Vorbereitungsauftrag",()=>{
     A(bewertet.find(d=>d.knowledge_object_id===alt.id).score>bewertet.find(d=>d.knowledge_object_id===neu.id).score);
     A.notEqual(bewertet.find(d=>d.knowledge_object_id===neu.id).decision,"Ignorieren");
-    A.equal(aktuell.debugPrimary.candidateStats.freshEligibleCount,1);
-    A.equal(aktuell.currentHelmutState.primaryVorgangId,neu.vorgang_id);
-    A.equal(aktuell.currentHelmutState.status,"fresh");
-    A.equal(aktuell.currentHelmutState.primaryItem.meldungAt,neu.created_at);
-    A(aktuell.currentHelmutState.items.some(i=>i.id===alt.vorgang_id));
+    A.equal(aktuell.debugPrimary.candidateStats.freshEligibleCount,0);
+    A.equal(aktuell.currentHelmutState.primaryVorgangId,alt.vorgang_id);
+    A.equal(aktuell.currentHelmutState.status,"stale");
+    A.equal(aktuell.currentHelmutState.primaryItem.meldungAt,doc.published_at);
+    A(aktuell.items.some(i=>i.vorgangId===neu.vorgang_id));
     A(render(aktuell,now.toISOString()).html.briefing.includes(doc.url));
     A.equal(JSON.stringify({profile,alt,neu,documents}),before);
   });
