@@ -112,6 +112,9 @@ test("Mehr Artikel mit demselben Sachstand erzeugen keine neue Radarentwicklung"
   const geplant = doc("geplant", "2026-09-24", {
     summary: "Der Gesetzentwurf zur Finanzierung des öffentlichen Nahverkehrs soll im zuständigen Ausschuss beschlossen werden." });
   assert.equal(B.beobachtung([alt, geplant], now), null);
+  const unklar = doc("unklar", "2026-09-24", {
+    summary: "Es ist weiterhin unklar, ob der Ausschuss den Entwurf zur Finanzierung des öffentlichen Nahverkehrs beschlossen hat." });
+  assert.equal(B.beobachtung([alt, unklar], now), null);
 });
 test("Geaenderte Zahlen sind beobachtbar, andere Datums- und Zahlenformate allein nicht", () => {
   const alt = doc("zahl-alt", "2026-09-22", {
@@ -120,6 +123,12 @@ test("Geaenderte Zahlen sind beobachtbar, andere Datums- und Zahlenformate allei
   const quelle = wert => doc("zahl-neu", "2026-09-24", { summary: text + wert + "." });
   assert.equal(B.beobachtung([alt, quelle("10 %")], now), null);
   assert.equal(B.beobachtung([alt, quelle("12 %")], now).publishedAt, "2026-09-24T08:00:00Z");
+  const geld = (wert, tag) => doc("geld-" + tag, tag, {
+    summary: "Das Land stellt für die Förderung des öffentlichen Nahverkehrs " + wert + " Euro bereit." });
+  for (const wert of ["1000", "1 000", "1.000,00"]) {
+    assert.equal(B.beobachtung([geld("1.000", "2026-09-22"), geld(wert, "2026-09-24")], now), null);
+  }
+  assert.ok(B.beobachtung([geld("1.000", "2026-09-22"), geld("1.050,00", "2026-09-24")], now));
 });
 test("Zeitgleiche Bestandsquellen sind keine neue Dynamik", () => {
   assert.equal(B.beobachtung([doc("a", "2026-09-24"), doc("b", "2026-09-24")], now), null);
@@ -371,6 +380,16 @@ test("Widerspruechliche und bei der Zeitumstellung uneindeutige Schlusszeiten sp
     assert.equal(B.istTagesauftrag(B.tagesAnlass(docs, jetzt, null, k, profile)), false);
   }
   assert.equal(B.istTagesauftrag(B.tagesAnlass([quelle("explizit", "02:30 Uhr MESZ")], jetzt, null, k, profile)), true);
+  const iso = s => doc("iso", "2026-10-24", {
+    summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am " + s + " beim Parlament." });
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("2026-10-25T12:00:00Z oder um 16:00 Uhr Berliner Zeit")],
+    jetzt, null, k, profile)), false);
+  assert.equal(B.istTagesauftrag(B.tagesAnlass([iso("25.10.2026 um 13:00 Uhr +01:00")], jetzt, null, k, profile)), true);
+  for (const zone of ["PST", "pst", "PsT"]) {
+    const normal = doc("fremde-zone", "2026-09-23", { summary:
+      "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um 15:00 Uhr " + zone + " beim Parlament." });
+    assert.equal(B.istTagesauftrag(B.tagesAnlass([normal], now, null, { ...ko(), deadline: "2026-09-24" }, profile)), false);
+  }
   const sprung = doc("sommerzeit", "2026-03-28", {
     summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 29.03.2026 um 02:30 Uhr beim Parlament." });
   assert.equal(B.istTagesauftrag(B.tagesAnlass([sprung], new Date("2026-03-29T00:40:00Z"), null,
