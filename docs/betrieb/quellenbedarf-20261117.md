@@ -114,7 +114,8 @@ Basis `main 1a797c6c`, Koordination und Dateireservierung in
 [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6949297979).
 PR1249/1250 werden nicht wiederholt. A integriert allein und nacheinander;
 B bearbeitet nach C-01 nur den reservierten Kundenrenderer und seinen bestehenden
-Quellenhinweistest; C bleibt unabhaengig lesend. Keine neuen Quellenfenster,
+Quellenhinweistest; C bleibt unabhaengig lesend. A besitzt zusaetzlich den vorab
+reservierten engen CI-Vertrag. Keine neuen Quellenfenster,
 Jobstarts, Modellaufrufe, Profilwrites oder Paketaktivierungen.
 
 Die aktuelle amtliche Mandatsbiografie wurde mit den benoetigten Rollen
@@ -167,11 +168,23 @@ auseinanderhalten; keine nicht veroeffentlichten Sitzungsinhalte behaupten.
 C hat unabhaengig [C-01 und C-02](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6949411072)
 abgegrenzt: der Client verwirft den transportierten Destatis-Hinweis; ein
 Destatis-Dokument im Digitalpaket belegt ausserdem noch keinen Digitalthemenbezug.
-C-01 ist eine gezielte neue technische Reparatur durch B, C-02 eine fachliche
+C-01 ist durch Bs unveraendert uebernommenen Code-/Testcommit
+`2e2c1b744058754661d8543b3eba809f75025008` in PR1251 gezielt repariert:
+13/13 vorhandene UI-Gruppen inklusive Gegenfaellen und zwoelf Quellenansichten;
+Bs echter isolierter Chromium-Mobilbeleg zeigt24 Hinweise. Das ist ein lokaler
+Browserbeleg, keine echte Kundenversorgung. C-02 bleibt eine fachliche
 Beleggrenze und kein Anlass fuer neue Pruefinfrastruktur. Vorhandene echte
 DIP-/BMAS-Abschluesse vom15.11. bleiben erhalten. BMG-Metadaten, Archive und zwei
 Lage-Teilstandabsaetze werden nicht zu einer heutigen Vollversorgung aufgewertet.
 
-Genau ein naechster Schritt: den von B exklusiv bearbeiteten Destatis-Anzeigefix
-am exakten Diff unabhaengig pruefen und mit den erforderlichen Pflichtchecks
-nacheinander integrieren; keine neue Verarbeitungsserie ausloesen.
+Der enge CI-Vertrag bindet Basis, PR, Branch, Bs zwei Runtime-/Testblobs und den
+sonst unveraenderten Baum. Er behaelt beide Pflichtjobs, Schnellkern, die
+vorhandenen RSS-/Hinweistests und echte Browser-Smoke-/Prosa-Pruefungen. Bs
+gezielter Mobilbeleg wird als solcher erhalten. Keine pauschale Auswahl der
+245 Bereichssuiten oder Mengen-/DB-Laeufe. Unpassender Kopf stoppt vor Auswahl;
+kein genereller Skip oder Rueckfall auf einen breiten Lauf bei Bindungsfehler.
+Merge, Pflicht-CI und regulaeres Deployment werden am exakten Kopf im PR belegt.
+
+Genau ein naechster Schritt nach gruener Integration: beim naechsten regulaeren
+Verarbeitungsabschluss die tatsaechliche Quellen-/Attributionsanzeige abnehmen;
+keine neue Verarbeitungsserie ausloesen.
