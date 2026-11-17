@@ -11,9 +11,9 @@ const {day,now}=F,profile={...F.profile,party:"Die Linke",faction:"Die Linke"},c
   actorOld="Alte Partei stimmt in Beispielstadt ueber den Vertrag ab",
   actorNew="Die Linke stimmt ueber denselben Vertrag ab",
   url="https://example.invalid/koalition/abstimmung",at=day+"T05:00:00Z";
-const docs=[{id:"rd-actor-alt",title:actorOld,summary:"Der gemeinsame Vertrag wird beraten.",
+const docs=[{id:"rd-actor-alt",title:actorOld,summary:"Die Delegierten beraten den Vertrag zur gemeinsamen Regierungsbildung und prüfen die Vereinbarungen für den Nahverkehr.",
   url:"https://example.invalid/koalition/vorher",published_at:"2026-09-12T05:00:00Z"},
-  {id:"rd-actor-neu",title:actorNew,summary:"Weitere Parteien beraten denselben gemeinsamen Vertrag.",
+  {id:"rd-actor-neu",title:actorNew,summary:"Die Delegierten haben den Vertrag zur gemeinsamen Regierungsbildung samt den Vereinbarungen für den Nahverkehr angenommen.",
     url:"https://www.example.invalid/koalition/abstimmung",published_at:at,privateReview:"NICHT-IN-DER-ANZEIGE"}];
 const item={vorgangId:vid,documentId:"rd-actor-neu",title:actorOld,sourceUrl:url,publishedAt:at,
   ursprungsBeleg:{documentId:"rd-actor-neu",url},relationTypes:["party"]};
@@ -33,7 +33,7 @@ async function fixture(){
   briefing.currentHelmutState={status:"empty",qualityStatus:"empty",profileId:profile.id,tenantId:null,items:[],
     primaryItem:null,primaryVorgangId:null,emptyState:{kind:"gap"},versorgung:{version:1,zustand:"offen"}};
   briefing.items=briefing.items.map((i,n)=>({...i,sources:lage.paragraphs[n].sources}));
-  const publicSources=docs.map(d=>({title:d.title,url:d.url,publishedAt:d.published_at,name:"Synthetische Quelle"}));
+  const publicSources=docs.map(d=>({title:d.title,summary:d.summary,url:d.url,publishedAt:d.published_at,name:"Synthetische Quelle"}));
   briefing.items.push({vorgangId:vid,title:actorOld,sources:publicSources,primarySource:clone(publicSources[1])});
   briefing.tagespaketGrundlage=[1,2].map(i=>({id:"ko-synth-"+i,vorgang_id:"vg-synth-"+i}));
   briefing.tagespaketGrundlage.push({id:"ko-actor",vorgang_id:vid});briefing.publicationEligibilityPolicy=P.publicInfo();
@@ -101,6 +101,29 @@ async function main(){
       A.equal(out.currentRadarState.environment.party.length,0);A.equal(JSON.stringify([...f.rows]),before);
     }
   });
+  await test("Unveraenderter Sachstand verschwindet aus dem gespeicherten Radar, eine echte Aktualisierung bleibt",async()=>{
+    for(const legacy of [false,true]){
+      const f=await fixture(),briefing=f.row.payload.briefing,radar=briefing.currentRadarState;
+      const original=produce().environment.party[0];
+      A.equal(original.beobachtungsBeleg.art,"weitere-berichte");
+      radar.environment.party=[clone(original)];
+      radar.dynamics=[{...clone(original),signalType:"rising"}];
+      if(legacy)delete radar.anzeige;
+      else {radar.anzeige.environment.party=[clone(original)];radar.anzeige.dynamics=clone(radar.dynamics);}
+      f.rebind();
+      const gueltig=(await f.read()).briefing.currentRadarState;
+      A.match(gueltig.anzeige.dynamics[0].evidence,/belegt einen neuen Sachstand/);
+      const i=briefing.items[2];
+      i.sources[1].summary=i.sources[0].summary;
+      i.primarySource.summary=i.sources[0].summary;
+      f.rebind();const vorher=clone([...f.rows]),out=(await f.read()).briefing;
+      A.deepEqual(out.currentRadarState.anzeige.environment.party,[]);
+      A.deepEqual(out.currentRadarState.anzeige.dynamics,[]);
+      A.deepEqual(out.currentRadarState.dynamics,[]);
+      A.equal(out.paketStatus.quittungGebunden,true);
+      A.deepEqual([...f.rows],vorher);
+    }
+  });
   await test("Canonical www Zeit Mandat Tag Policy und persoenliche Namensbindung werden nicht erweitert",async()=>{
     A.equal(V.radarArtikelbindung(item,[docs[1],{...docs[1],url:url}],now).title,actorNew);
     const f=await fixture();await A.rejects(f.read({userId:"fremd"}),/profil-abweichend/);
@@ -142,7 +165,7 @@ async function main(){
       A.equal(JSON.stringify([...f.rows]),before);
     }
   });
-  A.equal(count,7);A.deepEqual(forbidden,[]);console.log(`${count}/${count} neue Radar-Artikelgruppen bestanden; keine Alttests Modelle oder Productionwrites.`);
+  A.equal(count,8);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of modules)Object.assign(m,old);if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
