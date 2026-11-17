@@ -46,6 +46,24 @@ function context({ rows = new Map(), quota = true, finishUnknown = false, manife
   };
   return { deps, calls, rows };
 }
+async function diagnose(fn) {
+  const original = console.info, logs = [];
+  console.info = value => logs.push(value);
+  let result;
+  try { result = await fn(); } finally { console.info = original; }
+  assert.equal(logs.length, 1, "genau ein technischer Beleg je Aufwertung");
+  assert(logs[0].startsWith("[eurlex-original] "));
+  const record = JSON.parse(logs[0].slice("[eurlex-original] ".length));
+  assert.deepEqual(Object.keys(record).sort(), ["version", "zustand", "stufe", "grund", "manifestHttpStatus", "restzeitMs"].sort());
+  assert.equal(record.version, 1); assert(["metadata-only", "auszug-bestaetigt"].includes(record.zustand));
+  assert(/^[a-z-]{1,60}$/.test(record.stufe)); assert(/^[a-z-]{1,60}$/.test(record.grund));
+  assert(record.restzeitMs === null || Number.isSafeInteger(record.restzeitMs) && record.restzeitMs >= 0 && record.restzeitMs <= 300000);
+  assert(record.manifestHttpStatus === null || Number.isInteger(record.manifestHttpStatus)
+    && record.manifestHttpStatus >= 100 && record.manifestHttpStatus <= 599);
+  for (const denied of [Q.SOURCE_ID, Q.FEED_URL, F.itemUrl, F.excerpt, input.title, "PRIVATE-URL-PROFIL-INHALT"])
+    assert(!logs[0].includes(denied), "keine Quelldaten im Diagnosebeleg");
+  return { result, record };
+}
 
 (async () => {
   await test("Enger freigegebener Katalogpfad; pausierte, fremde oder geaenderte Wege bleiben ohne Textrecht", () => {
@@ -108,6 +126,71 @@ function context({ rows = new Map(), quota = true, finishUnknown = false, manife
       const c = context(); await Q.enrich([input], s, { ...c.deps, ...change });
       assert.equal(c.calls.rdf + c.calls.zip + c.calls.reserve + c.calls.quota, 0);
     }
+  });
+  await test("Diagnose benennt fruehe Freigabe Frist und Adapter ohne Inhalte oder neue Arbeit", async () => {
+    for (const [s, change, stufe, grund, rest] of [
+      [seed, {}, "freigabe", "quelle-nicht-freigegeben", 120000],
+      [source, { env: {} }, "freigabe", "arbeitsfenster-inaktiv", 120000],
+      [source, { fetchUrl: null }, "adapter", "abrufadapter-fehlt", 120000],
+      [source, { deadlineMs: NaN }, "frist", "frist-nicht-bestaetigt", null],
+      [source, { speicher: {} }, "adapter", "speicheradapter-unvollstaendig", 120000],
+      [source, { deadlineMs: Date.parse(readAt) + 1000 }, "auswahl", "restzeit", 1000],
+      [source, { deadlineMs: Date.parse(readAt) - 1000 }, "auswahl", "restzeit", 0]
+    ]) {
+      const c = context(), out = await diagnose(() => Q.enrich([input], s, { ...c.deps, ...change }));
+      assert.equal(out.result[0], input); assert.equal(out.record.zustand, "metadata-only");
+      assert.equal(out.record.stufe, stufe); assert.equal(out.record.grund, grund); assert.equal(out.record.restzeitMs, rest);
+      assert.equal(out.record.manifestHttpStatus, null);
+      assert.equal(Object.values(c.calls).reduce((a,b) => a+b, 0), 0);
+    }
+  });
+  await test("Diagnose unterscheidet RDF-Status Manifestparser Originalparser und fremden Fehlerfreitext", async () => {
+    const rdf = context(), fetch = rdf.deps.fetchUrl;
+    rdf.deps.fetchUrl = async (...args) => ({ ...await fetch(...args), status: 503 });
+    const status = await diagnose(() => Q.enrich([input], source, rdf.deps));
+    assert.equal(status.record.stufe, "manifest-antwort"); assert.equal(status.record.grund, "http-status-nicht-bestaetigt");
+    assert.equal(status.record.manifestHttpStatus, 503);
+    for (const actual of [403, 429, "PRIVATE-URL-PROFIL-INHALT", 999]) {
+      const c = context(), original = c.deps.fetchUrl;
+      c.deps.fetchUrl = async (...args) => ({ ...await original(...args), status: actual });
+      const out = await diagnose(() => Q.enrich([input], source, c.deps));
+      assert.equal(out.record.manifestHttpStatus, Number.isInteger(actual) && actual <= 599 ? actual : null);
+      assert.equal(c.calls.zip + c.calls.reserve + c.calls.quota, 0);
+    }
+    assert.equal(rdf.calls.rdf, 1); assert.equal(rdf.calls.zip + rdf.calls.reserve + rdf.calls.quota, 0);
+    for (const [c, stufe] of [[context({ manifest: "PRIVATE-URL-PROFIL-INHALT" }), "manifest-parser"],
+      [context({ bytes: Buffer.from("PRIVATE-URL-PROFIL-INHALT") }), "paket-parser"]]) {
+      const out = await diagnose(() => Q.enrich([input], source, c.deps));
+      assert.equal(out.record.zustand, "metadata-only"); assert.equal(out.record.stufe, stufe);
+      assert.equal(out.record.grund, "parser-abgelehnt"); assert(c.calls.zip <= 1 && c.calls.quota <= 1);
+    }
+    const leaked = context(); leaked.deps.fetchUrl = async () => {
+      throw Error("eurlex-original-PRIVATE-URL-PROFIL-INHALT " + Q.FEED_URL + " " + F.excerpt);
+    };
+    const out = await diagnose(() => Q.enrich([input], source, leaked.deps));
+    assert.equal(out.record.stufe, "manifest-abruf"); assert.equal(out.record.grund, "abruf-oder-ausgang-nicht-bestaetigt");
+    assert.equal(leaked.calls.zip + leaked.calls.quota + leaked.calls.reserve, 0);
+  });
+  await test("Diagnose bestaetigt Erfolg erst nach Readback und bewahrt UNKNOWN Negativcache und Originalquote", async () => {
+    const good = context(), success = await diagnose(() => Q.enrich([input], source, good.deps));
+    assert.equal(success.result[0].content, F.excerpt); assert.equal(success.record.zustand, "auszug-bestaetigt");
+    assert.equal(success.record.manifestHttpStatus, 200);
+    assert.equal(success.record.grund, "original-bestaetigt"); assert.equal(success.record.stufe, "abschluss-ruecklesung");
+    const before = clone([...good.rows]), cache = await diagnose(() => Q.enrich([input], source, good.deps));
+    assert.equal(cache.record.grund, "cache-bestaetigt"); assert.deepEqual([...good.rows], before);
+    assert.equal(good.calls.zip, 1); assert.equal(good.calls.quota, 1);
+    const denied = context({ quota: false }), noQuota = await diagnose(() => Q.enrich([input], source, denied.deps));
+    assert.equal(noQuota.record.grund, "originalquote-nicht-freigegeben"); assert.equal(denied.calls.release, 1);
+    assert.equal(denied.calls.zip, 0); assert.equal(denied.rows.size, 0);
+    const unknown = context({ finishUnknown: true }), first = await diagnose(() => Q.enrich([input], source, unknown.deps));
+    assert.equal(first.record.zustand, "metadata-only"); assert.equal(first.record.grund, "abschluss-nicht-bestaetigt");
+    const reserved = clone([...unknown.rows]), again = await diagnose(() => Q.enrich([input], source, unknown.deps));
+    assert.equal(again.record.grund, "cache-ausgang-offen"); assert.deepEqual([...unknown.rows], reserved);
+    assert.equal(unknown.calls.zip, 1); assert.equal(unknown.calls.quota, 1); assert.equal(unknown.calls.release, 0);
+    const broken = context({ bytes: Buffer.from("kaputt") });
+    await diagnose(() => Q.enrich([input], source, broken.deps)); const negative = clone([...broken.rows]);
+    assert.equal((await diagnose(() => Q.enrich([input], source, broken.deps))).record.grund, "cache-negativ");
+    assert.deepEqual([...broken.rows], negative); assert.equal(broken.calls.zip, 1);
   });
   await test("Nativer Lesealias erhaelt den vollstaendig validierten240Zeichen-Originalabsatz exakt", () => {
     // Synthetischer Grenzfall im bestehenden FORMEX-Fixture; kein neuer

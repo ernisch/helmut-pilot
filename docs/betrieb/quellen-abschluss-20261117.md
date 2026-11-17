@@ -87,3 +87,29 @@ ist ein regulaerer Betriebsnachweis vorheriger Reparaturen. Weitere erwartete
 Wirkung gilt nur fuer dieselben geprueften Codepfade, ohne erfundene Quellenzahl.
 Abnahme fuer ersten Kunden bleibt offen: heute noch keine echte Morgenquittung,
 BMG-Folgeanalyse und aktueller EUR-Lex-Originalauszug nicht bestaetigt.
+
+## Diagnose der noch offenen EUR-Lex-Originalstufe
+
+Alle statisch und primaer geprueften Freigabebedingungen stimmen: nativer
+RSS-Callback, zulaessiger Pfad, Arbeitsfenster on, vier Speicheradapter und
+validierte CELLAR-Metadaten. Der216ms-Kurzlauf belegt keinen bestimmten
+Frist-/Adapter-/Parserfehler. Konkrete damalige Eintrittsrestzeit und Abbruchstufe
+sind nicht gespeichert; dies bleibt UNKNOWN, ohne spekulative Fristlockerung.
+
+Behoben wird nur diese bestaetigte Diagnoseluecke im vorhandenen Logging:
+maximal ein technischer Abschlussbeleg je Aufwertung, fester Grund/Stufe,
+Manifest-HTTPstatus100–599 odernull und Restzeit0–300000ms. Keine Adressen,
+Artikel, Profile, Kennungen oder fremde Fehlertexte. metadata-only bleibt
+metadata-only; auszug-bestaetigt erst nach bestehender exakter Cache-/Readback-
+Pruefung. Keine neuen Requests, Reservierungen, Stores oder Laufrechte.
+Bestehende Auszugsuite17/17 lokal gruen, einschliesslich403/429/503, Parser,
+frueher0IO-Wachen, Datenlecknegativfaellen, Quoten und geschuetztem UNKNOWN.
+Die zwei funktionalen Ursachen plus Diagnosekorrektur sind keine drei neu
+wiederhergestellten Quellen. Der Originalerfolg bleibt regulaer nachzuweisen.
+
+Integration PR1241: unabhaengige Reviews, geschlossen an Runtime-/Testblobs
+und vollstaendigen Restbaum gebundener gezielter CI-Plan. Beide Pflichtjobs
+bleiben; Schnellkern und betroffene bestehende Suiten, kein weiterer500er- oder
+Datenbanklauf. Unveraenderter echter Desktop-/Mobilbeleg aus PR1240 bleibt
+explizit erhalten, kein neuer Browser-PASS. Rueckweg ist normaler Code-Revert,
+kein Daten-/Kosten-/Quotenreset. Deployment und Nachkontrolle werden im PR belegt.
