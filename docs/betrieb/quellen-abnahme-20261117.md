@@ -38,7 +38,7 @@ Genau ein Ersatz nach enger echter Fehlstart-/Quoten-/Jobpruefung:
 admin-quellen-2026-11-17-2b63780f-5c86-4ff6-b478-8abda33d3197,
 09:54:56.343–09:58:42.259UTC. HTTP200, echte Warteschlangen-Endquittung partial,
 10erledigteAuftraege=3Abrufauftraege+7Dokumentauftraege,42Endstopps,
-158Vertagungen/245Reservierungen, Planrest0. Supplemental bestaetigt neu0;
+158Vertagungen/245Jobreservierungen, Planrest0. Supplemental bestaetigt neu0;
 keine zweite BMG-Einreihung, keine Job-/Erfolgs-/Lease-/Counterresets.
 
 | Erfolgreicher Abrufweg | Funde | Neue Rohbelege |
@@ -60,8 +60,9 @@ wiederhergestellter Quellen; erwartete Wirkung nicht als Erfolg zaehlen.
 
 123provider-deferred-Quittungen/115verschiedene Quellkennungen, alle
 provider-limit/0Funde; keine123neuen Motorfehler.42Endstopps gruppieren sich
-in36fehlende bestaetigte Artikelziele,4bekannte Analysefehler und2dauerhaft
-fehlende Kontexte. Keine neuen Budget-/Versions-/CAS-Endfehler darin belegt.
+in36gebundene Publisherverweise ohne bestaetigtes Artikelziel,4bereits vor
+dem Lauf gesperrte Analysefehler und2offene Artikelkontexte, die nach der
+bestehenden48h-Wartefrist beendet wurden. Deren Unloesbarkeit ist unbelegt. Keine neuen Budget-/Versions-/CAS-Endfehler darin belegt.
 Keine Links, Fristen, Fassungen oder Lesetexte erfinden.
 
 ## Kosten und Abnahme
