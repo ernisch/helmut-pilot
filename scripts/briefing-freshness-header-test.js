@@ -75,7 +75,7 @@ const freshState = stateFor(fullKo("ko-f", "vg-f", "2026-07-15T07:00:00Z"));
 check("Vorbedingung: frischer Stand -> currentHelmutState.status 'fresh'", freshState.status === "fresh", freshState.status);
 check("FRISCH: Kopf zeigt 'Aktuell'", decorate(briefingWith(freshState)).status === "Aktuell");
 check("FRISCH: qualifizierter Hauptvorgang traegt den Hinweis auch ohne alte Kandidatenliste",
-  /aktuelle politische Entscheidungen/.test(decorate(briefingWith(freshState, { items: [] })).freshness.reason));
+  /belegten Handlungs- oder Vorbereitungsanlass/.test(decorate(briefingWith(freshState, { items: [] })).freshness.reason));
 
 // === 2) VERALTET: gestriger Datenstand -> Karte stale, Kopf NIE "Aktuell" =====
 const staleState = stateFor(fullKo("ko-s", "vg-s", "2026-06-20T07:00:00Z"));
@@ -126,7 +126,7 @@ check("Vorbedingung: leerer Stand -> currentHelmutState.status 'empty'", emptySt
   const b = briefingWith(state, { items: [{ decision: "Sofort reagieren", id: "alter-kandidat" }] });
   const before = JSON.stringify(b), out = decorate(b);
   check("LEER/GAP: alte Kandidaten behaupten keine aktuellen politischen Entscheidungen",
-    !/aktuelle politische Entscheidungen/.test(out.freshness.reason), out.freshness.reason);
+    !/aktuelle politische Entscheidungen|belegten Handlungs- oder Vorbereitungsanlass/.test(out.freshness.reason), out.freshness.reason);
   check("LEER/GAP: Quellenluecke bleibt sichtbar trotz alter nichtignorierter Kandidaten",
     /Quellenverarbeitung ist noch nicht abgeschlossen/.test(out.freshness.reason), out.freshness.reason);
   check("LEER/GAP: Status, qualifizierte Leere und alte Daten bleiben unveraendert",

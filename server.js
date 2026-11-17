@@ -4995,7 +4995,8 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
           : stale
             ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
             : hasDecisionItems
-              ? "Das Briefing enthält aktuelle politische Entscheidungen."
+              ? hasState ? "Das Briefing enthält einen belegten Handlungs- oder Vorbereitungsanlass."
+                : "Das Briefing enthält aktuelle politische Entscheidungen."
               : lueckenHinweis
                 ? lueckenHinweis
                 : hasSituationalItems
