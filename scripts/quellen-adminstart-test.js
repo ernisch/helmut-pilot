@@ -243,6 +243,80 @@ async function main() {
         assert.ok(!JSON.stringify(r.body).includes("synthetischer-erster-workerfehler"));
       } finally { pipeline.arbeite = old; }
     });
+    const operatorUrl = "/api/cron/quellen-operator";
+    const operatorHeaders = { Authorization: "Bearer synthetischer-adminstart" };
+    const vorherEnv = process.env.VERCEL_ENV;
+    restores.push(() => { if (vorherEnv === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = vorherEnv; });
+    const supplement = require("../lib/helmut/quellen-operatorplanung");
+    let supplements = 0, supplementFail = false;
+    replace(supplement, "ergaenze", async o => {
+      supplements++; assert(o.deadlineMs > now); assert(o.deadlineMs <= now + 20000);
+      const prefix = new Date(now).toISOString().slice(0, 10) + "|";
+      assert(counts.get(prefix + "quellenarbeit|fenster") >= 1, "Fenster zuerst reservieren");
+      if (supplementFail) throw Error("synthetisch-unbekannte-Ergaenzung");
+      return { ok: true, neu: 1, auftragId: "synthetischer-neuer-sourcejob" };
+    });
+    await check("Operatorauth Methode Production und Auftrag sperren vor jedem Account Quote oder Supplement", async () => {
+      now = Date.parse("2026-11-17T10:00:00Z"); leaseBis = 0; user = null;
+      const a = { tag: "2026-11-17", auftragId: crypto.randomUUID() }, before = counts.size;
+      process.env.VERCEL_ENV = "production";
+      assert.equal((await request(operatorUrl,"POST",a)).status,403);
+      assert.equal((await request(operatorUrl,"GET",null,operatorHeaders)).status,400);
+      assert.equal((await request(operatorUrl+"?force=1","POST",a,operatorHeaders)).status,400);
+      process.env.VERCEL_ENV = "preview";
+      assert.equal((await request(operatorUrl,"POST",a,operatorHeaders)).status,403);
+      process.env.VERCEL_ENV = "production";
+      assert.equal((await request(operatorUrl,"POST",{...a,force:true},operatorHeaders)).status,400);
+      const foreign = await request(operatorUrl,"POST",{...a,tag:"2026-11-18"},operatorHeaders);
+      assert.equal(foreign.body.zustand,"gesperrt"); assert.equal(counts.size,before); assert.equal(supplements,0);
+    });
+    await check("Cronoperator startet echten bestehenden Motor ausserhalb Slots mit genau einem Zusatzfenster", async () => {
+      const prefix = "2026-11-17|";
+      counts.set(prefix+"quellenarbeit|fenster",8); counts.set(prefix+"quellenarbeit|reservierte-sekunden",2400);
+      const a = { tag: "2026-11-17", auftragId: crypto.randomUUID() }, beforeWorkers=workers, beforePlans=plans;
+      const r = await request(operatorUrl,"POST",a,operatorHeaders);
+      assert.equal(r.status,200); assert.equal(r.body.quittungGespeichert,true); assert.equal(supplements,1);
+      assert.equal(workers,beforeWorkers+1); assert.equal(plans,beforePlans+1);
+      assert.equal(r.body.operatorErgaenzung.neu,1);
+      assert.equal(counts.get(prefix+"quellenarbeit|fenster"),9);
+      assert.equal(counts.get(prefix+"quellenarbeit|reservierte-sekunden"),2700);
+      const first=await request(operatorUrl,"POST",a,operatorHeaders); assert.equal(first.body.zustand,"gesperrt");
+      advance();
+      const retry=await request(operatorUrl,"POST",a,operatorHeaders); assert.equal(retry.body.zustand,"gesperrt");
+      const second=await request(operatorUrl,"POST",{...a,auftragId:crypto.randomUUID()},operatorHeaders);
+      assert.equal(second.body.zustand,"gesperrt"); assert.equal(supplements,1); assert.equal(workers,beforeWorkers+1);
+    });
+    await check("Unbestaetigte Operatorergaenzung beendet mit Fehlerquittung vor Planrest und Worker", async () => {
+      now=Date.parse("2026-11-17T11:00:00Z"); leaseBis=0; counts.clear(); supplementFail=true;
+      const beforeWorkers=workers,beforePlans=plans;
+      const a={tag:"2026-11-17",auftragId:crypto.randomUUID()};
+      const r=await request(operatorUrl,"POST",a,operatorHeaders);
+      assert.equal(r.status,200); assert.equal(r.body.ok,false);
+      assert.equal(r.body.grund,"operator-planung-nicht-bestaetigt"); assert.equal(r.body.quittungGespeichert,true);
+      assert.equal(workers,beforeWorkers); assert.equal(plans,beforePlans);
+      assert.equal(receipts.get(admin.laufId(a)).status,"failed");
+      assert.equal(receipts.get(admin.laufId(a)).fehlgeschlagen,0);
+      supplementFail=false;
+    });
+    await check("Fehlende Startquittung sperrt Operator vor Supplement Plan und Worker", async () => {
+      now=Date.parse("2026-11-17T12:00:00Z"); leaseBis=0; counts.clear();
+      const beforeWorkers=workers,beforePlans=plans,beforeSupplements=supplements;
+      const native=storage.schreibeWarteschlangenLaufquittung;
+      storage.schreibeWarteschlangenLaufquittung=async row => row.status === "running" ? {ok:false} : native(row);
+      try {
+        const r=await request(operatorUrl,"POST",{tag:"2026-11-17",auftragId:crypto.randomUUID()},operatorHeaders);
+        assert.equal(r.body.ok,false);assert.equal(r.body.grund,"operator-planung-nicht-bestaetigt");
+        assert.equal(workers,beforeWorkers);assert.equal(plans,beforePlans);assert.equal(supplements,beforeSupplements);
+      } finally {storage.schreibeWarteschlangenLaufquittung=native;}
+    });
+    await check("Folgetag nutzt normalen begrenzten Operator ohne abgelaufenen Planungszusatz", async () => {
+      now=Date.parse("2026-11-18T10:00:00Z");leaseBis=0;
+      const beforeSupplements=supplements,beforeWorkers=workers;
+      const r=await request(operatorUrl,"POST",{tag:"2026-11-18",auftragId:crypto.randomUUID()},operatorHeaders);
+      assert.equal(r.status,200);assert.equal(r.body.operatorErgaenzung.neu,0);
+      assert.equal(workers,beforeWorkers+1);assert.equal(supplements,beforeSupplements);
+      assert.equal(counts.get("2026-11-18|quellenarbeit|fenster"),1);
+    });
     if (process.argv.includes("--browser")) {
       const { browserCheck } = require("./quellen-adminstart-browser-cases");
       await browserCheck({ base, check, request, reset() {

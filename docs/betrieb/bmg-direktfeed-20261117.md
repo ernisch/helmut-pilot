@@ -93,7 +93,7 @@ LOCK TABLE public.helmut_jobs IN SHARE MODE NOWAIT;
 LOCK TABLE public.retrieval_paths, public.package_paths IN SHARE ROW EXCLUSIVE MODE NOWAIT;
 DO $bmg$
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.helmut_jobs WHERE status='running'
+  IF EXISTS (SELECT 1 FROM public.helmut_jobs WHERE status='laeuft'
       AND lease_expires_at>now() AND job_type IN ('source_fetch','document_understanding')) THEN
     RAISE EXCEPTION 'BMG: laufende Originalverarbeitung';
   END IF;
@@ -180,3 +180,12 @@ keine Mengenlaeufe. Beide Pflichtchecks werden an den finalen Dateibaum gebunden
 Deployment, Aktivierung und rein lesender Readback stehen am PR1242.
 Die neue Quelle ist erst technisch vorbereitet; ein echter regulaerer BMG-
 Folgebeleg wird nicht durch die lokale Feedpruefung oder Katalogzeile ersetzt.
+
+## Diagnosekorrektur17Nov beim Operatorauftrag
+
+Die fruehere SQL-Ruhepruefung verwendete faelschlich running; der Jobstatus
+laut bestehender Datenbankfunktion lautet laeuft. Die Vorlage ist berichtigt.
+Das ist keine erneute Kataloganwendung und keine Aenderung gespeicherter Erfolge.
+Die damalige Nullzahl allein ist kein gueltiger Aktivitaetsnachweis; historische
+Laufquittungen bleiben erhalten. Vor jedem neuen Start werden laeuft und reale
+noch gueltige Leases explizit geprueft. Bestehende globale Motorsperren bleiben.

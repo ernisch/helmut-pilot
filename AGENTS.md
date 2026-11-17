@@ -45,6 +45,28 @@ historischen Dokumenten. Eine spaetere ausdrueckliche Einschraenkung des Nutzers
 hat Vorrang. Fremde oder unabhaengige PRs sind nicht eingeschlossen. Fuer sonstige
 geschuetzte Production Aktionen gilt weiterhin der Abschnitt `Production Schutz`.
 
+## Betreiberfreigabe vom 17.11.2026: autonome Quellen-Zusatzstarts
+
+Der Betreiber hat den konkreten Zusatzstartauftrag und dessen Umsetzung mit
+„Go! Du hast jede Freigabe!“ bestaetigt. Codex darf Quellenlaeufe selbststaendig
+ueber den geschuetzten bestehenden Cronzugang starten und notwendige echte
+Verarbeitung innerhalb unveraenderter 1 USD/UTC-Tag und 30 USD gesamt ausfuehren.
+Keine erneute Freigabefrage fuer denselben beschriebenen Umfang.
+
+Konkret fuer17Nov: genau ein zusaetzliches Fenster bis300Sekunden, additiv bis
+9Fenster/2700Sekunden bei bestehender Basis8/2400/16Originalen; keine Zaehler
+zuruecksetzen und Originalgrenze16 nicht erhoehen. Fehlende autorisierte BMG-
+Planarbeit darf idempotent ergaenzt werden, ohne alte Manifeste, abgeschlossene
+Jobs, Erfolge oder UNKNOWN-Sicherungen umzuschreiben. Der Maschinenauftrag
+verwendet Cronauthentifizierung und einen einmaligen tagesgebundenen Auftrag;
+Admin-UI, echte Adminsession und CSRF-Schutz bleiben erhalten. Keine neue
+Infrastruktur, Secrets oder Crontermine. Vor Livebetrieb gelten weiterhin
+gruene exakte Pflicht-CI, unabhaengiger Review und regulaeres Deployment.
+
+Die Quellen- und Verarbeitungsfreigabe ist keine Lizenz fuer fremde Inhalte,
+keine Aufhebung externer Zugriffssperren und keine Freigabe fuer Massentests
+oder zusaetzliche kostenpflichtige Tests. Sonstige Schutzregeln bleiben.
+
 ## Verbindliche Dauerfreigabe vom 15.11.2026: Quellenbetrieb in der Aufbauphase
 
 Der Betreiber erteilt bis zum ausdruecklichen Widerruf eine **vorab erteilte,
