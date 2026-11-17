@@ -106,6 +106,14 @@ check("Belegte zentrale Null-Abruf-Vertagung hat eigenen Status/Code",
   zeile(vertagt).status === "provider-deferred" && zeile(vertagt).error_code === "provider-limit");
 check("Tagesgrenze wird ebenfalls strukturiert behandelt", zeile({ ...vertagt,
   anbieterVertagung: { ...vertagt.anbieterVertagung, grund: "anbietergrenze-tagesgrenze" } }).status === "provider-deferred");
+const schutzVertagt = { ...vertagt, error: "anbietergrenze: anbietergrenze-schutzschalter-offen",
+  anbieterVertagung: { ...vertagt.anbieterVertagung, grund: "anbietergrenze-schutzschalter-offen" } };
+check("Belegter zentraler Schutzschalter ohne Abruf ist Vertagung", zeile(schutzVertagt).status === "provider-deferred"
+  && zeile(schutzVertagt).error_code === "provider-limit");
+check("Schutzschaltertext ohne Null-Abrufbeleg bleibt UNKNOWN", zeile({ ...schutzVertagt, quellenAbrufBeleg: null }).status === "error"
+  && zeile({ ...schutzVertagt, quellenAbrufBeleg: null }).error_code === "unknown");
+check("Echter HTTP429 vor Schutzschalter bleibt Fehler", zeile({ ...schutzVertagt, error: "429 Too Many Requests",
+  quellenAbrufBeleg: { ...schutzVertagt.quellenAbrufBeleg, gestarteteAbrufe: 1 } }).error_code === "http-429");
 for (const [name, changed] of [
   ["nur Fehlertext", { anbieterVertagung: null, quellenAbrufBeleg: null }],
   ["nur vorAbruf", { quellenAbrufBeleg: null }],
@@ -145,7 +153,7 @@ check("Kein 'items'-Feld in den Zeilen", !("items" in r0) && !("items" in r1));
   const CELLAR = require("../lib/helmut/quellen-eurlex-cellar"), cellarCrawl = CELLAR.crawl;
   const original = { aktiv: A.steuerungAktiv, reserviere: A.reserviere, melde: A.melde };
   const oldError = console.error;
-  let erlaubt = 0, hits = 0;
+  let erlaubt = 0, hits = 0, vertagungsGrund = "anbietergrenze-minutengrenze";
   const server = http.createServer((req, res) => {
     hits++;
     if (req.url.startsWith("/503")) { res.writeHead(503); res.end("nicht verfuegbar"); }
@@ -158,7 +166,7 @@ check("Kein 'items'-Feld in den Zeilen", !("items" in r0) && !("items" in r1));
     const base = `http://127.0.0.1:${server.address().port}`;
     A.steuerungAktiv = () => true;
     A.reserviere = async () => erlaubt-- > 0 ? { erlaubt: true } : {
-      erlaubt: false, wartenMs: 1000, grund: "anbietergrenze-minutengrenze"
+      erlaubt: false, wartenMs: 1000, grund: vertagungsGrund
     };
     A.melde = async () => ({ gemeldet: true });
     console.error = () => {}; // erwartete Crawlerfehler, keine Rohfehlerausgabe
@@ -173,6 +181,16 @@ check("Kein 'items'-Feld in den Zeilen", !("items" in r0) && !("items" in r1));
     check("Crawler: zentrale Minute startet null HTTP-Aufrufe", pure.hits === 0);
     check("Crawlerbeleg erreicht Telemetrie als Vertagung",
       pure.result.quellenAbrufBeleg?.gestarteteAbrufe === 0 && pure.row.status === "provider-deferred");
+    vertagungsGrund = "anbietergrenze-schutzschalter-offen";
+    const breaker = await crawl("/leer", 0);
+    check("Native Schutzschaltervertagung startet null HTTP und erzeugt keinen Abruffehler",
+      breaker.hits === 0 && breaker.result.quellenAbrufBeleg?.gestarteteAbrufe === 0
+      && breaker.row.status === "provider-deferred" && breaker.row.error_code === "provider-limit");
+    const breakerMixed = await crawl("/503", 1);
+    check("Echter HTTP503 vor zentralem Schutzschalter bleibt Abruffehler",
+      breakerMixed.hits >= 1 && breakerMixed.row.status === "error" && breakerMixed.row.error_code === "http-5xx"
+      && !breakerMixed.result.quellenAbrufBeleg);
+    vertagungsGrund = "anbietergrenze-minutengrenze";
     for (const [first, code] of [["/503", "http-5xx"], ["/parse", "parse"], ["/leer", "empty-feed"], ["/redirect", "http-5xx"]]) {
       const mixed = await crawl(first, 1);
       check(`Crawler: ${first} vor Minute bleibt echter Fehler`, mixed.hits >= 1

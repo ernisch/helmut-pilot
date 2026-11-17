@@ -46,9 +46,38 @@ function welt(entries = []) {
       request: async (url, options) => {
         A.equal(options, undefined); requests.push(url);
         const row = map.get(tag)?.basis; return row ? [clone(row)] : [];
+      } }),
+    getBriefingFensterVorgaenger: (id, tag, tiefe) => S.getBriefingFensterVorgaenger(id, tag, tiefe, { bereit: true,
+      request: async (url, options) => {
+        A.equal(options, undefined); requests.push(url);
+        const q = new URL(url, "https://local.invalid"), root = map.get(tag)?.history;
+        if (!root) return [];
+        const out = {};
+        // Geschlossene PostgREST-JSONB-Projektion gegen die echte synthetische
+        // Paketkette auswerten, niemals den gesamten Vorwert zurueckgeben.
+        for (const column of q.searchParams.get("select").split(",")) {
+          const [alias, raw] = column.split(":"), fields = raw.replace(/->>/g, "->").split("->");
+          out[alias] = fields.reduce((v, k) => v?.[k], root) ?? null;
+        }
+        return [clone(out)];
       } })
   };
   return { map, reads, requests, storage, run: () => L.fensterFuerMorgen(storage, profile, day, { jetzt: now }) };
+}
+function mitFolgepaketen(entry, anzahl = 1) {
+  const paket = basis => ({ id: basis.id, user_id: basis.user_id, slot: basis.slot, generated_at: basis.generated_at,
+    payload: { version: B.VERSION, mandat: profile.id, tag: entry.receipt.payload.berlinTag,
+      profilHash: B.profilHash(profile), profilHashVersion: 2, erzeugtAm: basis.generated_at,
+      briefing: clone(basis.briefing), quellenStand: { briefingHash: B.hash(basis.briefing) } } });
+  let row = paket(entry.basis);
+  for (let i = 1; i <= anzahl; i++) {
+    const basis = { ...entry.basis, generated_at: new Date(Date.parse(entry.receipt.payload.erzeugtAm) + i * 30000).toISOString(),
+      briefing: { ...clone(entry.basis.briefing), reason: "spaetere-Teilaktualisierung-" + i } };
+    const next = paket(basis); next.payload.vorherigerStand = row; row = next;
+  }
+  entry.history = row;
+  entry.basis = { id: row.id, user_id: row.user_id, slot: row.slot, generated_at: row.generated_at, briefing: row.payload.briefing };
+  return entry;
 }
 let count = 0;
 async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
@@ -112,6 +141,57 @@ async function main() {
     A.deepEqual(result.fenster,F.frischeFenster({jetzt:now}));
     A.deepEqual(w.reads,[day,"2026-11-13","2026-11-12"]);A.equal(w.requests.length,0);
   });
+  await test("Folgetag erreicht nach mehreren GAP-Folgepaketen den echten davor quittierten Inhaltsabschluss", async () => {
+    const a = stand("2026-11-12", "inhalt"), b = mitFolgepaketen(stand("2026-11-13"), 3);
+    const w = welt([a,b]), before = JSON.stringify([...w.map]), result = await w.run();
+    A.equal(result.fenster.start, a.receipt.payload.erzeugtAm);
+    A.deepEqual(w.reads, [day,"2026-11-13","2026-11-12"]);
+    A.equal(w.requests.length, 5, "GAP-Basis, drei einzelne Vorwerte, bisheriger Inhaltsabschluss");
+    A.equal(JSON.stringify([...w.map]), before);
+  });
+  await test("Quittierter echter Vorfahrenabschluss behaelt sein damaliges Fenster ohne Neuqualifikation des Folgepakets", async () => {
+    for (const tag of [day,"2026-11-13"]) {
+      const entry = mitFolgepaketen(stand(tag,"inhalt"),2), w = welt([entry]), before = JSON.stringify(entry);
+      const result = await w.run();
+      A.equal(result.fenster.start, tag === day ? entry.receipt.payload.fensterStart : entry.receipt.payload.erzeugtAm);
+      if (tag === day) A.equal(result.heutiger.checkpoint.art,"vorbereitungsstand");
+      A.equal(w.requests.length,3); A.equal(JSON.stringify(entry),before);
+    }
+  });
+  await test("Fremde manipulierte fehlende oder zu tiefe Vorfahren bleiben UNKNOWN vor jedem Morgenbuild", async () => {
+    for (const change of [e=>{delete e.history.payload.vorherigerStand;},
+      e=>{e.history.payload.vorherigerStand.user_id="fremd";},
+      e=>{e.history.payload.vorherigerStand.id="fremd";},
+      e=>{e.history.payload.vorherigerStand.payload.profilHash="f".repeat(64);},
+      e=>{e.history.payload.vorherigerStand.payload.profilHashVersion=1;},
+      e=>{e.history.payload.vorherigerStand.payload.tag="2026-11-12";},
+      e=>{e.history.payload.vorherigerStand.payload.version=999;},
+      e=>{e.history.payload.vorherigerStand.generated_at=e.basis.generated_at;},
+      e=>{e.history.payload.vorherigerStand.payload.erzeugtAm="ungueltig";},
+      e=>{e.history.payload.vorherigerStand.payload.briefing.reason="manipuliert";},
+      e=>{e.receipt.payload.ausgabeBeleg.briefingHash="f".repeat(64);},
+      e=>{e.history.payload.vorherigerStand.payload.vorherigerStand=e.history;}]) {
+      const e=mitFolgepaketen(stand("2026-11-13"),3);change(e);const w=welt([e]);
+      await A.rejects(w.run(),{code:"BRIEFING_FENSTER_UNBEKANNT"});
+    }
+    const deep=welt([mitFolgepaketen(stand("2026-11-13"),9)]);
+    await A.rejects(deep.run(),{code:"BRIEFING_FENSTER_UNBEKANNT"});A.equal(deep.requests.length,9);
+    const broken=welt([mitFolgepaketen(stand("2026-11-13"))]);
+    broken.storage.getBriefingFensterVorgaenger=async()=>{throw Error("Transport unklar");};
+    await A.rejects(broken.run(),{code:"BRIEFING_FENSTER_UNBEKANNT"});
+  });
+  await test("Bedarfsprojektion liest nur einen begrenzten Briefingvorwert ohne Lage private Pruefung oder Vollhistory", async () => {
+    const e=mitFolgepaketen(stand("2026-11-13")),w=welt([e]);await w.run();
+    const request=w.requests.find(r=>r.includes("vorherigerStand")),q=new URL(request,"https://local.invalid");
+    A.equal(q.searchParams.get("id"),"eq."+e.basis.id);A.equal(q.searchParams.get("user_id"),"eq."+profile.id);
+    A.equal(q.searchParams.get("slot"),"eq.mandatsbriefing");A.equal(q.searchParams.get("limit"),"2");
+    const columns=q.searchParams.get("select").split(",");A.equal(columns.length,12);
+    A(columns.every(c=>c.split(":")[1].startsWith("payload->vorherigerStand->")));
+    A(!columns.some(c=>/lage|pruefung|\*|:payload$|->vorherigerStand$/.test(c)));
+    A(request.length<2000,"keine riesige History-URL fuer den echten Ein-Stufenfall");
+    for(const tiefe of [0,9,32,1.5])await A.rejects(S.getBriefingFensterVorgaenger(profile.id,day,tiefe,{bereit:true,
+      request:async()=>{throw Error("darf nicht lesen");}}),/speicher-nicht-bereit/);
+  });
   await test("Nativer Paketleser projiziert genau einmal Briefing ohne Lage Historie oder Hauptblob und bleibt mandantengefiltert", async () => {
     const e=stand(day,"inhalt"),w=welt([e]);await w.run();A.equal(w.requests.length,1);
     const q=new URL(w.requests[0],"https://local.invalid");
@@ -133,7 +213,7 @@ async function main() {
     w.map.get(day).receipt.payload.ausgabeBeleg.briefingHash="0".repeat(64);
     await A.rejects(run(),{code:"BRIEFING_FENSTER_UNBEKANNT"});
   });
-  A.equal(count,7);A.deepEqual(forbidden,[]);
+  A.equal(count,11);A.deepEqual(forbidden,[]);
   console.log(`${count}/${count} neue Checkpointgruppen bestanden; keine alten Tests Modelle Datenbank oder historischen Writes.`);
 }
 main().catch(error=>{console.error(error.stack||error);process.exitCode=1;}).finally(()=>{
