@@ -14,6 +14,7 @@ const body = (revision = 0, time = "10:30", top = 1) => `${revision ? revision +
 Berlin, den ${revision ? "10" : "5"}. November 2026
 Die Tagesordnung der 59. Sitzung des Ausschusses
 Mittwoch, dem 11. November 2026, ${time} Uhr
+${revision ? "wird um folgenden Tagesordnungspunkt ergänzt:" : ""}
 Tagesordnungspunkt ${top}
 Beratung zum synthetischen Testgegenstand
 BT-Drucksache 21/8119
@@ -22,9 +23,10 @@ const doc = (revision = 0, time = "10:30", patch = {}) => B.tagesordnung(q, link
   Buffer.from("%PDF-" + body(revision, time)), [body(revision, time)]);
 const catalog = () => ({ retrievalPaths: [{ id: q.retrievalPathId, legacy_source_id: q.id,
   publisher_id: "publisher-bundestag.de", method: q.crawlMethod, url: q.url, status: "healthy",
-  activation_mode: "always_on", rights_review_required: false,
-  usage_policy: { commercialUseApproved: true, scope: "structured_parliamentary_facts", fullTextAllowed: false,
-    imagesAllowed: false, aiTrainingAllowed: false, evidenceUrls: ["https://example.test/explicit-fixture-approval"] } }] });
+  activation_mode: "always_on" }] });
+const rights = () => ({ id:q.id,url:q.url,rightsReviewRequired:false,
+  usagePolicy: { commercialUseApproved: true, scope: "structured_parliamentary_facts", fullTextAllowed: false,
+    imagesAllowed: false, aiTrainingAllowed: false, evidenceUrls: ["https://example.test/explicit-fixture-approval"] } });
 function row(revision) { return `<tr><td>10. November 2026</td><td>Wirtschaft</td><td><a href="${url(revision)}">
   ${revision ? revision + ". Ergänzungsmitteilung zur " : ""}59. Sitzung am Mittwoch, den 11. November 2026, 09:00 Uhr – nicht öffentlich</a></td></tr>`; }
 test("Genau drei Ausschussquellen plus Plenum/Kalender; keine Personen- oder Fremdquelle", () => {
@@ -76,7 +78,7 @@ test("Ausdrueckliche Neufassung ersetzt TOPs; blosse Aenderungsmitteilung bleibt
   const state = B.fasseZusammen([base,full])[0]; A.equal(state.state,"geplant");
   A.deepEqual(state.tops.map(t=>t.number),["7"]); A.equal(state.topVersions.length,2);
   A.equal(state.topVersions[0].superseded,true);
-  const delta = B.tagesordnung(q,link(1),Buffer.from("%PDF-aenderung"),[text]);
+  const delta = B.tagesordnung(q,link(1),Buffer.from("%PDF-aenderung"),[text.replace("wird um folgenden Tagesordnungspunkt ergänzt:","Tagesordnungspunkt 1 entfällt.")]);
   const unresolved = B.fasseZusammen([base,delta])[0]; A.equal(unresolved.state,"aenderung-pruefen"); A.equal(unresolved.tops.length,0);
 });
 test("Arbeit45/44 bleibt Konflikt; fehlende Uhrzeit wird nicht aus Listentitel erfunden", () => {
@@ -140,10 +142,13 @@ test("Frische Rechte-/Katalogpruefung: offene Rechte starten weder Netz noch Abl
   let calls = 0;
   const blocked = await B.aufnahme(q, { katalog: { retrievalPaths: [] }, fetchUrl: () => { calls++; }, save: () => { calls++; } });
   A.equal(blocked.uebersprungen, true); A.equal(blocked.ok, false); A.equal(calls, 0);
-  A(B.freigabe(q, catalog()));
-  for (const change of [p => p.status = "paused", p => p.rights_review_required = true,
-    p => p.usage_policy.commercialUseApproved = false, p => p.usage_policy.fullTextAllowed = true, p => p.url += "?fremd"])
-    { const c = catalog(); change(c.retrievalPaths[0]); A.equal(B.freigabe(q, c), false); }
+  A(B.freigabe(q, catalog(), rights()));
+  A.equal(B.freigabe(q,catalog()),false,"Reale bestehende SQL-Felder ersetzen keinen fehlenden Code-Nutzungsbeleg");
+  A.equal(B.codeNutzungsbeleg(q.id),null);
+  for (const change of [p => p.status = "paused", p => p.url += "?fremd"])
+    { const c = catalog(); change(c.retrievalPaths[0]); A.equal(B.freigabe(q, c,rights()), false); }
+  for(const change of [s=>s.rightsReviewRequired=true,s=>s.usagePolicy.commercialUseApproved=false,
+    s=>s.usagePolicy.fullTextAllowed=true,s=>s.url+="?fremd"]){const s=rights();change(s);A.equal(B.freigabe(q,catalog(),s),false);}
 });
 test("Geschlossener Speichervertrag nimmt keine Fremdfelder/Volltexte auf", () => {
   const d = doc();
@@ -154,7 +159,7 @@ test("Regulaerer Quellenadapter liest Liste/Originale begrenzt und verlangt bele
   const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
   const landing = Buffer.from(JSON.stringify({ endpoint })), list = Buffer.from(row(1) + row(0));
   let saved, requests = [];
-  const deps = { katalog: catalog(), now, deadlineMs: now()+20000,
+  const deps = { katalog: catalog(), rightsForSource:rights, now, deadlineMs: now()+20000,
     reserveOriginal: async () => ({ erlaubt: true, geprueft: true }), fetchUrl: async (url, depth, opts) => {
     requests.push(url); A.equal(opts.allowedHost, "bundestag.de"); A.equal(opts.binary, true);
     return { status: 200, finalUrl: url, bytes: url === q.url ? landing : url === endpoint ? list : Buffer.from("%PDF-fixture-" + url.match(/fixture-(\d+)/)[1]) };
@@ -179,6 +184,13 @@ test("Unveraenderliche Ablage: nur POST-neu, exaktes Ruecklesen, verlorene Antwo
   A.equal(methods.filter(m => m === "POST").length, 1); A(!methods.some(m => ["PATCH","DELETE"].includes(m)));
   const unknown = B.speicher({ storeId: "isoliert", request: async (path, o) => { if(o) throw Error("unknown"); return []; } });
   await A.rejects(unknown.sichern(s), /persistenz-unbestaetigt/);
+});
+test("Spaeter Katalog-/Speicherzugriff eroeffnet keine neue Schreibphase nach der Frist", async()=>{
+  let clock=1,posts=0;
+  const store=B.speicher({storeId:"isoliert",now:()=>clock,deadlineMs:10,request:async(path,opts)=>{
+    if(opts?.method)posts++;clock=10;return[];}});
+  const s=B.baueStand(q,[doc()],new Date(now()).toISOString(),"a".repeat(64));
+  await A.rejects(store.sichern(s),/zeitbudget/);A.equal(posts,0);
 });
 test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generischem Crawl/Modell", async () => {
   const handler = SP.HANDLER.source_fetch; let generic = 0, frees = 0;
