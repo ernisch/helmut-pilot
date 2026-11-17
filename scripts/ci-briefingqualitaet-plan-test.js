@@ -49,7 +49,7 @@ check("nur echter normaler Mainmerge mit identischem Baum",()=>{
 });
 check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  const w=fs.readFileSync(".github/workflows/ci.yml","utf8");
- const blocks=[...w.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1249 \][\s\S]*?\n          fi/g)].map(x=>x[0]);
+ const blocks=[...w.matchAll(/if \[ "\$\{HELMUT_CI_PR_NUMBER:-\}" = 1250 \][\s\S]*?\n          fi/g)].map(x=>x[0]);
  assert.equal(blocks.length,2);assert.equal(blocks[0],blocks[1]);
  const script=`set -e
  git(){ case "$1" in log) printf '%s' "$MSG";;rev-parse) printf '%s' "$PARENT";;merge-base) return "$ANCESTOR";;*) return 99;;esac; }
@@ -57,13 +57,13 @@ check("beide Selektoren identisch und ohne breiten Fehler-Rueckfall",()=>{
  ${blocks[0]}
  printf BROAD`;
  const run=(msg,parent,ancestor,extra={})=>spawnSync("bash",["-c",script],{encoding:"utf8",env:{PATH:process.env.PATH,GITHUB_EVENT_NAME:"push",GITHUB_REF:"refs/heads/main",GITHUB_OUTPUT:"/dev/null",MSG:msg,PARENT:parent,ANCESTOR:String(ancestor),...extra}});
- for(const msg of [Q.MERGE_TITLE,"Merge pull request #1249","fehlerhafter Betreff"]){const r=run(msg,Q.BASE,0);assert.equal(r.status,23,r.stderr);assert.equal(r.stdout,"GUARD");}
+ for(const msg of [Q.MERGE_TITLE,"Merge pull request #1250","fehlerhafter Betreff"]){const r=run(msg,Q.BASE,0);assert.equal(r.status,23,r.stderr);assert.equal(r.stdout,"GUARD");}
  for(const msg of ["fremd","spaeterer Commit"]){const r=run(msg,"8".repeat(40),1);assert.equal(r.status,0);assert.equal(r.stdout,"BROAD");}
- const pr=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_NUMBER:"1249"});assert.equal(pr.status,23);assert.equal(pr.stdout,"GUARD");
+ const pr=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_NUMBER:"1250"});assert.equal(pr.status,23);assert.equal(pr.stdout,"GUARD");
  const branch=run("x","8".repeat(40),1,{GITHUB_EVENT_NAME:"pull_request",HELMUT_CI_PR_HEAD_REF:Q.BRANCH});assert.equal(branch.status,23);assert.equal(branch.stdout,"GUARD");
  assert.match(w,/name: Native automation boundary qualification \(synthetic\)\n[^\n]+steps\.plan\.outputs\.quellenbedarf != 'true'/);
  const step=w.split("      - name: Quellenbedarf -")[1].split("      - name: Quellenreadback -")[0];
- for(const name of ["dip-vorgangsfakten-profil","quellen-destatis-rss-stand","fach-parteiquellen","dedup-quellenkontext","dedup-findings","quellen-eurlex-auszug"])assert(step.includes("scripts/"+name+"-test.js"));
+ for(const name of ["quellen-destatis-rss-stand"])assert(step.includes("scripts/"+name+"-test.js"));
  assert(!/source-demand|--extended|Mock100|Mock500|morgen-paketnachweis/.test(step));
  const browser=w.split("      - name: Quellenbedarf - gebundenen")[1].split("      - name: Quellenreadback -")[0];
  assert.match(browser,/44065530896\/job\/133978126070/);

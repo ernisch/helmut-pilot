@@ -110,12 +110,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          # Nur exakt gebundene DIP-/Destatis-Quellenreparatur, PR1249.
-          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1249 ] \
-            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabdeckung-20261117 ] \
+          # Nur exakt gebundene Destatis-Altarchivkompatibilitaet, PR1250.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1250 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/destatis-altfund-20261117 ] \
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
-              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)' ] \
-                || [ "$(git rev-parse HEAD^1)" = 7d55e40cbb943d0397bcbb9f1b76818638cb4e0b ]; }; }; then
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): amtliche Alt-Fundstellen ohne optionale Pfadkennung wiederverwenden (#1250)' ] \
+                || [ "$(git rev-parse HEAD^1)" = 5c01f345f9bde2542c724c27abd90ef2989d463a ]; }; }; then
             node scripts/ci-briefingqualitaet-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -886,7 +886,6 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: |
           node scripts/lokal.js -- node scripts/ci-pruefplan-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-auszug-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-native-datum-test.js
 
@@ -903,8 +902,6 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/abdeckungspruefung-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-cellar-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/crawler-hardening-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-quellenkontext-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-findings-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/source-dedupe-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/briefing-quellenpflicht-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/briefing-artikelidentitaet-test.js
@@ -919,15 +916,13 @@ jobs:
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikelkontext-quellenlayout-test.js --bmg
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/artikel-wiedergewinnung-test.js
 
-      - name: Quellenbedarf - DIP, lizenzierte RSS-Fassung, Dedup und Herkunft
+      - name: Quellenbedarf - lizenzierte RSS-Fassung und optionale Alt-Fundstelle
         if: steps.plan.outputs.quellenbedarf == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
         run: |
           node scripts/lokal.js -- node scripts/ci-briefingqualitaet-plan-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dip-vorgangsfakten-profil-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-destatis-rss-stand-test.js
-          node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/fach-parteiquellen-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-quellenkontext-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/dedup-findings-test.js
           node scripts/lokal.js -- node --require ./scripts/run-offline-tests.js scripts/quellen-eurlex-auszug-test.js
@@ -1228,12 +1223,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          # Nur exakt gebundene DIP-/Destatis-Quellenreparatur, PR1249.
-          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1249 ] \
-            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/quellenabdeckung-20261117 ] \
+          # Nur exakt gebundene Destatis-Altarchivkompatibilitaet, PR1250.
+          if [ "${HELMUT_CI_PR_NUMBER:-}" = 1250 ] \
+            || [ "${HELMUT_CI_PR_HEAD_REF:-${GITHUB_REF#refs/heads/}}" = codex/destatis-altfund-20261117 ] \
             || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] \
-              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)' ] \
-                || [ "$(git rev-parse HEAD^1)" = 7d55e40cbb943d0397bcbb9f1b76818638cb4e0b ]; }; }; then
+              && { [ "$(git log -1 --format=%s)" = 'fix(quellen): amtliche Alt-Fundstellen ohne optionale Pfadkennung wiederverwenden (#1250)' ] \
+                || [ "$(git rev-parse HEAD^1)" = 5c01f345f9bde2542c724c27abd90ef2989d463a ]; }; }; then
             node scripts/ci-briefingqualitaet-plan.js --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -1610,7 +1605,7 @@ jobs:
       - name: Quellenbedarf - gebundenen echten Browserbeleg erhalten
         if: steps.plan.outputs.quellenbedarf == 'true'
         run: |
-          echo 'Server, UI und Browserdateien im vollstaendigen Baum unveraendert; Fachdelta durch native RSS-/Storage-/DTO-Belege gezielt geprueft. Kein neuer Chromiumlauf oder Browser-PASS behauptet.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Server, UI und Browserdateien im vollstaendigen Baum unveraendert; Delta im reinen Archivadapter durch RSS-/Finding-/Speicherbelege gezielt geprueft. Kein neuer Chromiumlauf oder Browser-PASS behauptet.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Echter Desktop-/Mobilbeleg PR1246: https://github.com/ernisch/helmut-pilot/actions/runs/44065530896/job/133978126070' >> "$GITHUB_STEP_SUMMARY"
       - name: Quellenreadback - gebundenen echten Browserbeleg erhalten
         if: steps.plan.outputs.quellenreadback == 'true'

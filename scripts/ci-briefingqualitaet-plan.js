@@ -1,26 +1,18 @@
 "use strict";
 
-// Exakt gebundene DIP-/Destatis-Quellenreparatur PR1249.
+// Exakt gebundene Destatis-Altarchivkompatibilitaet PR1250.
 // Beide Pflichtjobs bleiben. Unveraenderte Browser-/UI-Belege aus PR1246 erhalten;
 // Runtime-/Testblobs und unveraenderter restlicher Baum sind geschlossen gebunden.
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
-const REPOSITORY = "ernisch/helmut-pilot", PR = 1249;
-const BRANCH = "codex/quellenabdeckung-20261117";
-const BASE = "7d55e40cbb943d0397bcbb9f1b76818638cb4e0b";
-const EVIDENCE = "899119de889eaae54a78fa017b685bc15e79a828";
-const MERGE_TITLE = "fix(quellen): DIP-Stellvertretungen und amtliche Destatis-RSS-Fassungen erhalten (#1249)";
+const REPOSITORY = "ernisch/helmut-pilot", PR = 1250;
+const BRANCH = "codex/destatis-altfund-20261117";
+const BASE = "5c01f345f9bde2542c724c27abd90ef2989d463a";
+const EVIDENCE = "bcbc08a75332da8d82400038714ffdc657a55cfb";
+const MERGE_TITLE = "fix(quellen): amtliche Alt-Fundstellen ohne optionale Pfadkennung wiederverwenden (#1250)";
 const BLOBS = Object.freeze({
-  "lib/helmut/dip.js": "0712ea6fd79bad499a75fd30721f6029de5d433c",
-  "lib/helmut/crawler.js": "717d6e1b74b70f2f573c4fbf5d0bf4b73b8943c5",
-  "lib/helmut/dedup.js": "5738e348981cab5d8303cca518fe72bf18fa6e10",
-  "lib/helmut/quellen-destatis-rss-stand.js": "fb04b14fb394ed96cb3d1f013191e07d16738e1a",
-  "lib/helmut/quellen-hinweis.js": "b7f185656bc555efe78fcc5a50466b7f9d344677",
-  "lib/helmut/quellenarchitektur/dedup-global.js": "f7f6e2b22438acf8b16243bec2e3406be245be75",
-  "lib/helmut/storage.js": "935e9c59ac5b6c189df498cdd38b4268924a72dd",
-  "scripts/dip-vorgangsfakten-profil-test.js": "ef140cd5de7341f03113349c34219e989aa6a9cb",
-  "scripts/quellen-destatis-rss-stand-test.js": "095620c886cfbe74773a1de2cdce6a1f3f0b0965",
-  "scripts/fach-parteiquellen-test.js": "931a9b20dbac9b95c425e4c7563aae29c966a7fd"
+  "lib/helmut/quellen-destatis-rss-stand.js": "d9dd9291df502195477a84ba6f85054eb9abb015",
+  "scripts/quellen-destatis-rss-stand-test.js": "92d4dfee8dab7dbe93d959b4e5c3243725c7d56e"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-briefingqualitaet-plan.js", "scripts/ci-briefingqualitaet-plan-test.js"]);
 const DOC_FILES = Object.freeze(["docs/CURRENT_STATE.md", "docs/betrieb/quellenbedarf-20261117.md"]);
@@ -56,11 +48,11 @@ function validate({ event, repository, ref, headRef, before, message, pr, head, 
     need(same(baseTree.get(file), headTree.get(file)) && same(evidenceTree.get(file), headTree.get(file)),
       "unerwarteter-diff:" + file);
   }
-  return { mode: "quellenbedarf", reason: "Exakt gebundene DIP-/Destatis-Quellenreparatur mit nativen Speicher-/DTO-Belegen",
+  return { mode: "quellenbedarf", reason: "Exakt gebundene Destatis-Altarchivkompatibilitaet mit nativen Archiv-/Finding-Belegen",
     standard: false, core: true, area: false, database: false, browser: false, syntax: true, npm: true,
     quellenbedarf: true, source: { repository: REPOSITORY, pr: PR, base: BASE, evidence: EVIDENCE, head },
-    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte DIP-/RSS-/Dedup-/Herkunftsvertraege", "Unveraenderten echten Desktop-/Mobilbeleg aus PR1246 wiederverwenden"],
-    limits: ["Nur DIP-Profilfilter und geschlossene lizenzierte RSS-Fassung; keine Auth-/UI-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Altzeilenkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
+    execute: ["Gebundener Pruefplan mit Abweisungsfaellen", "Schnellkern", "Gezielte RSS-/Archiv-/Finding-Vertraege", "Unveraenderten echten Desktop-/Mobilbeleg aus PR1246 wiederverwenden"],
+    limits: ["Nur optionalen NULL-Altpfad im reinen Archivadapter zulassen; keine Auth-/UI-/Schema-/Profil-/Geldgrenzenaenderung", "Kein neuer Modell-/Quellenlauf, keine Altzeilenkorrektur oder Erfindung fehlender Belege", "Keine pauschalen DB-/500er-Laeufe"] };
 }
 function git(args) { return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 10000 }); }
 function tree(ref) {
