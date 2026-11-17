@@ -8,11 +8,11 @@ const { execFileSync } = require("node:child_process");
 const REPOSITORY = "ernisch/helmut-pilot", PR = 1247;
 const BRANCH = "codex/briefing-status-20261117";
 const BASE = "2877e265ce0860da9362e20a6a9d6f4c4f46fc6b";
-const EVIDENCE = "be3d21427a4845c43ff38cb5e6e3ea4516de7c84";
+const EVIDENCE = "03e58cf970f5509b13f5255a736c654f4d1744ff";
 const MERGE_TITLE = "fix(briefing): Statusbegründung aus qualifiziertem Tagesstand ableiten (#1247)";
 const BLOBS = Object.freeze({
-  "server.js": "b8bebe4c466dc7914e0df930142c22170665ca31",
-  "scripts/briefing-freshness-header-test.js": "bef2452e26ec63d6ddcb8d432fff043ccaac4662",
+  "server.js": "639c6560f4670d600bdbc8af9970146fc4d9efe6",
+  "scripts/briefing-freshness-header-test.js": "b5f147c97ef80dde258972243ea6612f79f6b7a3",
   "scripts/quellen-versorgungsstand-test.js": "5b9e65f0a80ea404d208f33a533470d70eb93ce0"
 });
 const CI_FILES = Object.freeze([".github/workflows/ci.yml", "scripts/ci-briefingqualitaet-plan.js", "scripts/ci-briefingqualitaet-plan-test.js"]);
