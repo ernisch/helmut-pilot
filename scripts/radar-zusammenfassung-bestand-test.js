@@ -14,23 +14,29 @@ const iso = day => `2026-11-${String(day).padStart(2, "0")}T07:00:00Z`;
 const ko = (id, title, extra = {}) => ({ id: `ko-${id}`, vorgang_id: `vg-${id}`,
   status: "neu", understanding_status: "complete", display_title: title,
   created_at: iso(7), updated_at: iso(14), ...extra });
-const doc = (id, title, day) => ({ id: `rd-${id}`, title,
-  summary: title, url: `https://example.org/radar/${id}`,
+const doc = (id, title, day, summary) => ({ id: `rd-${id}`, title,
+  summary, url: `https://example.org/radar/${id}`,
   source_name: "Synthetische Testquelle", source_type: "media", published_at: iso(day) });
 
 test("Heutige Umfeldquelle macht Gesamtstand frisch, drei alte Dynamiken bleiben neutrale Beobachtungen", () => {
   const party = ko("umfeld", "Testpartei beschliesst eine Resolution", { parteien: ["Testpartei"] });
   const dynamics = [13, 12, 8].map(day => ko(`pflege-${day}`, `Pflegeversicherung: Bericht ${day}`,
     { was_ist_passiert: "Die Pflegeversicherung wird reformiert.", source_document_count: 3 }));
+  const vorlage = "Der Ausschuss für Gesundheit berät den Entwurf zur Neuordnung der Leistungen der gesetzlichen Pflegeversicherung.";
+  const beschluss = "Der Ausschuss für Gesundheit hat den Entwurf zur Neuordnung der Leistungen der gesetzlichen Pflegeversicherung angenommen.";
   const kos = [party, ...dynamics];
   const args = { profile, now, knowledgeObjects: kos,
     kosById: Object.fromEntries(kos.map(k => [k.id, k])),
     decisions: kos.map(k => ({ knowledge_object_id: k.id, score: 70,
       matched_features: k === party ? [{ type: "partei", value: "Testpartei" }] : [] })),
     sourcesByVorgang: {
-      [party.vorgang_id]: [doc("umfeld-alt", party.display_title, 13), doc("umfeld-heute", party.display_title, 14)],
+      [party.vorgang_id]: [
+        doc("umfeld-alt", "Testpartei berät eine Resolution", 13, "Die Testpartei berät eine Resolution zur Finanzierung der kommunalen Infrastruktur auf ihrem Landesparteitag."),
+        doc("umfeld-heute", party.display_title, 14, "Die Testpartei hat die Resolution zur Finanzierung der kommunalen Infrastruktur auf ihrem Landesparteitag beschlossen.")
+      ],
       ...Object.fromEntries(dynamics.map((k, i) => [k.vorgang_id,
-        [0, 1, 2].map(offset => doc(`pflege-${[13, 12, 8][i]}-${offset}`, k.display_title, [13, 12, 8][i] - offset))]))
+        [0, 1, 2].map(offset => doc(`pflege-${[13, 12, 8][i]}-${offset}`, k.display_title,
+          [13, 12, 8][i] - offset, offset ? vorlage : beschluss))]))
     } };
   const before = JSON.stringify(args);
   const state = R.buildCurrentRadarState(args), visible = state.anzeige;
