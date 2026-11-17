@@ -45,7 +45,8 @@ nur bestehendes POST-/Readback-Muster, keine Live-Datenbankpruefung.
   veraendert die Hashes nicht. Stabile URL ist keine Fassungsidentitaet.
 - Grundfassung, alle sichtbaren Ergaenzungen und Aenderungen bleiben erhalten.
   Nur ein ausdrueckliches „wird wie folgt neu gefasst“ ersetzt aeltere TOPs in
-  der aktuellen Sicht. Unklare Aenderung: `aenderung-pruefen`, keine aktuelle
+  der aktuellen Sicht; nur ausdrueckliches „wird um … ergaenzt“ gilt als
+  additiv. Absetzung/Ersetzung oder unklare Aenderung: `aenderung-pruefen`, keine aktuelle
   TOP-Liste. Fehlender Rang, gleicher Rang mit mehreren Originalen, widersprechende
   Nummern/Publikationstage oder unlesbare Sitzungszeit bleiben `ungeklaert`.
 - TOP-Nummern, Drucksachen und ausdrueckliche Voten-/Stellungnahmefristen;
@@ -82,7 +83,7 @@ Originale bleiben ausserhalb von Git. Kein kuenstliches heutiges Fristdatum.
 
 Gezielt lokal, jeweils ueber `scripts/lokal.js`:
 
-- `scripts/quellen-bundestag-termine-test.js`: 18/18 Gruppen; echte Planer-
+- `scripts/quellen-bundestag-termine-test.js`: 19/19 Gruppen; echte Planer-
   und Handleranbindung, Negativrechte, Konflikte, Transport, Quote, Readback/UNKNOWN.
 - Dieselbe Suite mit `--original-dir=<lokaler Originalbestand>`:
   zusaetzliche hashgebundene Originalgruppe, keine neuen Abrufe durch den Test.
@@ -108,13 +109,22 @@ POST ohne Upsert, exaktes Ruecklesen auch bei verlorener Antwort, sonst Fehler.
 `leseStand()` prueft Identitaet/geschlossene Metadaten; keine Blob-Hauptzeile.
 Worker-DI: `leseBundestagTermineKatalog`, `bundestagTermineFetch`,
 `reserviereBundestagOriginal`, `sichereBundestagTerminstand`.
+Die Aufnahme uebergibt `now/deadlineMs/signal` bis in den Speicheradapter;
+spaete Lesungen eroeffnen keine neue POST-Phase nach der absoluten Frist.
 
 Die fuenf konstanten Quellenkennungen/URLs stehen in `QUELLEN`. Der aktuelle
 Katalog muss dieselbe `rp-`-/Legacy-/Publisher-/URL-/Methodenbindung,
-`healthy`, `always_on`, keine Vorbereitung/Rechtepruefung und explizite Policy
+`healthy` und `always_on` tragen. Der Nutzungsbeleg kommt getrennt aus dem
+bereits bestehenden Code-Seed-Weg `seeds/fach-parteiquellen` wie bei Destatis:
+keine Vorbereitung/Rechtepruefung und explizite Policy
 `scope: structured_parliamentary_facts`, `commercialUseApproved:true`,
 `fullTextAllowed/imagesAllowed/aiTrainingAllowed:false` samt primaeren
-Rechtebelegen tragen. Solche Freigaben werden in diesem PR **nicht gesetzt**.
+Rechtebelegen. Die fuenf neuen Quellen haben dort noch keinen Nutzungsbeleg.
+Solche Freigaben werden in diesem PR **nicht gesetzt**. Insbesondere werden
+keine nicht vorhandenen SQL-Rechtespalten vorausgesetzt. Ds unabhaengiges
+Review60526304 hat diese urspruengliche Schnittstellenannahme aufgedeckt;
+der korrigierte Test verwendet das reale SQL-Feldmodell und beweist die
+Default-Sperre selbst bei einem technisch aktiven Katalogweg.
 
 D besitzt Produktleser/Anzeige und gemeinsame Statusdateien. Dort bei spaeterer
 Freigabe nur die neueste bestaetigte, fuer die konkrete Ausgabe zulaessige
