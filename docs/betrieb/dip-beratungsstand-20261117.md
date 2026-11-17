@@ -2,8 +2,27 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise: PR1253/1252 regulaer live; notwendige Produktlesefolge in Arbeit.
+**Teilweise,20:50UTC: PR1253/1252 regulaer live; PR1254/69e85a3f
+beide Pflichtchecks gruen, Merge wegen fehlender E-Endabnahme blockiert.
 Neue Textwege ohne Nutzungsfreigabe inaktiv, regulaere Kundenwirkung offen.**
+
+Abschliessender Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
+ist completed/success, exakt an69e85a3f9e949613c94184f7c7c6a00dbc5a8895
+gebunden: Kern134340080967 und Browser134340081326 erfolgreich; voller
+Mock100 bewusstskipped, kein neuer Sonderlauf. PR1254 konfliktfrei gegen
+Main6c1af21a, Es drei Quellblobs unveraendert zu42909cb0. Keine PR-Reviews
+oder E-Endabnahme der neuen D-Deltas in1218 vorhanden. Kein Merge/Deployment
+und kein Production-Wirkungsnachweis von1254 behauptet.
+Productionlesung20:50:14UTC: null Abschluesse seit1251, null DIP-/Terminstandzeilen,
+keine neue gebundene Destatis-Fassung. Letzter regulaerer Quellenabschluss
+weiterhin cron-crawl-20261117044523-onl6r,04:49:09.506UTC,partial.
+Der aktuelle Betreiber-Appbeleg bleibt der echte gespeicherte Abruf19:24UTC;
+keine neue Verarbeitung, keine angemeldete visuelle Kundenabnahme.
+
+Der abschliessende reine Doku-Stand liegt getrennt vom eingefrorenen
+Runtimekopf auf codex/quellenabschlussstatus-d-20261117. Nach Es Endabnahme
+und Runtimeintegration ist ausschliesslich dieser Dokucommit fuer den einen
+abschliessenden Dokumentations-PR bestimmt; diesen Ref nicht direkt mergen.
 
 ## Integration und notwendiger Folgeanschluss
 
@@ -315,5 +334,5 @@ nachtraeglich aufgewertet. Das ist kein neuer Verarbeitungsabschluss.
 Ausschuesse/Tagesordnungen/Termine und ihre neuen Textrechte bleiben Es/Fs
 getrennte, noch nicht aktivierte Wege. Keine vollstaendige Quellen-/Verkaufsabnahme.
 
-**Naechster Schritt:** fertigen Integrationskopf unabhaengig pruefen und mit
-unveraenderter Pflicht-CI sequenziell integrieren.
+**Naechster Schritt:** Es unabhaengige Endabnahme des exakten
+PR1254-Kopfes69e85a3f nachweisen.
