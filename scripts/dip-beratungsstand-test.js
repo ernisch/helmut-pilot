@@ -249,6 +249,12 @@ async function main() {
       const cached=await DIP.getQueueDocuments({committee:"Haushalt"},{env,now,deadlineMs:now()+30000,fetch:api});
       assert.equal(cached.length,1);assert.equal(admits,1);assert.equal(rows.size,0);
       assert(calls.every(c=>c.url.startsWith("/rest/v1/helmut_store")));
+      // Auch der neue Stand darf nach verlorenem letzten Lease nicht geschrieben werden.
+      calls=[];let verloren=false,http=0;A.reserviere=async()=>({erlaubt:true});
+      A.starteLeaseWache=()=>({signal:new AbortController().signal,verloren:()=>verloren,beenden(){}});
+      await assert.rejects(()=>DIP.getQueueDocuments({committee:"Haushalt"},{env,now,deadlineMs:now()+30000,
+        fetch:async(url,opts)=>{const response=await api(url,opts);if(++http===3)verloren=true;return response;}}),/dip-lease-verloren/);
+      assert.equal(http,3);assert.equal(rows.size,0);assert(calls.every(c=>c.method!=="POST"));
     } finally {Object.assign(A,old);S.supabaseRequest=oldRequest;for(const[k,v]of Object.entries(savedEnv)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
   });
   await test("Nativer produktseitiger Storage-Leser liefert den gebundenen Stand ohne Quellen- oder Modellabruf",async()=>{

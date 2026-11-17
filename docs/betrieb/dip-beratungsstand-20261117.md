@@ -128,18 +128,32 @@ Der alte vollstaendige Smoke blieb bis zur End-CI ausdruecklich rot;
 keine lokale Gesamtgruenaussage aus diesen Teilbelegen.
 
 Der abgeschlossene erste Lauf44115174998 bestaetigt die Standard-Offlinesuite,
-scheitert in der Bereichsregression aber an zehn alten Briefingvertraegen.
-GitHub-Fehlerannotationen nennen sie eindeutig; der externe Azure-Logdownload
-war nicht erreichbar. Zwei repraesentative Faelle auf isoliertem **unveraendertem
+scheitert in der Bereichsregression an **20** Suiten. Die Check-API zeigt
+nur zehn Fehlerannotationen; E uebermittelt die komplette Erstlogliste
+in [6953732829](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6953732829),
+ohne neue Probe. Der externe Azure-Logdownload war bei D nicht erreichbar.
+Zwei repraesentative Faelle auf isoliertem **unveraendertem
 main2023dfd5** scheitern identisch: Artikelidentitaet erwartet unbelegten Primary,
 Teilstandtest erwartet dessen Verdrängung durch eine blosse ID-Markierung.
-Keine neue DIP-Regression daraus. D korrigiert nur die fuenf reservierten Tests:
+Diese beiden Faelle sind Basisfehler. D korrigiert zunaechst die fuenf reservierten Tests:
 Artikel-/FR-Belegzeit bleibt am vorhandenen Sachstandeintrag geprueft;
 Quellenbindung/Aussagenbereinigung allein erzeugen keinen Tagesauftrag;
 unbelegter Primary verdraengt keinen wirklich geprueften Teilstand.
 Gezielt danach **11/11, 6/6, 15/15, 50/50, 10/10** erfolgreich.
 E uebernimmt getrennt die fuenf verbleibenden Zeit-/Korrekturvertraege.
 Keine Runtime-, Fachwachen- oder CI-Aenderung fuer diese Altfehler.
+
+**Eigener echter Runtime-Erstfehler durch Es unabhaengige Gegenprobe entdeckt:**
+`quellen-inhaltsversorgung-queue-test.js` besteht auf main29/29, scheitert am
+D-Kopf aber mit „Missing expected rejection“. Der neu vorgezogene Dokumentcache
+hatte einen letzten Leasefehler ueberlebt. Cachefreigabe wieder ausschliesslich
+nach final bestaetigter Lease und Zeitgrenze, auch nach Standaufnahme.
+Zusaetzliche gezielte Gegenprobe zeigte einen moeglichen Stand-POST nach
+verlorenem letztem API-Lease (zunaechst eine statt null Speicherzeilen).
+Dieselbe Wache reicht jetzt bis in jede neue Speicherphase; keine POST-/
+Readbackphase nach Verlust/Frist und keine Erfolgsbehauptung bei UNKNOWN.
+Unveraenderte Queue-Schutzsuite **29/29** und erweiterte DIP-Suite **17/17**
+danach gruen. Kein bestehender Schutzfall wird angepasst oder entfernt.
 
 Es Aufnahme60526304 samt korrigierter Nutzungsbindung6346e7b5 ist von D
 vollstaendig unabhaengig gelesen und ohne Konflikt sequenziell uebernommen;
