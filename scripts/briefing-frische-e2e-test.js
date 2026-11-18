@@ -173,6 +173,27 @@ const antwortLeer = server.__prepareBriefingResponse(leeresBriefing, { frischeKo
 check("2h Leerer Stand wird durch den Vertrag NICHT zu 'Aktuell'",
   antwortLeer.status !== "Aktuell", antwortLeer.status);
 
+// Der reguläre Morgenlauf kann ein Teilpaket erfolgreich quittieren, obwohl
+// die Quellenverarbeitung für das Mandat noch offen ist.
+const teilpaketOhnePrioritaet = {
+  available: true,
+  currentHelmutState: {
+    status: "empty", primaryItem: null, items: [],
+    versorgung: { version: 1, zustand: "offen" },
+    emptyState: { kind: "gap", headline: "Quellenlage noch nicht ausreichend ausgewertet" }
+  },
+  paketStatus: { zustand: "teilweise", vollstaendig: false, quittungGebunden: true }
+};
+for (const compact of [false, true]) {
+  const a = server.__prepareBriefingResponse(teilpaketOhnePrioritaet, {
+    frischeKontext: kontext(), compact
+  });
+  check(`2h Teilpaket mit Quellenlücke zeigt offenen Kopf (compact=${compact})`,
+    a.status === "Quellenlage offen" && a.freshness.status === a.status
+      && a.freshness.vertrag.aktuell === true && a.freshness.vertrag.ruhelage === false,
+    a.status);
+}
+
 // Ohne Kontext (Not-Aus/kein Mandat) bleibt das bisherige Verhalten erhalten.
 const antwortOhne = server.__prepareBriefingResponse(baueBriefing(), {});
 check("2i Ohne Frischekontext unveraendertes Altverhalten",
