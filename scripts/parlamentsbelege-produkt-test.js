@@ -14,11 +14,17 @@ const doc=()=>D.toRawDocumentRow(Scheduler.dipDocToRawItem(DIP.normalizeDrucksac
 const text=`Mitteilung\nBerlin, den 5. November 2026\nDie Tagesordnung der 59. Sitzung des Ausschusses
 Mittwoch, dem 11. November 2026, 10:30 Uhr\nTagesordnungspunkt 1\nSynthetischer Testgegenstand
 BT-Drucksache 21/8119\nVoten angefordert für den: 11.11.2026`;
-const pd=()=>E.tagesordnung(q,{url:"https://www.bundestag.de/resource/blob/999999/fixture.pdf",listedMeeting:"59",revision:0,visibility:"nichtoeffentlich"},Buffer.from("%PDF-deklarierte-Fiktion"),[text]);
+const pd=()=>E.tagesordnung(q,{url:"https://www.bundestag.de/resource/blob/999999/fixture.pdf",listedDay:"2026-11-06",listedMeeting:"59",revision:0,visibility:"nichtoeffentlich"},Buffer.from("%PDF-deklarierte-Fiktion"),[text]);
 const stand=()=>E.baueStand(q,[pd()],new Date(now()).toISOString(),"a".repeat(64));
-const katalog=()=>({retrievalPaths:[{id:q.retrievalPathId,legacy_source_id:q.id,publisher_id:"publisher-bundestag.de",url:q.url,method:q.crawlMethod,status:"healthy",activation_mode:"always_on"}]});
+const katalog=(qs=[q])=>({
+  retrievalPaths:qs.map(s=>({id:s.retrievalPathId,legacy_source_id:s.id,publisher_id:"publisher-bundestag.de",
+    url:s.url,method:s.crawlMethod,status:"needs_review",activation_mode:"auto"})),
+  packages:[...new Set(qs.map(s=>s.packageId))].map(id=>({id,status:"active"})),
+  packagePaths:qs.map(s=>({package_id:s.packageId,retrieval_path_id:s.retrievalPathId}))
+});
 const seedPath=require.resolve("../lib/helmut/quellenarchitektur/seeds/fach-parteiquellen");
 const seed=require(seedPath),savedSeed=require.cache[seedPath].exports;
+const ohneFreigabe={...seed,BUNDESTAG_TERMINE_NUTZUNGSBELEGE:[]};
 const approval={id:q.id,url:q.url,rightsReviewRequired:false,usagePolicy:{scope:"structured_parliamentary_facts",commercialUseApproved:true,
   fullTextAllowed:false,imagesAllowed:false,aiTrainingAllowed:false,evidenceUrls:["https://example.test/deklarierter-testbeleg"]}};
 let stored,calls,passed=0,browserHtml="";
@@ -58,6 +64,7 @@ async function normaleAppAusgabe(briefing, { suche = "", storage = S, zeit = now
 }
 async function main(){
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ,"aktiv");
+  require.cache[seedPath].exports=ohneFreigabe;
   await test("Drei Pilotrollen bleiben Hauptausschuss/Stellvertretungen; kein BT-Kontext im Landtag",async()=>{
     const p={parliamentType:"Bundestag",committee:"Arbeit und Soziales",deputyCommittees:["Wirtschaft und Energie","Digitales und Staatsmodernisierung"]};
     A.equal(T.rolle(p,E.QUELLEN[0]),"Hauptausschuss");A.equal(T.rolle(p,E.QUELLEN[1]),"Stellvertretung");A.equal(T.rolle(p,E.QUELLEN[2]),"Stellvertretung");
@@ -91,7 +98,7 @@ async function main(){
       A.deepEqual(paket,before);A.equal(out.lageBriefing.parlamentsKontext,undefined);A.equal(calls.length,0);
     }finally{S.getPruefSourcesByVorgaenge=old;}
   });
-  require.cache[seedPath].exports={...seed,ZUSAETZLICHE_QUELLEN:[...seed.ZUSAETZLICHE_QUELLEN,approval]};
+  require.cache[seedPath].exports={...seed,BUNDESTAG_TERMINE_NUTZUNGSBELEGE:[approval]};
   const oldRequest=S.supabaseRequest,oldCatalog=S.listSourceArchitectureRows;
   S.supabaseRequest=request;S.listSourceArchitectureRows=katalog;
   try{
@@ -164,7 +171,7 @@ async function main(){
     });
     await test("Belegter Ausschuss-TOP trägt Briefing und bleibt an den aktuellen Originalstand gebunden", async () => {
       const speichere = (inhalt, gelesenAm = new Date(now()).toISOString()) => {
-        const pdf = E.tagesordnung(q, { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" },
+        const pdf = E.tagesordnung(q, { url: pd().url, listedDay: "2026-11-06", listedMeeting: "59", revision: 0, visibility: "oeffentlich" },
           Buffer.from(inhalt), [inhalt]);
         return [row(E.baueStand(q, [pdf], gelesenAm, "a".repeat(64)))];
       };
@@ -223,7 +230,7 @@ async function main(){
       A.deepEqual([...rows], vorher);
       stored = speichere(inhalt);
       const mitFreigabe = require.cache[seedPath].exports;
-      require.cache[seedPath].exports = savedSeed;
+      require.cache[seedPath].exports = ohneFreigabe;
       try {
         A.equal(T.terminAnlaesse(d, profile, input.now).length, 0);
         A.equal((await live()).briefing.currentHelmutState.primaryItem, null);
@@ -241,10 +248,14 @@ async function main(){
       const [sitzung] = await T.mitGespeichertenStaenden([doc()], deps());
       A.equal(T.terminAnlaesse(sitzung, profile, input.now)[0].art, "bevorstehender-schritt");
       A.equal(T.terminAnlaesse(sitzung, profile, new Date(now() + 86400001)).length, 0);
+      stored = speichere(inhalt.replace("BT-Drucksache 21/8119", "BT-Drucksachen 21/8119, 21/8120"));
+      const [mehrfach] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(mehrfach.parlamentsOriginalbelege[0].sitzungen[0].tops[0].fristen.length, 0);
+      A.equal(T.terminAnlaesse(mehrfach, profile, input.now)[0].art, "bevorstehender-schritt");
     });
     await test("Neue Fassung mit abweichendem oder unklarem Tag sperrt den alten Termin derselben Sitzung", async () => {
       const inhalt = text.replace("11. November", "19. November").split("\nVoten angefordert")[0];
-      const link = { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" };
+      const link = { url: pd().url, listedDay: "2026-11-06", listedMeeting: "59", revision: 0, visibility: "oeffentlich" };
       const grundfassung = E.tagesordnung(q, link, Buffer.from(inhalt), [inhalt]);
       const anders = inhalt.replace("Mitteilung", "1. Änderungsmitteilung\nDie Tagesordnung wird wie folgt neu gefasst:")
         .replace("19. November", "20. November").replace("21/8119", "21/8118");
@@ -327,7 +338,7 @@ async function main(){
     });
     await test("Plenarprogramm erhaelt vier Sitzungen ohne erfundene TOP-/Tageszuordnung; Wochenende exklusiv",async()=>{
       const extra=[E.QUELLEN[3],E.QUELLEN[4]],currentSeed=require.cache[seedPath].exports;
-      require.cache[seedPath].exports={...currentSeed,ZUSAETZLICHE_QUELLEN:[...currentSeed.ZUSAETZLICHE_QUELLEN,...extra.map(s=>({...approval,id:s.id,url:s.url}))]};
+      require.cache[seedPath].exports={...currentSeed,BUNDESTAG_TERMINE_NUTZUNGSBELEGE:[approval,...extra.map(s=>({...approval,id:s.id,url:s.url}))]};
       try{
         const page="Tagesordnung Stand: 12. November 2026\n"+[110,111,112,113].map((n,i)=>`${n}. Sitzung des Deutschen Bundestages\nam Dienstag, dem ${24+i}. November 2026, ${9+i} Uhr`).join("\n")
           +"\nTagesordnungspunkt 9\nSynthetischer Testgegenstand\nDrucksache 21/8119";
@@ -335,7 +346,7 @@ async function main(){
         const ics=Buffer.from("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:fixture.test\r\nDTSTAMP:20251216T100654Z\r\nDTSTART;VALUE=DATE:20261123\r\nDTEND;VALUE=DATE:20261128\r\nSUMMARY:Sitzungswoche Deutscher Bundestag\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n");
         const calendar=E.kalender(extra[1],{url:"https://www.bundestag.de/resource/blob/999997/fixture.ics"},ics);
         const stands=[stand(),E.baueStand(extra[0],[plenum],new Date(now()).toISOString(),"a".repeat(64)),E.baueStand(extra[1],[calendar],new Date(now()).toISOString(),"a".repeat(64))];
-        const options={...deps(),katalog:()=>({retrievalPaths:[q,...extra].map(s=>({...katalog().retrievalPaths[0],id:s.retrievalPathId,legacy_source_id:s.id,url:s.url,method:s.crawlMethod}))}),
+        const options={...deps(),katalog:()=>katalog([q,...extra]),
           request:async(endpoint,opts={})=>{A(!opts.method||opts.method==="GET");const id=new URL(endpoint,"https://offline.invalid").searchParams.get("data->>sourceId").slice(3);return stands.filter(s=>s.sourceId===id).map(row);}};
         const ctx=await T.leseKontext(profile,options),p=ctx.belege.find(b=>b.art==="plenum"),cal=ctx.belege.find(b=>b.art==="kalender");
         A.equal(p.sitzungen.length,4);A(p.sitzungen.every(m=>m.tops.length===0));A.equal(p.sitzungszuordnung,"unbekannt");
@@ -353,7 +364,7 @@ async function main(){
       const d=(await T.mitGespeichertenStaenden([doc()],deps()))[0];
       const bound=T.fuerMandat({v:[d]},profile,new Date(now())).v[0];
       const context=await T.leseKontext(profile,deps());
-      require.cache[seedPath].exports=savedSeed;
+      require.cache[seedPath].exports=ohneFreigabe;
       A.deepEqual(T.anzeige(bound,bound.url),{});A.equal(await T.leseKontext(profile,deps()),null);
       const previous={lageBriefing:{parlamentsKontext:context}};
       A.equal((await T.ergaenzeAusgabe(previous,profile,deps())).lageBriefing.parlamentsKontext,undefined);
