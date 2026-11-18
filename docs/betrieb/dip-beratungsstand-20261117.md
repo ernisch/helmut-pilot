@@ -2,9 +2,102 @@
 
 Auftrag und Dateizustaendigkeiten: [#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6951450665).
 Basis `2023dfd5` nach PR1249–1251; deren Reparaturen werden nicht wiederholt.
-**Teilweise,23:40UTC: PR1252–1256 regulaer live und lesend bestaetigt.
+**Historischer Stand 17.11.,23:40UTC: PR1252–1256 regulaer live und lesend bestaetigt.
 1254-Produktwirkung echt belegt; 1255/56-Code abgenommen, neue Betriebswirkung
 und Kunden-/Rechtsabnahme offen. Kein vollstaendiger Quellen-/Verkaufs-PASS.**
+
+## Regulaerer Morgenlauf 18.11.2026
+
+**Teilweise belegt.** Runtime `b0819bae`, acht echte Quellenfenster von
+03:00:12.363 bis 04:49:08.983 UTC. Letzte Queuequittung
+`cron-crawl-20261118044523-v3mef`, anschliessender Abdeckungsbericht partial.
+40 erfolgreiche Abrufquittungen mit 263 neuen Rohdokumenten laut Abruftelemetrie.
+853 Vertagungen an 134 Quellkennungen durch Anbietergrenzen. Die native Queue quittiert heute 42 erledigte Abruf- und 63 erledigte
+Dokumentauftraege sowie 59 Endstopps bei Dokumentauftraegen. 633 Abruf- und 758 Dokumentauftraege faellig, keine
+aktive Lease. Bei den aktualisierten wartenden Auftraegen ueberwiegen
+Anbietergrenzen (113 Abrufe) und offene Artikelkontexte (114 Dokumente).
+Weitere Dokumentgrenzen sind fehlende bestaetigte Artikelziele, Fassungen
+und Zeitbudgets. Die Rueckstaende sind nach Ursachen getrennt. Fuer den erfolgreichen Start des
+regulaeren Tagesablaufs ist keine weitere Motorreparatur belegt.
+8 Fenster/2400 Sekunden/6 von 16 Originalen. Um05:26:12UTC Kostenbuch
+0,528437/1 USD am Tag, 5,611157/30 USD gebunden kumulativ, eine alte UNKNOWN.
+
+Lageprozess `briefing-lage-20261118050023-2a8p9`: Abschluss05:00:52.950 UTC,
+Lageeintrag05:00:52.378 UTC gespeichert. Morgenprozess
+`briefing-morning-20261118051530-y87rp`: Abschluss05:15:43.694 UTC,
+partial/morgenversorgung-unvollstaendig, null fehlgeschlagene Mandate.
+Tagespaket05:15:41.908 UTC, InhaltSHA256
+`717c78b07aa0eb080e20c352399c5115dcbfe511233e14dcd0e39d7a8b3eb86b`,
+Profilbindung V2 und echte gebundene Morgenquittung05:15:43.239 UTC.
+Teilpaket enthaelt quellenversorgung-unvollstaendig und briefing-ohne-tagesanlass.
+
+Echter normaler Betreiber-AppGET05:25:58.935 UTC HTTP200/availabletrue,
+666531 Bytes, AntwortSHA256
+`effce749b3179e2e148a9bf8e1984c6023d68eb20ed34c8a0f41779c235eea8e`.
+Die Lage liefert zwei belegte Pflegeabsätze aus Originalen vom 12.11.
+(Destatis) und 05.11. (Bundestag/Gürpinar) sowie elf Karten. Der Renderer verwendet den qualifizierten Radarstand mit
+null sichtbaren Signalen. Fuenf technische Rohkandidaten wurden gespeichert,
+sie belegen dort keinen neuen Originalinhalt. Das Briefing hat keine
+belegte Tagesprioritaet. Angemeldete visuelle Kundenabnahme offen.
+
+Destatis: die gebundene Fassung `rd-635871ad…` zum Industrieenergieverbrauch
+wurde03:31:00.346 UTC gespeichert, KO `vg-energieverbrauch-20261116-fa297a`
+um04:17:50.806 UTC analysiert. Der App-DTO enthaelt diesen Originalbezug, Auszug
+und Attribution, mit Prioritaet Ignorieren. Das Publikationsdatum bleibt16.11.
+Keine aktuelle Karten-/Tagesprioritaet fuer diese Fundstelle. Der Katalog
+enthaelt weiterhin keinen belegten Publikationsrhythmus.
+DIP: zwei neue native Staende ab03:00:55 UTC. Vorgang336986
+(Beschlussempfehlung liegt vor, Drucksache21/9247, drei Positionen) und
+341809 (Noch nicht beantwortet, Drucksache21/9263, eine Position).
+Ihre neuen Staende erscheinen im geprueften Paket in keiner sichtbaren Karte.
+Die sichtbare alte Drucksache21/9191 bleibt an Vorgang340926 gebunden, mit
+unbekanntem Stand. Null neue Terminstandzeilen, fuenf Wege ohne Q2 inaktiv.
+
+Livebefund: Bei `versorgung.zustand=offen` und `emptyState.kind=gap`
+meldet der Kopf "Keine neue Entscheidung". `decorateBriefingFreshness`
+verwendet den Hinweis im Detail, aber nicht im Status. Gezielte Reproduktion
+am bestehenden Frische-E2E-Test rot fuer volle und kompakte Antwort, danach
+70/70 gruen mit [PR1259](https://github.com/ernisch/helmut-pilot/pull/1259).
+[D/F/G-Abstimmung](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6970044607).
+[Pflichtlauf 44244799628](https://github.com/ernisch/helmut-pilot/actions/runs/44244799628)
+completed/success, genau `29c35b78c9ef3419a8a1644702aefab59ec77051`.
+Kern134601051517 und Chromium134601051851 gruen, separater Voll-Mock100
+planmaessig ausgelassen. G hat exakt diesen Kopf in
+[#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6972438876)
+und im [PR-Review](https://github.com/ernisch/helmut-pilot/pull/1259#pullrequestreview-5952586081)
+unabhaengig abgenommen. SHA-gebundener Merge `25958d0a6224e816898a5b075f3b2e399bae29da`.
+Regulaerer Gitrollout `dpl_4QiRkBXXRBPNkqpFj3sSu4ui2Rz7` READY,
+Productionalias/Root/Client HTTP200. App-GET07:53:43.592UTC liefert
+„Quellenlage offen“ in status und freshness.status. AntwortSHA256
+`2c683ff41ab835c9caf738968372081cc07b68101a621fe4f8e66beb2ba911a0`.
+Inhaltshash, Quittungsbindung, Lageabsaetze und Radarprojektion stimmen
+mit dem regulaeren Morgenpaket ueberein.
+
+[PR1258](https://github.com/ernisch/helmut-pilot/pull/1258) auf
+`8b7ac5b4969e57689dc9ad3226ee5d1410258a41` unabhaengig
+[durch D abgenommen](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6970069345).
+Gleicher Kopf gegen Main25958d0a konfliktfrei simuliert, acht abgenommene
+Dateiblobs unveraendert, die zwei 1259-Dateien blieben exakt erhalten.
+Beide [Pflichtchecks 44215306689](https://github.com/ernisch/helmut-pilot/actions/runs/44215306689)
+an diesem Kopf erfolgreich, Chromium ausgefuehrt, Voll-Mock100 ausgelassen.
+SHA-gebundener Merge `25fab5ea41f879c3e5aab05b38b605fc35648385` mit dem
+vorab ermittelten Baum `57013c130615343eb62bbd0d2a5742189a8473c7`.
+Regulaerer Vercelrollout `dpl_B6PfMCkNKLHsvfCz49MymrzJsJra` READY. Oeffentlicher
+Alias/Root/Client HTTP200, Version25fab5ea. Clientbytes entsprechen Git,
+SHA256 `607038fca2e55b0e94df524d56853b949ff3258de806a19285b6b306582f7bad`.
+App-GET07:56:22.347UTC HTTP200, AntwortSHA256
+`1711db30515aae6fef8c0ee49867d2d8ceae6ffbe12584a0bd7ed9009e6160c7`.
+Kopf „Quellenlage offen“, gebundenes Teilpaket, zwei Lageabsaetze/elf Karten,
+Radar ohne Signal, Briefing ohne belegten Tagesanlass. Die neue Fristreihenfolge,
+Originalstellen und Ausschussbindung sind in der vorhandenen Code-/Browserpruefung
+belegt. Fuer ihre positive Livewirkung fehlt im aktuellen Paket ein Tagesanlass.
+Eine angemeldete visuelle Kundenpruefung steht aus. Alle fuenf neuen
+Parlamentswege bleiben inaktiv. Keine Zusatzverarbeitung und keine Budgetaenderung.
+
+**Genau ein naechster Schritt:** Die Fristreihenfolge und Originalstellen von
+#1258 am ersten regulaeren Paket mit belegtem Tagesanlass im angemeldeten
+Kundenzugang abnehmen.
+
 
 Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
 ist completed/success, exakt an69e85a3f9e949613c94184f7c7c6a00dbc5a8895
