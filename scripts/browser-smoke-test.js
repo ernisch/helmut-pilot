@@ -397,6 +397,9 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           await page.locator(`${isMobile ? ".mobile-dock" : ".nav-list"} [data-view="helmut"]`).click();
           const card = page.locator("[data-ui-briefing-teilstand]"); await card.waitFor({ state: "visible" });
+          assert.equal(await card.locator("[data-ui-briefing-absatz]:visible").count(), 0);
+          await card.getByText("Geprüfte Einordnungen aus der Lage ansehen", { exact: true }).click();
+          assert.equal(await card.locator("[data-ui-briefing-absatz]:visible").count(), text.payload.paragraphs.length);
           assert.deepEqual(await card.locator("[data-ui-briefing-absatz]").allTextContents(), text.payload.paragraphs.map(p => p.text));
           for (const [i, paragraph] of lageAnsicht.paragraphs.entries()) {
             const article = card.locator("article").nth(i), q = paragraph.sources[0];
@@ -404,7 +407,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             const date = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(new Date(q.publishedAt));
             assert((await article.innerText()).includes(date));
           }
-          check(`${label}: vorlaeufiges Briefing zeigt wortgleiche gepruefte Absaetze mit eigenen Quelldaten und offenem Tagesurteil`,
+          check(`${label}: Teilstatus steht sofort fest, geprüfte Lageabsätze mit Quelldaten öffnen auf Wunsch`,
             (await card.innerText()).includes("Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.")
             && (await card.innerText()).includes("Der Abschluss des neueren Tagespakets ist noch offen.")
             && !(await page.locator(".hstand-frische").innerText()).includes("kein erzeugtes Morgenbriefing")
@@ -490,6 +493,34 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
               } finally { briefing.currentHelmutState = saved; }
             });
             check(`${label}: Option und Originalbeleg bleiben gegen HTML-Ausfuehrung geschuetzt`, escaped);
+            const fristen = [
+              { id: "eins", zeit: "15:00", score: 40, publikation: day },
+              { id: "zwei", zeit: "16:00", score: 30, publikation: "2026-09-11" },
+              { id: "drei", zeit: "18:00", score: 90, publikation: day }
+            ];
+            const vorgaenge = fristen.map(({ id }) => ({ ...ko, id, vorgang_id: id, deadline: day,
+              display_title: `Haushaltsentwurf ${id}` }));
+            const quellen = fristen.map(({ id, zeit, publikation }) => ({ ...doc, id,
+              url: `https://example.invalid/beleg/${id}`, published_at: `${publikation}T05:00:00Z`,
+              summary: `Die Einreichungsfrist für Stellungnahmen zum Haushaltsentwurf endet am ${day} um ${zeit} Uhr Berliner Zeit.` }));
+            const geordnet = require("../lib/helmut/briefingContract").buildCurrentHelmutState({
+              profile: { ...profile, focusTopics: ["Haushalt"] }, now,
+              frischeFenster: require("../lib/helmut/briefing-frische").frischeFenster({ jetzt: now }),
+              decisions: fristen.map(({ id, score }) => ({ knowledge_object_id: id, decision: "Sofort reagieren", score })),
+              kosById: Object.fromEntries(vorgaenge.map(k => [k.id, k])),
+              sourcesByVorgang: Object.fromEntries(quellen.map(q => [q.id, [q]]))
+            });
+            await page.evaluate(state => { briefing.currentHelmutState = state; render(); }, geordnet);
+            const titles = await page.locator("[data-topic-title]").evaluateAll(nodes => nodes.map(n => n.dataset.topicTitle));
+            check(`${label}: Fristreihenfolge bleibt im Briefing trotz älterer Quelle und höherem Score erhalten`,
+              JSON.stringify(titles) === JSON.stringify(vorgaenge.map(k => k.display_title)));
+            const zweite = page.locator('.hstand-rel[data-topic-title="Haushaltsentwurf zwei"]');
+            await zweite.locator("details summary").click();
+            const optionsText = await zweite.innerText();
+            check(`${label}: Nebenpriorität zeigt Option, Anlass und die eigene tragende Originalstelle`,
+              optionsText.includes("Möglicher nächster Schritt") && optionsText.includes("Mandatsbezug und Anlass")
+              && await zweite.locator("blockquote").isVisible() && await zweite.locator("blockquote").textContent() === quellen[1].summary
+              && await zweite.locator("a.hstand-rel-quelle").getAttribute("href") === quellen[1].url);
             assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
           }
           continue; // Nur neue Teilbriefingfaelle; keine historischen Browsergruppen.

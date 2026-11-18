@@ -6836,9 +6836,9 @@ function renderHstandItems(state) {
   const zeile = (i) => {
     const title = hstandText(i.displayTitle) || hstandText(i.title);
     const lageLink = briefingLageVerweis(i);
-    const why = i.tagesAnlass?.recommendation
-      ? [hstandText(i.recommendation), hstandText(i.whyRelevant)].filter(Boolean).join(" ")
-      : lageLink ? "" : hstandText(i.whyRelevant);
+    const beleg = i.tagesAnlass?.recommendation && i.tagesAnlass.beleg;
+    const why = beleg || !lageLink ? hstandText(i.whyRelevant) : "";
+    const recommendation = beleg && hstandText(i.recommendation);
     const urgency = hstandUrgencyChip(i.urgency);
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
@@ -6846,23 +6846,27 @@ function renderHstandItems(state) {
     // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
     const quelle = hstandQuelleHref(i);
     const lv = lageVorgangZumBriefing(i);
-    const tap = lv ? ` data-lage-verweis data-vorgang="${escapeAttribute(lageAnzeigeId(lv))}" role="button" tabindex="0"` : "";
+    const tap = lv && !beleg ? ` data-lage-verweis data-vorgang="${escapeAttribute(lageAnzeigeId(lv))}" role="button" tabindex="0"` : "";
     return `
-      <li class="hstand-rel${lv ? " is-tappable" : ""}"${tap} data-topic-title="${escapeAttribute(title)}">
+      <li class="hstand-rel${tap ? " is-tappable" : ""}"${tap} data-topic-title="${escapeAttribute(title)}">
         <div class="hstand-rel-head">
           <p class="hstand-rel-title">${escapeHtml(title)}</p>
           ${urgency}
         </div>
         ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
-        ${why ? `<p class="hstand-rel-why">${escapeHtml(uiSieText(why))}</p>` : ""}
+        ${recommendation ? `<p class="hstand-rel-why"><strong>Möglicher nächster Schritt</strong> ${escapeHtml(uiSieText(recommendation))}</p>` : ""}
+        ${why ? `<p class="hstand-rel-why">${beleg ? "<strong>Mandatsbezug und Anlass</strong> " : ""}${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+        ${quelle && beleg?.text ? `<details class="ui-evidence-note"><summary>Tragende Textstelle</summary><blockquote>${escapeHtml(beleg.text)}</blockquote></details>` : ""}
+        ${quelle ? renderSourceNotice(i, quelle) : ""}
         ${quelle ? renderDipBeratungsstand(i, quelle) : ""}
       </li>`;
   };
-  // Ohne Frischeklassen (Altpfad/Vertrag aus) unveraendert EINE Liste.
+  // Bei qualifizierten Arbeitsaufträgen ist die fachliche Reihenfolge bindend.
+  // Das Datum der Quelle steht weiterhin am einzelnen Vorgang.
   const klassifiziert = items.some((i) => i && i.frischeKlasse);
-  if (!klassifiziert) {
+  if (state.tagesAnlass?.beleg || !klassifiziert) {
     return `
     <section class="hstand-card hstand-related" aria-label="Danach wichtig">
       <h2 class="ui-section-rule">Danach wichtig<span class="ui-count">${Math.min(items.length, 3)}</span></h2>
@@ -6994,9 +6998,10 @@ function renderBriefingTeilstand(state) {
     <h2>Vorläufiger Briefingstand</h2>
     <p class="ui-evidence-note">Die Quellenversorgung ist noch unvollständig. Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.</p>
     ${briefing.vorlaeufigerBriefingstand.abschluss === "offen" ? '<p class="ui-evidence-note">Der heutige Morgenlauf ist belegt. Der Abschluss des neueren Tagespakets ist noch offen.</p>' : ""}
-    <p class="ui-evidence-note">Bereits geprüfte, gespeicherte Einordnungen. Die Originalquellen und ihr Veröffentlichungsdatum stehen jeweils dabei.</p>
-    ${paragraphs.map(p => `<article><p data-ui-briefing-absatz>${escapeHtml(p.text)}</p>
-      <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
+    <details class="ui-evidence-note"><summary>Geprüfte Einordnungen aus der Lage ansehen</summary>
+      ${paragraphs.map(p => `<article><p data-ui-briefing-absatz>${escapeHtml(p.text)}</p>
+        <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
+    </details>
   </section>`;
 }
 

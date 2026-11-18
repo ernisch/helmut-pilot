@@ -442,4 +442,79 @@ test("Höchstens drei belegte Tagesprioritäten, keine Auffüllung und keine Ei
   assert.ok(b.currentHelmutState.primaryItem); assert.equal(b.currentHelmutState.items.length, 2);
   assert.equal(b.items.length, 4); assert.equal(JSON.stringify(args), before);
 });
+test("Frist, Profilrelevanz und Originalstelle gelten in Tagesauswahl, Paketleser und Anzeige", () => {
+  const cases = [
+    { id: "zuerst", zeit: "10:15 Uhr UTC", score: 40, tag: "2026-09-24" },
+    { id: "danach", zeit: "13:00 Uhr Berliner Zeit", score: 30, tag: "2026-09-22" },
+    { id: "zuletzt", zeit: "16:00 Uhr Berliner Zeit", score: 90, tag: "2026-09-24" }
+  ];
+  const ks = cases.map(({ id }) => ({ ...ko(id), display_title: `Verkehr: ${id}`, deadline: "2026-09-24" }));
+  const sources = Object.fromEntries(cases.map(({ id, zeit, tag }, i) => [ks[i].vorgang_id, [doc(id, tag, {
+    summary: `Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 24.09.2026 um ${zeit}.`
+  })]]));
+  const args = { ...input(ks, sources), decisions: ks.map((k, i) => ({ ...decision(k), score: cases[i].score })),
+    frischeFenster: require("../lib/helmut/briefing-frische").frischeFenster({ jetzt: now }) };
+  const render = require("./lib/briefing-ansichten");
+  for (const p of [{ ...profile, parliamentType: "Bundestag" }, { ...profile, parliamentType: "Landtag", state: "Berlin" }]) {
+    const stand = C.buildCurrentHelmutState({ ...args, profile: p });
+    assert.deepEqual([stand.primaryItem.id, ...stand.items.map(i => i.id)], ks.map(k => k.vorgang_id));
+    const [a, b] = stand.items;
+    const alt = { ...stand, primaryItem: { ...b, tagesAnlass: undefined }, tagesAnlass: b.tagesAnlass,
+      items: [a, { ...stand.primaryItem, tagesAnlass: stand.tagesAnlass }] };
+    const before = JSON.stringify(alt);
+    const copy = C.pruefeGespeichertenHelmutStand(alt, p, now).stand;
+    assert.deepEqual([copy.primaryItem.id, ...copy.items.map(i => i.id)], ks.map(k => k.vorgang_id));
+    assert.equal(copy.status, "fresh"); assert.equal(copy.datenstandVonHeute, true);
+    assert.equal(JSON.stringify(alt), before);
+    const html = render({ currentHelmutState: copy }, now.toISOString()).html.briefing;
+    assert.deepEqual([...html.matchAll(/data-topic-title="([^"]+)"/gu)].map(m => m[1]), ks.map(k => k.display_title));
+    for (const k of ks) assert.ok(html.includes(sources[k.vorgang_id][0].summary));
+  }
+});
+test("Eine Frist im anderen Parlament begründet keine persönliche Ausschusszuständigkeit", () => {
+  for (const [institution, passend, fremd] of [
+    ["des Bundestags", { parliamentType: "Bundestag" }, { parliamentType: "Landtag", state: "Berlin" }],
+    ["des Landtags Brandenburg", { parliamentType: "Landtag", state: "Brandenburg" }, { parliamentType: "Bundestag" }],
+    ["des Abgeordnetenhauses von Berlin", { parliamentType: "Landtag", state: "Berlin" }, { parliamentType: "Landtag", state: "Brandenburg" }]
+  ]) {
+    const text = `Die Einreichungsfrist für Stellungnahmen zur Pflegereform im Gesundheitsausschuss ${institution} endet am 24.09.2026.`;
+    const k = { ...ko(), deadline: "2026-09-24", headline: "Einreichungsfrist zur Pflegereform", was_ist_passiert: text };
+    const sources = { [k.vorgang_id]: [doc("pflege-ausschuss", "2026-09-23", { summary: text })] };
+    const profil = merkmale => ({ id: profile.id, ...merkmale, committees: ["Gesundheit"] });
+    const eigen = profil(passend), thema = { ...profil(fremd), focusTopics: ["Pflege"] };
+    const native = C.buildCurrentHelmutState({ ...input([k], sources), profile: eigen });
+    assert.equal(native.tagesAnlass.profilbezug.belege[0].art, "haupt");
+    const lesestand = C.pruefeGespeichertenHelmutStand(native, eigen, now).stand;
+    assert.equal(lesestand.tagesAnlass.profilbezug.belege[0].art, "haupt");
+    assert.equal(C.buildCurrentHelmutState({ ...input([k], sources), profile: profil(fremd) }).primaryItem, null);
+    const fachstand = C.buildCurrentHelmutState({ ...input([k], sources), profile: thema });
+    assert.equal(fachstand.tagesAnlass.profilbezug.belege[0].art, "thema");
+    assert.equal(C.pruefeGespeichertenHelmutStand(fachstand, thema, now).stand.tagesAnlass.profilbezug.belege[0].art, "thema");
+  }
+});
+test("Bei gleicher Schlusszeit geht eine belegte Zuständigkeit vor einem reinen Fachschwerpunkt", () => {
+  const direkt = { ...ko("direkt"), deadline: "2026-09-24", was_ist_passiert: "Der Gesundheitsausschuss des Bundestags berät die Pflegereform." };
+  const thema = { ...ko("thema"), deadline: direkt.deadline };
+  const wortlaut = fach => `Die Einreichungsfrist für Stellungnahmen ${fach} endet am 24.09.2026 um 15:00 Uhr Berliner Zeit.`;
+  const args = input([thema, direkt], {
+    [direkt.vorgang_id]: [doc("direkt", "2026-09-23", { summary: wortlaut("zur Pflegereform im Gesundheitsausschuss des Bundestags") })],
+    [thema.vorgang_id]: [doc("thema", "2026-09-24", { summary: wortlaut("zum Verkehr") })]
+  });
+  const p = { ...profile, parliamentType: "Bundestag", committees: ["Gesundheit"] };
+  const stand = C.buildCurrentHelmutState({ ...args, profile: p,
+    decisions: [{ ...decision(thema), score: 99 }, { ...decision(direkt), score: 10 }] });
+  assert.equal(stand.primaryItem?.id, direkt.vorgang_id);
+  assert.equal(stand.items[0]?.id, thema.vorgang_id);
+});
+test("Kommende Frist geht vor einer erst später angesetzten Beratung", () => {
+  const frist = { ...ko("frist"), deadline: "2026-09-25" };
+  const beratung = ko("beratung");
+  const args = input([beratung, frist], {
+    [frist.vorgang_id]: [doc("frist", "2026-09-23", { summary: "Die Einreichungsfrist für Stellungnahmen zum Verkehr endet am 25.09.2026." })],
+    [beratung.vorgang_id]: [doc("beratung", "2026-09-24", { summary: "Die öffentliche Beratung zum Verkehr findet am 27.09.2026 im zuständigen Ausschuss statt." })]
+  });
+  const stand = C.buildCurrentHelmutState(args);
+  assert.equal(stand.primaryItem?.id, frist.vorgang_id);
+  assert.equal(stand.items[0]?.id, beratung.vorgang_id);
+});
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);
