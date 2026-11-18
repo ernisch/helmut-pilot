@@ -506,6 +506,19 @@ test("Bei gleicher Schlusszeit geht eine belegte Zuständigkeit vor einem reinen
   assert.equal(stand.primaryItem?.id, direkt.vorgang_id);
   assert.equal(stand.items[0]?.id, thema.vorgang_id);
 });
+test("Ein passendes Fachwort macht den anderen Ausschuss desselben Parlaments nicht zum eigenen", () => {
+  const summary = "Die Einreichungsfrist für Stellungnahmen zur Zufahrt zum Krankenhaus endet im Ausschuss für Verkehr des Bundestags am 24.09.2026 um 16:00 Uhr Berliner Zeit.";
+  const k = { ...ko(), headline: "Zufahrt zum Krankenhaus", was_ist_passiert: summary, deadline: "2026-09-24" };
+  const args = input([k], { [k.vorgang_id]: [doc("krankenhauszufahrt", "2026-09-23", { summary })] });
+  const p = { id: profile.id, parliamentType: "Bundestag", committees: ["Gesundheit"] };
+  assert.equal(C.buildCurrentHelmutState({ ...args, profile: p }).primaryItem, null);
+  const focus = C.buildCurrentHelmutState({ ...args, profile: { ...p, focusTopics: ["Krankenhaus"] } });
+  assert.equal(focus.tagesAnlass.profilbezug.belege[0].art, "thema");
+  const verkehr = { ...p, committees: [], deputyCommittees: ["Verkehr"] };
+  const s = C.buildCurrentHelmutState({ ...args, profile: verkehr });
+  assert.equal(s.tagesAnlass.profilbezug.belege[0].art, "stellvertretung");
+  assert.equal(C.pruefeGespeichertenHelmutStand(s, verkehr, now).stand.tagesAnlass.profilbezug.belege[0].art, "stellvertretung");
+});
 test("Kommende Frist geht vor einer erst später angesetzten Beratung", () => {
   const frist = { ...ko("frist"), deadline: "2026-09-25" };
   const beratung = ko("beratung");
