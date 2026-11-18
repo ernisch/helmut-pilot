@@ -239,7 +239,7 @@ async function main(){
       A.equal(T.terminAnlaesse(sitzung, profile, input.now)[0].art, "bevorstehender-schritt");
       A.equal(T.terminAnlaesse(sitzung, profile, new Date(now() + 86400001)).length, 0);
     });
-    await test("Neue Fassung an anderem Tag sperrt den alten Termin derselben Ausschusssitzung", async () => {
+    await test("Neue Fassung mit abweichendem oder unklarem Tag sperrt den alten Termin derselben Sitzung", async () => {
       const inhalt = text.replace("11. November", "19. November").split("\nVoten angefordert")[0];
       const link = { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" };
       const grundfassung = E.tagesordnung(q, link, Buffer.from(inhalt), [inhalt]);
@@ -248,12 +248,28 @@ async function main(){
       const neufassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "neufassung.pdf"), revision: 1 },
         Buffer.from(anders), [anders]);
       const jetzt = new Date(now());
-      stored = [row(E.baueStand(q, [grundfassung], jetzt.toISOString(), "a".repeat(64)))];
-      const [nurAlt] = await T.mitGespeichertenStaenden([doc()], deps());
-      A.equal(T.terminAnlaesse(nurAlt, profile, jetzt)[0].termin, "2026-11-19");
-      stored = [row(E.baueStand(q, [grundfassung, neufassung], jetzt.toISOString(), "a".repeat(64)))];
-      const [verlegt] = await T.mitGespeichertenStaenden([doc()], deps());
-      A.equal(T.terminAnlaesse(verlegt, profile, jetzt).length, 0);
+      const anlaesse = async (...originale) => {
+        stored = [row(E.baueStand(q, [grundfassung, ...originale], jetzt.toISOString(), "a".repeat(64)))];
+        const [d] = await T.mitGespeichertenStaenden([doc()], deps());
+        return T.terminAnlaesse(d, profile, jetzt).map(a => a.termin);
+      };
+      A.deepEqual(await anlaesse(), ["2026-11-19"]);
+      A.deepEqual(await anlaesse(neufassung), []);
+      const unklar = anders.replace("Berlin, den 5.", "Berlin, den 6.").replace(", 10:30 Uhr", ", um 09:00 Uhr");
+      const leseUnklar = (pdf, listedMeeting) => E.tagesordnung(q,
+        { ...link, url: neufassung.url, listedMeeting, revision: 1, meetingDay: "2026-11-20" }, Buffer.from(pdf), [pdf]);
+      const unklareNeufassung = leseUnklar(unklar, "59");
+      A.equal(unklareNeufassung.meetings[0].day, null);
+      A.deepEqual(await anlaesse(unklareNeufassung), []);
+      A.deepEqual(await anlaesse(leseUnklar(unklar, null)), []);
+      const andereSitzung = leseUnklar(unklar.replace("59. Sitzung", "60. Sitzung"), "60");
+      A.deepEqual(await anlaesse(andereSitzung), ["2026-11-19"]);
+      const gueltig = anders.replace("20. November", "19. November").replace("21/8118", "21/8119");
+      const spaetereFassung = E.tagesordnung(q, { ...link, url: neufassung.url, revision: 1 }, Buffer.from(gueltig), [gueltig]);
+      const frueherUnklar = inhalt.replace("Berlin, den 5.", "Berlin, den 4.").replace(", 10:30 Uhr", ", um 10:30 Uhr");
+      const alteFassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "alte-fassung.pdf") },
+        Buffer.from(frueherUnklar), [frueherUnklar]);
+      A.deepEqual(await anlaesse(spaetereFassung, alteFassung), ["2026-11-19"]);
     });
     await test("Native Lage liefert den getrennten Mandatskontext auch ohne belegte Tagesprioritaet",async()=>{
       const previous=process.env.HELMUT_SUPABASE_STORE_ID;process.env.HELMUT_SUPABASE_STORE_ID="offline";
