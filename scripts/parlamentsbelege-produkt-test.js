@@ -270,6 +270,16 @@ async function main(){
       const alteFassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "alte-fassung.pdf") },
         Buffer.from(frueherUnklar), [frueherUnklar]);
       A.deepEqual(await anlaesse(spaetereFassung, alteFassung), ["2026-11-19"]);
+
+      const widerspruch = anders.replace("1. Änderungsmitteilung", "Änderungsmitteilung")
+        .replace(", 10:30 Uhr", ", um 09:00 Uhr");
+      const zweiteFassung = E.tagesordnung(q, {
+        ...link, url: link.url.replace("fixture.pdf", "zweite-fassung.pdf"), revision: 2, meetingDay: "2026-11-20",
+      }, Buffer.from(widerspruch), [widerspruch]);
+      A.equal(zweiteFassung.publishedDay, spaetereFassung.publishedDay);
+      A.equal(zweiteFassung.meetings[0].day, null);
+      A(zweiteFassung.conflicts.includes("fassungsnummer-widerspruch"));
+      A.deepEqual(await anlaesse(spaetereFassung, zweiteFassung), []);
     });
     await test("Native Lage liefert den getrennten Mandatskontext auch ohne belegte Tagesprioritaet",async()=>{
       const previous=process.env.HELMUT_SUPABASE_STORE_ID;process.env.HELMUT_SUPABASE_STORE_ID="offline";
