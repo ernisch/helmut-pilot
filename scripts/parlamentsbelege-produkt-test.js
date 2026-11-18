@@ -38,18 +38,23 @@ function client(){
     .replace("{ renderSourceNotice,","{ renderParlamentsKontext,renderParlamentsOriginale,renderDipBeratungsstand,renderUiBriefingHero,renderSourceNotice,");
   return vm.runInNewContext(code+"\nloadClient()",{root,fs,vm,assert:A,console,path,URL,URLSearchParams,Intl,Date});
 }
-async function normaleAppAusgabe(briefing){
+async function normaleAppAusgabe(briefing, { suche = "", storage = S, zeit = now() } = {}) {
   // Der wirkliche HTTP-Leseeinstieg, gespeicherter Pakettransport ersetzt.
   // Die bestehenden Paket-/Quittungspruefungen werden dadurch nicht neu abgenommen.
   const src=fs.readFileSync(path.join(__dirname,"..","server.js"),"utf8"),start=src.indexOf("async function latestBriefingPayload("),end=src.indexOf("\n// opts.slot",start);
   A(start>0&&end>start);
   const fn=vm.runInNewContext(src.slice(start,end)+"\nlatestBriefingPayload",{
     require:name=>{
-      if(name==="./lib/helmut/tagespaket-auslieferung")return{lese:async()=>({briefing,frischeKontext:null})};
+      if(name==="./lib/helmut/tagespaket-auslieferung")return{...require("../lib/helmut/tagespaket-auslieferung"),lese:async()=>({briefing,frischeKontext:null})};
+      if(name==="./lib/helmut/briefing-speicher") {
+        const B = require("../lib/helmut/briefing-speicher");
+        return { ...B, lese: args => B.lese({ ...args, storage }) };
+      }
+      if(name==="./lib/helmut/publication-eligibility")return require("../lib/helmut/publication-eligibility");
       if(name==="./lib/helmut/parlamentsbelege-produkt")return T;
       throw Error("Unerwarteter Apppfad: "+name);
-    },storageModul:S,prepareBriefingResponse:value=>value});
-  return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing")});
+    },storageModul:storage,Date:class extends Date { constructor(){ super(zeit); } },prepareBriefingResponse:value=>value});
+  return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing"+suche)});
 }
 async function main(){
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ,"aktiv");
@@ -197,10 +202,21 @@ async function main(){
       await B.materialisiere({ ...paketAuftrag, briefing });
       const vorher = copy([...rows]);
       const live = () => Paket.lese(paketAuftrag);
+      const explizit = (auswahl, zeit) => normaleAppAusgabe(null, { suche: `?${auswahl}=2026-11-17`, storage, zeit });
+      const auswahl = ["gespeichert", "aktuellGespeichert"];
       A.equal((await live()).briefing.currentHelmutState.tagesAnlass.beleg.terminOriginal.url, pd().url);
+      for (const modus of auswahl) {
+        const out = await explizit(modus);
+        A.equal(out.currentHelmutState.tagesAnlass.beleg.terminOriginal.url, pd().url);
+        A.equal(out.gespeicherterNachweis.inhaltHash, vorher[0][1].payload.inhaltHash);
+        const abgelaufen = await explizit(modus, Date.parse("2026-11-18T10:00:00Z"));
+        A.equal(abgelaufen.currentHelmutState.primaryItem, null);
+        A.equal(abgelaufen.currentHelmutState.recommendation, "");
+      }
       stored = speichere(inhalt.replace("19. November", "20. November"));
       A.equal(lesen({ synth: await T.mitGespeichertenStaenden([doc()], deps()) }).abgewiesen, true);
       A.equal((await live()).briefing.currentHelmutState.primaryItem, null);
+      for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
       A.deepEqual([...rows], vorher);
       stored = speichere(inhalt);
       const mitFreigabe = require.cache[seedPath].exports;
@@ -208,7 +224,11 @@ async function main(){
       try {
         A.equal(T.terminAnlaesse(d, profile, input.now).length, 0);
         A.equal((await live()).briefing.currentHelmutState.primaryItem, null);
+        for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
       } finally { require.cache[seedPath].exports = mitFreigabe; }
+      stored = [];
+      for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
+      A.deepEqual([...rows], vorher);
       stored = speichere(inhalt.replace("BT-Drucksache 21/8119", "BT-Drucksache 21/8118"));
       A.equal(lesen({ synth: await T.mitGespeichertenStaenden([doc()], deps()) }).abgewiesen, true);
       stored = speichere(inhalt.replace("59. Sitzung", "58. Sitzung"));
@@ -218,6 +238,22 @@ async function main(){
       const [sitzung] = await T.mitGespeichertenStaenden([doc()], deps());
       A.equal(T.terminAnlaesse(sitzung, profile, input.now)[0].art, "bevorstehender-schritt");
       A.equal(T.terminAnlaesse(sitzung, profile, new Date(now() + 86400001)).length, 0);
+    });
+    await test("Neue Fassung an anderem Tag sperrt den alten Termin derselben Ausschusssitzung", async () => {
+      const inhalt = text.replace("11. November", "19. November").split("\nVoten angefordert")[0];
+      const link = { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" };
+      const grundfassung = E.tagesordnung(q, link, Buffer.from(inhalt), [inhalt]);
+      const anders = inhalt.replace("Mitteilung", "1. Änderungsmitteilung\nDie Tagesordnung wird wie folgt neu gefasst:")
+        .replace("19. November", "20. November").replace("21/8119", "21/8118");
+      const neufassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "neufassung.pdf"), revision: 1 },
+        Buffer.from(anders), [anders]);
+      const jetzt = new Date(now());
+      stored = [row(E.baueStand(q, [grundfassung], jetzt.toISOString(), "a".repeat(64)))];
+      const [nurAlt] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(T.terminAnlaesse(nurAlt, profile, jetzt)[0].termin, "2026-11-19");
+      stored = [row(E.baueStand(q, [grundfassung, neufassung], jetzt.toISOString(), "a".repeat(64)))];
+      const [verlegt] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(T.terminAnlaesse(verlegt, profile, jetzt).length, 0);
     });
     await test("Native Lage liefert den getrennten Mandatskontext auch ohne belegte Tagesprioritaet",async()=>{
       const previous=process.env.HELMUT_SUPABASE_STORE_ID;process.env.HELMUT_SUPABASE_STORE_ID="offline";
