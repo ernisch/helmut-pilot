@@ -8,7 +8,7 @@ const { EventEmitter } = require("node:events"), { PassThrough } = require("node
 const tests = [], test = (name, fn) => tests.push([name, fn]);
 const q = B.QUELLEN[1], url = n => `https://www.bundestag.de/resource/blob/1231438/fixture-${n}.pdf`;
 const now = () => Date.parse("2026-11-17T12:00:00Z");
-const link = (revision = 0, patch = {}) => ({ url: url(revision), label: "59. Sitzung", listedDay: null,
+const link = (revision = 0, patch = {}) => ({ url: url(revision), listedDay: revision ? "2026-11-10" : "2026-11-05",
   listedMeeting: "59", revision, visibility: "nichtoeffentlich", ...patch });
 const body = (revision = 0, time = "10:30", top = 1) => `${revision ? revision + ". Ergänzungsmitteilung" : "Mitteilung"}
 Berlin, den ${revision ? "10" : "5"}. November 2026
@@ -22,8 +22,9 @@ Voten angefordert für den: 11.11.2026`;
 const doc = (revision = 0, time = "10:30", patch = {}) => B.tagesordnung(q, link(revision, patch),
   Buffer.from("%PDF-" + body(revision, time)), [body(revision, time)]);
 const catalog = () => ({ retrievalPaths: [{ id: q.retrievalPathId, legacy_source_id: q.id,
-  publisher_id: "publisher-bundestag.de", method: q.crawlMethod, url: q.url, status: "healthy",
-  activation_mode: "always_on" }] });
+  publisher_id: "publisher-bundestag.de", method: q.crawlMethod, url: q.url, status: "needs_review",
+  activation_mode: "auto" }], packages: [{ id: q.packageId, status: "active" }],
+  packagePaths: [{ package_id: q.packageId, retrieval_path_id: q.retrievalPathId }] });
 const rights = () => ({ id:q.id,url:q.url,rightsReviewRequired:false,
   usagePolicy: { commercialUseApproved: true, scope: "structured_parliamentary_facts", fullTextAllowed: false,
     imagesAllowed: false, aiTrainingAllowed: false, evidenceUrls: ["https://example.test/explicit-fixture-approval"] } });
@@ -69,7 +70,7 @@ test("Fehlende Zwischenfassungen/gleicher Rang/Datumskonflikt werden nicht still
   A(B.fasseZusammen([doc(), doc(4, "09:00")])[0].conflicts.includes("fassungskette-unvollstaendig"));
   const sameRank = B.fasseZusammen([doc(), doc(1), doc(1, "09:00", { url: url(99) })])[0];
   A(sameRank.conflicts.includes("mehrere-fassungen-gleichen-ranges")); A.equal(sameRank.startsAt, null);
-  A(B.tagesordnung(q, link(0, { listedDay: "2026-11-06" }), Buffer.from("%PDF-fixture"), [body()])
+  A(B.tagesordnung(q, link(0, { listedDay: "2026-11-04" }), Buffer.from("%PDF-fixture"), [body()])
     .conflicts.includes("publikationstag-widerspruch"));
 });
 test("Ausdrueckliche Neufassung ersetzt TOPs; blosse Aenderungsmitteilung bleibt zur Pruefung", () => {
@@ -90,10 +91,10 @@ test("Arbeit45/44 bleibt Konflikt; fehlende Uhrzeit wird nicht aus Listentitel e
   A(missing.conflicts.includes("sitzung-nicht-eindeutig-gelesen"));
 });
 test("Amtliche Arbeit-Typografie und Digital-Votenfrist werden ohne erfundene Uhrzeit gelesen", () => {
-  const d = B.tagesordnung(B.QUELLEN[0], link(0,{listedMeeting:"45"}), Buffer.from("%PDF-fixture"),
+  const d = B.tagesordnung(B.QUELLEN[0], link(0,{listedMeeting:"45",listedDay:"2026-11-12"}), Buffer.from("%PDF-fixture"),
     ["Mitteilung Berlin, den 6 . November 2026\nDie 44. Sitzung des Ausschusses\nDonnerstag, dem 26. November 2026, 8.00 Uhr\nEinziger Tagesordnungspunkt\n\nAktuelle arbeits- und sozialpolitische Themen"]);
-  A.equal(d.publishedDay,"2026-11-06"); A.equal(d.meetings[0].startsAt,"2026-11-26T07:00:00.000Z");
-  A.equal(d.tops[0].number,"einzig"); A.equal(d.tops[0].subject,"Aktuelle arbeits- und sozialpolitische Themen");
+  A.equal(d.publishedDay,"2026-11-12"); A.equal(d.versionDay,"2026-11-06"); A.equal(d.meetings[0].startsAt,"2026-11-26T07:00:00.000Z");
+  A.equal(d.tops[0].number,"einzig"); A(!JSON.stringify(d).includes("Aktuelle arbeits- und sozialpolitische Themen"));
   A.deepEqual(d.conflicts,["sitzungsnummer-widerspruch"]);
   const digital = B.tagesordnung(B.QUELLEN[2],link(),Buffer.from("%PDF-fixture"),
     [body().replace("Voten angefordert für den:","Frist für die Abgabe der Voten:")]);
@@ -106,8 +107,10 @@ test("Plenarsitzungen110–113 und Tagesordnungsstand bleiben getrennt; kein Bes
     + "\nDi. I. a) Beratung des Haushaltsgesetzes\nDrucksachen 21/7300, 21/7302\n113. Sitzung des Deutschen Bundestages";
   const d = B.tagesordnung(B.QUELLEN[3], link(0, { listedMeeting: null, visibility: "oeffentlich" }), Buffer.from("%PDF-fixture"), [page]);
   A.equal(d.meetings.length, 4); A.equal(d.meetings[0].day, "2026-11-24");
-  A.equal(d.meetings[3].day, "2026-11-27"); A.equal(d.publishedDay, "2026-11-12");
-  A.equal(d.conflicts.length, 0); A(d.plenumTops.length); A.deepEqual(d.references, ["21/7300", "21/7302"]);
+  A.equal(d.meetings[3].day, "2026-11-27"); A.equal(d.publishedDay, null); A.equal(d.versionDay, "2026-11-12");
+  A.equal(d.conflicts.length, 0); A.deepEqual(d.plenumTops, [{ number: "I. a)" }]);
+  A.deepEqual(d.references, ["21/7300", "21/7302"]);
+  A(!JSON.stringify(d).includes("Beratung des Haushaltsgesetzes"));
   const stand = B.baueStand(B.QUELLEN[3], [d], new Date(now()).toISOString(), "a".repeat(64));
   A.equal(stand.plannedIsDecision, false);
   A.deepEqual(stand.meetings.map(m => ({ key: m.key, startsAt: m.startsAt })), d.meetings.map(m => ({
@@ -130,6 +133,7 @@ test("Amtliche Sitzungswoche23–27Nov: exklusives28Nov, ganztags, DTSTAMP kein 
   const d = B.kalender(B.QUELLEN[4], { url: "https://www.bundestag.de/resource/blob/1103938/Parlamentstermine_2026_ics.ics" }, ics());
   A.equal(d.publishedDay, null); A.equal(d.events[0].startDay, "2026-11-23");
   A.equal(d.events[0].endDayExclusive, "2026-11-28"); A.equal(d.events[0].allDay, true);
+  A.equal(d.events[0].uidHash, B.hash("fixture.test")); A(!JSON.stringify(d).includes("fixture.test"));
   for (const extra of ["ATTENDEE:mailto:person@example.test\r\n", "RRULE:FREQ=DAILY\r\n", "ATTACH:https://example.test/file\r\n"])
     A.throws(() => B.kalender(B.QUELLEN[4], link(), ics(extra)), /fremdstruktur/);
   A.throws(() => B.kalender(B.QUELLEN[4], link(), Buffer.from(ics().toString().replace("20261128", "20261122"))), /ics-zeit/);
@@ -158,8 +162,11 @@ test("Frische Rechte-/Katalogpruefung: offene Rechte starten weder Netz noch Abl
   const blocked = await B.aufnahme(q, { katalog: { retrievalPaths: [] }, fetchUrl: () => { calls++; }, save: () => { calls++; } });
   A.equal(blocked.uebersprungen, true); A.equal(blocked.ok, false); A.equal(calls, 0);
   A(B.freigabe(q, catalog(), rights()));
-  A.equal(B.freigabe(q,catalog()),false,"Reale bestehende SQL-Felder ersetzen keinen fehlenden Code-Nutzungsbeleg");
-  A.equal(B.codeNutzungsbeleg(q.id),null);
+  A.equal(B.freigabe(q,catalog(),null),false,"Reale SQL-Felder ersetzen keinen fehlenden Code-Nutzungsbeleg");
+  A.equal(B.codeNutzungsbeleg("fremde-quelle"),null);
+  A(B.QUELLEN.every(s => B.nutzungsfreigabe(s)));
+  A.equal(B.freigabe(q,{...catalog(),packagePaths:[]}),false);
+  A.equal(B.freigabe(q,{...catalog(),packages:[{id:q.packageId,status:"prepared"}]}),false);
   for (const change of [p => p.status = "paused", p => p.url += "?fremd"])
     { const c = catalog(); change(c.retrievalPaths[0]); A.equal(B.freigabe(q, c,rights()), false); }
   for(const change of [s=>s.rightsReviewRequired=true,s=>s.usagePolicy.commercialUseApproved=false,
@@ -169,24 +176,41 @@ test("Geschlossener Speichervertrag nimmt keine Fremdfelder/Volltexte auf", () =
   const d = doc();
   A.throws(() => B.baueStand(q,[{...d,content:"nicht freigegebener Volltext"}],new Date(now()).toISOString(),"a".repeat(64)),/dokument-bindung/);
   A.throws(() => B.baueStand(q,[{...d,tops:[{...d.tops[0],personalDeadline:true}]}],new Date(now()).toISOString(),"a".repeat(64)),/dokument-bindung/);
+  A.throws(() => B.baueStand(q,[{...d,tops:[{...d.tops[0],subjectStatus:"originalfragment",subject:"gesperrt"}]}],
+    new Date(now()).toISOString(),"a".repeat(64)),/dokument-bindung/);
+  A.throws(() => B.leseStand({...B.baueStand(q,[d],new Date(now()).toISOString(),"a".repeat(64)),version:1}), /stand-bindung/);
+  const text = body().replace("synthetischen Testgegenstand", "Testgegenstand 21/9999 und Ausschussdrucksache 21/7777");
+  const parsed = B.tagesordnung(q,link(),Buffer.from(text),[text]);
+  A.deepEqual(parsed.tops[0].references, ["21/8119"]);
 });
 test("Regulaerer Quellenadapter liest Liste/Originale begrenzt und verlangt belegHash-Readback", async () => {
   const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
-  const landing = Buffer.from(JSON.stringify({ endpoint })), list = Buffer.from(row(1) + row(0));
+  const robots = "https://www.bundestag.de/robots.txt";
+  const landing = Buffer.from(JSON.stringify({ endpoint }));
+  const list = Buffer.from(row(1).replace(" am Mittwoch, den 11. November 2026, 09:00 Uhr", "")
+    + row(0).replace("den 11. November", "den 25. November"));
   let saved, requests = [];
   const deps = { katalog: catalog(), rightsForSource:rights, now, deadlineMs: now()+20000,
     reserveOriginal: async () => ({ erlaubt: true, geprueft: true }), fetchUrl: async (url, depth, opts) => {
-    requests.push(url); A.equal(opts.allowedHost, "bundestag.de"); A.equal(opts.binary, true);
-    return { status: 200, finalUrl: url, bytes: url === q.url ? landing : url === endpoint ? list : Buffer.from("%PDF-fixture-" + url.match(/fixture-(\d+)/)[1]) };
+    requests.push(url); A.equal(opts.allowedHost, "bundestag.de"); A.equal(opts.binary, true); A.equal(opts.bundestagFakten,true);
+    const bytes = url === robots ? Buffer.from("User-agent: *\nDisallow: /xml/") : url === q.url ? landing
+      : url === endpoint ? list : Buffer.from("%PDF-fixture-" + url.match(/fixture-(\d+)/)[1]);
+    return { status: 200, finalUrl: url, bytes };
   }, pdfText: async bytes => [body(+bytes.toString().slice(-1))], save: async s => {
     saved = s; return { ok: true, standHash: s.standHash, belegHash: s.belegHash }; } };
   const result = await B.aufnahme(q, deps);
-  A.equal(result.ok, true); A.equal(result.documents, 2); A.equal(requests.length, 4); A.equal(saved.coverage, "partial");
+  A.equal(result.ok, true); A.equal(result.documents, 2); A.equal(requests.length, 5); A.equal(saved.coverage, "partial");
   await A.rejects(B.aufnahme(q, { ...deps, save: async s => ({ ok: true, standHash: s.standHash }) }), /persistenz-unbestaetigt/);
   await A.rejects(B.aufnahme(q, { ...deps, deadlineMs: now()-1 }), /zeitbudget/);
   const used = requests.length;
   const quota = await B.aufnahme(q, { ...deps, reserveOriginal: async () => ({ erlaubt: false, geprueft: true }) });
-  A.equal(quota.zurueckgestellt,true); A.equal(requests.length-used,2,"Nur Liste/Seite, kein neues Original bei verbrauchter Quote");
+  A.equal(quota.zurueckgestellt,true); A.equal(requests.length-used,3,"Nur Robots/Liste/Seite bei verbrauchter Originalquote");
+  const beforeRobots = requests.length;
+  const probe = async u => u === robots
+    ? { status: 200, finalUrl: u, bytes: Buffer.from("User-agent: HelmutBot\nDisallow: /ajax/*/de/") }
+    : deps.fetchUrl(u,0,{allowedHost:"bundestag.de",binary:true,bundestagFakten:true});
+  await A.rejects(B.aufnahme(q,{...deps,fetchUrl:probe}), /robots-gesperrt/);
+  A.deepEqual(requests.slice(beforeRobots),[q.url]);
 });
 test("Unveraenderliche Ablage: nur POST-neu, exaktes Ruecklesen, verlorene Antwort und UNKNOWN", async () => {
   const s = B.baueStand(q, [doc()], new Date(now()).toISOString(), "a".repeat(64)), map = new Map(), methods = [];
@@ -218,13 +242,20 @@ test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generische
 });
 test("Vorhandener HTTP-Transport bewahrt Binaerbytes und begrenzt Antwortgroesse", async () => {
   const https = require("node:https"), original = https.get, bytes = Buffer.from([37,80,68,70,45,255,0,200]);
+  let status = 200, headers = {}, calls = 0;
   https.get = (url, opts, cb) => { const request = new EventEmitter(); request.destroy = e => { if(e) request.emit("error",e); };
-    queueMicrotask(() => { const response = new PassThrough(); response.statusCode = 200; response.headers = {}; response.complete = true;
+    calls++;
+    queueMicrotask(() => { const response = new PassThrough(); response.statusCode = status; response.headers = headers; response.complete = true;
       cb(response); response.end(bytes); }); return request; };
   try {
     const r = await C.fetchUrl(url(1), 0, { env: {}, binary: true, maxBytes: 50, allowedHost: "bundestag.de" });
     A.deepEqual(r.bytes, bytes); A.equal(r.status, 200);
     await A.rejects(C.fetchUrl(url(1), 0, { env: {}, binary: true, maxBytes: 3, allowedHost: "bundestag.de" }), /Response too large/);
+    const facts = { env: {}, binary: true, allowedHost: "bundestag.de", bundestagFakten: true };
+    status = 302; headers = { location: url(2) };
+    await A.rejects(C.fetchUrl(url(1), 0, facts), /weiterleitung/); A.equal(calls, 3);
+    status = 200; headers = { "tdm-reservation": "1" };
+    await A.rejects(C.fetchUrl(url(1), 0, facts), /nutzungsvorbehalt/);
   } finally { https.get = original; }
 });
 const originalDir = process.argv.find(a => a.startsWith("--original-dir="))?.slice(15);
@@ -243,14 +274,19 @@ if (originalDir) test("Zehn amtliche Originalfassungen: drei Ausschuesse/Plenum/
   const docs = {};
   for (const [name,index,number,revision,pdfPath,sha] of definitions) {
     const bytes = fs.readFileSync(path.join(originalDir,name+".pdf")); A.equal(B.hash(bytes),sha);
-    const q = B.QUELLEN[index], d = B.tagesordnung(q,link(revision,{url:"https://www.bundestag.de/resource/blob/"+pdfPath,listedMeeting:number}),bytes,await P.lesen(bytes));
+    // Die Original-Fixture bindet die PDF-Bytes. Der Listenwert für Wirtschaft
+    // ist eine deklarierte Testannahme, da diese Fixture keine Liste enthält.
+    const listedDay = index === 2 ? "2026-11-11" : "2026-11-12";
+    const q = B.QUELLEN[index], d = B.tagesordnung(q,link(revision,{
+      url:"https://www.bundestag.de/resource/blob/"+pdfPath,listedMeeting:number,listedDay }),bytes,await P.lesen(bytes));
     B.leseStand(B.baueStand(q,[d],new Date(now()).toISOString(),"a".repeat(64))); docs[name]=d;
   }
   A.deepEqual(docs.arbeit.conflicts,["sitzungsnummer-widerspruch"]);
   A.equal(docs.arbeit.meetings[0].startsAt,"2026-11-26T07:00:00.000Z"); A.equal(docs.arbeit.tops[0].number,"einzig");
   A.equal(docs["wirtschaft-basis"].meetings[0].startsAt,"2026-11-11T09:30:00.000Z");
   A.equal(docs.wirtschaft.meetings[0].startsAt,"2026-11-11T08:00:00.000Z");
-  A(docs.wirtschaft.tops[0].subject.includes("Energiewende"));
+  A(docs.wirtschaft.tops.length > 0);
+  A(!JSON.stringify(docs.wirtschaft).includes("Energiewende"));
   const economics = B.fasseZusammen([docs["wirtschaft-basis"],docs["wirtschaft-1"],docs["wirtschaft-2"],docs["wirtschaft-3"],docs.wirtschaft])[0];
   A.equal(economics.state,"geplant"); A.equal(economics.startsAt,"2026-11-11T08:00:00.000Z");
   A(economics.topVersions.some(t=>t.superseded)); A(economics.tops.every(t=>t.revision>=2));

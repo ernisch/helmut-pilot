@@ -11917,7 +11917,7 @@ function renderParlamentsOriginale(belege) {
       const url=link(o.url);if(!url)return "";
       const einzel=b.sitzungen.some(m=>m.konflikte?.length) ? (o.sitzungen||[]).slice(0,12).map(m=>
         `Original nennt Sitzung ${m.nummer}, ${datum(m.beginn||m.tag,Boolean(m.beginn))}.`).join(" ") : "";
-      return `<p><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Amtlicher Originalbeleg</a>${o.veroeffentlicht ? ` · Veröffentlichung ${escapeHtml(datum(o.veroeffentlicht))}` : ""}${einzel ? `<br>${escapeHtml(einzel)} Zusammenführung ungeklärt.` : ""}</p>`;
+      return `<p><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Amtlicher Originalbeleg</a>${o.veroeffentlicht ? ` · Veröffentlichung ${escapeHtml(datum(o.veroeffentlicht))}` : ""}${o.fassungsdatum ? ` · Dokumentstand ${escapeHtml(datum(o.fassungsdatum))}` : ""}${einzel ? `<br>${escapeHtml(einzel)} Zusammenführung ungeklärt.` : ""}</p>`;
     }).join("");
     return `<details class="source-notice" data-parlamentsbeleg><summary>${escapeHtml(`${b.name} · ${b.rolle}${b.dokumentnummer ? " · Drucksache "+b.dokumentnummer : ""}`)}</summary><p>Quelle: Deutscher Bundestag. Strukturierte Angaben ausgewählt und gegliedert. ${escapeHtml(lesezeit)}</p>${b.sitzungszuordnung === "unbekannt" ? "<p>Gemeinsames Plenarprogramm: Zuordnung dieser Drucksache zu einem einzelnen Sitzungstag oder TOP nicht bestätigt.</p>" : ""}<ul>${meetings}${wochen}</ul>${originale}<p>Planungsangaben; Durchführung, Beschlüsse und spätere Änderungen sind nicht bestätigt. Kein persönlicher Anwesenheits- oder Handlungsauftrag.</p></details>`;
   }).join("");
