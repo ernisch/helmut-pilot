@@ -6863,10 +6863,8 @@ function renderHstandItems(state) {
         ${quelle ? renderDipBeratungsstand(i, quelle) : ""}
       </li>`;
   };
-  // Bei qualifizierten Arbeitsaufträgen ist die fachliche Reihenfolge bindend.
-  // Das Datum der Quelle steht weiterhin am einzelnen Vorgang.
   const klassifiziert = items.some((i) => i && i.frischeKlasse);
-  if (state.tagesAnlass?.beleg || !klassifiziert) {
+  if (!klassifiziert) {
     return `
     <section class="hstand-card hstand-related" aria-label="Danach wichtig">
       <h2 class="ui-section-rule">Danach wichtig<span class="ui-count">${Math.min(items.length, 3)}</span></h2>
@@ -6878,6 +6876,9 @@ function renderHstandItems(state) {
   const gruppen = HSTAND_FRISCHE_GRUPPEN
     .map((g) => ({ ...g, liste: items.filter((i) => i.frischeKlasse === g.klasse).slice(0, 3) }))
     .filter((g) => g.liste.length);
+  // Bei den höchstens zwei Nebenprioritäten folgt die Gruppenreihenfolge der
+  // fachlichen Auswahl. Die Frischeklasse erklärt den Stand der Quelle.
+  if (state.tagesAnlass?.beleg) gruppen.sort((a, b) => items.indexOf(a.liste[0]) - items.indexOf(b.liste[0]));
   if (!gruppen.length) return "";
   return gruppen.map((g) => `
     <section class="hstand-card hstand-related" data-frische-klasse="${escapeAttribute(g.klasse)}" aria-label="${escapeAttribute(g.label)}">
