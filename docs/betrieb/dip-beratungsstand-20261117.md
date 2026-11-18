@@ -34,8 +34,8 @@ Teilpaket enthaelt quellenversorgung-unvollstaendig und briefing-ohne-tagesanlas
 Echter normaler Betreiber-AppGET05:25:58.935 UTC HTTP200/availabletrue,
 666531 Bytes, AntwortSHA256
 `effce749b3179e2e148a9bf8e1984c6023d68eb20ed34c8a0f41779c235eea8e`.
-Die Lage liefert zwei belegte Pflegeabsätze (Destatis und Bundestag/Gürpinar)
-und elf Karten. Der Renderer verwendet den qualifizierten Radarstand mit
+Die Lage liefert zwei belegte Pflegeabsätze aus Originalen vom 12.11.
+(Destatis) und 05.11. (Bundestag/Gürpinar) sowie elf Karten. Der Renderer verwendet den qualifizierten Radarstand mit
 null sichtbaren Signalen. Fuenf technische Rohkandidaten wurden gespeichert,
 sie belegen dort keinen neuen Originalinhalt. Das Briefing hat keine
 belegte Tagesprioritaet. Angemeldete visuelle Kundenabnahme offen.
@@ -59,6 +59,13 @@ verwendet den Hinweis im Detail, aber nicht im Status. Gezielte Reproduktion
 am bestehenden Frische-E2E-Test rot fuer volle und kompakte Antwort, danach
 70/70 gruen mit [PR1259](https://github.com/ernisch/helmut-pilot/pull/1259).
 [D/F/G-Abstimmung](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6970044607).
+[Pflichtlauf 44244799628](https://github.com/ernisch/helmut-pilot/actions/runs/44244799628)
+completed/success, genau `29c35b78c9ef3419a8a1644702aefab59ec77051`.
+Kern134601051517 und Chromium134601051851 gruen, separater Voll-Mock100
+planmaessig ausgelassen. Um06:00UTC fehlt die unabhängige Abnahme durch F/G.
+Der PR bleibt offen und konfliktfrei. Der bisherige Kopftext ist noch live.
+Genau ein naechster Schritt dieses Betriebsschritts: #1259 unabhaengig abnehmen.
+
 
 Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
 ist completed/success, exakt an69e85a3f9e949613c94184f7c7c6a00dbc5a8895
