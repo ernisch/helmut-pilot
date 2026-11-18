@@ -104,7 +104,7 @@ test("Amtliche Arbeit-Typografie und Digital-Votenfrist werden ohne erfundene Uh
 test("Plenarsitzungen110–113 und Tagesordnungsstand bleiben getrennt; kein Beschluss", () => {
   const page = "Tagesordnung Stand: 12. November 2026\n" + [110, 111, 112, 113].map((n,i) =>
     `${n}. Sitzung des Deutschen Bundestages\nam Dienstag, dem ${24+i}. November 2026, ${i ? 9 : 10} Uhr`).join("\n")
-    + "\nDi. I. a) Beratung des Haushaltsgesetzes\nDrucksachen 21/7300, 21/7302\n113. Sitzung des Deutschen Bundestages";
+    + "\nDi. I. a) Beratung des Haushaltsgesetzes\nDrucksachen 21/…, 21/7300, 21/7302\n113. Sitzung des Deutschen Bundestages";
   const d = B.tagesordnung(B.QUELLEN[3], link(0, { listedMeeting: null, visibility: "oeffentlich" }), Buffer.from("%PDF-fixture"), [page]);
   A.equal(d.meetings.length, 4); A.equal(d.meetings[0].day, "2026-11-24");
   A.equal(d.meetings[3].day, "2026-11-27"); A.equal(d.publishedDay, null); A.equal(d.versionDay, "2026-11-12");
@@ -239,6 +239,28 @@ test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generische
   A.equal(result.uebersprungen, true); A.equal(generic, 0); A.equal(frees, 1);
   await A.rejects(handler({ payload: { quelle: { ...q, url: q.url + "?fremd" } } }, deps), /bundestag-termine-quelle/);
   await A.rejects(C.crawlSource(q), /nur-quellenauftrag/);
+});
+test("Quellenjob übernimmt externe Sperre und Retry-After in die bestehende Warteschlange", async () => {
+  let fetches = 0, delay;
+  const handler = SP.HANDLER.source_fetch;
+  const auftrag = { id: "fixture", job_type: "source_fetch", payload: { quelle: q }, attempts: 1 };
+  const deps = { env: {}, now, handler: { source_fetch: handler }, leseBundestagTermineKatalog: async () => catalog(),
+    sichereBundestagTerminstand: () => A.fail("keine Ablage"), reserviereBundestagOriginal: () => A.fail("kein Original"),
+    leseBundestagAbrufpause: async () => null,
+    zurueckstellen: async ({ delayMs, grund }) => { delay = { delayMs, grund }; return { verfuegbar: true, uebernommen: true }; },
+    finish: () => A.fail("Sperre ist kein Erfolg oder unmittelbarer Retry") };
+  const job = extra => SP.fuehreAuftragAus({ auftrag, besitzer: "fixture", deps: { ...deps, ...extra }, restzeitMs: 60000 });
+  const http = (statusCode, retryAfterMs) => async () => {
+    fetches++;
+    throw Object.assign(Error("HTTP"), { statusCode, retryAfterMs });
+  };
+  await job({ bundestagTermineFetch: http(403) });
+  A.deepEqual(delay, { delayMs: 86400000, grund: "bundestag-termine-zugriff-gesperrt" });
+  await job({ bundestagTermineFetch: http(429, 7200000) });
+  A.deepEqual(delay, { delayMs: 7200000, grund: "bundestag-termine-http-429" });
+  const pause = { ...delay, bundestagAbrufpauseMs: delay.delayMs, zurueckgestellt: true, langeWarten: true };
+  await job({ leseBundestagAbrufpause: async () => pause, bundestagTermineFetch: () => A.fail("kein erneuter Abruf") });
+  A.equal(fetches, 2);
 });
 test("Vorhandener HTTP-Transport bewahrt Binaerbytes und begrenzt Antwortgroesse", async () => {
   const https = require("node:https"), original = https.get, bytes = Buffer.from([37,80,68,70,45,255,0,200]);

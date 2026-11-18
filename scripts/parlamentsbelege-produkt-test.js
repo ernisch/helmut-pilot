@@ -248,6 +248,10 @@ async function main(){
       const [sitzung] = await T.mitGespeichertenStaenden([doc()], deps());
       A.equal(T.terminAnlaesse(sitzung, profile, input.now)[0].art, "bevorstehender-schritt");
       A.equal(T.terminAnlaesse(sitzung, profile, new Date(now() + 86400001)).length, 0);
+      stored = speichere(inhalt.replace("BT-Drucksache 21/8119", "BT-Drucksachen 21/8119, 21/8120"));
+      const [mehrfach] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(mehrfach.parlamentsOriginalbelege[0].sitzungen[0].tops[0].fristen.length, 0);
+      A.equal(T.terminAnlaesse(mehrfach, profile, input.now)[0].art, "bevorstehender-schritt");
     });
     await test("Neue Fassung mit abweichendem oder unklarem Tag sperrt den alten Termin derselben Sitzung", async () => {
       const inhalt = text.replace("11. November", "19. November").split("\nVoten angefordert")[0];

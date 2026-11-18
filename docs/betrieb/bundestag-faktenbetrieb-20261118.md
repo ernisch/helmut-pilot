@@ -39,7 +39,10 @@ Nutzungsvorbehalt. Die Probe belegt Zugangsbedingungen zum Prüfzeitpunkt.
 HTML, PDF und ICS bleiben zur Faktenerkennung kurzzeitig im Arbeitsspeicher.
 Der vorhandene Quellenjob prüft der Reihe nach Katalog und Rechte,
 `robots.txt`, Abrufziel und Antwortsignale. Weiterleitungen werden vor einem
-Folgeabruf gestoppt. Es gelten dieselben Abruffenster, Anbieter- und Originalgrenzen.
+Folgeabruf gestoppt. Eine erkannte Zugriffssperre wird im bestehenden Auftrag
+vertagt. Bei HTTP 429 gilt mindestens der spätere Zeitpunkt aus `Retry-After`
+und dem bestehenden Backoff. Neue Aufträge desselben Wegs berücksichtigen die
+noch laufende Sperre. Es gelten dieselben Abruffenster, Anbieter- und Originalgrenzen.
 Je Original wird die bestehende Tagesquote reserviert. Das Speicherschema v2
 lässt Original-URL, Herausgeber, Abrufzeit, Hashes, Termin- und Drucksachennummern,
 Fristen und Fassungsmerkmale zu. Betrefftexte und rohe ICS-IDs entfallen.
@@ -54,7 +57,9 @@ Verbindung zum gesamten Dokument über eine Drucksachennummer zu. Ein einzelner
 Sitzungstag oder TOP folgt daraus nicht. Der Wochenkalender belegt Wochen,
 keinen konkreten Vorgang. Die seit PR #1261 bestehende Briefingauswahl verlangt
 für eine Priorität einen gültigen Tagesanlass, einen eindeutigen DIP-Vorgang,
-einen aktuellen Ausschussbeleg und passenden Mandatsbezug.
+einen aktuellen Ausschussbeleg und passenden Mandatsbezug. Eine nicht eindeutig
+einer Drucksache zugeordnete Frist bei mehreren Drucksachen bleibt beim TOP
+und begründet keine vorgangsbezogene Frist.
 
 ## Gebundene Katalogaktivierung
 
