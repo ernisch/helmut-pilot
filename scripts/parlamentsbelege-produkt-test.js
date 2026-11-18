@@ -209,6 +209,9 @@ async function main(){
         const out = await explizit(modus);
         A.equal(out.currentHelmutState.tagesAnlass.beleg.terminOriginal.url, pd().url);
         A.equal(out.gespeicherterNachweis.inhaltHash, vorher[0][1].payload.inhaltHash);
+        const heuteOffen = await explizit(modus, Date.parse("2026-11-18T08:00:00Z"));
+        A.equal(heuteOffen.currentHelmutState.tagesAnlass?.art, "heutige-frist");
+        A.deepEqual(heuteOffen.currentHelmutState.tagesAnlass.beleg.terminOriginal, anlass.beleg.terminOriginal);
         const abgelaufen = await explizit(modus, Date.parse("2026-11-18T10:00:00Z"));
         A.equal(abgelaufen.currentHelmutState.primaryItem, null);
         A.equal(abgelaufen.currentHelmutState.recommendation, "");
