@@ -4967,9 +4967,11 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
     grundText: "Der heutige Morgenlauf ist belegt; für das neuere Tagespaket fehlt noch die passende Abschlussquittung.",
     hinweis: "Der heutige Morgenlauf ist belegt; für das neuere Tagespaket fehlt noch die passende Abschlussquittung." };
 
-  const status = vertragBlockiert
-    ? briefingFrische.LABEL_NICHT_AKTUELL
-    : (stale ? "Veraltet" : fresh ? "Aktuell" : "Keine neue Entscheidung");
+  let status = "Keine neue Entscheidung";
+  if (vertragBlockiert) status = briefingFrische.LABEL_NICHT_AKTUELL;
+  else if (stale) status = "Veraltet";
+  else if (fresh) status = "Aktuell";
+  else if (lueckenHinweis) status = "Quellenlage offen";
 
   // Der Vertrag wirkt bis in den State hinein, damit Kopf, Karte und Client
   // NICHT auseinanderlaufen koennen (Punkt 7: eine Aussage in API und Oberflaeche).
