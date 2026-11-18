@@ -62,6 +62,36 @@ test("Kommende belegte Frist erlaubt Vorbereitung ohne heutige Dringlichkeit",()
   const s=state({...ko,deadline:"2026-11-12"},[{...doc,summary:"Die Einreichungsfrist für Stellungnahmen zur Pflegereform endet am 2026-11-12. Die Verbände können ihre Stellungnahmen einreichen."}]);
   A.equal(s.tagesAnlass.art,"kommende-frist"); A(s.whyItMatters.includes("nicht heute fällig")); A.equal(s.urgency,"unknown");
 });
+test("Frist für Stellungnahmen begründet interne Vorbereitung, keine Einreichung für das Mandat", () => {
+  for (const deadline of ["2026-11-09", "2026-11-12"]) {
+    const source = { ...doc, summary: `Die Einreichungsfrist für Stellungnahmen zur Pflegereform endet am ${deadline}. Ausschließlich die angehörten Verbände dürfen Stellungnahmen einreichen.` };
+    for (const profile of [p, { ...p, id: "test-land", parliamentType: "Landtag", state: "Berlin" }]) {
+      const result = state({ ...ko, deadline }, [source], profile);
+      A.equal(result.tagesAnlass.art, deadline === "2026-11-09" ? "heutige-frist" : "kommende-frist");
+      A.match(result.recommendation, /intern.*Stellungnahme/u);
+      A.doesNotMatch(result.recommendation, /einreich|abgeben/iu);
+      const checked = C.pruefeGespeichertenHelmutStand(result, profile, now).stand;
+      A.equal(checked.recommendation, result.recommendation);
+    }
+  }
+});
+test("Frist ohne konkret belegte Handlung erzeugt keine Tagespriorität", () => {
+  for (const deadline of ["2026-11-09", "2026-11-12"]) {
+    const source = { ...doc, summary: `Die öffentliche Bekanntmachung nennt für die Pflegereform eine Frist bis ${deadline}.` };
+    A.equal(state({ ...ko, deadline }, [source]).primaryItem, null);
+  }
+});
+test("Einreichungsgegenstand bestimmt die interne Vorbereitung", () => {
+  for (const [vorschrift, check] of [
+    ["Die Einreichungsfrist für Änderungsanträge zur Pflegereform endet am 2026-11-09.", /Änderungen am Entwurf/u],
+    ["Die Votenfrist im Ausschuss zur Pflegereform endet am 2026-11-09.", /Fragen vor dem Ausschussvotum/u]
+  ]) {
+    const result = state({ ...ko, deadline: "2026-11-09" }, [{ ...doc, summary: vorschrift }]);
+    A.equal(result.tagesAnlass.beleg.text, vorschrift);
+    A.match(result.recommendation, check);
+    A.doesNotMatch(result.recommendation, /einreich|abgeben/iu);
+  }
+});
 test("Anzeige enthält Prüfauftrag und Originalbeleg statt Leerkarte/Lagekopie",()=>{
   const s=state(), b={currentHelmutState:s,currentRadarState:{},lageBriefing:{paragraphs:[{text:"NICHT KOPIEREN"}],vorgaenge:[]}};
   const r=render(b,now.toISOString()); A.equal(r.fachinhalt.briefing,true);
