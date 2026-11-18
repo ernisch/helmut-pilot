@@ -62,9 +62,41 @@ am bestehenden Frische-E2E-Test rot fuer volle und kompakte Antwort, danach
 [Pflichtlauf 44244799628](https://github.com/ernisch/helmut-pilot/actions/runs/44244799628)
 completed/success, genau `29c35b78c9ef3419a8a1644702aefab59ec77051`.
 Kern134601051517 und Chromium134601051851 gruen, separater Voll-Mock100
-planmaessig ausgelassen. Um06:00UTC fehlt die unabhängige Abnahme durch F/G.
-Der PR bleibt offen und konfliktfrei. Der bisherige Kopftext ist noch live.
-Genau ein naechster Schritt dieses Betriebsschritts: #1259 unabhaengig abnehmen.
+planmaessig ausgelassen. G hat exakt diesen Kopf in
+[#1218](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6972438876)
+und im [PR-Review](https://github.com/ernisch/helmut-pilot/pull/1259#pullrequestreview-5952586081)
+unabhaengig abgenommen. SHA-gebundener Merge `25958d0a6224e816898a5b075f3b2e399bae29da`.
+Regulaerer Gitrollout `dpl_4QiRkBXXRBPNkqpFj3sSu4ui2Rz7` READY,
+Productionalias/Root/Client HTTP200. App-GET07:53:43.592UTC liefert
+„Quellenlage offen“ in status und freshness.status. AntwortSHA256
+`2c683ff41ab835c9caf738968372081cc07b68101a621fe4f8e66beb2ba911a0`.
+Inhaltshash, Quittungsbindung, Lageabsaetze und Radarprojektion stimmen
+mit dem regulaeren Morgenpaket ueberein.
+
+[PR1258](https://github.com/ernisch/helmut-pilot/pull/1258) auf
+`8b7ac5b4969e57689dc9ad3226ee5d1410258a41` unabhaengig
+[durch D abgenommen](https://github.com/ernisch/helmut-pilot/issues/1218#issuecomment-6970069345).
+Gleicher Kopf gegen Main25958d0a konfliktfrei simuliert, acht abgenommene
+Dateiblobs unveraendert, die zwei 1259-Dateien blieben exakt erhalten.
+Beide [Pflichtchecks 44215306689](https://github.com/ernisch/helmut-pilot/actions/runs/44215306689)
+an diesem Kopf erfolgreich, Chromium ausgefuehrt, Voll-Mock100 ausgelassen.
+SHA-gebundener Merge `25fab5ea41f879c3e5aab05b38b605fc35648385` mit dem
+vorab ermittelten Baum `57013c130615343eb62bbd0d2a5742189a8473c7`.
+Regulaerer Vercelrollout `dpl_B6PfMCkNKLHsvfCz49MymrzJsJra` READY. Oeffentlicher
+Alias/Root/Client HTTP200, Version25fab5ea. Clientbytes entsprechen Git,
+SHA256 `607038fca2e55b0e94df524d56853b949ff3258de806a19285b6b306582f7bad`.
+App-GET07:56:22.347UTC HTTP200, AntwortSHA256
+`1711db30515aae6fef8c0ee49867d2d8ceae6ffbe12584a0bd7ed9009e6160c7`.
+Kopf „Quellenlage offen“, gebundenes Teilpaket, zwei Lageabsaetze/elf Karten,
+Radar ohne Signal, Briefing ohne belegten Tagesanlass. Die neue Fristreihenfolge,
+Originalstellen und Ausschussbindung sind in der vorhandenen Code-/Browserpruefung
+belegt. Fuer ihre positive Livewirkung fehlt im aktuellen Paket ein Tagesanlass.
+Eine angemeldete visuelle Kundenpruefung steht aus. Alle fuenf neuen
+Parlamentswege bleiben inaktiv. Keine Zusatzverarbeitung und keine Budgetaenderung.
+
+**Genau ein naechster Schritt:** Die Fristreihenfolge und Originalstellen von
+#1258 am ersten regulaeren Paket mit belegtem Tagesanlass im angemeldeten
+Kundenzugang abnehmen.
 
 
 Pflichtlauf [44168269981](https://github.com/ernisch/helmut-pilot/actions/runs/44168269981)
