@@ -6588,6 +6588,11 @@ function renderUiBriefingColumns(state) {
   return cols ? `<div class="ui-briefing-cols">${cols}</div>` : "";
 }
 
+function renderStrukturierterBriefingbeleg(beleg) {
+  const original = hstandQuelleHref({ sourceUrl: beleg.terminOriginal.url });
+  return original ? `<details class="ui-evidence-note"><summary>Amtlicher Terminbeleg</summary><p>${escapeHtml(beleg.text)}</p><a href="${escapeAttribute(original)}" target="_blank" rel="noopener noreferrer">Original der Tagesordnung öffnen ↗</a></details>` : "";
+}
+
 function renderUiBriefingHero(state, details = "") {
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
@@ -6616,7 +6621,8 @@ function renderUiBriefingHero(state, details = "") {
         : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>` : ""}
       ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Mandatsbezug und Anlass:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
       ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
-      ${orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
+      ${orientierung?.terminOriginal ? renderStrukturierterBriefingbeleg(orientierung)
+        : orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
         : `<p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>`}
       <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
     </div>
@@ -6858,7 +6864,8 @@ function renderHstandItems(state) {
         ${why ? `<p class="hstand-rel-why">${beleg ? "<strong>Mandatsbezug und Anlass</strong> " : ""}${escapeHtml(uiSieText(why))}</p>` : ""}
         ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
-        ${quelle && beleg?.text ? `<details class="ui-evidence-note"><summary>Tragende Textstelle</summary><blockquote>${escapeHtml(beleg.text)}</blockquote></details>` : ""}
+        ${beleg?.terminOriginal ? renderStrukturierterBriefingbeleg(beleg)
+          : quelle && beleg?.text ? `<details class="ui-evidence-note"><summary>Tragende Textstelle</summary><blockquote>${escapeHtml(beleg.text)}</blockquote></details>` : ""}
         ${quelle ? renderSourceNotice(i, quelle) : ""}
         ${quelle ? renderDipBeratungsstand(i, quelle) : ""}
       </li>`;

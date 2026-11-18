@@ -3596,6 +3596,12 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
         auswahl: aktuellTag ? "aktuell" : "historisch", profilHash: row.payload.profilHash,
         vorgaengerId: row.payload.profilkontextUebergang?.vorgaengerId || null,
         pruefung: row.payload.pruefung } };
+    const stand = gespeicherteAusgabe.currentHelmutState;
+    if (stand?.tagesAnlass?.beleg?.terminOriginal || stand?.items?.some(item => item.tagesAnlass?.beleg?.terminOriginal)) {
+      const geprueft = await require("./lib/helmut/tagespaket-auslieferung").pruefeArbeitsauftraege(stand,
+        { profile, now: new Date(), storage: storageModul });
+      gespeicherteAusgabe.currentHelmutState = geprueft.stand;
+    }
     return prepareBriefingResponse(aktuellTag && !previewMode
       ? await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(gespeicherteAusgabe,profile)
       : gespeicherteAusgabe, { previewMode, compact, frischeKontext: null });

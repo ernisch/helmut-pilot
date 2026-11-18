@@ -38,18 +38,23 @@ function client(){
     .replace("{ renderSourceNotice,","{ renderParlamentsKontext,renderParlamentsOriginale,renderDipBeratungsstand,renderUiBriefingHero,renderSourceNotice,");
   return vm.runInNewContext(code+"\nloadClient()",{root,fs,vm,assert:A,console,path,URL,URLSearchParams,Intl,Date});
 }
-async function normaleAppAusgabe(briefing){
+async function normaleAppAusgabe(briefing, { suche = "", storage = S, zeit = now() } = {}) {
   // Der wirkliche HTTP-Leseeinstieg, gespeicherter Pakettransport ersetzt.
   // Die bestehenden Paket-/Quittungspruefungen werden dadurch nicht neu abgenommen.
   const src=fs.readFileSync(path.join(__dirname,"..","server.js"),"utf8"),start=src.indexOf("async function latestBriefingPayload("),end=src.indexOf("\n// opts.slot",start);
   A(start>0&&end>start);
   const fn=vm.runInNewContext(src.slice(start,end)+"\nlatestBriefingPayload",{
     require:name=>{
-      if(name==="./lib/helmut/tagespaket-auslieferung")return{lese:async()=>({briefing,frischeKontext:null})};
+      if(name==="./lib/helmut/tagespaket-auslieferung")return{...require("../lib/helmut/tagespaket-auslieferung"),lese:async()=>({briefing,frischeKontext:null})};
+      if(name==="./lib/helmut/briefing-speicher") {
+        const B = require("../lib/helmut/briefing-speicher");
+        return { ...B, lese: args => B.lese({ ...args, storage }) };
+      }
+      if(name==="./lib/helmut/publication-eligibility")return require("../lib/helmut/publication-eligibility");
       if(name==="./lib/helmut/parlamentsbelege-produkt")return T;
       throw Error("Unerwarteter Apppfad: "+name);
-    },storageModul:S,prepareBriefingResponse:value=>value});
-  return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing")});
+    },storageModul:storage,Date:class extends Date { constructor(){ super(zeit); } },prepareBriefingResponse:value=>value});
+  return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing"+suche)});
 }
 async function main(){
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ,"aktiv");
@@ -156,6 +161,128 @@ async function main(){
       A.equal(ui.renderDipBeratungsstand(source,"https://fremd.test/"),"");
       const ctx=await T.leseKontext(profile,deps()),markup=ui.renderParlamentsKontext(ctx);
       A(markup.includes("keine Zuordnung zu einer bestimmten Meldung"));A.equal((markup.match(/data-parlamentskontext/g)||[]).length,1);
+    });
+    await test("Belegter Ausschuss-TOP trägt Briefing und bleibt an den aktuellen Originalstand gebunden", async () => {
+      const speichere = (inhalt, gelesenAm = new Date(now()).toISOString()) => {
+        const pdf = E.tagesordnung(q, { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" },
+          Buffer.from(inhalt), [inhalt]);
+        return [row(E.baueStand(q, [pdf], gelesenAm, "a".repeat(64)))];
+      };
+      const inhalt = text.replace("11. November", "19. November").replace("11.11.2026", "18.11.2026, 11:00 Uhr");
+      stored = speichere(inhalt);
+      const [d] = await T.mitGespeichertenStaenden([doc()], deps());
+      const ko = { id: "ko-synth", vorgang_id: "synth", status: "neu", understanding_status: "complete", display_title: d.title };
+      const input = { profile, now: new Date(now()), decisions: [{ knowledge_object_id: ko.id, score: 50, decision: "Beobachten" }],
+        kosById: { [ko.id]: ko }, sourcesByVorgang: { synth: [d] } };
+      const briefing = C.toBriefingContractV3(input), stand = briefing.currentHelmutState;
+      const anlass = stand.tagesAnlass;
+      A.equal(stand.primaryItem.id, "synth");
+      A.equal(anlass.art, "kommende-frist");
+      A.equal(anlass.beleg.terminOriginal.dipVorgangId, original.vorgangsbezug[0].id);
+      A.equal(anlass.beleg.terminOriginal.url, pd().url);
+      A.equal(anlass.beleg.url, d.url);
+      const html = client().renderUiBriefingHero(stand);
+      A(html.includes(pd().url)); A(html.includes("Amtlicher Terminbeleg")); A(!html.includes("<blockquote>"));
+      const lesen = (quellen, p = profile, zeit = input.now) => C.pruefeGespeichertenHelmutStand(stand, p, zeit, quellen);
+      A.equal(lesen(input.sourcesByVorgang).abgewiesen, false);
+      A.equal(lesen({}).abgewiesen, true);
+      A.equal(lesen(input.sourcesByVorgang, { ...profile, committees: ["Gesundheit"] }).abgewiesen, true);
+      A.equal(lesen(input.sourcesByVorgang, profile, new Date("2026-11-18T10:00:00Z")).abgewiesen, true);
+      const B = require("../lib/helmut/briefing-speicher"), Paket = require("../lib/helmut/tagespaket-auslieferung");
+      const rows = new Map(), storage = { assertTenant: S.assertTenant,
+        getRenderedBriefingV3: async (id, slot, day) => copy(rows.get(`bf-${id}-${slot}-${day}`) || null),
+        insertRenderedBriefingV3: async r => { rows.set(r.id, copy(r)); return { saved: true }; },
+        getPruefSourcesByVorgaenge: async ids => {
+          A.deepEqual(ids, [{ id: ko.id, vorgang_id: ko.vorgang_id }]);
+          return { synth: await T.mitGespeichertenStaenden([doc()], deps()) };
+        }
+      };
+      A.deepEqual([...Paket.vorgangIds({ beleg: anlass.beleg })], []);
+      const paketAuftrag = { profile, userId: profile.id, storage, now: input.now };
+      await B.materialisiere({ ...paketAuftrag, briefing });
+      const vorher = copy([...rows]);
+      const live = () => Paket.lese(paketAuftrag);
+      const explizit = (auswahl, zeit) => normaleAppAusgabe(null, { suche: `?${auswahl}=2026-11-17`, storage, zeit });
+      const auswahl = ["gespeichert", "aktuellGespeichert"];
+      A.equal((await live()).briefing.currentHelmutState.tagesAnlass.beleg.terminOriginal.url, pd().url);
+      for (const modus of auswahl) {
+        const out = await explizit(modus);
+        A.equal(out.currentHelmutState.tagesAnlass.beleg.terminOriginal.url, pd().url);
+        A.equal(out.gespeicherterNachweis.inhaltHash, vorher[0][1].payload.inhaltHash);
+        const heuteOffen = await explizit(modus, Date.parse("2026-11-18T08:00:00Z"));
+        A.equal(heuteOffen.currentHelmutState.tagesAnlass?.art, "heutige-frist");
+        A.deepEqual(heuteOffen.currentHelmutState.tagesAnlass.beleg.terminOriginal, anlass.beleg.terminOriginal);
+        const abgelaufen = await explizit(modus, Date.parse("2026-11-18T10:00:00Z"));
+        A.equal(abgelaufen.currentHelmutState.primaryItem, null);
+        A.equal(abgelaufen.currentHelmutState.recommendation, "");
+      }
+      stored = speichere(inhalt.replace("19. November", "20. November"));
+      A.equal(lesen({ synth: await T.mitGespeichertenStaenden([doc()], deps()) }).abgewiesen, true);
+      A.equal((await live()).briefing.currentHelmutState.primaryItem, null);
+      for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
+      A.deepEqual([...rows], vorher);
+      stored = speichere(inhalt);
+      const mitFreigabe = require.cache[seedPath].exports;
+      require.cache[seedPath].exports = savedSeed;
+      try {
+        A.equal(T.terminAnlaesse(d, profile, input.now).length, 0);
+        A.equal((await live()).briefing.currentHelmutState.primaryItem, null);
+        for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
+      } finally { require.cache[seedPath].exports = mitFreigabe; }
+      stored = [];
+      for (const modus of auswahl) A.equal((await explizit(modus)).currentHelmutState.primaryItem, null);
+      A.deepEqual([...rows], vorher);
+      stored = speichere(inhalt.replace("BT-Drucksache 21/8119", "BT-Drucksache 21/8118"));
+      A.equal(lesen({ synth: await T.mitGespeichertenStaenden([doc()], deps()) }).abgewiesen, true);
+      stored = speichere(inhalt.replace("59. Sitzung", "58. Sitzung"));
+      const [konflikt] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(T.terminAnlaesse(konflikt, profile, input.now).length, 0);
+      stored = speichere(inhalt.split("\nVoten angefordert")[0]);
+      const [sitzung] = await T.mitGespeichertenStaenden([doc()], deps());
+      A.equal(T.terminAnlaesse(sitzung, profile, input.now)[0].art, "bevorstehender-schritt");
+      A.equal(T.terminAnlaesse(sitzung, profile, new Date(now() + 86400001)).length, 0);
+    });
+    await test("Neue Fassung mit abweichendem oder unklarem Tag sperrt den alten Termin derselben Sitzung", async () => {
+      const inhalt = text.replace("11. November", "19. November").split("\nVoten angefordert")[0];
+      const link = { url: pd().url, listedMeeting: "59", revision: 0, visibility: "oeffentlich" };
+      const grundfassung = E.tagesordnung(q, link, Buffer.from(inhalt), [inhalt]);
+      const anders = inhalt.replace("Mitteilung", "1. Änderungsmitteilung\nDie Tagesordnung wird wie folgt neu gefasst:")
+        .replace("19. November", "20. November").replace("21/8119", "21/8118");
+      const neufassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "neufassung.pdf"), revision: 1 },
+        Buffer.from(anders), [anders]);
+      const jetzt = new Date(now());
+      const anlaesse = async (...originale) => {
+        stored = [row(E.baueStand(q, [grundfassung, ...originale], jetzt.toISOString(), "a".repeat(64)))];
+        const [d] = await T.mitGespeichertenStaenden([doc()], deps());
+        return T.terminAnlaesse(d, profile, jetzt).map(a => a.termin);
+      };
+      A.deepEqual(await anlaesse(), ["2026-11-19"]);
+      A.deepEqual(await anlaesse(neufassung), []);
+      const unklar = anders.replace("Berlin, den 5.", "Berlin, den 6.").replace(", 10:30 Uhr", ", um 09:00 Uhr");
+      const leseUnklar = (pdf, listedMeeting) => E.tagesordnung(q,
+        { ...link, url: neufassung.url, listedMeeting, revision: 1, meetingDay: "2026-11-20" }, Buffer.from(pdf), [pdf]);
+      const unklareNeufassung = leseUnklar(unklar, "59");
+      A.equal(unklareNeufassung.meetings[0].day, null);
+      A.deepEqual(await anlaesse(unklareNeufassung), []);
+      A.deepEqual(await anlaesse(leseUnklar(unklar, null)), []);
+      const andereSitzung = leseUnklar(unklar.replace("59. Sitzung", "60. Sitzung"), "60");
+      A.deepEqual(await anlaesse(andereSitzung), ["2026-11-19"]);
+      const gueltig = anders.replace("20. November", "19. November").replace("21/8118", "21/8119");
+      const spaetereFassung = E.tagesordnung(q, { ...link, url: neufassung.url, revision: 1 }, Buffer.from(gueltig), [gueltig]);
+      const frueherUnklar = inhalt.replace("Berlin, den 5.", "Berlin, den 4.").replace(", 10:30 Uhr", ", um 10:30 Uhr");
+      const alteFassung = E.tagesordnung(q, { ...link, url: link.url.replace("fixture.pdf", "alte-fassung.pdf") },
+        Buffer.from(frueherUnklar), [frueherUnklar]);
+      A.deepEqual(await anlaesse(spaetereFassung, alteFassung), ["2026-11-19"]);
+
+      const widerspruch = anders.replace("1. Änderungsmitteilung", "Änderungsmitteilung")
+        .replace(", 10:30 Uhr", ", um 09:00 Uhr");
+      const zweiteFassung = E.tagesordnung(q, {
+        ...link, url: link.url.replace("fixture.pdf", "zweite-fassung.pdf"), revision: 2, meetingDay: "2026-11-20",
+      }, Buffer.from(widerspruch), [widerspruch]);
+      A.equal(zweiteFassung.publishedDay, spaetereFassung.publishedDay);
+      A.equal(zweiteFassung.meetings[0].day, null);
+      A(zweiteFassung.conflicts.includes("fassungsnummer-widerspruch"));
+      A.deepEqual(await anlaesse(spaetereFassung, zweiteFassung), []);
     });
     await test("Native Lage liefert den getrennten Mandatskontext auch ohne belegte Tagesprioritaet",async()=>{
       const previous=process.env.HELMUT_SUPABASE_STORE_ID;process.env.HELMUT_SUPABASE_STORE_ID="offline";
