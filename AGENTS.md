@@ -202,6 +202,9 @@ Belegte Lage, Radar, Briefing und Bueroausgaben muessen ihren eigenen Zweck erfu
 Keine erfundenen Quellen, Aussagen oder Standpunkte; Tatsachen und Einordnung trennen,
 Unsicherheit und Leerzustaende ehrlich zeigen. Keinen gleichen Sachstand als neue
 Aussage mehrfach ausgeben. Produktprinzipien: `docs/START_HERE.md`.
+Verbindliche redaktionelle Briefingziele, Quellenpriorisierung und Wortlaengen:
+`docs/produktvertrag-20261115.md` Abschnitt H. Fachliche Richtwerte sind keine
+Erlaubnis, Prioritaeten oder Inhalte ohne gueltige Originale zu erzeugen.
 
 Betreiberbeschluss 05.11.2026: Mock100, danach sichere Produktintegration und
 verkaufbarer Livebetrieb fuer einen kleinen Kundenkreis. Authentifizierung,
