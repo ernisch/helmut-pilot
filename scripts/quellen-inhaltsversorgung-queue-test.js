@@ -7,7 +7,7 @@ const P = require("../lib/helmut/scalable-pipeline"), D = require("../lib/helmut
 const C = require("../lib/helmut/crawler");
 const G = require("../lib/helmut/artikelkontext-gewinnung");
 const start = Date.parse("2026-11-09T04:00:00Z");
-const profile = { id: "queue-offline", name: "Synthetischer Queue Test", party: "SPD", parliament: "Bundestag",
+const profile = { id: "queue-offline", name: "Synthetischer Queue Test", party: "SPD", parliamentType: "Bundestag",
   state: "Niedersachsen", focusTopics: ["Arbeit", "Soziales"], profileActive: true };
 const contract = { version: 1, profileId: profile.id, startsAt: "2026-11-05T00:00:00.000Z", dailyLimitUsd: 1, totalLimitUsd: 30,
   route: { provider: "azure", responsesUrl: "https://offline.openai.azure.com/openai/v1/responses", model: "gpt-5-mini" } };
@@ -573,6 +573,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       retrievalPaths: [{ ...katalog.retrievalPaths[0], status: "paused" }] }) }, { auftragsDeadlineMs: start + 120000 })).zurueckgestellt, true);
     assert.equal((await P.HANDLER.source_fetch(dipJob, { ...d, listFullProfiles: async () => [{ ...profile, profileActive: false }] },
       { auftragsDeadlineMs: start + 120000 })).zurueckgestellt, true);
+    assert.equal((await P.HANDLER.source_fetch(dipJob, { ...d, listFullProfiles: async () => [{ ...profile, parliamentType: "Landtag" }] },
+      { auftragsDeadlineMs: start + 120000 })).zurueckgestellt, true);
     assert.equal((await P.HANDLER.source_fetch(dipJob, d, { auftragsDeadlineMs: start + 20000 })).zurueckgestellt, true);
     await assert.rejects(P.HANDLER.source_fetch({ ...dipJob, tenantId: "fremd" }, d, { auftragsDeadlineMs: start + 120000 }), /dip-auftrag/);
     await assert.rejects(P.HANDLER.source_fetch(dipJob, { ...d, listFullProfiles: async () => [profile, { ...profile, id: "fremd" }] },
@@ -600,6 +602,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.equal((await run(doc, [{ ...finding, retrieval_path_id: null }])).dokumente.length, 0);
     assert.equal((await run({ ...doc, title: "Manipuliert" }, [finding])).dokumente.length, 0);
     assert.equal((await run(doc, [finding], { ...profile, committee: "Finanzen", focusTopics: ["Steuerrecht"] })).dokumente.length, 0);
+    assert.equal((await run(doc, [finding], { ...profile, parliamentType: "Landtag" })).dokumente.length, 0);
     assert.equal((await run(doc, [finding], profile, { ...katalog, retrievalPaths: [{ ...katalog.retrievalPaths[0], status: "paused" }] })).dokumente.length, 0);
   });
   await test("DIP Queueclient nutzt Headerauth, Providerreserve und Zwoelferfilter; Fehler und echter Abort bleiben ehrlich", async () => {

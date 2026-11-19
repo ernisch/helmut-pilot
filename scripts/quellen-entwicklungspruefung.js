@@ -100,7 +100,9 @@ function start(args) {
   }
   if (quelle === "produktionsnah") {
     const result = spawnSync(process.execPath, [path.join(__dirname, auswahl[quelle])], {
-      stdio: "inherit", timeout: 240000, killSignal: "SIGKILL"
+      // Reale Runnerzeit für PostgreSQL und beide synthetischen Tage. Die
+      // Uhr, Cron-Zeitfenster und Abnahmefristen im Szenario sind separat.
+      stdio: "inherit", timeout: 300000, killSignal: "SIGKILL"
     });
     return result.status === 0 ? 0 : 1;
   }
