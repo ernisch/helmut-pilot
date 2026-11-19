@@ -402,12 +402,16 @@ async function main() {
       manifest: null, jobs: [job], belege: new Map([[id, beleg]]), ausgaben: new Map([[key, paket]]),
       analyseJobs: [{ id: jobId, status: "erledigt", finished_at: "2026-11-19T04:40:00Z",
         payload: { quellenstaende: { [rohId]: stand } } }], jetztMs: Date.parse("2026-11-19T06:00:00Z"), env };
-    function pruefeLage(generated_at) {
+    function pruefeLage(generated_at, quelle_id = "q-fixture") {
       return C.abgleichen({ ...basis, lageAusgaben: new Map([[key, { user_id: profile.id, generated_at,
-        payload: { paragraphs: [sichtbarerBezug] } }]]) }).faelligkeiten[0];
+        payload: { paragraphs: [{ text: "Dieser Absatz zitiert den amtlichen Antrag.",
+          vorgang_ids: ["vg-fixture"], quellen_ids: [quelle_id] }],
+        quellen: [{ vorgang_id: "vg-fixture", quellenbelege: [{ quelle_id: "q-fixture", ...sichtbarerBezug }] }] }
+      }]]) }).faelligkeiten[0];
     }
     A.equal(pruefeLage("2026-11-19T04:39:59Z").grund, "lagefrist_nicht_belegt");
     A.equal(pruefeLage("2026-11-19T04:40:01Z").grund, null);
+    A.equal(pruefeLage("2026-11-19T04:40:01Z", "andere-quelle").grund, "lagefrist_nicht_belegt");
     A.equal(pruefeLage("2026-11-19T05:00:01Z").grund, "lage_verspaetet");
   });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {

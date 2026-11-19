@@ -7,6 +7,10 @@ const C = require("../lib/helmut/crawler"), SP = require("../lib/helmut/scalable
 const { EventEmitter } = require("node:events"), { PassThrough } = require("node:stream");
 const tests = [], test = (name, fn) => tests.push([name, fn]);
 const q = B.QUELLEN[1], url = n => `https://www.bundestag.de/resource/blob/1231438/fixture-${n}.pdf`;
+test("Plenum und Sitzungskalender sind vor den Ausschussoriginalen fällig", () => {
+  const D = require("../lib/helmut/source-demand");
+  A.deepEqual(B.QUELLEN.map(D.amtlicheMorgenPrioritaet), [40, 40, 40, 37, 36]);
+});
 const now = () => Date.parse("2026-11-17T12:00:00Z");
 const link = (revision = 0, patch = {}) => ({ url: url(revision), listedDay: revision ? "2026-11-10" : "2026-11-05",
   listedMeeting: "59", revision, visibility: "nichtoeffentlich", ...patch });
@@ -237,12 +241,12 @@ test("Spaeter Katalog-/Speicherzugriff eroeffnet keine neue Schreibphase nach de
   const s=B.baueStand(q,[doc()],new Date(now()).toISOString(),"a".repeat(64));
   await A.rejects(store.sichern(s),/zeitbudget/);A.equal(posts,0);
 });
-test("PDF und ICS setzen nach Tageswechsel den bestätigten Teil mit genau einer Originalreservierung fort", async () => {
+test("PDF und ICS setzen bestätigte Teile nach Layout- und Tageswechsel mit einer Originalreservierung fort", async () => {
   for (const quelle of [q, B.QUELLEN[4]]) {
     const kalender = quelle.art === "kalender";
     const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
     const urls = kalender ? [0,1].map(n => `https://www.bundestag.de/resource/blob/1231438/termin-${n}.ics`) : [url(0), url(1)];
-    let clock = now(), kontingent = 1, reserve = 0, stand;
+    let clock = now(), kontingent = 1, reserve = 0, stand, layout = "", geaenderterName = false;
     const storeRows = new Map(), abgerufen = [];
     const catalogRows = kalender ? {
       retrievalPaths: [{ ...catalog().retrievalPaths[0], id: quelle.retrievalPathId, url: quelle.url,
@@ -263,8 +267,9 @@ test("PDF und ICS setzen nach Tageswechsel den bestätigten Teil mit genau einer
       auftragId: laufId, teilspeicher, reserveOriginal: async () => { reserve++; return { erlaubt: kontingent-- > 0, geprueft: true }; },
       fetchUrl: async u => {
         let text = "User-agent: *";
-        if (u === quelle.url) text = kalender ? urls.map(a => `<a href="${a}">Sitzungswochen</a>`).join("") : JSON.stringify({ endpoint });
-        else if (u === endpoint) text = row(0) + row(1);
+        if (u === quelle.url) text = kalender ? layout + urls.map(a => `<a href="${a}">Sitzungswochen</a>`).join("") : JSON.stringify({ endpoint });
+        else if (u === endpoint) text = layout + row(0) + row(1);
+        if (geaenderterName && [quelle.url, endpoint].includes(u)) text += "Neue Fassung";
         else if (urls.includes(u)) { abgerufen.push(u); text = kalender ? ics() : "%PDF-fixture"; }
         return { status: 200, finalUrl: u, bytes: Buffer.from(text) };
       }, pdfText: async () => [body()], save: async s => {
@@ -273,14 +278,40 @@ test("PDF und ICS setzen nach Tageswechsel den bestätigten Teil mit genau einer
     });
     A.equal((await abruf("lauf-a")).zurueckgestellt, true);
     A.equal(storeRows.size, 1); A.equal(abgerufen.length, 1); A.equal(reserve, 2);
-    clock += 86400000; kontingent = 1; reserve = 0;
+    clock += 86400000; kontingent = 1; reserve = 0; layout = '<span class="neu"></span>';
     A.equal((await abruf("lauf-a")).documents, 2);
     A.equal(stand.retrievedAt, new Date(now()).toISOString());
     A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
+    geaenderterName = true; kontingent = 0; reserve = 0;
+    A.equal((await abruf("lauf-a")).zurueckgestellt, true, "Eine geänderte Liste erfordert einen neuen Beleg");
+    A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
+    geaenderterName = false;
     kontingent = 0; reserve = 0;
     A.equal((await abruf("lauf-b")).zurueckgestellt, true, "Eine neue Fälligkeit bestätigt ihre eigene Beobachtung");
     A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
   }
+});
+test("Beschädigte PDF bleibt offen und wird erst im nächsten Quellenfenster erneut versucht", async () => {
+  const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
+  let original = 0, abschluss;
+  const result = await SP.fuehreAuftragAus({
+    auftrag: { id: "pdf-fehler", job_type: "source_fetch", payload: { quelle: q }, attempts: 1 },
+    besitzer: "fixture", restzeitMs: 60000, deps: {
+      handler: SP.HANDLER, env: {}, now,
+      leseBundestagTermineKatalog: async () => catalog(), leseBundestagAbrufpause: async () => null,
+      reserviereBundestagOriginal: async () => { original++; return { erlaubt: true, geprueft: true }; },
+      bundestagTermineFetch: async u => ({ status: 200, finalUrl: u, bytes: Buffer.from(
+        u === q.url ? JSON.stringify({ endpoint }) : u === endpoint ? row(0)
+          : u === url(0) ? "%PDF-1.4\nkaputt" : "User-agent: *") }),
+      sichereBundestagTerminstand: () => A.fail("Defektes Original darf keinen Fassungstand erzeugen"),
+      finish: async a => { abschluss = a; return { verfuegbar: true, uebernommen: true }; }
+    }
+  });
+  A.equal(result.ausgang, "wiederholt");
+  A.equal(original, 1);
+  A.equal(abschluss.ok, false);
+  A.equal(abschluss.error, "bundestag-termine-pdf-lesefehler-beschaedigt");
+  A.equal(abschluss.retryDelayMs, 15 * 60000);
 });
 test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generischem Crawl/Modell", async () => {
   const handler = SP.HANDLER.source_fetch; let generic = 0, frees = 0;

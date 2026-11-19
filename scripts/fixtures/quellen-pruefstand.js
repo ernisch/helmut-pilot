@@ -11,6 +11,7 @@ const GOOGLE = "https://news.google.com";
 const VERLAG = "https://nachrichten.fixture.invalid";
 const AZURE = "https://helmut-fixture.openai.azure.com";
 const DIP = "https://search.dip.bundestag.de/api/v1";
+const DIP_TITEL = "Antrag zur Beratung über Arbeitsmarktpolitik";
 const mandat = Object.freeze({
   id: "synthetik-quellenpruefstand", fullName: "Mara Beispiel", name: "Mara Beispiel",
   party: "Fraktionslos", parliamentType: "Bundestag", constituency: "Beispielregion",
@@ -125,8 +126,33 @@ function termine() {
   return seiten;
 }
 
+function modellAntwort(schema, eingabe) {
+  const basis = require("./z3-plattform").baueSchemaAntwort(schema);
+  // Nur das vorhandene synthetische DIP-Dokument besitzt eine fachlich
+  // passende Fixture-Antwort. Die übrigen Modell- und Quellenfälle bleiben.
+  if (!schema?.properties?.was_ist_passiert || typeof eingabe !== "string") return basis;
+  const quellen = eingabe.split("\n").flatMap(zeile => {
+    if (!zeile.startsWith("{")) return [];
+    try {
+      const quelle = JSON.parse(zeile);
+      return quelle.quelle_id && quelle.titel ? [quelle] : [];
+    } catch { return []; }
+  });
+  if (quellen.length !== 1 || quellen[0].titel !== DIP_TITEL
+    || quellen[0].herausgeber !== "DIP Bundestag") return basis;
+  return {
+    ...Object.fromEntries(Object.entries(basis).map(([k, v]) => [k, Array.isArray(v) ? [] : v])),
+    headline: DIP_TITEL, display_title: DIP_TITEL, confidence_score: 80, source_document_count: 1,
+    status: "neu", zeitdruck: "keiner", decision_level: "bund", event_type: "antrag",
+    was_ist_passiert: DIP_TITEL + ".", warum_wichtig: "Der Antrag betrifft die Arbeitsmarktpolitik.",
+    wer_ist_betroffen: "Das Bundesministerium für Arbeit und Soziales ist als Ressort gelistet.",
+    handlungsempfehlung: "Die weitere Beratung zur Arbeitsmarktpolitik beobachten.",
+    ministerien: ["Bundesministerium für Arbeit und Soziales"]
+  };
+}
+
 function antworten(uhr) {
-  const bt = termine(), zaehler = new Map(), unbekannt = [], proAdresse = new Map();
+  const bt = termine(), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -136,11 +162,12 @@ function antworten(uhr) {
     const adresse = tag + "|" + url.href;
     const vorher = proAdresse.get(adresse) || 0;
     proAdresse.set(adresse, vorher + 1);
+    if (art === "original") proOriginal.set(adresse, vorher + 1);
     // Transportzeit des beobachteten Medienmixes ist eine explizite Annahme.
     uhr.setze(uhr.now() + (art === "google" ? 2000 : art === "modell" ? 2000 : 1000));
     if (url.origin === AZURE && url.pathname === "/openai/v1/responses" && methode === "POST") {
       const schema = modellAnfrage?.text?.format?.schema;
-      const text = JSON.stringify(require("./z3-plattform").baueSchemaAntwort(schema));
+      const text = JSON.stringify(modellAntwort(schema, modellAnfrage?.input));
       return { type: "application/json", body: JSON.stringify({
         id: "fixture-antwort", status: "completed",
         output_text: text, output: [{ type: "message", content: [{ type: "output_text", text }] }],
@@ -151,7 +178,7 @@ function antworten(uhr) {
     if (url.origin === BT && bt.has(url.pathname)) return bt.get(url.pathname)(tag);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
       return { type: "application/json", body: JSON.stringify({ documents: [{
-        id: 990001, titel: "Antrag zur Beratung über Arbeitsmarktpolitik", drucksachetyp: "Antrag",
+        id: 990001, titel: DIP_TITEL, drucksachetyp: "Antrag",
         dokumentart: "Drucksache", datum: "2026-11-19", wahlperiode: 21,
         urheber: [{ titel: "Bundesregierung" }],
         ressort: [{ titel: "Bundesministerium für Arbeit und Soziales" }],
@@ -189,7 +216,7 @@ function antworten(uhr) {
     unbekannt.push(url.origin + url.pathname);
     return { status: 503, body: "Fixture-Ziel fehlt" };
   }
-  return { antwort, zaehler, unbekannt };
+  return { antwort, zaehler, unbekannt, proOriginal };
 }
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben

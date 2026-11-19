@@ -141,14 +141,15 @@ async function test(name, fn) {
   });
   await test("Gleiche URL bindet nur den passenden frischen Quellenstand und bewahrt langen RSS-Inhalt", async () => {
     const historisch = { ...alt, url: aktuell.url }, fremd = { ...aktuell, title: "Abweichende synthetische Metadaten" };
-    const w = welt({ roh: [aktuell], geladen: [historisch, aktuell, fremd] }), native = w.deps.ladeRohdokumentStaende;
-    w.deps.ladeRohdokumentStaende = async (ids, hashes) => {
-      const rows = await native(ids, hashes);
-      // Native ladeRohdokumentStaende prueft den kanonischen aktuellen Stand.
-      if (!require("../lib/helmut/quellenstand-bindung").gleicherStand(D.toRawDocumentRow(aktuell), rows[0]))
-        throw Error("quellenstand-metadatenabweichung");
-      return rows;
-    };
+    const w = welt({ roh: [aktuell], geladen: [historisch, aktuell, fremd] });
+    w.deps.ladeRohdokumentStaende = (ids, hashes) => require("../lib/helmut/storage").ladeRohdokumentStaende(ids, hashes, {
+      ladeAktuell: async () => [D.toRawDocumentRow(aktuell)],
+      request: async endpoint => {
+        const id = new URL(endpoint, "https://fixture.invalid").searchParams.get("id").slice(3);
+        const quellenHash = id.slice(-64), dokument = w.versionen.get(quellenHash);
+        return dokument ? [{ id, data: { version: 1, quellenHash, dokument } }] : [];
+      }
+    });
     await w.run();
     A.equal(D.toRawDocumentRow(historisch).id, D.toRawDocumentRow(aktuell).id);
     A.equal(w.calls.length, 1);

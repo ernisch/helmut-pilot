@@ -54,12 +54,42 @@ function welt(docs = [dokument(990010, true), dokument(990011), dokument(990012)
     }),
     eagerUnderstanding: fail("Modell"), budget: { reserviere: fail("Reservierung") }
   };
-  w.run = () => P.HANDLER.source_fetch(source, w.deps, { auftragsDeadlineMs: now + 120000 });
+  w.run = (auftrag = source) => P.HANDLER.source_fetch(auftrag, w.deps, { auftragsDeadlineMs: now + 120000 });
   return w;
 }
 let count = 0;
 async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
 (async () => {
+  await test("Heute amtlich beobachtete Drucksache erhält einen priorisierten, versionsgebundenen Analyseauftrag", async () => {
+    const datum = "2026-11-13";
+    const w = welt([DIP.normalizeDrucksache({ id: 990019, titel: "Mindestlohn und soziale Beratung", datum,
+      drucksachetyp: "Antrag", fundstelle: { pdf_url: "https://dserver.bundestag.de/btd/21/099/2109900.pdf" } })]);
+    const gelesen = w.deps.dipDocToRawItem;
+    w.deps.dipDocToRawItem = doc => ({ ...gelesen(doc), retrievedAt: new Date(now).toISOString() });
+    const laden = w.deps.ladeRohdokumentStaende;
+    w.deps.ladeRohdokumentStaende = async (...args) => (await laden(...args))
+      .map(row => ({ ...row, published_at: datum + "T00:00:00+00:00" }));
+    const geteilt = { ...source, tenantId: null, payload: { quelle: source.payload.quelle, art: "dip-geteilt" } };
+    const r = await w.run(geteilt);
+    const jobs = w.q.alle();
+    A.equal(jobs.length, 1);
+    A.equal(jobs[0].priority, 35);
+    A.equal(jobs[0].tenant_id, null);
+    const rohId = jobs[0].payload.dokumentIds[0];
+    A.equal(jobs[0].payload.quellenstaende[rohId], R.standHash(w.persisted.get(rohId)));
+    A.deepEqual(r.abrufErgebnis.analyse, [{ rohId, stand: jobs[0].payload.quellenstaende[rohId], jobId: jobs[0].id }]);
+    await w.run(geteilt);
+    A.equal(w.q.groesse(), 1);
+    const artikel = w.deps.dipDocToRawItem(w.docs[0]);
+    const tagesrelevanz = require("../lib/helmut/artikel-tagesrelevanz");
+    for (const retrievedAt of [undefined, "2026-11-13", new Date(now + 1000).toISOString(), "2026-11-12T10:00:00Z"])
+      A.equal(tagesrelevanz.pruefe({ ...artikel, retrievedAt }, { jetztMs: now }).geeignet, false);
+    const q = require("../lib/helmut/lage-quellenbeleg").baueEingabe([{ vorgang_id: "vg-fixture" }],
+      { "vg-fixture": [w.persisted.get(rohId)] }, new Date(now))[0].quellenbelege[0];
+    A.equal(q.documentId, rohId);
+    A.equal(q.veroeffentlichtAm, datum);
+    A.equal(q.dokumentangaben.ereignisdatum, null);
+  });
   await test("Defektes erstes DIP-Dokument blockiert zwei bestaetigte Nachbarn nicht", async () => {
     const w = welt(), r = await w.run(), jobs = w.q.alle();
     A.equal(w.persisted.size, 2); A.equal(r.gespeichert, 2); A.equal(r.teilfehler, 1);
