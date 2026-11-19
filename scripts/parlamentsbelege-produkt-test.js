@@ -133,6 +133,46 @@ async function main(){
       A.equal((await T.leseStaende({...deps(),katalog:()=>({retrievalPaths:[]})}))[0].stand,null);
       A.equal((await T.leseStaende({...deps(),request:()=>{throw Error("Speicher nicht lesbar");}}))[0].stand,null);
     });
+    await test("Sitzungswochen aus der wirklichen Paket-Lage sind in der Morgenquittung gebunden", async () => {
+      const kalender = E.QUELLEN[4], originalUrl = "https://www.bundestag.de/resource/blob/1103938/fixture.ics";
+      const bytes = Buffer.from(["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "UID:fixture.test",
+        "DTSTAMP:20261116T080000Z", "DTSTART;VALUE=DATE:20261123", "DTEND;VALUE=DATE:20261128",
+        "SUMMARY:Sitzungswoche Deutscher Bundestag", "END:VEVENT", "END:VCALENDAR", ""].join("\r\n"));
+      const kalenderstand = E.baueStand(kalender, [E.kalender(kalender, { url: originalUrl }, bytes)],
+        new Date(now()).toISOString(), "b".repeat(64));
+      const erlaubnis = { ...approval, id: kalender.id, url: kalender.url };
+      const vorher = require.cache[seedPath].exports, flag = process.env.HELMUT_QUELLEN_ARBEITSFENSTER;
+      const M = require("../lib/helmut/morgenversorgung"), B = require("../lib/helmut/briefing-speicher");
+      const belege = require("../lib/helmut/briefing-ausgabebeleg");
+      try {
+        require.cache[seedPath].exports = { ...seed, BUNDESTAG_TERMINE_NUTZUNGSBELEGE: [erlaubnis] };
+        process.env.HELMUT_QUELLEN_ARBEITSFENSTER = "on";
+        const kontext = await T.leseKontext(profile, { ...deps(), katalog: () => katalog([kalender]),
+          request: async () => [row(kalenderstand)] });
+        A.equal(kontext.belege[0].belegHash, kalenderstand.belegHash);
+        A.deepEqual(T.quellenAusgabebelege(kontext, { ...profile, parliamentType: "Landtag" }, now()), []);
+        let paket;
+        const storage = {
+          assertTenant: S.assertTenant,
+          getRenderedBriefingV3: async (_id, slot) => slot === B.SLOT ? paket || null : null,
+          insertRenderedBriefingV3: async zeile => { paket = structuredClone(zeile); return { saved: true }; }
+        };
+        const result = await M.speicherePaket({ profile, userId: profile.id,
+          briefing: { available: false, items: [], currentHelmutState: {}, currentRadarState: {} },
+          lageAnsicht: { parlamentsKontext: kontext, vorgaenge: [] }, storage,
+          tag: "2026-11-17", now: new Date(now()) });
+        A.equal(paket.payload.briefing.amtlicheQuellenbelege[0].belegHash, kalenderstand.belegHash);
+        A(belege.passt(result.ausgabeBeleg, paket));
+        delete paket.payload.briefing.amtlicheQuellenbelege;
+        paket.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(paket.payload);
+        paket.payload.inhaltHash = B.inhaltHash(paket.payload);
+        A.equal(belege.passt(result.ausgabeBeleg, paket), false);
+      } finally {
+        require.cache[seedPath].exports = vorher;
+        if (flag === undefined) delete process.env.HELMUT_QUELLEN_ARBEITSFENSTER;
+        else process.env.HELMUT_QUELLEN_ARBEITSFENSTER = flag;
+      }
+    });
     await test("Exakte BT-Drucksache/Vorgangszuordnung statt Titel, Bundesrat oder fremder Nummer",async()=>{
       A.equal(T.drucksache(doc()),"21/8119");
       const d=doc(),a=await T.mitGespeichertenStaenden([d],deps());A.equal(a[0].parlamentsOriginalbelege[0].dokumentnummer,"21/8119");

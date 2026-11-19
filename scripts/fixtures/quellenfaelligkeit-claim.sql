@@ -15,7 +15,7 @@ begin
   insert into public.helmut_jobs(job_type,idempotency_key,freshness_window,priority,due_at,first_due_at)
     values ('source_fetch','offiziell','2026-11-19T00Z',40,v_tag,v_tag),
       ('source_fetch','neu','2026-11-19T00Z',60,v_tag,v_tag),
-      ('source_fetch','alt','2026-11-18T00Z',100,v_tag,v_tag - interval '1 day'),
+      ('source_fetch','alt','2026-11-18T00Z',40,v_tag,v_tag - interval '1 day'),
       ('source_fetch','vertagt','2026-11-18T00Z',35,now() + interval '1 minute',v_tag - interval '1 day'),
       ('document_understanding','analyse','2026-11-19T00Z',0,v_tag,v_tag);
   select id, first_due_at into strict v_auftrag, v_erster

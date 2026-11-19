@@ -90,9 +90,11 @@ der reguläre Tageswechsel, Rechte, PDF- und ICS-Teilfortschritt, einmalige
 Ergebnisbelege, der Katalogabgleich und die Mandatsausgabe.
 
 Die Ausgabeprüfung liest vorhandene, mandatsgefilterte Pakete für den
-Fälligkeitstag. Ein amtlicher Beleg in der Lage und derselbe Beleg in der
-gebundenen Morgenausgabe sind getrennte Bedingungen. Die ursprüngliche
-Bestätigung bleibt auch beim Tageswechsel maßgeblich.
+Pflichttag. Bei übrigen Tagesquellen kann auch ein späteres Paket die
+Verarbeitung belegen. Eine verfehlte Frist bleibt sichtbar. Ein amtlicher
+Beleg in der Lage und derselbe Beleg in der gebundenen Morgenausgabe sind
+getrennte Bedingungen. Der bestätigte Sitzungskalender ist über die
+gespeicherte Morgenquittung an das Paket gebunden.
 
 Die vorhandene Pflicht-CI wählt bei der SQL- und Kernänderung den vollen
 Datenbankpfad einschließlich der 500er-Suiten. Die gezielte Verifizierung

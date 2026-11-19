@@ -131,8 +131,9 @@ Drei sauber getrennte Ebenen (Details:
 Der vorhandene Manifest-Cursor setzt frühere Pläne im regulären Quellenfenster fort.
 Die Queue bewahrt die ursprüngliche Fälligkeit, der Manifestauftrag die fachliche
 Frist. `due_at` hält die Wiedervorlage. Die Morgenarbeit erhält amtlichen
-Vorrang. Um 03:30 und 04:30 UTC erhält je eine fällige Altaufgabe außerhalb
-der amtlichen Originalwege zuerst Platz im bestehenden Abrufanteil. Der service-only Claim
+Vorrang. Sechs Abrufanteile starten mit den jeweils fälligen Morgenpflichten.
+Um 03:30 und 04:30 UTC kommt je eine fällige Altaufgabe zuerst zum Zug. Danach
+gilt wieder der amtliche Tagesvorrang. Der service-only Claim
 verwendet die bestehenden Queue-Leases. Bei fehlendem RPC greift der bisherige
 Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` und ihr
 Rückweg sind für die gesonderte Production-Freigabe vorbereitet.

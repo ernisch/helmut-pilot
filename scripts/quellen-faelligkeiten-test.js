@@ -113,7 +113,7 @@ async function main() {
     const speicher = Q.speicher({ storeId: "fixture", request: async (_path, o) => [JSON.parse(o.body)] });
     const beleg = await speicher.sichern(binding, inhalt, jetzt);
     const planAuftrag = { jobType: "source_fetch", idempotencyKey: "pflicht", tenantId: null,
-      freshnessWindow: job.freshness_window, payload: job.payload };
+      freshnessWindow: job.freshness_window, dueAt: due, priority: 40, payload: job.payload };
     const catalog = { retrievalPaths: [{ id: quelle.retrievalPathId, legacy_source_id: quelle.id,
       url: quelle.url, method: quelle.crawlMethod, activation_mode: "always_on", status: "healthy" },
     { id: "rp-fehlt", url: "https://amt.example/feed", method: "rss", activation_mode: "always_on", status: "healthy" }],
@@ -138,10 +138,32 @@ async function main() {
       "zuordnung_nicht_belegt");
     A.equal(abgleich(ausgabe, { jetztMs: Date.parse("2026-11-20T06:00:00Z"), manifest: null }).faelligkeiten[0].grund, null);
     A(abgleich(ausgabe, { jobs: [{ ...job, tenant_id: "fremd" }] }).luecken.some(l => l.grund === "queue_auftrag_abweichend"));
+    const fristManipuliert = { ...job, payload: { ...job.payload, faelligkeit: {
+      urspruenglichFaelligAm: new Date(due).toISOString(), frist: "2026-11-20T05:00:00.000Z" } } };
+    A.equal(abgleich(ausgabe, { jobs: [fristManipuliert] }).faelligkeiten[0].grund, "queue_auftrag_abweichend");
     A.equal(abgleich({ ...ausgabe, user_id: "fremd" }).faelligkeiten[0].grund, "zuordnung_nicht_belegt");
     A.equal(abgleich({ ...ausgabe, generated_at: "2026-11-19T05:15:01Z" }).faelligkeiten[0].grund, "morgenpaket_verspaetet");
     basis.belege.clear();
     A.equal(abgleich(ausgabe).faelligkeiten[0].grund, "ergebnisbeleg_fehlt");
+  });
+  await test("Eine Tagesquelle behält den Mandatsbeleg nach Tageswechsel und die verfehlte 24-Stunden-Frist", async () => {
+    const dokument = "rd-" + "e".repeat(64), stand = "f".repeat(64);
+    const jobId = "00000000-0000-4000-8000-000000000002";
+    const job = { id, idempotency_key: "alt", tenant_id: profile.id, first_due_at: due, due_at: due,
+      freshness_window: "2026-11-19T00Z", priority: 100, status: "erledigt", finished_at: "2026-11-20T03:15:00Z",
+      payload: { art: "person-aktuell", quelle: { id: "fixture-rss", url: "https://quelle.example/feed" } } };
+    const QStore = Q.speicher({ storeId: "fixture", request: async (_path, o) => [JSON.parse(o.body)] });
+    const beleg = await QStore.sichern({ id, tenantId: profile.id, firstDueAt: due, payload: job.payload },
+      { art: "rohfassungen", rohIds: [dokument], analyse: [{ rohId: dokument, stand, jobId }] },
+      Date.parse("2026-11-20T03:10:00Z"));
+    const ausgaben = new Map([[`2026-11-20|${profile.id}`, { user_id: profile.id, generated_at: "2026-11-20T05:14:00Z",
+      payload: { briefing: { currentHelmutState: { primaryItem: { sourceIds: [dokument] } } } } }]]);
+    const r = C.abgleichen({ catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
+      manifest: null, jobs: [job], belege: new Map([[id, beleg]]), analyseJobs: [{ id: jobId, status: "erledigt",
+        payload: { quellenstaende: { [dokument]: stand } } }], ausgaben, jetztMs: Date.parse("2026-11-20T06:00:00Z"), env });
+    A.equal(r.faelligkeiten[0].produkt, "mandatspaket_belegt");
+    A.equal(r.faelligkeiten[0].grund, "frist_verfehlt");
+    A.equal(r.faelligkeiten[0].verspaetet, true);
   });
   console.log(`${n}/${n} Fälligkeitsgruppen bestanden`);
 }

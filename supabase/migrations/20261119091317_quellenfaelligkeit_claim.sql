@@ -29,11 +29,9 @@ begin
        and (j.status = 'wartend' or (j.status = 'laeuft' and j.lease_expires_at < v_now))
      order by
        case
-         -- Zwei vorhandene Slots geben zuerst einem Altauftrag ohne
-         -- amtlichen Originalvorrang Platz. Danach gilt wieder die Tagesfolge.
-         when p_alt_vorrang and j.first_due_at < v_tag and j.priority not between 35 and 50
-           and coalesce(j.payload->'quelle'->>'id','') not like 'bt-termine-%'
-           and coalesce(j.payload->'quelle'->>'crawlMethod','') <> 'dip' then 0
+         -- Zwei vorhandene Slots geben zuerst einem Altauftrag Platz.
+         -- Danach und in den übrigen Slots gilt der amtliche Tagesvorrang.
+         when p_alt_vorrang and j.first_due_at < v_tag then 0
          when j.first_due_at >= v_tag and j.priority between 35 and 50 then 1
          when j.first_due_at >= v_tag then 2
          else 3

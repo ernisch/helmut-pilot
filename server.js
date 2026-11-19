@@ -3515,7 +3515,8 @@ function isCompactResponse(url) {
 }
 
 function prepareBriefingResponse(briefing, { previewMode = false, compact = false, frischeKontext = null } = {}) {
-  const decorated = decorateBriefingFreshness(briefing, frischeKontext);
+  const { amtlicheQuellenbelege, ...ausgabe } = briefing || {};
+  const decorated = decorateBriefingFreshness(amtlicheQuellenbelege ? ausgabe : briefing, frischeKontext);
   const payload = compact ? compactBriefingPayload(decorated) : decorated;
   return withPreviewMode(payload, previewMode);
 }
