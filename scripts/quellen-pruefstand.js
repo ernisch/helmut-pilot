@@ -27,7 +27,7 @@ const abweichungen = [
   "Bereinigter Mengen- und Protokollmix. Die 754 gemessenen wartenden Aufträge dienen als synthetischer Startbestand. In Production war dies ein nachgelagerter Snapshot.",
   "Vercel Cold Starts, Instanzgrenzen, Cron-Zustellung, DNS, TLS, Region und Netzwerkjitter sind nur in Production messbar.",
   "Die verwaltete Datenbank und ihr Pooler werden durch isoliertes PostgreSQL/PostgREST mit ausgewählten Vertragsmigrationen angenähert.",
-  "Modellantworten und Tokenverbrauch kommen aus einem lokalen Fixture. Semantik, reale Tokenkosten und Modelllatenz bleiben offen.",
+  "Modellantworten und Tokenverbrauch kommen aus einem lokalen Fixture. Der DIP-Abruf erhält eine an seinen Titel gebundene Modelltestantwort. Semantik, reale Tokenkosten und Modelllatenz bleiben offen.",
   "Nicht belegte Mandats-, Modell-, Abruf- und Dispatch-Overrides werden durch den getesteten Code-Standard oder ausgewiesene Fixture-Flags ersetzt."
 ];
 const pruefungen = [];
@@ -171,11 +171,19 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
   assert([googleReservierungen, originalReservierungen, fenster].every(Number.isSafeInteger));
   const heute = quellen.filter(q => q.neu);
   const morgen = heute.filter(q => q.morgenbriefingFrist);
+  const originalAbrufe = [...transport.proOriginal].filter(([adresse]) => adresse.startsWith(tag + "|"));
   const ausgaben = await storage.listRenderedBriefingsV3ForTenants([mandat.id], ["lage", "mandatsbriefing", "morgenlage"], tag);
   const folgearbeit = JSON.parse(db.psql(`select coalesce(jsonb_agg(to_jsonb(bilanz)), '[]'::jsonb) from (
     select job_type, status, split_part(last_error, ':', 1) as grund, count(*) as anzahl
-    from public.helmut_jobs where job_type <> 'source_fetch' and last_seen_window like '${tag}%'
+    from public.helmut_jobs where job_type <> 'source_fetch' and coalesce(last_seen_window, freshness_window) like '${tag}%'
     group by job_type, status, grund order by job_type, status, grund) bilanz`));
+  const dipAnalyse = JSON.parse(db.psql(`select coalesce(jsonb_agg(jsonb_build_object(
+      'status', a.status, 'prioritaet', a.priority, 'grund', a.last_error, 'fertigAm', a.finished_at)), '[]'::jsonb)
+    from public.helmut_jobs s
+    join public.helmut_store b on b.id = 'main-quellenfaelligkeit-' || s.id
+    cross join lateral jsonb_array_elements(b.data#>'{ergebnis,analyse}') beleg
+    left join public.helmut_jobs a on a.id::text = beleg->>'jobId'
+    where s.job_type = 'source_fetch' and s.payload->'quelle'->>'id' = 'dip' and s.first_due_at::date = '${tag}'::date`));
   return {
     tag, bedarf: tag === pruefzeiten[0] ? 162 : 161, eingeplant: heute.length - heute.filter(q => q.abruf === "fehlt").length,
     technischErledigt: gruppen.erledigt, fristgerecht: heute.filter(q => !q.grund && !q.verspaetet && q.belegHash).length,
@@ -184,6 +192,8 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
     googleBedarf: tag === pruefzeiten[0] ? 145 : 144, googleErledigt: gruppen.googleErledigt, googleReservierungen,
     googleAbschluesseGesamt: gruppen.googleAbschluesseGesamt,
     originalReservierungen, fenster, laufzeitMs: Math.round(laufzeitMs),
+    verschiedeneOriginaladressen: originalAbrufe.length,
+    wiederholteOriginalabrufe: originalAbrufe.reduce((sum, [, n]) => sum + n - 1, 0),
     simulierteArbeitszeitMs: laeufe.reduce((sum, r) => sum + r.simulierteMs, 0),
     rueckstandBeginn: start.offen, rueckstandEnde: gruppen.offen, historischErledigt: gruppen.historischErledigt,
     lageFrist: morgen.length === 6 && morgen.every(q => !q.verspaetet && !q.grund && q.produkt === "mandatspaket_belegt"),
@@ -193,7 +203,7 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
     alteFaelligkeiten: abgleich.faelligkeiten.filter(q => !q.aktuell),
     httpAnfragen: Object.fromEntries([...transport.zaehler].filter(([k]) => k.startsWith(tag + "|"))
       .map(([k, n]) => [k.split("|")[1], n])),
-    laeufe, folgearbeit, quellen
+    laeufe, folgearbeit, dipAnalyse, quellen
   };
 }
 
@@ -297,9 +307,15 @@ async function main(schreibeZwischenstand) {
         const mitFenster = resultate.filter(r => r.data.arbeitsfenster);
         if (parallel) assert.equal(mitFenster.length, 1, "Keine eindeutige Arbeitsfensterreservierung bei Parallelstart");
         const r = mitFenster[0] || resultate[0];
+        const istLage = slot.path === "/api/cron/lage-briefing";
+        const istMorgen = slot.path === "/api/cron/morning-briefing";
         laeufe.push({ slot: slot.zeit, startVerzoegerungS: verzoegerung, pfad: slot.path, ok: r.data.ok ?? null,
           grund: r.data.grund || r.data.reason || null, arbeitsfenster: Boolean(r.data.arbeitsfenster),
-          simulierteMs: uhr.now() - soll * 1000 });
+          simulierteMs: uhr.now() - soll * 1000,
+          ...(istLage ? { lage: { gespeichert: r.data.prewarmed ?? 0, vollstaendig: r.data.vollstaendig === true,
+            ergebnisse: (r.data.results || []).map(({ available, reason, diagnose }) => ({ available, reason, diagnose })) } } : {}),
+          ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null,
+            morgenergebnisse: (r.data.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
       uhr.setze(Date.parse(`${tag}T05:16:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);

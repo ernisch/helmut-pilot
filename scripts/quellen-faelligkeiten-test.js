@@ -273,6 +273,81 @@ async function main() {
       }
     }
   });
+  await test("Wiederbeobachteter öffentlicher Google-Direktlink ergänzt nur seine fehlende Abrufweg-ID", async () => {
+    const S = require("../lib/helmut/storage");
+    const feed = "https://news.google.com/rss/search?q=fixture";
+    const proxy = "https://news.google.com/rss/articles/CBMi_fiktiver_link?oc=5";
+    const verlag = "https://verlag.fixture.invalid/", original = `${verlag}politik/geprueft`;
+    const titel = "Fixture zum Haushalt", datum = "Wed, 18 Nov 2026 10:00:00 GMT";
+    const quelle = { id: "fixture-google", retrievalPathId: "rp-fixture-google", name: "Fixture", type: "media",
+      url: feed, crawlMethod: "rss", active: true };
+    const rss = `<rss><channel><item><title>${titel}</title><pubDate>${datum}</pubDate><link>${proxy}</link>`
+      + `<source url="${verlag}">Fixture Verlag</source></item></channel></rss>`;
+    const werte = { HELMUT_V3_STORE: "1", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
+      SUPABASE_URL: "https://datenbank.fixture.invalid", SUPABASE_SERVICE_ROLE_KEY: "fixture" };
+    const vorher = Object.fromEntries(Object.keys(werte).map(key => [key, process.env[key]]));
+    const fetchVorher = globalThis.fetch, abrufe = [], bestand = new Map();
+    let dokument, fundstellen, patchAnfragen = 0;
+    const crawl = () => crawlAllSources([quelle], { now: () => jetzt, deadlineMs: jetzt + 1500,
+      googleOriginale: new Map(), leseGoogleArtikelfundstellen: S.leseGoogleArtikelfundstellen,
+      fetchUrl: async url => { abrufe.push(url); return url === feed ? { body: rss } : { finalUrl: original, body: "" }; } });
+    try {
+      Object.assign(process.env, werte);
+      globalThis.fetch = async (input, { method, body } = {}) => {
+        const url = new URL(input), query = url.searchParams;
+        if (url.pathname === "/rest/v1/raw_documents") return Response.json(method === "POST" ? [] : [dokument]);
+        if (url.pathname === "/rest/v1/helmut_store") {
+          if (method === "POST") { const row = JSON.parse(body); bestand.set(row.id, row); return Response.json([row]); }
+          const row = bestand.get(query.get("id").slice(3));
+          return Response.json(row ? [row] : []);
+        }
+        A.equal(url.pathname, "/rest/v1/document_findings");
+        if (method === "POST") {
+          A.deepEqual(JSON.parse(body).map(f => f.retrieval_path_id), [quelle.retrievalPathId]);
+          return new Response(null, { status: 204 }); // Kollision: Altbestand bleibt beim normalen Insert bestehen.
+        }
+        A.equal(query.get("source_id"), `eq.${quelle.id}`);
+        if (method === "PATCH") {
+          patchAnfragen++;
+          A.equal(query.get("retrieval_path_id"), "is.null");
+          A.equal(query.get("link_type"), "eq.direct");
+          A.equal(query.get("or"), `(and(raw_document_id.eq.${dokument.id},original_url.eq."${proxy}"))`);
+          const daten = JSON.parse(body);
+          A.deepEqual(daten, { retrieval_path_id: quelle.retrievalPathId });
+          const zeile = fundstellen.find(f => f.raw_document_id === dokument.id && f.retrieval_path_id === null);
+          if (zeile) Object.assign(zeile, daten);
+          return new Response(null, { status: 204 });
+        }
+        const rows = (fundstellen || []).filter(f => `eq.${f.retrieval_path_id}` === query.get("retrieval_path_id"));
+        return Response.json(rows.map(f => ({ ...f, raw_documents: dokument })));
+      };
+      const erster = await crawl();
+      A.deepEqual(abrufe.splice(0), [feed, proxy]);
+      const item = erster.results[0].items[0];
+      dokument = require("../lib/helmut/dedup").toRawDocumentRow(item);
+      const alt = { raw_document_id: dokument.id, source_id: quelle.id, original_url: proxy, link_type: "direct",
+        found_at: "2026-11-18T17:00:00Z", retrieval_path_id: null };
+      fundstellen = [structuredClone(alt), { ...alt, raw_document_id: "rd-" + "a".repeat(64) }];
+      const speichern = (i, q) => S.persistiereRohdokumenteWarteschlange([i], { googleFundstellenQuelle: q });
+      A.equal((await speichern(item, { ...quelle, type: "person" })).ok, true);
+      A.equal((await speichern({ ...item, sourceUrl: "https://fremd.fixture.invalid/" }, quelle)).ok, true);
+      A.equal(patchAnfragen, 0);
+      A.equal((await speichern(item, quelle)).ok, true);
+      A.equal(patchAnfragen, 1);
+      A.deepEqual(fundstellen[0], { ...alt, retrieval_path_id: quelle.retrievalPathId });
+      A.equal(fundstellen[1].retrieval_path_id, null);
+      const wieder = await crawl();
+      A.deepEqual(abrufe, [feed]);
+      A.equal(wieder.results[0].gespeicherteGoogleLinks, 1);
+      A.equal(wieder.results[0].items[0].url, original);
+    } finally {
+      globalThis.fetch = fetchVorher;
+      for (const [key, value] of Object.entries(vorher)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
   await test("Bestätigte Rohfassung einmal lesen und neue Fassung nach Schreibantwort belegen", async () => {
     const { erzeuge, standHash } = require("../lib/helmut/roh-quellenstaende");
     const operationen = [], stand = new Map();
@@ -387,28 +462,51 @@ async function main() {
   await test("Eine analysierte amtliche Pflichtquelle belegt auch die Lage erst nach Analyseabschluss", async () => {
     const rohId = "rd-" + "c".repeat(64), stand = "d".repeat(64);
     const jobId = "00000000-0000-4000-8000-000000000004";
+    const D = require("../lib/helmut/dip"), L = require("../lib/helmut/lage-quellenbeleg");
+    const url = "https://dserver.bundestag.de/btd/21/099/2109900.pdf";
+    const titel = "Antrag zur Beratung über Wirtschaftspolitik", auszug = "Bundesministerium für Wirtschaft und Energie";
+    const original = D.normalizeDrucksache({ id: "990001", titel, datum: "2026-11-19",
+      drucksachetyp: "Antrag", fundstelle: { pdf_url: url } }).dipQuellfelder;
     const job = { id, idempotency_key: "dip-pflicht", tenant_id: null, first_due_at: due, due_at: due,
       freshness_window: "2026-11-19T00Z", priority: 35, status: "erledigt", finished_at: "2026-11-19T04:33:00Z",
-      payload: { art: "dip-geteilt", quelle: { id: "dip", retrievalPathId: "rp-dip", crawlMethod: "dip" } } };
+      payload: { art: "dip-geteilt", quelle: { id: "dip", retrievalPathId: "rp-dip", crawlMethod: "dip",
+        url: "https://search.dip.bundestag.de/api/v1" } } };
     const qs = Q.speicher({ storeId: "fixture", request: async (_path, o) => [JSON.parse(o.body)] });
     const beleg = await qs.sichern({ id, tenantId: null, firstDueAt: due, payload: job.payload },
       { art: "rohfassungen", rohIds: [rohId], analyse: [{ rohId, stand, jobId }] },
       Date.parse("2026-11-19T04:31:00Z"));
     const key = `2026-11-19|${profile.id}`;
-    const sichtbarerBezug = { documentId: rohId };
+    const belegLink = { documentId: rohId, url, quellfelderHash: original.hash };
+    const anlass = { art: "bevorstehender-schritt", documentIds: [rohId], recommendation: "Prüfen Sie die Drucksache.",
+      profilbezug: { satz: "Der TOP betrifft Ihren Ausschuss.", belege: [{ art: "haupt" }] }, beleg: { documentId: rohId, url } };
     const paket = { user_id: profile.id, generated_at: "2026-11-19T05:10:00Z",
-      payload: { briefing: { currentHelmutState: { primaryItem: sichtbarerBezug } } } };
-    const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
+      payload: { briefing: { currentHelmutState: { primaryItem: { sourceUrl: url, dipDokumentbeleg: belegLink }, tagesAnlass: anlass } } } };
+    const catalog = { retrievalPaths: [{ id: "rp-dip", legacy_source_id: "dip", publisher_id: "publisher-dip.bundestag.de",
+      method: "api", parser: "dip-json", url: job.payload.quelle.url, status: "healthy", activation_mode: "always_on" }],
+      packages: [], packagePaths: [] };
+    const land = { ...profile, id: "fixture-land", parliamentType: "Landtag", state: "Berlin" };
+    const basis = { catalog, profiles: [profile, land], dipOriginale: new Map([[`${rohId}|${stand}`, original]]),
       manifest: null, jobs: [job], belege: new Map([[id, beleg]]), ausgaben: new Map([[key, paket]]),
       analyseJobs: [{ id: jobId, status: "erledigt", finished_at: "2026-11-19T04:40:00Z",
         payload: { quellenstaende: { [rohId]: stand } } }], jetztMs: Date.parse("2026-11-19T06:00:00Z"), env };
-    function pruefeLage(generated_at) {
+    const quellen = [{ vorgang_id: "vg-fixture", quellenbelege: [{ quelle_id: "q-fixture", documentId: rohId,
+      titel, auszug, url, dokumentangaben: { quellfelderHash: original.hash } }] }];
+    function pruefeLage(generated_at, quelle_id = "q-fixture") {
       return C.abgleichen({ ...basis, lageAusgaben: new Map([[key, { user_id: profile.id, generated_at,
-        payload: { paragraphs: [sichtbarerBezug] } }]]) }).faelligkeiten[0];
+        payload: { paragraphs: [titel, auszug].map(text => ({ text,
+          vorgang_ids: ["vg-fixture"], quellen_ids: [quelle_id], belegstellen: [{ quelle_id, text }] })),
+        quellen, quellenHash: L.hashEingabe(quellen), quellenVersion: L.VERSION, koSetHash: "a".repeat(32),
+        qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } }
+      }]]) }).faelligkeiten[0];
     }
     A.equal(pruefeLage("2026-11-19T04:39:59Z").grund, "lagefrist_nicht_belegt");
     A.equal(pruefeLage("2026-11-19T04:40:01Z").grund, null);
+    A.equal(pruefeLage("2026-11-19T04:40:01Z", "andere-quelle").grund, "lagefrist_nicht_belegt");
     A.equal(pruefeLage("2026-11-19T05:00:01Z").grund, "lage_verspaetet");
+    A.equal(C.abgleichen({ ...basis, dipOriginale: new Map() }).faelligkeiten[0].grund, "dip_original_nicht_belegt");
+    const alt = structuredClone(paket);
+    alt.payload.briefing.currentHelmutState.primaryItem.dipDokumentbeleg.quellfelderHash = "0".repeat(64);
+    A.equal(C.abgleichen({ ...basis, ausgaben: new Map([[key, alt]]) }).faelligkeiten[0].grund, "zuordnung_nicht_belegt");
   });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {
     const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";

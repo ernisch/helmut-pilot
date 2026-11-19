@@ -620,7 +620,7 @@ async function speicherUndLeser() {
       || sel.includes("berlin_artikelstand:raw->helmutBerlinArtikelstand")
       || sel.includes("brandenburg_artikelstand:raw->helmutBrandenburgLandtagPresseArtikelstand");
     const ohneAlias = geseheneSelects.filter(sel => sel !== "id,finding_count"
-      && sel !== "knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at)"
+      && sel !== "knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,source_id,document_type,retrieved_at,dip_quellfelder:raw->helmutDipQuellfelder)"
       && !standProjektion(sel));
     assert.deepEqual(ohneAlias, []);
     bestanden += 1; console.log("OK Alle relevanten Leser fragen die Aliasprojektion raw->helmutBundestagArtikelstand ab");
