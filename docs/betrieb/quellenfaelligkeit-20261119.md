@@ -1,12 +1,11 @@
 # Quellenfälligkeiten am 19.11.2026
 
-**Abnahme offen.** Die bestehende Architekturentscheidung gilt. Die Codeänderung
-liegt auf `codex/quellenfaelligkeiten-1266`, ausgehend von `main` auf `13d21b85`.
-Der öffentliche Produktionsalias hat lesend `24a626ff` als `READY` bestätigt.
-Die Messungen stammen aus dem regulären Betrieb, vor der Änderung in diesem
-Branch. [Entscheidung](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004523155)
+**Abnahme offen.** [PR #1272](https://github.com/ernisch/helmut-pilot/pull/1272)
+ist als `da61adfe` auf dem Produktionsalias live. Die Kapazitätsmessungen
+stammen aus dem regulären Betrieb vor der Änderung.
+[Architekturentscheidung](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004523155)
 · [Produktionsbericht](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004176533)
-· [Deployment](https://vercel.com/nohut/helmut-pilot/FztRk3Hi2pHUaEEy6ngYLweNXBCP)
+· [Aktives Deployment](https://vercel.com/nohut/helmut-pilot/7i8nwqeVVBPwnfFYZDsDApxMJTMS)
 
 ## Ein aktives Mandat
 
@@ -82,8 +81,12 @@ Klima/Umwelt, Landwirtschaft, Recht und Sport. Der neue Mapper übernimmt
 für solche bereits aktivierten öffentlichen Einzelabfragen die exakte
 Katalog-URL innerhalb desselben Google-RSS-Abrufwegs. Alle acht Abweichungen
 sind mit den gelesenen Katalog- und Manifestdaten offline reproduziert und
-im Mapper behoben. Der erste reguläre Manifestbeleg steht aus. Der amtliche
-BA-Originalweg fehlt weiterhin.
+im Mapper behoben. Der erste reguläre Manifestbeleg steht aus. Der Katalog hat
+für die Bundesagentur für Arbeit zwei Google-Suchwege. Ein amtlicher
+Direktweg mit belegten Nutzungsrechten fehlt. Die BA verlangt bei der
+geprüften Pressewebsite die ausdrückliche vorherige Zustimmung für die
+Übernahme von Texten und Textteilen. Die Statistikwebsite antwortete in der
+lesenden Prüfung mit HTTP 429. [Nutzungsbedingungen der BA](https://www.arbeitsagentur.de/impressum)
 
 Das am 19.11. gespeicherte Lageobjekt hat den Zeitstempel **05:00:51.628 UTC**,
 das Mandatsbriefing **05:15:44.627 UTC**. Damit liegen diese Artefakte 51,628
@@ -132,13 +135,15 @@ verfügbaren Anteil weiter. Der Rahmen von **1 USD pro UTC-Tag, 30 USD gesamt**
 gilt. Reale Einsparungen und Kapazität nach der Bündelung müssen im Regelbetrieb
 belegt werden.
 
-## Freigabe und Rückweg
+## Ausrollung und Rückweg
 
 Der netzlose PostgreSQL-17.6-Nachweis prüft Rollenzugriffe, den amtlichen
 Vorrang, alte und neue Fälligkeiten, die Wiederaufnahme abgelaufener Leases,
 den atomaren Abschluss und das Zurückrollen. Gezielt geprüft sind außerdem
 der reguläre Tageswechsel, Rechte, PDF- und ICS-Teilfortschritt, einmalige
-Ergebnisbelege, der Katalogabgleich und die Mandatsausgabe.
+Ergebnisbelege, der Katalogabgleich und die Mandatsausgabe. Auf dem unabhängig
+geprüften Kopf `64efa31f` waren beide Pflichtchecks und der neue native
+Migrationstest grün. [Pflicht-CI](https://github.com/ernisch/helmut-pilot/actions/runs/44528051446)
 
 Die Ausgabeprüfung liest vorhandene, mandatsgefilterte Pakete für den
 Pflichttag. Bei übrigen Tagesquellen kann auch ein späteres Paket die
@@ -148,28 +153,37 @@ getrennte Bedingungen. Der bestätigte Sitzungskalender ist über die
 gespeicherte Morgenquittung an das Paket gebunden. Bei Artikeln zählt nur
 die sichtbare Ausgabe, sofern die zugehörige Analysefassung beim Erstellen
 dieser Ausgabe bereits fertig war.
+Die bestehende Admin-Route `GET /api/admin/sources-status` liefert
+unter `faelligkeitsabgleich` die einzelnen Gründe, Fälligkeiten und
+Wiederprüfzeitpunkte. Der reguläre Quellencron speichert die aggregierte
+Prüfung im vorhandenen Prozesslauf.
 
 [PR #1271](https://github.com/ernisch/helmut-pilot/pull/1271) hat die
 Pflicht-CI ohne historische Mengenläufe auf `main` gebracht. Die neue
 Queue-Migration ist als gezielte Prüfung in der regulären
 netzlosen PostgreSQL-Prüfung eingebunden.
 
-Die vorbereitete Migration ergänzt genau die Funktion
+Die einmalig angewandte Migration ergänzt die Funktion
 `public.helmut_claim_quellenfaelligkeit(text,bigint,boolean)` mit Ausführungsrecht
-für `service_role`. Sie ersetzt keine bestehenden RPCs und
-ändert keine Queue-Zeilen bei der Installation. Der lesende Nachweis nach
-einer freigegebenen Anwendung prüft Funktionskörper, Rechte und Migrationsversion.
-Das Rückweg-SQL entfernt den Einsprung. Bereits bestätigte Manifeste,
-Teilstände und Ergebnisse bleiben bei einem Rückweg erhalten. Der Betreiber
-hat die einmalige Anwendung nach grüner Pflicht-CI und Review freigegeben.
+für `service_role`. Supabase führt sie unter `20261119130200`. Der lesende
+Nachweis um 13:02:23 UTC bestätigt den Funktionskörper mit MD5
+`6a88011286ac4a1beae5ac5fc10f0e8d`, `SECURITY INVOKER` und die
+Ausführungssperre für `PUBLIC`, `anon` und `authenticated`.
+Vor und nach der Installation waren 15.041 Quellenaufträge vorhanden, 754
+fällig und wartend sowie null in Arbeit. Das Rückweg-SQL entfernt die Routine.
+Es erhält die bestätigten Manifeste, Teilstände und Ergebnisse.
 
-Die freigegebene Terminänderung verschiebt die Lage auf 04:55 und die
-Morgenausgabe auf 05:10 UTC. Das letzte Quellenfenster läuft auch bei
+Vercel hat auf `dpl_7i8nwqeVVBPwnfFYZDsDApxMJTMS` die aktiven Termine
+04:55 UTC für Lage und 05:10 UTC für Morgenausgabe bestätigt. Der Alias
+`helmut-pilot.vercel.app` zeigt auf diesen `READY`-Stand. Die drei
+Quellen-Crondefinitionen mit insgesamt acht Terminen sind bestätigt.
+Das letzte Quellenfenster läuft auch bei
 zulässiger Zustellverzögerung vor 04:55 UTC aus. Beide Termine geben den
 Ausgabepfaden je fünf Minuten bis zur Frist. Die Betriebsprüfung muss den
 Puffer unter regulärer Last bestätigen. Der Rückweg setzt die Termine auf
 05:00 und 05:15 UTC zurück.
 
 Die Abnahme erfordert zusammenhängende lesende Belege aus mehreren regulären
-Tageswechseln und einem Archivwechsel. Der vorbereitete Stand liefert keine
-Produktionsrate nach dem Umbau.
+Tageswechseln und einem Archivwechsel. Der erste reguläre Lauf nach der
+Ausrollung ist am 20.11.2026. Der Produktionsnachweis für Kapazität,
+vollständige Quellenabdeckung und fristgerechte Mandatsausgaben steht aus.

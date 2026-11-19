@@ -134,8 +134,9 @@ Frist. `due_at` hält die Wiedervorlage. Fällige Morgenpflichten erhalten in
 allen Fenstern Vorrang. Um 03:30 und 04:30 UTC folgt jeweils eine fällige
 Altaufgabe vor der übrigen Tagesarbeit. Der service-only Claim
 verwendet die bestehenden Queue-Leases. Bei fehlendem RPC greift der bisherige
-Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` und ihr
-Rückweg sind für die gesonderte Production-Freigabe vorbereitet.
+Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` ist in
+Production aktiv. Den geprüften Rückweg und den Datenbankbeleg führt der
+[Betriebsbericht](betrieb/quellenfaelligkeit-20261119.md).
 
 DIP bündelt die neutrale HTTP-Abfrage pro Tagesfenster. Die bestehende
 Profilauswahl und die Prüfung von Mandatsbezug und Fundstelle gelten bei der
