@@ -52,11 +52,18 @@ jobs:
           PRUEFMANDAT: ${{ inputs.mandat }}
         run: |
           set -euo pipefail
-          # Nur die Werkzeuge zum Erstellen der Netzisolation laufen mit sudo.
-          sudo -n -- unshare --net -- runuser -u "$(id -un)" -- env -i \
-            PATH="$PATH" GITHUB_RUN_ID="$GITHUB_RUN_ID" \
-            GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
-            node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$PRUEFQUELLE" "$PRUEFMANDAT"
+          # Nur das Einrichten des isolierten Loopbacks benötigt sudo.
+          sudo -n -- unshare --net -- bash -c '
+            set -euo pipefail
+            ip link set lo up
+            test "$(ip -o link show | wc -l)" -eq 1
+            test -z "$(ip route show)"
+            test -z "$(ip -6 route show default)"
+            echo "Isolation bestätigt: nur Loopback, keine externe Route"
+            exec runuser -u "$1" -- env -i PATH="$2" GITHUB_RUN_ID="$3" \
+              GITHUB_RUN_ATTEMPT="$4" GITHUB_SHA="$5" \
+              node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$6" "$7"
+          ' offline "$(id -un)" "$PATH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$PRUEFQUELLE" "$PRUEFMANDAT"
       - name: Ausführungsstatus dokumentieren
         if: always()
         env:
