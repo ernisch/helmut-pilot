@@ -8,8 +8,11 @@ global.fetch = () => { throw Error("Netz verboten"); };
 const env = { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SCALABLE_PIPELINE: "on" };
 async function supply(stand, mandat = "synthetischer-abschluss") {
   return V.lese({ mandat, jetztMs: now.getTime(), env, deps: {
-    planungsrest: { lesen: async () => ({ zustand: "fertig" }) },
-    offeneVorbedingungen: async args => { calls.push(args); return stand; }
+    planungsrest: { lesen: async () => ({ zustand: "fertig" }),
+      offene: async () => ({ plaene: [], weitereVorhanden: false }) },
+    offeneVorbedingungen: async args => { calls.push(args); return stand; },
+    leseAbdeckung: async () => [{ startedAt: now.toISOString(), status: "success",
+      ergebnisse: { fehlendePlanpositionen: 0, offeneAbrufbelege: 0 } }]
   } });
 }
 function state(versorgung, profile = testPoliticianOne) {
