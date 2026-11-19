@@ -135,6 +135,7 @@ async function main(){
     });
     await test("Sitzungswochen aus der wirklichen Paket-Lage sind in der Morgenquittung gebunden", async () => {
       const kalender = E.QUELLEN[4], originalUrl = "https://www.bundestag.de/resource/blob/1103938/fixture.ics";
+      const mandat = { ...profile, name: "Synthetisches Mandat", party: "Fraktionslos", focusTopics: ["Wirtschaft"] };
       const bytes = Buffer.from(["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "UID:fixture.test",
         "DTSTAMP:20261116T080000Z", "DTSTART;VALUE=DATE:20261123", "DTEND;VALUE=DATE:20261128",
         "SUMMARY:Sitzungswoche Deutscher Bundestag", "END:VEVENT", "END:VCALENDAR", ""].join("\r\n"));
@@ -147,7 +148,7 @@ async function main(){
       try {
         require.cache[seedPath].exports = { ...seed, BUNDESTAG_TERMINE_NUTZUNGSBELEGE: [erlaubnis] };
         process.env.HELMUT_QUELLEN_ARBEITSFENSTER = "on";
-        const kontext = await T.leseKontext(profile, { ...deps(), katalog: () => katalog([kalender]),
+        const kontext = await T.leseKontext(mandat, { ...deps(), katalog: () => katalog([kalender]),
           request: async () => [row(kalenderstand)] });
         A.equal(kontext.belege[0].belegHash, kalenderstand.belegHash);
         A.deepEqual(T.quellenAusgabebelege(kontext, { ...profile, parliamentType: "Landtag" }, now()), []);
@@ -157,16 +158,51 @@ async function main(){
           getRenderedBriefingV3: async (_id, slot) => slot === B.SLOT ? paket || null : null,
           insertRenderedBriefingV3: async zeile => { paket = structuredClone(zeile); return { saved: true }; }
         };
-        const result = await M.speicherePaket({ profile, userId: profile.id,
+        const result = await M.speicherePaket({ profile: mandat, userId: mandat.id,
           briefing: { available: false, items: [], currentHelmutState: {}, currentRadarState: {} },
           lageAnsicht: { parlamentsKontext: kontext, vorgaenge: [] }, storage,
           tag: "2026-11-17", now: new Date(now()) });
         A.equal(paket.payload.briefing.amtlicheQuellenbelege[0].belegHash, kalenderstand.belegHash);
         A(belege.passt(result.ausgabeBeleg, paket));
+        const vorwert = copy(paket);
         delete paket.payload.briefing.amtlicheQuellenbelege;
-        paket.payload.quellenStand = require("../lib/helmut/tagespaket-auslieferung").quellenStand(paket.payload);
+        paket.generated_at = paket.payload.erzeugtAm = new Date(now() + 60000).toISOString();
+        paket.payload.vorherigerStand = vorwert;
+        const paketLeser = require("../lib/helmut/tagespaket-auslieferung");
+        paket.payload.quellenStand = paketLeser.quellenStand(paket.payload);
         paket.payload.inhaltHash = B.inhaltHash(paket.payload);
         A.equal(belege.passt(result.ausgabeBeleg, paket), false);
+        const L = require("../lib/helmut/briefing-lauf");
+        const tag = "2026-11-17";
+        const lauf = L.quittung({ tenantId: mandat.id, berlinTag: tag, status: L.STATUS_ERFOLG,
+          ausgabeBeleg: result.ausgabeBeleg, erzeugtAm: new Date(now() + 5000) });
+        const zeit = now() + 120000;
+        A.deepEqual(paketLeser.quittierterVorgaenger(paket, lauf,
+          { day: tag, profile: mandat, now: zeit }), vorwert);
+        A.equal(paketLeser.quittierterVorgaenger({ ...paket, payload: { ...paket.payload,
+          vorherigerStand: { ...vorwert, user_id: "fremdes-mandat" } } }, lauf,
+        { day: tag, profile: mandat, now: zeit }), false);
+        const job = { id: "00000000-0000-4000-8000-000000000001", idempotency_key: "kalender", tenant_id: null,
+          first_due_at: `${tag}T03:00:00Z`, finished_at: new Date(now()).toISOString(), priority: 40,
+          status: "erledigt", payload: { art: "geteilt", quelle: kalender } };
+        const Q = require("../lib/helmut/quellen-faelligkeit");
+        const journal = Q.speicher({ storeId: "offline", request: async (_path, o) => [JSON.parse(o.body)] });
+        const bestaetigt = await journal.sichern({ id: job.id, tenantId: null, firstDueAt: job.first_due_at, payload: job.payload },
+          { art: "terminstand", belegHash: kalenderstand.belegHash, standHash: kalenderstand.standHash }, now());
+        const abgleich = await require("../lib/helmut/quellenarchitektur/faelligkeitsabgleich").lese({
+          catalog: katalog([kalender]), profiles: [mandat], jetztMs: zeit, now: () => zeit, deadlineAt: zeit + 3000,
+          env: { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SUPABASE_STORE_ID: "offline" },
+          storage: { supabaseRequest: async path => {
+            if (path.includes("helmut_jobs?job_type=eq.source_fetch")) return [job];
+            if (path.includes("helmut_store?id=in.")) return [{ id: journal.id(job.id), data: bestaetigt }];
+            A(path.includes("helmut_store?id=eq.offline-quellenplan-")); return [];
+          }, listRenderedBriefingsV3ForTenants: async (ids, slots, day) => {
+            A.deepEqual(ids, [mandat.id]); A(slots.includes(L.SLOT_ERFOLG)); A.equal(day, tag);
+            return [paket, { id: L.laufId(mandat.id, tag), user_id: mandat.id, slot: L.SLOT_ERFOLG, payload: lauf }];
+          } }
+        });
+        A.equal(abgleich.faelligkeiten[0].produkt, "mandatspaket_belegt");
+        A.equal(abgleich.faelligkeiten[0].grund, "morgenpaket_verspaetet");
       } finally {
         require.cache[seedPath].exports = vorher;
         if (flag === undefined) delete process.env.HELMUT_QUELLEN_ARBEITSFENSTER;

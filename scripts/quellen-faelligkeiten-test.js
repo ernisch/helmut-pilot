@@ -165,6 +165,27 @@ async function main() {
     A.equal(r.faelligkeiten[0].grund, "frist_verfehlt");
     A.equal(r.faelligkeiten[0].verspaetet, true);
   });
+  await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", () => {
+    const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";
+    const auftrag = { jobType: "source_fetch", idempotencyKey: "archiv", tenantId: profile.id,
+      priority: 300, freshnessWindow: start, dueAt: due,
+      payload: { art: "person-archiv", quelle: { id: "person", url: "https://fixture.invalid/feed" } } };
+    const erstmals = { ...auftrag, payload: { ...auftrag.payload, faelligkeit: Q.fristen(auftrag, due) } };
+    const heute = { ...auftrag, dueAt: morgen, payload: { ...auftrag.payload, faelligkeit: Q.fristen(auftrag, morgen) } };
+    const job = { id, idempotency_key: "archiv", tenant_id: profile.id, first_due_at: due, due_at: due,
+      freshness_window: start, priority: 300, status: "wartend", payload: erstmals.payload };
+    const plan = a => ({ cursor: 1, auftraege: [a] });
+    const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
+      belege: new Map(), analyseJobs: [], ausgaben: new Map(), env };
+    const pruefe = (j, manifest, archivVorgaenger, zeit) => C.abgleichen({ ...basis,
+      jobs: [j], manifest, archivVorgaenger, jetztMs: Date.parse(zeit) }).faelligkeiten[0];
+    A.equal(pruefe({ ...job, first_due_at: "2026-11-19T00:01:00Z" }, plan(erstmals), [], due).grund, "queue_auftrag_abweichend");
+    A.equal(pruefe(job, plan(heute), [], morgen).grund, "queue_auftrag_abweichend");
+    const original = pruefe(job, plan(heute), [plan(erstmals)], morgen);
+    A.equal(original.grund, "abruf_ausstehend");
+    A.equal(original.urspruenglichFaelligAm, "2026-11-19T03:00:00.000Z");
+    A.equal(original.frist, "2026-11-26T00:00:00.000Z");
+  });
   console.log(`${n}/${n} Fälligkeitsgruppen bestanden`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

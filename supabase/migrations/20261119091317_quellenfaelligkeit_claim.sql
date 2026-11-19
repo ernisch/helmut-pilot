@@ -29,10 +29,10 @@ begin
        and (j.status = 'wartend' or (j.status = 'laeuft' and j.lease_expires_at < v_now))
      order by
        case
-         -- Zwei vorhandene Slots geben zuerst einem Altauftrag Platz.
-         -- Danach und in den übrigen Slots gilt der amtliche Tagesvorrang.
-         when p_alt_vorrang and j.first_due_at < v_tag then 0
-         when j.first_due_at >= v_tag and j.priority between 35 and 50 then 1
+         -- Fällige Morgenpflichten behalten das gemeinsame Originalkontingent.
+         -- Zwei vorhandene Slots ziehen danach jeweils einen Altauftrag vor.
+         when j.first_due_at >= v_tag and j.priority between 35 and 50 then 0
+         when p_alt_vorrang and j.first_due_at < v_tag then 1
          when j.first_due_at >= v_tag then 2
          else 3
        end,

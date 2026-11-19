@@ -24,6 +24,14 @@ wartende Abrufe. 278 davon stammen aus früheren Fenstern. Am 19.11. lagen
 an diesem Tag 117 Google-Abschlüsse und 121 Abschlüsse insgesamt. Die
 Warteschlange, Quotenbuchungen und Originalbelege wurden zur Auswertung gelesen.
 
+| Gruppe am 19.11. | Geplant | Technisch erledigt |
+| --- | ---: | ---: |
+| Übrige Google-Tagesquellen | 144 | 28 |
+| Google-Archivsuche | 1 | 0 |
+| Amtliche PDF-/ICS-Morgenpflichten | 5 | 1 |
+| DIP | 1 | 1 |
+| Übrige Anbieter | 11 | 11 |
+
 8 Fenster, 2.400 reservierte Sekunden und 16 Originalreservierungen sind am
 19.11. ausgeschöpft. Drei der fünf amtlichen Wege wurden an der Originalquote
 vertagt. Das entspricht in diesem Ablauf mindestens drei weiteren verweigerten
@@ -36,9 +44,14 @@ Google-Abschlüssen einher. Der beobachtete Mix ergibt 17,07 Reservierungen
 je Abschluss. Bei demselben Mix würden 145 Abschlüsse 2.475 Reservierungen
 brauchen, 1.975 mehr als die am 19.11. gebuchten 500. Mit diesen 500 Buchungen
 müsste der Mix auf höchstens 3,45 Reservierungen je Abschluss sinken.
-Öffentliche Weiterleitungen lassen sich im Slot wiederverwenden. Die Quote
-von 30 pro Minute und die nutzbare Workerzeit begrenzen den tatsächlichen
-Durchsatz. 500 ist ein beobachteter Verbrauch, kein konfigurierter Tagesdeckel.
+Öffentliche Weiterleitungen lassen sich im Slot wiederverwenden. In 31 von
+35 belasteten Minuten wurde die Grenze von 30 erreicht. Acht Fünfminutenfenster
+berühren höchstens 48 feste Minuten der Anbieterquote. Selbst bei 1.440
+Reservierungen würden beim beobachteten Mix höchstens 84 Google-Aufträge
+abgeschlossen. Gegenüber den 2.475 benötigten Reservierungen fehlen selbst
+dann 1.035. Die am 19.11. gemessenen 500 Buchungen sind der Ist-Verbrauch.
+Für 754 Altaufträge in fünf Tagen wären bei 162 neuen Aufträgen je Tag
+mindestens 313 Abschlüsse pro Tag nötig, davon 151 für den Rückstand.
 
 ## Abgleich von Katalog und Ausgabe
 
@@ -61,25 +74,39 @@ Vercel-Termine beginnen um 05:00 und 05:15 UTC. Die Ausgabeprüfung verwendet
 die gespeicherten Zeitstempel und die getrennte Morgenquittung. Der
 Artefaktzeitpunkt allein belegt keine einzelne Quelle in der Ausgabe.
 
-## Bedarfsrechnung für 500 Mandate
+## Bedarfsrechnung für 100 und 500 Mandate
 
 Der 19.11. enthält 159 geteilte Abrufaufträge, davon 143 Google, einen
-DIP-Auftrag sowie je eine persönliche Tages- und Archivsuche. Bei 500
-berechtigten Bundestagsmandaten mit derselben Menge geteilter Definitionen
-bündelt der neue Plan DIP einmal je Tagesfenster. Das Szenario erfordert
-durchschnittlich **731,43 Abrufaufträge je Tag** und **1.160** am
-Archivwechsel. Davon sind mindestens **714,43** beziehungsweise **1.143**
-Google-Feedreservierungen nötig, bereits vor Artikelauflösung und Retries.
-Bei 30 Reservierungen je Minute entspricht das mindestens 23 min 49 s
-beziehungsweise 38 min 06 s Anbieterzeit. Weitere Paket-, Rollen-, Wahlkreis-
-und Landesdefinitionen erhöhen den Bedarf. Die gemessenen Schwankungen
-geben noch keine belastbare Rate nach Bündelung vor.
+DIP-Auftrag sowie je eine persönliche Tages- und Archivsuche. Der neue Plan
+bündelt DIP einmal je Tagesfenster. Issue #1266 setzt die aktuelle Betriebsgröße
+auf 100 Mandate. Die angeforderte Rechnung für 500 nutzt denselben Bedarf pro
+berechtigtem Bundestagsmandat und dieselben gemeinsam genutzten Abrufwege.
+
+| Mandate | Aufträge im Tagesmittel | Aufträge am Archivwechsel | Google-Feeds im Tagesmittel | Google-Feeds am Archivwechsel |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 274,29 | 360 | 257,29 | 343 |
+| 500 | 731,43 | 1.160 | 714,43 | 1.143 |
+
+Bei 30 Reservierungen je Minute entsprechen die Google-Feeds für 100
+Mandate mindestens 8 min 35 s im Mittel und 11 min 26 s am Archivwechsel.
+Bei 500 Mandaten sind es 23 min 49 s und 38 min 06 s. Artikelauflösung,
+Wiederholungen und weitere Paket-, Rollen-, Wahlkreis- und Landesdefinitionen
+erhöhen den Bedarf. Für das 100er-Szenario mit beispielhaften 25 Prozent
+Reserve braucht es im Mittel mindestens 343 Abrufabschlüsse und zum
+Archivwechsel 450. Die fünf amtlichen Originalwege und DIP werden je
+Tagesfenster einmal als Auftrag eingeplant. Die Zahl ausgabefähiger Lagen
+wächst mit der Mandatszahl.
 
 Aus den paarweise beobachteten Modellkosten des 18. und 19.11. ergeben sich
-bei 500 neu zu erzeugenden und zu prüfenden Lagen **7,264–7,506 USD pro Tag**.
-Das Szenario verwendet dieselben globalen Kosten wie je Beobachtungstag und
-enthält keine zusätzlichen Radar- oder Bürokosten. Caches können die Kosten
-senken. Der geltende Rahmen bleibt **1 USD pro UTC-Tag, 30 USD gesamt**.
+bei täglich neu zu erzeugenden und zu prüfenden Lagen **1,905–1,913 USD** für
+100 und **7,264–7,506 USD** für 500 Mandate. Das Szenario enthält keine
+zusätzlichen Radar- oder Bürokosten. Nach den beobachteten globalen Kosten
+lassen sich im Rahmen von 1 USD täglich rechnerisch bis zu 32–34 Lagen neu
+erstellen und prüfen. Für 100 Mandate müssten also mindestens 66–68 Lagen
+ohne dieses neue Aufrufpaar auskommen. Kostenreservierungen senken den
+verfügbaren Anteil weiter. Der Rahmen von **1 USD pro UTC-Tag, 30 USD gesamt**
+gilt. Reale Einsparungen und Kapazität nach der Bündelung müssen im Regelbetrieb
+belegt werden.
 
 ## Freigabe und Rückweg
 
