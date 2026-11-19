@@ -142,8 +142,11 @@ Profilauswahl und die Prüfung von Mandatsbezug und Fundstelle gelten bei der
 Ausgabe. PDF und ICS speichern zulässige Fakten je bestätigtem Originalteil mit
 Fassungsfingerabdruck. Ein Retry prüft Katalog, Rechte, Zugriff und Dokumentliste
 erneut. Identische geprüfte Teile desselben Auftrags brauchen keine weitere
-Originalreservierung. Bestätigte Google-Originaladressen können andere Abrufe
-im selben Slot wiederverwenden.
+Originalreservierung. Öffentliche Google-Suchen verwenden bestätigte
+Originaladressen auch über Slots hinweg, wenn Suchweg, Fund-URL, Titel,
+Publikationszeit und Herausgeberhost belegt passen. Die aktuelle
+Feedbeobachtung bleibt Pflicht. Personensuchen prüfen den Profilbezug vor
+der Linkauflösung und übernehmen keine gemeinsam gespeicherten Suchbelege.
 
 Der Abdeckungsbericht vergleicht aktive Abrufwege und Paketbedarf mit Tagesmanifest,
 Queue und Ergebnisbelegen. Wiederkehrende Archivschlüssel behalten die Fälligkeit

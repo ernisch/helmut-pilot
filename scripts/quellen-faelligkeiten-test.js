@@ -5,7 +5,7 @@ const Q = require("../lib/helmut/quellen-faelligkeit");
 const P = require("../lib/helmut/scalable-pipeline");
 const B = require("../lib/helmut/quellen-bundestag-termine");
 const C = require("../lib/helmut/quellenarchitektur/faelligkeitsabgleich");
-const { resolveArticleUrl } = require("../lib/helmut/crawler");
+const { resolveArticleUrl, crawlAllSources } = require("../lib/helmut/crawler");
 const jetzt = Date.parse("2026-11-19T03:30:00Z");
 const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
   HELMUT_JOB_DISPATCH_MODE: "off", DIP_API_KEY: "fixture" };
@@ -104,6 +104,48 @@ async function main() {
     const unbekannt = async () => { eingaenge++; throw Error("fixture nicht verfügbar"); };
     for (let i = 0; i < 2; i++) A.equal(await resolveArticleUrl(google, "Abweichender Beleg", { googleOriginale, fetchUrl: unbekannt }), google);
     A.equal(eingaenge, 3); A.equal(googleOriginale.size, 1);
+  });
+  await test("Erneute öffentliche Google-Beobachtung verwendet nur die bestätigte Originaladresse", async () => {
+    const feed = "https://news.google.com/rss/search?q=fixture", publisher = "https://fixture.example/";
+    const proxy = "https://news.google.com/rss/articles/CBMi_fiktiver_link", original = `${publisher}politik/geprueft`;
+    const title = "Fixture zum Haushalt", published = "Wed, 18 Nov 2026 10:00:00 GMT";
+    const body = `<rss><channel><item><title>${title}</title><description>Fixture Erläuterung</description>`
+      + `<pubDate>${published}</pubDate><link>${proxy}</link><source url="${publisher}">Fixture Zeitung</source></item></channel></rss>`;
+    const source = { id: "fixture", retrievalPathId: "rp-fixture", name: "Fixture", type: "media", active: true,
+      url: feed, rssUrl: feed, crawlMethod: "rss" };
+    const beleg = { source_id: source.id, retrieval_path_id: null, original_url: proxy, found_at: "2026-11-18T17:00:00Z",
+      raw_documents: { title, url: original, published_at: new Date(published).toISOString(), link_type: "direct" } };
+    async function run(fundstellen, quelle = source) {
+      const abrufe = [];
+      let lesungen = 0;
+      const r = await crawlAllSources([quelle], { now: () => jetzt, deadlineMs: jetzt + 1500,
+        googleOriginale: new Map(),
+        fetchUrl: async url => { abrufe.push(url); return url === feed ? { body } : { finalUrl: original, body: "" }; },
+        leseGoogleArtikelfundstellen: async (_quelle, urls, { timeoutMs }) => {
+          A.deepEqual(urls, [proxy]); A.equal(timeoutMs, 600); lesungen++;
+          return fundstellen;
+        } });
+      return { abrufe, lesungen, result: r.results[0] };
+    }
+    const wieder = await run([beleg]);
+    A.deepEqual(wieder.abrufe, [feed]); A.equal(wieder.lesungen, 1);
+    A.equal(wieder.result.items[0].url, original); A.equal(wieder.result.items[0].originalUrl, proxy);
+    A.equal(wieder.result.gespeicherteGoogleLinks, 1);
+    for (const schlechte of [[{ ...beleg, source_id: "fremd" }], [{ ...beleg, retrieval_path_id: "rp-fremd" }],
+      [{ ...beleg, found_at: "2026-11-10T17:00:00Z" }], [{ ...beleg, raw_documents: { ...beleg.raw_documents, title: "Andere Fassung" } }],
+      [beleg, { ...beleg, raw_documents: { ...beleg.raw_documents, url: `${publisher}politik/anders` } }]]) {
+      const neu = await run(schlechte);
+      A.deepEqual(neu.abrufe, [feed, proxy]); A.equal(neu.result.gespeicherteGoogleLinks, undefined);
+    }
+    A.equal((await run([beleg], { ...source, type: "person", queryTerms: ["Haushalt"] })).lesungen, 0);
+    const ohneBezug = await run([], { ...source, type: "person", queryTerms: ["Fiktiver Fremdname"] });
+    A.deepEqual(ohneBezug.abrufe, [feed]); A.equal(ohneBezug.result.itemCount, 0);
+    let posts = 0;
+    await resolveArticleUrl(proxy, title, {
+      fetchUrl: async () => ({ body: '<div data-n-a-id="ABC" data-n-a-ts="123" data-n-a-sg="SIG"></div>' }),
+      postForm: async () => { posts++; return { body: "[]" }; }
+    });
+    A.equal(posts, 1);
   });
   await test("Abgleich findet fehlenden Katalogweg, verlorenes Enqueue und fremdes oder zu spätes Morgenpaket", async () => {
     const job = { id, idempotency_key: "pflicht", tenant_id: null, first_due_at: due, due_at: due,

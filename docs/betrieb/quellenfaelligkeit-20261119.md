@@ -44,7 +44,7 @@ Google-Abschlüssen einher. Der beobachtete Mix ergibt 17,07 Reservierungen
 je Abschluss. Bei demselben Mix würden 145 Abschlüsse 2.475 Reservierungen
 brauchen, 1.975 mehr als die am 19.11. gebuchten 500. Mit diesen 500 Buchungen
 müsste der Mix auf höchstens 3,45 Reservierungen je Abschluss sinken.
-Öffentliche Weiterleitungen lassen sich im Slot wiederverwenden. In 31 von
+In 31 von
 35 belasteten Minuten wurde die Grenze von 30 erreicht. Acht Fünfminutenfenster
 berühren höchstens 48 feste Minuten der Anbieterquote. Selbst bei 1.440
 Reservierungen würden beim beobachteten Mix höchstens 84 Google-Aufträge
@@ -52,6 +52,16 @@ abgeschlossen. Gegenüber den 2.475 benötigten Reservierungen fehlen selbst
 dann 1.035. Die am 19.11. gemessenen 500 Buchungen sind der Ist-Verbrauch.
 Für 754 Altaufträge in fünf Tagen wären bei 162 neuen Aufträgen je Tag
 mindestens 313 Abschlüsse pro Tag nötig, davon 151 für den Rückstand.
+
+Seit 13.11. sind 632 bestätigte direkte Google-Fundstellen für aktive
+öffentliche Katalogsuchwege gespeichert. Sie enthalten 610 verschiedene
+Proxy-Adressen. Der neue Leser bindet die bekannte Originaladresse an
+Suchweg, Proxy, Titel, Publikationszeit und Herausgeberhost. Der Feed bleibt
+eine aktuelle Beobachtung. Ein Offline-Fall spart beim wiedergefundenen
+Artikel einen von zwei Google-Abrufen. Personensuchen prüfen die gleichen
+Suchbegriffe vor der Linkauflösung. Ein POST mit bestätigter Antwort ohne
+Artikellink wird mit derselben Eingabe nicht wiederholt. Eine belastbare
+Wiederverwendungsrate folgt erst aus regulären Abrufbelegen.
 
 ## Abgleich von Katalog und Ausgabe
 
@@ -62,15 +72,17 @@ Status- und Modusfilter. 146 exakte URLs finden sich im Tagesmanifest. Die
 acht übrigen Katalog-IDs sind im Manifest mit jeweils abweichenden
 Google-Abfragen vertreten. Die Legacy-Zuordnung übergibt deren Such-URLs.
 Die Abweichungen betreffen Bau/Wohnen, Bildung, Digitales, Familie,
-Klima/Umwelt, Landwirtschaft, Recht und Sport. Der Abgleich meldet die
-abweichende Definition. Die gültige fachliche Fassung muss je Weg belegt
-werden, bevor eine Katalog- oder Abrufänderung die Abweichung schließen kann.
-Der amtliche BA-Originalweg fehlt weiterhin.
+Klima/Umwelt, Landwirtschaft, Recht und Sport. Der neue Mapper übernimmt
+für solche bereits aktivierten öffentlichen Einzelabfragen die exakte
+Katalog-URL innerhalb desselben Google-RSS-Abrufwegs. Alle acht Abweichungen
+sind mit den gelesenen Katalog- und Manifestdaten offline reproduziert und
+im Mapper behoben. Der erste reguläre Manifestbeleg steht aus. Der amtliche
+BA-Originalweg fehlt weiterhin.
 
 Das am 19.11. gespeicherte Lageobjekt hat den Zeitstempel **05:00:51.628 UTC**,
 das Mandatsbriefing **05:15:44.627 UTC**. Damit liegen diese Artefakte 51,628
 beziehungsweise 44,627 Sekunden hinter den Fristen. Die regulären
-Vercel-Termine beginnen um 05:00 und 05:15 UTC. Die Ausgabeprüfung verwendet
+Vercel-Termine begannen um 05:00 und 05:15 UTC. Die Ausgabeprüfung verwendet
 die gespeicherten Zeitstempel und die getrennte Morgenquittung. Der
 Artefaktzeitpunkt allein belegt keine einzelne Quelle in der Ausgabe.
 
@@ -123,9 +135,9 @@ Beleg in der Lage und derselbe Beleg in der gebundenen Morgenausgabe sind
 getrennte Bedingungen. Der bestätigte Sitzungskalender ist über die
 gespeicherte Morgenquittung an das Paket gebunden.
 
-Die vorhandene Pflicht-CI wählt bei der SQL- und Kernänderung den vollen
-Datenbankpfad einschließlich der 500er-Suiten. Die gezielte Verifizierung
-läuft lokal. Eine PR-Eröffnung würde die Vollprüfung automatisch auslösen.
+PR #1271 bereitet die Pflicht-CI ohne historische Mengenläufe vor.
+Die neue Queue-Migration erhält eine gezielte PostgreSQL-Prüfung als Teil
+des Pflichtlaufs.
 
 Die vorbereitete Migration ergänzt genau die Funktion
 `public.helmut_claim_quellenfaelligkeit(text,bigint,boolean)` mit Ausführungsrecht
@@ -133,16 +145,15 @@ für `service_role`. Sie ersetzt keine bestehenden RPCs und
 ändert keine Queue-Zeilen bei der Installation. Der lesende Nachweis nach
 einer freigegebenen Anwendung prüft Funktionskörper, Rechte und Migrationsversion.
 Das Rückweg-SQL entfernt den Einsprung. Bereits bestätigte Manifeste,
-Teilstände und Ergebnisse bleiben bei einem Rückweg erhalten. Änderungen an
-Produktionskatalog und Cron benötigen ihre jeweils konkrete Freigabe.
+Teilstände und Ergebnisse bleiben bei einem Rückweg erhalten. Der Betreiber
+hat die einmalige Anwendung nach grüner Pflicht-CI und Review freigegeben.
 
-Für eine getrennte Terminfreigabe kommen 04:55 UTC für die Lage und 05:10 UTC
-für die Morgenausgabe in Betracht. Das letzte Quellenfenster hat bei später
-regulärer Zustellung bis 04:54 UTC Zeit. Die beiden neuen Zeiten geben den
-Ausgabepfaden je fünf Minuten bis zur Frist. Vor einer Anwendung sind die
-gemessenen Laufzeitgrenzen und die Überschneidung mit dem Quellenfenster
-gegen den zu integrierenden Stand abzugleichen. Der Rückweg wären die
-vorhandenen Termine 05:00 und 05:15 UTC.
+Die freigegebene Terminänderung verschiebt die Lage auf 04:55 und die
+Morgenausgabe auf 05:10 UTC. Das letzte Quellenfenster läuft auch bei
+zulässiger Zustellverzögerung vor 04:55 UTC aus. Beide Termine geben den
+Ausgabepfaden je fünf Minuten bis zur Frist. Die Betriebsprüfung muss den
+Puffer unter regulärer Last bestätigen. Der Rückweg setzt die Termine auf
+05:00 und 05:15 UTC zurück.
 
 Die Abnahme erfordert zusammenhängende lesende Belege aus mehreren regulären
 Tageswechseln und einem Archivwechsel. Der vorbereitete Stand liefert keine

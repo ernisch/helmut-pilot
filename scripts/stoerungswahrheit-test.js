@@ -182,8 +182,10 @@ function check(name, cond, detail = "") {
     && /Nicht begonnene Mandate werden NICHT als versucht/.test(fairnessSource));
   check("Mandatsbezogene Crons brauchen KEINE mandantenspezifische Env-Variable",
     !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT|HELMUT_MORNING_PUSH_ALL_PROFILES/.test(serverSource));
-  check("Cron-Zeiten unveraendert (vercel.json nicht angefasst)",
-    fs.readFileSync(path.join(root, "vercel.json"), "utf8").includes('"0 5 * * *"'));
+  const crons = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8")).crons;
+  check("Lage und Briefing starten mit Puffer vor den unveränderten UTC-Fristen",
+    crons.find(c => c.path === "/api/cron/lage-briefing")?.schedule === "55 4 * * *"
+    && crons.find(c => c.path === "/api/cron/morning-briefing")?.schedule === "10 5 * * *");
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
