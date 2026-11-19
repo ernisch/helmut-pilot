@@ -73,6 +73,8 @@ const HISTORISCH = [
   "skalierung-stufen-test.js",
   "auth-store-cas-test.js", "store-cas-test.js", "source-demand-test.js",
   "admin-profile-inventory-test.js", "starttor-full-packet-transport-test.js",
+  "admin-ergebnisse-route-test.js", "v3-anbindung-test.js", "lage-check-kapazitaet-test.js",
+  "skalierung-lastnachweis-test.js", "lage-aktive-fortsetzung-test.js",
   "testfenster-null500-test.js", "synthetik-500-import-test.js", "realkohorte-500-runtime-test.js",
   "github-direkt500-test.js", "end500-waechter-beleg-test.js"
 ];

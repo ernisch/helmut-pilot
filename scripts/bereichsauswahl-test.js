@@ -19,9 +19,9 @@ const A = require(path.join(ROOT, "scripts", "bereichsauswahl.js"));
 
 const ALLE = R.collectSuites();
 const STANDARD = R.STANDARD;
-const NEUE_PFLICHTVERTRAEGE = ["auth-store-partial-test.js", "starttor-original-state-witness-test.js",
-  "starttor-preserved-controls-test.js", "starttor-counter-head-test.js"];
-const ERWARTETE_STANDARDANZAHL = 119;
+const NEUE_PFLICHTVERTRAEGE = ["auth-store-partial-test.js", "starttor-preserved-controls-test.js",
+  "starttor-counter-head-test.js"];
+const ERWARTETE_STANDARDANZAHL = 114;
 
 // Modul nur LADEN (nicht scharfschalten) fuer eine saubere Kindprozess-Umgebung.
 process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "ja";
