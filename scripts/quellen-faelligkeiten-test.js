@@ -413,6 +413,11 @@ async function main() {
     A.equal(abgleich(ausgabe, { jobs: [fristManipuliert] }).faelligkeiten[0].grund, "queue_auftrag_abweichend");
     A.equal(abgleich({ ...ausgabe, user_id: "fremd" }).faelligkeiten[0].grund, "zuordnung_nicht_belegt");
     A.equal(abgleich({ ...ausgabe, generated_at: "2026-11-19T05:15:01Z" }).faelligkeiten[0].grund, "morgenpaket_verspaetet");
+    basis.belege.set(id, await speicher.sichern(binding, { ...inhalt, quellenkonflikt: true }, jetzt));
+    const konflikt = abgleich(ausgabe).faelligkeiten[0];
+    A.equal(konflikt.abruf, "teilweise");
+    A.equal(konflikt.grund, "terminstand_quellenkonflikt");
+    A.equal(konflikt.produkt, "ausstehend");
     basis.belege.clear();
     A.equal(abgleich(ausgabe).faelligkeiten[0].grund, "ergebnisbeleg_fehlt");
   });

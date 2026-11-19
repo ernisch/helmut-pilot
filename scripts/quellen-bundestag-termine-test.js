@@ -25,10 +25,10 @@ BT-Drucksache 21/8119
 Voten angefordert für den: 11.11.2026`;
 const doc = (revision = 0, time = "10:30", patch = {}) => B.tagesordnung(q, link(revision, patch),
   Buffer.from("%PDF-" + body(revision, time)), [body(revision, time)]);
-const catalog = () => ({ retrievalPaths: [{ id: q.retrievalPathId, legacy_source_id: q.id,
-  publisher_id: "publisher-bundestag.de", method: q.crawlMethod, url: q.url, status: "needs_review",
-  activation_mode: "auto" }], packages: [{ id: q.packageId, status: "active" }],
-  packagePaths: [{ package_id: q.packageId, retrieval_path_id: q.retrievalPathId }] });
+const catalog = (quelle = q) => ({ retrievalPaths: [{ id: quelle.retrievalPathId, legacy_source_id: quelle.id,
+  publisher_id: "publisher-bundestag.de", method: quelle.crawlMethod, url: quelle.url, status: "needs_review",
+  activation_mode: "auto" }], packages: [{ id: quelle.packageId, status: "active" }],
+  packagePaths: [{ package_id: quelle.packageId, retrieval_path_id: quelle.retrievalPathId }] });
 const rights = () => ({ id:q.id,url:q.url,rightsReviewRequired:false,
   usagePolicy: { commercialUseApproved: true, scope: "structured_parliamentary_facts", fullTextAllowed: false,
     imagesAllowed: false, aiTrainingAllowed: false, evidenceUrls: ["https://example.test/explicit-fixture-approval"] } });
@@ -221,6 +221,14 @@ test("Regulaerer Quellenadapter liest Liste/Originale begrenzt und verlangt bele
     : deps.fetchUrl(u,0,{allowedHost:"bundestag.de",binary:true,bundestagFakten:true});
   await A.rejects(B.aufnahme(q,{...deps,fetchUrl:probe}), /robots-gesperrt/);
   A.deepEqual(requests.slice(beforeRobots),[q.url]);
+  const davor = requests.length;
+  await A.rejects(B.aufnahme(q, { ...deps,
+    reserveOriginal: () => A.fail("Keine Buchung bei einem gesperrten Original in der Kette"),
+    fetchUrl: u => u === robots ? { status: 200, finalUrl: u,
+      bytes: Buffer.from("User-agent: HelmutBot\nDisallow: " + new URL(url(0)).pathname) }
+      : deps.fetchUrl(u, 0, { allowedHost: "bundestag.de", binary: true, bundestagFakten: true })
+  }), /robots-gesperrt/);
+  A.deepEqual(requests.slice(davor), [q.url, endpoint]);
 });
 test("Unveraenderliche Ablage: nur POST-neu, exaktes Ruecklesen, verlorene Antwort und UNKNOWN", async () => {
   const s = B.baueStand(q, [doc()], new Date(now()).toISOString(), "a".repeat(64)), map = new Map(), methods = [];
@@ -291,27 +299,65 @@ test("PDF und ICS setzen bestätigte Teile nach Layout- und Tageswechsel mit ein
     A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
   }
 });
-test("Beschädigte PDF bleibt offen und wird erst im nächsten Quellenfenster erneut versucht", async () => {
+test("Ein Altauftrag nutzt den bestätigten heutigen Terminstand nur bei exakt gleicher amtlicher Liste", async () => {
   const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
-  let original = 0, abschluss;
-  const result = await SP.fuehreAuftragAus({
-    auftrag: { id: "pdf-fehler", job_type: "source_fetch", payload: { quelle: q }, attempts: 1 },
-    besitzer: "fixture", restzeitMs: 60000, deps: {
-      handler: SP.HANDLER, env: {}, now,
-      leseBundestagTermineKatalog: async () => catalog(), leseBundestagAbrufpause: async () => null,
-      reserviereBundestagOriginal: async () => { original++; return { erlaubt: true, geprueft: true }; },
-      bundestagTermineFetch: async u => ({ status: 200, finalUrl: u, bytes: Buffer.from(
-        u === q.url ? JSON.stringify({ endpoint }) : u === endpoint ? row(0)
-          : u === url(0) ? "%PDF-1.4\nkaputt" : "User-agent: *") }),
-      sichereBundestagTerminstand: () => A.fail("Defektes Original darf keinen Fassungstand erzeugen"),
-      finish: async a => { abschluss = a; return { verfuegbar: true, uebernommen: true }; }
-    }
-  });
-  A.equal(result.ausgang, "wiederholt");
-  A.equal(original, 1);
-  A.equal(abschluss.ok, false);
-  A.equal(abschluss.error, "bundestag-termine-pdf-lesefehler-beschaedigt");
-  A.equal(abschluss.retryDelayMs, 15 * 60000);
+  let list = row(0), gebucht = 0, ruecklesungen = 0;
+  const original = doc(0, "10:30", { listedMeeting: "60" });
+  const beobachtet = (zeit, docs = [original]) => B.baueStand(q, docs, zeit, B.hash(Buffer.from(row(0))));
+  let stand = beobachtet("2026-11-17T03:00:00.000Z");
+  const deps = { env: { HELMUT_QUELLEN_ARBEITSFENSTER: "on" }, now,
+    leseBundestagTermineKatalog: async () => catalog(), leseBundestagAbrufpause: async () => null,
+    reserviereBundestagOriginal: async () => { gebucht++; return { erlaubt: false, geprueft: true }; },
+    bundestagTerminTeilspeicher: opts => B.speicher({ ...opts, storeId: "isoliert", request: async pfad => {
+      if (!pfad.includes("retrievedAt=lt.")) return [];
+      ruecklesungen++;
+      return [{ id: "isoliert-bt-terminstand-" + stand.belegHash, data: stand }];
+    } }),
+    bundestagTermineFetch: async u => ({ status: 200, finalUrl: u, bytes: Buffer.from(
+      u === q.url ? JSON.stringify({ endpoint }) : u === endpoint ? list : "User-agent: *") }),
+    sichereBundestagTerminstand: () => A.fail("Vorhandenen Beleg nicht umdatieren") };
+  const lauf = firstDueAt => SP.HANDLER.source_fetch({ id: "fixture", firstDueAt, payload: { quelle: q } }, deps,
+    { auftragsDeadlineMs: now() + 60000 });
+  const gestern = "2026-11-16T03:00:00.000Z";
+  const r = await lauf(gestern);
+  A.deepEqual(r.abrufErgebnis, { art: "terminstand", standHash: stand.standHash, belegHash: stand.belegHash,
+    wiederverwendet: true, quellenkonflikt: true });
+  A.equal(ruecklesungen, 1); A.equal(gebucht, 0);
+  A.equal((await lauf("2026-11-17T03:00:00.000Z")).zurueckgestellt, true);
+  A.equal(ruecklesungen, 1); A.equal(gebucht, 1);
+  list += " korrigierte amtliche Liste";
+  A.equal((await lauf(gestern)).zurueckgestellt, true);
+  list = row(0);
+  stand = beobachtet("2026-11-16T12:00:00.000Z");
+  A.equal((await lauf(gestern)).zurueckgestellt, true);
+  stand = beobachtet("2026-11-17T03:00:00.000Z", [{ ...original, url: url(99) }]);
+  A.equal((await lauf(gestern)).zurueckgestellt, true);
+  A.equal(ruecklesungen, 4); A.equal(gebucht, 4);
+});
+test("Beschädigte PDF und ICS bleiben offen und warten mindestens bis zum nächsten Fenster", async () => {
+  const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
+  const icsUrl = "https://www.bundestag.de/resource/blob/1231438/termin-0.ics";
+  for (const [quelle, fehler] of [[q, "pdf-lesefehler-beschaedigt"], [B.QUELLEN[4], "ics-format"]]) {
+    let original = 0, abschluss;
+    const antworten = new Map([[q.url, JSON.stringify({ endpoint })], [endpoint, row(0)], [url(0), "%PDF-1.4\nkaputt"],
+      [B.QUELLEN[4].url, `<a href="${icsUrl}">Sitzungswochen</a>`], [icsUrl, "BEGIN:VCALENDAR\r\nungueltig"]]);
+    const result = await SP.fuehreAuftragAus({
+      auftrag: { id: "terminfehler", job_type: "source_fetch", payload: { quelle }, attempts: 1 },
+      besitzer: "fixture", restzeitMs: 60000, deps: {
+        handler: SP.HANDLER, env: {}, now,
+        leseBundestagTermineKatalog: async () => catalog(quelle), leseBundestagAbrufpause: async () => null,
+        reserviereBundestagOriginal: async () => { original++; return { erlaubt: true, geprueft: true }; },
+        bundestagTermineFetch: async u => ({ status: 200, finalUrl: u, bytes: Buffer.from(antworten.get(u) || "User-agent: *") }),
+        sichereBundestagTerminstand: () => A.fail("Defektes Original darf keinen Fassungsstand erzeugen"),
+        finish: async a => { abschluss = a; return { verfuegbar: true, uebernommen: true }; }
+      }
+    });
+    A.equal(result.ausgang, "wiederholt");
+    A.equal(original, 1);
+    A.equal(abschluss.ok, false);
+    A.equal(abschluss.error, "bundestag-termine-" + fehler);
+    A.equal(abschluss.retryDelayMs, 15 * 60000);
+  }
 });
 test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generischem Crawl/Modell", async () => {
   const handler = SP.HANDLER.source_fetch; let generic = 0, frees = 0;
