@@ -1,0 +1,66 @@
+name: HELMUT manuelle Quellenprüfung
+run-name: Quellenentwicklung · ${{ inputs.quelle }} · ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      quelle:
+        description: Einzelne Quelle oder Adapter mit Offline-Prüfdaten
+        required: true
+        type: choice
+        default: bundestag-kalender
+        options:
+          - bundestag-kalender
+          - bundestag-pdf
+          - destatis-rss
+          - dip-quellfelder
+      mandat:
+        description: Optionales synthetisches Mandat für bundestag-kalender
+        required: true
+        type: choice
+        default: ohne
+        options:
+          - ohne
+          - bundestag
+          - landtag
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-manuelle-quellenpruefung
+  cancel-in-progress: false
+
+jobs:
+  offline:
+    if: github.repository == 'ernisch/helmut-pilot' && github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Gepinnte Abhängigkeiten bereitstellen
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Genau eine Offline-Quellenprüfung ausführen
+        env:
+          PRUEFQUELLE: ${{ inputs.quelle }}
+          PRUEFMANDAT: ${{ inputs.mandat }}
+        run: |
+          set -euo pipefail
+          # Nur die Werkzeuge zum Erstellen der Netzisolation laufen mit sudo.
+          sudo -n -- unshare --net -- runuser -u "$(id -un)" -- env -i \
+            PATH="$PATH" GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$PRUEFQUELLE" "$PRUEFMANDAT"
+      - name: Ausführungsstatus dokumentieren
+        if: always()
+        env:
+          PRUEFSTATUS: ${{ job.status }}
+        run: |
+          printf 'Entwicklungsprüfung (offline) · Run %s/%s · Commit %s · %s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$PRUEFSTATUS" >> "$GITHUB_STEP_SUMMARY"
