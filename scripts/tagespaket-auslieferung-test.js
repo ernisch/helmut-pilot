@@ -14,7 +14,7 @@ const clone = structuredClone;
 let n = 0;
 const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
 async function test(name, fn) { if (only && !name.includes(only)) return; await fn(); n++; console.log("PASS " + name); }
-async function state({ partial = false } = {}) {
+async function state({ partial = false, jsonb = false } = {}) {
   const original = fixture.fixture(), rows = new Map(), reads = [];
   const text = clone(original.text); rows.set(text.id, text);
   const briefing = clone(fixture.briefing);
@@ -23,6 +23,7 @@ async function state({ partial = false } = {}) {
   briefing.currentHelmutState.status = "fresh";
   if (partial) briefing.currentHelmutState.versorgung = { version: 1, zustand: "offen" };
   briefing.currentRadarState = { status: "fresh", articles: [{ vorgangId: "vg-synth-1", title: "Gespeicherter Radarhinweis" }] };
+  if (jsonb) briefing.currentRadarState.articles[0].reportingTopic = undefined;
   briefing.tagespaketGrundlage = [1,2].map(i => ({ id: "ko-synth-" + i, vorgang_id: "vg-synth-" + i }));
   const lageAnsicht = { ...B.lageAusgabe(text.payload), vorgaenge: [1,2].map(i => ({
     vorgangId: "vg-synth-" + i, displayTitle: "Gespeicherte Lagekarte " + i,
@@ -31,7 +32,7 @@ async function state({ partial = false } = {}) {
     getRenderedBriefingV3: async (id, slot, tag) => {
       reads.push([id,slot,tag]); return clone(rows.get(`bf-${id}-${slot}-${tag}`) || null);
     },
-    insertRenderedBriefingV3: async row => { rows.set(row.id, clone(row)); return { saved: true }; },
+    insertRenderedBriefingV3: async row => { rows.set(row.id, jsonb ? JSON.parse(JSON.stringify(row)) : clone(row)); return { saved: true }; },
     ergaenzeUnvollstaendigesBriefing: async (before, after) => {
       A.deepEqual(rows.get(before.id), before); rows.set(after.id, clone(after)); return { saved: true };
     }
@@ -56,6 +57,13 @@ function bindeTeststand(f) {
     ausgabeBeleg: require("../lib/helmut/briefing-ausgabebeleg").ausPaket(row), fensterStart: day + "T00:00:00Z" });
 }
 (async () => {
+  await test("Morgenpaket bestätigt nach JSONB-Rücklesen vorhandene Inhalte mit optionalen Anzeigefeldern", async () => {
+    const w = await state({ partial: true, jsonb: true });
+    A.equal(w.row.payload.briefing.currentRadarState.articles[0].title, "Gespeicherter Radarhinweis");
+    A.equal(Object.hasOwn(w.row.payload.briefing.currentRadarState.articles[0], "reportingTopic"), false);
+    A.equal(w.row.payload.pruefung.strukturellVollstaendig, false);
+    A(w.row.payload.pruefung.fehler.includes("quellenversorgung-unvollstaendig"));
+  });
   await test("Normale Auslieferung liest genau Paket und gebundene Quittung, kein Korpus", async () => {
     const f = await state(), before = JSON.stringify([...f.rows]);
     const result = await f.read();
