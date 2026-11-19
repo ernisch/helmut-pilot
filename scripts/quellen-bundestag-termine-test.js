@@ -205,6 +205,12 @@ test("Regulaerer Quellenadapter liest Liste/Originale begrenzt und verlangt bele
   const used = requests.length;
   const quota = await B.aufnahme(q, { ...deps, reserveOriginal: async () => ({ erlaubt: false, geprueft: true }) });
   A.equal(quota.zurueckgestellt,true); A.equal(requests.length-used,3,"Nur Robots/Liste/Seite bei verbrauchter Originalquote");
+  A.equal(quota.bundestagAbrufpauseMs, undefined);
+  const dayQuota = await B.aufnahme(q, { ...deps, reserveOriginal: async () => ({
+    erlaubt: false, geprueft: true, grund: "arbeitslimit-tagesgrenze", wartenMs: 73000000
+  }) });
+  A.equal(dayQuota.bundestagAbrufpauseMs, 73000000);
+  A.equal(dayQuota.langeWarten, true);
   const beforeRobots = requests.length;
   const probe = async u => u === robots
     ? { status: 200, finalUrl: u, bytes: Buffer.from("User-agent: HelmutBot\nDisallow: /ajax/*/de/") }

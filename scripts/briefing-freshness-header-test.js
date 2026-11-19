@@ -133,6 +133,11 @@ check("Vorbedingung: leerer Stand -> currentHelmutState.status 'empty'", emptySt
     out.status !== "Aktuell" && out.currentHelmutState.primaryItem === null
       && out.currentHelmutState.items.length === 0 && JSON.stringify(out.items) === JSON.stringify(b.items)
       && JSON.stringify(b) === before);
+  const terminal = briefingWith({ ...state, versorgung: { ...state.versorgung, verarbeitungBeendet: true } });
+  const terminalReason = decorate(terminal).freshness.reason;
+  check("LEER/GAP: beendeter Verarbeitungslauf mit Einzelfehlern bleibt ein Gap",
+    /Verarbeitungslauf ist beendet/.test(terminalReason) && /ruhiger Nachrichtentag ist damit nicht belegt/.test(terminalReason),
+    terminalReason);
 }
 
 // === 5) Alter Inhalt bleibt lesbar: der Decorator LÖSCHT keine Items ==========

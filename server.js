@@ -4916,7 +4916,9 @@ function decorateBriefingFreshness(briefing, frischeKontext = null) {
   const hasSituationalItems = Number(briefing.situationalBriefing?.length || 0) > 0;
   const versorgungsHinweis = hasState && state.versorgung?.version === 1
     ? state.versorgung.zustand === "offen"
-      ? "Die Quellenverarbeitung ist noch nicht abgeschlossen. Ein ruhiger Nachrichtentag ist damit nicht belegt."
+      ? state.versorgung.verarbeitungBeendet === true
+        ? "Der Verarbeitungslauf ist beendet. Einzelne Quellen oder Artikel konnten nicht ausgewertet werden. Ein ruhiger Nachrichtentag ist damit nicht belegt."
+        : "Die Quellenverarbeitung ist noch nicht abgeschlossen. Ein ruhiger Nachrichtentag ist damit nicht belegt."
       : state.versorgung.zustand === "unbekannt"
         ? "Der Stand der Quellenverarbeitung ist derzeit nicht bestätigt. Ein ruhiger Nachrichtentag ist damit nicht belegt."
         : null
