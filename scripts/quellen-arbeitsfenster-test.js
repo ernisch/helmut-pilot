@@ -4,6 +4,7 @@
 // Die atomare RPC selbst ist im vorhandenen Anbieter-Datenbanktest nachgewiesen.
 const assert = require("node:assert/strict");
 const fenster = require("../lib/helmut/quellen-arbeitsfenster");
+const tagbetrieb = require("../lib/helmut/quellen-tagesbetrieb");
 const dispatch = require("../lib/helmut/job-dispatch");
 const worker = require("../lib/helmut/worker-betrieb");
 const pipeline = require("../lib/helmut/scalable-pipeline");
@@ -241,22 +242,56 @@ async function main() {
       assert.equal(calls, 1); assert.equal(fenster.freigabeGueltig(receipt, w.zeit()), false);
     } finally { pipeline.arbeite = alt; }
   });
-  await check("Cronplan hält die acht Quellenslots und lässt Lage und Morgenausgabe vor ihrer Frist starten", () => {
-    const termine = [];
-    for (const cron of config.crons) {
-      const [minute, stunde, ...rest] = cron.schedule.split(" "); assert.deepEqual(rest, ["*", "*", "*"]);
-      for (const m of minute.split(",").map(Number)) termine.push({ minute: Number(stunde) * 60 + m, path: cron.path });
+  await check("104 Aufrufe mit Berliner Vorabend-, Nacht-, Pflicht- und Ausgabefenstern", () => {
+    assert.equal(config.crons[0].schedule, "*/15 * * * *");
+    assert.equal(config.functions["api/index.js"].maxDuration, fenster.FENSTER_SEKUNDEN);
+    const termine = config.crons.slice(1).map(cron => {
+      const [minute, stunde, ...rest] = cron.schedule.split(" ");
+      assert.deepEqual(rest, ["*", "*", "*"]);
+      return stunde.split(",").flatMap(h => minute.split(",").map(m => (Number(h) * 60 + Number(m)) * 60000));
+    });
+    assert.equal(96 + termine.flat().length, 104);
+    for (const [tag, offset] of [["2026-03-28", 1], ["2026-03-29", 2], ["2026-10-24", 2], ["2026-10-25", 1]]) {
+      const start = Date.parse(`${tag}T00:00:00Z`);
+      const z = tagbetrieb.zeiten(start);
+      assert.equal(z.redaktionsschluss, start + ((6 - offset) * 60 + 45) * 60000);
+      assert.equal(z.frist, start + ((7 - offset) * 60 + 30) * 60000);
+      assert.deepEqual(termine[0].map(t => start + t).filter(t => tagbetrieb.ausgabeFaellig("lage", t)),
+        [z.redaktionsschluss, z.redaktionsschluss + 600000]);
+      assert.deepEqual(termine[1].map(t => start + t).filter(t => tagbetrieb.ausgabeFaellig("briefing", t)),
+        [z.paketStart, z.paketStart + 600000]);
+      const slots = Array.from({ length: 96 }, (_, i) => tagbetrieb.quellenslot(start + i * 900000)).filter(Boolean);
+      assert.equal(slots.length, 93);
+      assert.equal(new Set(slots.map(s => s.slot)).size, 93);
+      assert.equal(slots.filter(s => s.pflicht).length, 9);
+      assert(slots.some(s => s.slot === "00:00") && slots.some(s => s.slot === "23:45"));
+      assert.equal(tagbetrieb.quellenslot(z.redaktionsschluss - 10 * 60000), null, "Verspätung darf kein neues Fenster öffnen");
+      assert.equal(tagbetrieb.quellenslot(z.redaktionsschluss), null);
+      assert(tagbetrieb.quellenslot(z.frist));
     }
-    termine.sort((a, b) => a.minute - b.minute);
-    assert.deepEqual(termine.filter(t => t.path.startsWith("/api/cron/crawl")).map(t => t.minute), [180, 195, 210, 225, 240, 255, 270, 285]);
-    assert.equal(termine.length, 10); assert.equal(config.functions["api/index.js"].maxDuration, fenster.FENSTER_SEKUNDEN);
-    assert.deepEqual(termine.slice(8), [{ path: "/api/cron/lage-briefing", minute: 295 },
-      { path: "/api/cron/morning-briefing", minute: 310 }]);
-    const letzterStart = Date.parse("2026-11-19T04:49:59.999Z");
-    assert.equal(fenster.slotFuerZeit(letzterStart), "04:45");
-    assert.equal(fenster.slotFuerZeit(letzterStart + 1), null);
-    assert(letzterStart + fenster.FENSTER_SEKUNDEN * 1000
-      < Date.parse("2026-11-19T00:00:00Z") + termine[8].minute * 60000);
+    const schnitt = Date.parse("2026-11-20T05:45:00Z");
+    assert(tagbetrieb.vorSchnitt({ created_at: "2026-11-20T05:44:00Z" }, schnitt));
+    assert(!tagbetrieb.vorSchnitt({ created_at: "2026-11-20T05:46:00Z", published_at: "2026-11-19" }, schnitt));
+    assert(!tagbetrieb.vorSchnitt({ published_at: "2026-11-19" }, schnitt));
+  });
+  await check("Ganztag nimmt nach fehlendem Slot auf, dedupliziert und schützt Originale", async () => {
+    const w = welt();
+    const ganztag = arbeit => fenster.fuehreAus({ env: ENV, deps: w.deps, ganztags: true, arbeit });
+    w.setze("2026-11-19T00:45:00Z");
+    const original = pflichtOriginal => fenster.reserviereOriginal({ env: ENV, deps: w.deps, pflichtOriginal });
+    const erste = await ganztag(async () => {
+      for (let i = 0; i < 4; i++) assert((await original(false)).erlaubt);
+      assert(!((await original(false)).erlaubt));
+      assert((await original(true)).erlaubt);
+      return { ok: true };
+    });
+    assert.equal(erste.arbeitsfenster.grenzen.fenster, 96);
+    assert.equal(erste.arbeitsfenster.grenzen.originale, 16);
+    assert.equal(w.stand(fenster.SCHLUESSEL.originale), 5);
+    await ganztag(() => assert.fail("Paralleler Abruf im selben Fenster"));
+    w.setze("2026-11-19T01:15:00Z");
+    assert((await ganztag(async () => ({ ok: true }))).ok);
+    assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 2);
   });
   await check("17Nov ab09:16 genau ein global gebuchtes Zusatzfenster ohne weitere Originalrechte", async () => {
     const w = operatorWelt(); let arbeiten = 0;

@@ -9,15 +9,16 @@ const http = require("node:http");
 const { performance } = require("node:perf_hooks");
 const { Worker } = require("node:worker_threads");
 const schutz = require("./lokaler-netzschutz");
-const { erstelleBericht, formatiereBericht, PRODUKTIONSBASIS } = require("./quellen-pruefstand-bericht");
+const { erstelleBericht, formatiereBericht } = require("./quellen-pruefstand-bericht");
+const tagesbetrieb = require("../lib/helmut/quellen-tagesbetrieb");
 
 const TAG = 86400000;
-const START = Date.parse("2026-11-19T02:50:00Z");
+const START = Date.parse("2026-11-19T00:00:00Z");
 const terminkonfig = require("../vercel.json");
 const pruefzeiten = ["2026-11-19", "2026-11-20"];
 const konfiguration = {
   node: process.version, mandatsprofile: 1, maxDurationS: terminkonfig.functions["api/index.js"].maxDuration,
-  region: terminkonfig.regions, fenster: 8, fensterSekunden: 300, originalReservierungen: 16,
+  region: terminkonfig.regions, fenster: tagesbetrieb.MAX_FENSTER, fensterSekunden: 300, originalReservierungen: 16,
   googleReservierungenJeMinute: 30, modellTageslimitUsd: 1, modellGesamtlimitUsd: 30,
   arbeitstage: pruefzeiten, historischWartendZuBeginn: 754,
   transportMillisekunden: { google: 2000, modell: 2000, sonstige: 1000 },
@@ -27,7 +28,7 @@ const abweichungen = [
   "Bereinigter Mengen- und Protokollmix. Die 754 gemessenen wartenden Aufträge dienen als synthetischer Startbestand. In Production war dies ein nachgelagerter Snapshot.",
   "Vercel Cold Starts, Instanzgrenzen, Cron-Zustellung, DNS, TLS, Region und Netzwerkjitter sind nur in Production messbar.",
   "Die verwaltete Datenbank und ihr Pooler werden durch isoliertes PostgreSQL/PostgREST mit ausgewählten Vertragsmigrationen angenähert.",
-  "Modellantworten und Tokenverbrauch kommen aus einem lokalen Fixture. Semantik, reale Tokenkosten und Modelllatenz bleiben offen.",
+  "Modellantworten und Tokenverbrauch kommen aus einem lokalen Fixture. Der DIP-Abruf erhält eine an seinen Titel gebundene Modelltestantwort. Semantik, reale Tokenkosten und Modelllatenz bleiben offen.",
   "Nicht belegte Mandats-, Modell-, Abruf- und Dispatch-Overrides werden durch den getesteten Code-Standard oder ausgewiesene Fixture-Flags ersetzt."
 ];
 const pruefungen = [];
@@ -139,9 +140,11 @@ async function startApp() {
 
 function termine(pfad) {
   return terminkonfig.crons.filter(cron => pfad.test(cron.path)).flatMap(({ path, schedule }) => {
-    const match = /^(\d+(?:,\d+)*) (\d+) \* \* \*$/.exec(schedule);
-    assert(match, "Cron-Ausdruck des Prüfstands weicht ab");
-    return match[1].split(",").map(m => ({ path, zeit: [match[2], m].map(n => n.padStart(2, "0")).join(":") }));
+    const [minuten, stunden, ...rest] = schedule.split(" ");
+    assert.deepEqual(rest, ["*", "*", "*"], "Cron-Ausdruck des Prüfstands weicht ab");
+    const ms = minuten === "*/15" ? [0, 15, 30, 45] : minuten.split(",").map(Number);
+    const hs = stunden === "*" ? Array.from({ length: 24 }, (_, i) => i) : stunden.split(",").map(Number);
+    return hs.flatMap(h => ms.map(m => ({ path, zeit: [h, m].map(n => String(n).padStart(2, "0")).join(":") })));
   }).sort((a, b) => a.zeit.localeCompare(b.zeit));
 }
 
@@ -171,11 +174,19 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
   assert([googleReservierungen, originalReservierungen, fenster].every(Number.isSafeInteger));
   const heute = quellen.filter(q => q.neu);
   const morgen = heute.filter(q => q.morgenbriefingFrist);
+  const originalAbrufe = [...transport.proOriginal].filter(([adresse]) => adresse.startsWith(tag + "|"));
   const ausgaben = await storage.listRenderedBriefingsV3ForTenants([mandat.id], ["lage", "mandatsbriefing", "morgenlage"], tag);
   const folgearbeit = JSON.parse(db.psql(`select coalesce(jsonb_agg(to_jsonb(bilanz)), '[]'::jsonb) from (
     select job_type, status, split_part(last_error, ':', 1) as grund, count(*) as anzahl
-    from public.helmut_jobs where job_type <> 'source_fetch' and last_seen_window like '${tag}%'
+    from public.helmut_jobs where job_type <> 'source_fetch' and coalesce(last_seen_window, freshness_window) like '${tag}%'
     group by job_type, status, grund order by job_type, status, grund) bilanz`));
+  const dipAnalyse = JSON.parse(db.psql(`select coalesce(jsonb_agg(jsonb_build_object(
+      'status', a.status, 'prioritaet', a.priority, 'grund', a.last_error, 'fertigAm', a.finished_at)), '[]'::jsonb)
+    from public.helmut_jobs s
+    join public.helmut_store b on b.id = 'main-quellenfaelligkeit-' || s.id
+    cross join lateral jsonb_array_elements(b.data#>'{ergebnis,analyse}') beleg
+    left join public.helmut_jobs a on a.id::text = beleg->>'jobId'
+    where s.job_type = 'source_fetch' and s.payload->'quelle'->>'id' = 'dip' and s.first_due_at::date = '${tag}'::date`));
   return {
     tag, bedarf: tag === pruefzeiten[0] ? 162 : 161, eingeplant: heute.length - heute.filter(q => q.abruf === "fehlt").length,
     technischErledigt: gruppen.erledigt, fristgerecht: heute.filter(q => !q.grund && !q.verspaetet && q.belegHash).length,
@@ -184,6 +195,8 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
     googleBedarf: tag === pruefzeiten[0] ? 145 : 144, googleErledigt: gruppen.googleErledigt, googleReservierungen,
     googleAbschluesseGesamt: gruppen.googleAbschluesseGesamt,
     originalReservierungen, fenster, laufzeitMs: Math.round(laufzeitMs),
+    verschiedeneOriginaladressen: originalAbrufe.length,
+    wiederholteOriginalabrufe: originalAbrufe.reduce((sum, [, n]) => sum + n - 1, 0),
     simulierteArbeitszeitMs: laeufe.reduce((sum, r) => sum + r.simulierteMs, 0),
     rueckstandBeginn: start.offen, rueckstandEnde: gruppen.offen, historischErledigt: gruppen.historischErledigt,
     lageFrist: morgen.length === 6 && morgen.every(q => !q.verspaetet && !q.grund && q.produkt === "mandatspaket_belegt"),
@@ -193,7 +206,7 @@ async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, 
     alteFaelligkeiten: abgleich.faelligkeiten.filter(q => !q.aktuell),
     httpAnfragen: Object.fromEntries([...transport.zaehler].filter(([k]) => k.startsWith(tag + "|"))
       .map(([k, n]) => [k.split("|")[1], n])),
-    laeufe, folgearbeit, quellen
+    laeufe, folgearbeit, dipAnalyse, quellen
   };
 }
 
@@ -237,9 +250,10 @@ async function main(schreibeZwischenstand) {
   assert(![".env.local", ".env", "env.local", "env.local.html"].some(pfad => existsSync(pfad)),
     "Prüfstand braucht einen Checkout ohne lokale Zugangsdaten");
   assert.equal(konfiguration.maxDurationS, 300, "Maximale Funktionsdauer weicht vom geprüften Quellenfenster ab");
-  const slots = termine(/^\/api\/cron\/crawl(\?|$)/), ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)$/);
-  assert.deepEqual(slots.map(s => s.zeit), ["03:00", "03:15", "03:30", "03:45", "04:00", "04:15", "04:30", "04:45"]);
-  assert.deepEqual(ausgaben.map(s => s.zeit), [PRODUKTIONSBASIS.lageStartUtc, PRODUKTIONSBASIS.briefingStartUtc]);
+  const slots = termine(/^\/api\/cron\/crawl(\?|$)/), ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)(\?|$)/);
+  assert.equal(slots.length, 96);
+  assert.equal(ausgaben.length, 8);
+  const ablauf = [...slots, ...ausgaben].sort((a, b) => a.zeit.localeCompare(b.zeit));
   const uhr = uhrStart(process.env.HELMUT_QUELLEN_DB_UHR);
   let db, transport, app;
   try {
@@ -286,23 +300,45 @@ async function main(schreibeZwischenstand) {
 
     for (const tag of pruefzeiten) {
       const beginn = performance.now(), start = await queue(db, tag), laeufe = [];
-      for (const slot of [...slots, ...ausgaben]) {
-        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "04:45" ? 240 : 0;
+      const frist = tagesbetrieb.zeiten(Date.parse(`${tag}T00:00:00Z`)).frist;
+      let morgenstand = null;
+      for (const slot of ablauf) {
+        if (tag === pruefzeiten[1] && slot.zeit === "00:15" && slots.includes(slot)) continue;
+        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "05:30" && slots.includes(slot) ? 240 : 0;
         const soll = sekunde(`${tag}T${slot.zeit}:00Z`) + verzoegerung;
         uhr.setze(soll * 1000);
         assert.equal(Number(await db.psql("select extract(epoch from now())::bigint")), soll, "Anwendungs- und SQL-Uhr weichen ab");
+        if (soll * 1000 === frist && morgenstand === null) {
+          const r = await app.cron(`/api/cron/briefing-nachweis?mandat=${encodeURIComponent(profil.id)}`);
+          assert.equal(r.status, 200, "Gespeicherte Kundenausgabe nicht rücklesbar");
+          const stand = r.data;
+          const kopf = stand.currentHelmutState;
+          const prioritaeten = [kopf?.primaryItem, ...(kopf?.items || [])].filter(Boolean);
+          morgenstand = { abrufbar: stand.available === true,
+            prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
+            mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)) };
+          assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
+        }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
         const resultate = await Promise.all(Array.from({ length: parallel ? 2 : 1 }, () => app.cron(slot.path)));
         assert(resultate.every(r => r.status === 200), `Cron-Transportfehler ${slot.path}`);
         const mitFenster = resultate.filter(r => r.data.arbeitsfenster);
         if (parallel) assert.equal(mitFenster.length, 1, "Keine eindeutige Arbeitsfensterreservierung bei Parallelstart");
         const r = mitFenster[0] || resultate[0];
+        const istLage = slot.path.startsWith("/api/cron/lage-briefing?");
+        const istMorgen = slot.path.startsWith("/api/cron/morning-briefing?");
         laeufe.push({ slot: slot.zeit, startVerzoegerungS: verzoegerung, pfad: slot.path, ok: r.data.ok ?? null,
           grund: r.data.grund || r.data.reason || null, arbeitsfenster: Boolean(r.data.arbeitsfenster),
-          simulierteMs: uhr.now() - soll * 1000 });
+          simulierteMs: uhr.now() - soll * 1000,
+          ...(istLage ? { lage: { gespeichert: r.data.prewarmed ?? 0, vollstaendig: r.data.vollstaendig === true,
+            ergebnisse: (r.data.results || []).map(({ available, reason, diagnose }) => ({ available, reason, diagnose })) } } : {}),
+          ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null,
+            morgenergebnisse: (r.data.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
-      uhr.setze(Date.parse(`${tag}T05:16:00Z`));
+      uhr.setze(Date.parse(`${tag}T23:59:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);
+      tagesbericht.morgenstand = morgenstand;
+      tagesbericht.briefingFrist &&= morgenstand?.abrufbar === true;
       tage.push(tagesbericht);
       schreibeZwischenstand();
       assert.equal(tagesbericht.eingeplant, tagesbericht.bedarf, `Tagesplan oder Queue unvollständig für ${tag}`);

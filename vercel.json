@@ -176,24 +176,16 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/crawl",
-      "schedule": "0 4 * * *"
+      "path": "/api/cron/crawl?arbeitsfenster=1&betrieb=24h",
+      "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/crawl?arbeitsfenster=1",
-      "schedule": "0,15,30,45 3 * * *"
+      "path": "/api/cron/lage-briefing?betrieb=24h",
+      "schedule": "45,55 4,5 * * *"
     },
     {
-      "path": "/api/cron/crawl?arbeitsfenster=1",
-      "schedule": "15,30,45 4 * * *"
-    },
-    {
-      "path": "/api/cron/lage-briefing",
-      "schedule": "55 4 * * *"
-    },
-    {
-      "path": "/api/cron/morning-briefing",
-      "schedule": "10 5 * * *"
+      "path": "/api/cron/morning-briefing?betrieb=24h",
+      "schedule": "10,20 5,6 * * *"
     }
   ],
   "ignoreCommand": "node scripts/vercel-ignore-build.js"

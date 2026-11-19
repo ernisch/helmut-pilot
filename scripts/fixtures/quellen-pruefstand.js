@@ -11,6 +11,11 @@ const GOOGLE = "https://news.google.com";
 const VERLAG = "https://nachrichten.fixture.invalid";
 const AZURE = "https://helmut-fixture.openai.azure.com";
 const DIP = "https://search.dip.bundestag.de/api/v1";
+const DIP_TITEL = "Antrag zur Beratung über Arbeitsmarktpolitik";
+const DIP_RESSORT = "Bundesministerium für Arbeit und Soziales";
+const DIP_VORGANG = "990002";
+const DIP_DATUM = "2026-11-19";
+const DIP_ORIGINAL = "https://dserver.bundestag.de/btd/21/099/2109900.pdf";
 const mandat = Object.freeze({
   id: "synthetik-quellenpruefstand", fullName: "Mara Beispiel", name: "Mara Beispiel",
   party: "Fraktionslos", parliamentType: "Bundestag", constituency: "Beispielregion",
@@ -76,14 +81,14 @@ function pdf(zeilen) {
   const stream = "BT /F1 12 Tf 50 750 Td " + zeilen.map(line => `(${line}) Tj`).join(" 0 -20 Td ") + " ET";
   const objects = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
     "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>", `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
   let text = "%PDF-1.4\n";
   const offsets = [0];
   objects.forEach((object, index) => { offsets.push(text.length); text += `${index + 1} 0 obj\n${object}\nendobj\n`; });
   const xref = text.length;
   text += "xref\n0 6\n0000000000 65535 f \n";
   text += offsets.slice(1).map(n => String(n).padStart(10, "0") + " 00000 n \n").join("");
-  return text + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(text + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, "latin1");
 }
 
 function termine() {
@@ -108,12 +113,17 @@ function termine() {
       const url = link(i + 1, q.art === "plenum" ? "Tagesordnung-komplett.pdf" : `tagesordnung-${i + 1}.pdf`);
       const sitzung = q.art === "plenum" ? "7. Sitzung des Deutschen Bundestages am 24.11.2026, 09 Uhr"
         : "der 7. Sitzung am Dienstag, dem 24.11.2026, 09 Uhr";
+      const pilotAusschuss = q.key === "arbeit-soziales";
+      const revision = pilotAusschuss && i ? `${i}. Ergänzungsmitteilung` : null;
       seiten.set(url, tag => ({ type: "application/pdf", body:
         nummer === 1 && i === 1 && tag === "2026-11-19" ? "%PDF-fehlerhaft" :
-          pdf(["Berlin, 19.11.2026", "Tagesordnung " + sitzung, "Tagesordnungspunkt 1", "Beratung zum Arbeitsmarkt", "BT-Drucksache 21/9001",
+          pdf(["Berlin, den 19.11.2026", "Tagesordnung " + sitzung,
+            ...(revision ? [revision, "Die Tagesordnung wird um folgende Tagesordnungspunkte ergänzt."] : []),
+            `Tagesordnungspunkt ${pilotAusschuss ? i + 1 : 1}`, "Beratung zum Arbeitsmarkt",
+            `BT-Drucksache ${pilotAusschuss && i === 0 ? "21/9900" : `21/${9001 + i}`}`,
             ...(tag === "2026-11-20" && i === 0 ? ["Geaenderte Fassung"] : [])])
       }));
-      return `<tr><td>19.11.2026</td><td><a href="${url}">7. Sitzung am Dienstag, dem 24.11.2026</a></td></tr>`;
+      return `<tr><td>19.11.2026</td><td><a href="${url}">7. Sitzung am Dienstag, dem 24.11.2026${revision ? `, ${revision}` : ""}</a></td></tr>`;
     }).join("");
     if (q.art === "ausschuss") {
       const endpoint = `/ajax/filterlist/de${pfad}/1-1`;
@@ -125,8 +135,57 @@ function termine() {
   return seiten;
 }
 
+function modellAntwort(schema, eingabe) {
+  const basis = require("./z3-plattform").baueSchemaAntwort(schema);
+  if (typeof eingabe !== "string") return basis;
+  const zeilen = eingabe.split("\n");
+  const json = text => { try { return JSON.parse(text); } catch { return null; } };
+  const aussagen = [
+    { text: "Der Antrag sieht eine Beratung über Arbeitsmarktpolitik vor.", belegfeld: "titel" },
+    { text: "DIP führt das " + DIP_RESSORT + " als Ressort des Antrags auf.", belegfeld: "auszug" }
+  ];
+  const mandatstext = "Arbeit und Soziales: Der Antrag betrifft die Beratung zur Arbeitsmarktpolitik.";
+  const amtlich = q => q?.titel === DIP_TITEL && q.auszug?.includes(DIP_RESSORT) && q.quelle === "DIP Bundestag";
+  if (schema?.properties?.paragraphs) {
+    const quellen = zeilen.filter(z => z.startsWith("[vg-")).map(z => json(z.slice(z.indexOf("] ") + 2)));
+    const vorgang = quellen.find(v => v?.quellenbelege?.some(amtlich));
+    const quelle = vorgang?.quellenbelege.find(amtlich);
+    if (!quelle) return basis;
+    return { paragraphs: aussagen.map(({ text }) => ({ text, vorgang_ids: [vorgang.vorgang_id],
+      quelle_id: quelle.quelle_id, auswahlbegruendung: mandatstext,
+      mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } })) };
+  }
+  if (schema?.properties?.pruefungen && schema.properties.vergleiche) {
+    const aus = prefix => json(zeilen.find(z => z.startsWith(prefix))?.slice(prefix.length));
+    const quellen = aus("QUELLEN: "), absaetze = aus("ABSAETZE: ");
+    const quelle = quellen?.flatMap(v => v.quellenbelege).find(amtlich);
+    if (!quelle || absaetze?.length !== 2 || !absaetze.every((p, i) =>
+      p.quelle_id === quelle.quelle_id && p.text === aussagen[i].text)) return basis;
+    return { pruefungen: aussagen.map(({ belegfeld }, absatz) => ({ absatz, quelle_id: quelle.quelle_id,
+      belegfeld, pruefbegruendung: "Die jeweilige Angabe steht im DIP-Beleg.", vollstaendig_belegt: true,
+      themenrein: true, mandatsbegruendung: mandatstext, profilbezug: true, textart: "konkreter_sachverhalt" })),
+      vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
+        pruefbegruendung: "Beratungsgegenstand und gelistetes Ressort sind zwei getrennte Angaben." }] };
+  }
+  // Nur das vorhandene synthetische DIP-Dokument besitzt eine fachlich
+  // passende Fixture-Antwort. Die übrigen Modell- und Quellenfälle bleiben.
+  if (!schema?.properties?.was_ist_passiert) return basis;
+  const quellen = zeilen.filter(z => z.startsWith("{")).map(json).filter(q => q?.quelle_id && q.titel);
+  if (quellen.length !== 1 || quellen[0].titel !== DIP_TITEL
+    || quellen[0].herausgeber !== "DIP Bundestag") return basis;
+  return {
+    ...Object.fromEntries(Object.entries(basis).map(([k, v]) => [k, Array.isArray(v) ? [] : v])),
+    headline: DIP_TITEL, display_title: DIP_TITEL, confidence_score: 80, source_document_count: 1,
+    status: "neu", zeitdruck: "keiner", decision_level: "bund", event_type: "antrag",
+    was_ist_passiert: DIP_TITEL + ".", warum_wichtig: "Der Antrag betrifft die Arbeitsmarktpolitik.",
+    wer_ist_betroffen: "Das " + DIP_RESSORT + " ist als Ressort gelistet.",
+    handlungsempfehlung: "Die weitere Beratung zur Arbeitsmarktpolitik beobachten.",
+    ministerien: [DIP_RESSORT]
+  };
+}
+
 function antworten(uhr) {
-  const bt = termine(), zaehler = new Map(), unbekannt = [], proAdresse = new Map();
+  const bt = termine(), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -136,11 +195,12 @@ function antworten(uhr) {
     const adresse = tag + "|" + url.href;
     const vorher = proAdresse.get(adresse) || 0;
     proAdresse.set(adresse, vorher + 1);
+    if (art === "original") proOriginal.set(adresse, vorher + 1);
     // Transportzeit des beobachteten Medienmixes ist eine explizite Annahme.
     uhr.setze(uhr.now() + (art === "google" ? 2000 : art === "modell" ? 2000 : 1000));
     if (url.origin === AZURE && url.pathname === "/openai/v1/responses" && methode === "POST") {
       const schema = modellAnfrage?.text?.format?.schema;
-      const text = JSON.stringify(require("./z3-plattform").baueSchemaAntwort(schema));
+      const text = JSON.stringify(modellAntwort(schema, modellAnfrage?.input));
       return { type: "application/json", body: JSON.stringify({
         id: "fixture-antwort", status: "completed",
         output_text: text, output: [{ type: "message", content: [{ type: "output_text", text }] }],
@@ -151,12 +211,20 @@ function antworten(uhr) {
     if (url.origin === BT && bt.has(url.pathname)) return bt.get(url.pathname)(tag);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
       return { type: "application/json", body: JSON.stringify({ documents: [{
-        id: 990001, titel: "Antrag zur Beratung über Arbeitsmarktpolitik", drucksachetyp: "Antrag",
-        dokumentart: "Drucksache", datum: "2026-11-19", wahlperiode: 21,
+        id: 990001, titel: DIP_TITEL, drucksachetyp: "Antrag",
+        dokumentart: "Drucksache", datum: DIP_DATUM, wahlperiode: 21,
         urheber: [{ titel: "Bundesregierung" }],
-        ressort: [{ titel: "Bundesministerium für Arbeit und Soziales" }],
-        fundstelle: { pdf_url: "https://dserver.bundestag.de/btd/21/099/2109900.pdf" }
+        ressort: [{ titel: DIP_RESSORT }],
+        vorgangsbezug: [{ id: DIP_VORGANG, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
+        fundstelle: { pdf_url: DIP_ORIGINAL }
       }] }) };
+    if (url.origin === new URL(DIP).origin && url.pathname === `/api/v1/vorgang/${DIP_VORGANG}`)
+      return { type: "application/json", body: JSON.stringify({ id: DIP_VORGANG, typ: "Vorgang",
+        titel: DIP_TITEL, vorgangstyp: "Antrag", wahlperiode: 21, datum: DIP_DATUM,
+        aktualisiert: `${DIP_DATUM}T01:00:00Z` }) };
+    if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/vorgangsposition"
+      && url.searchParams.get("f.vorgang") === DIP_VORGANG)
+      return { type: "application/json", body: JSON.stringify({ numFound: 0, documents: [], cursor: "" }) };
     if (url.origin === GOOGLE && url.pathname === "/rss/search") {
       const query = url.searchParams.get("q") || "";
       if (query === "fixture-ressort-7" && !vorher && tag === "2026-11-20")
@@ -189,7 +257,7 @@ function antworten(uhr) {
     unbekannt.push(url.origin + url.pathname);
     return { status: 503, body: "Fixture-Ziel fehlt" };
   }
-  return { antwort, zaehler, unbekannt };
+  return { antwort, zaehler, unbekannt, proOriginal };
 }
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben
