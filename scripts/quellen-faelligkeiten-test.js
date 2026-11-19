@@ -233,6 +233,73 @@ async function main() {
     });
     A.equal(posts, 1);
   });
+  await test("Lange Google-Fundstellenlisten bleiben vollständig und an den Abrufweg gebunden", async () => {
+    const { leseGoogleArtikelfundstellen } = require("../lib/helmut/storage");
+    const quelle = { id: "fixture", retrievalPathId: "rp-fixture", type: "media" };
+    const urls = Array.from({ length: 12 }, (_, i) => `https://news.google.com/rss/articles/${"a".repeat(365)}_${i}?oc=5`);
+    const werte = { HELMUT_V3_STORE: "1", SUPABASE_URL: "https://datenbank.fixture.invalid", SUPABASE_SERVICE_ROLE_KEY: "fixture" };
+    const vorher = Object.fromEntries(Object.keys(werte).map(key => [key, process.env[key]]));
+    const fetchVorher = globalThis.fetch;
+    const abrufe = [];
+    let falscheBindung = false;
+    try {
+      Object.assign(process.env, werte);
+      globalThis.fetch = async input => {
+        const url = new URL(input);
+        const gruppe = url.searchParams.get("original_url").slice(4, -1).split(",").map(JSON.parse);
+        abrufe.push({ url, gruppe });
+        return Response.json(gruppe.map(original_url => ({ original_url, source_id: quelle.id,
+          retrieval_path_id: falscheBindung && original_url === urls[0] ? "rp-fremd" : quelle.retrievalPathId })));
+      };
+      const lesen = q => leseGoogleArtikelfundstellen(q, [...urls, urls[0], "https://fremd.fixture.invalid/a"], { jetztMs: jetzt, timeoutMs: 600 });
+      A.deepEqual((await lesen(quelle)).map(row => row.original_url), urls);
+      A.equal(abrufe.length, 2);
+      A.deepEqual(abrufe.flatMap(a => a.gruppe), urls);
+      for (const { url } of abrufe) {
+        A.equal(url.hostname, "datenbank.fixture.invalid");
+        A.equal(url.searchParams.get("source_id"), "eq.fixture");
+        A.equal(url.searchParams.get("retrieval_path_id"), "eq.rp-fixture");
+      }
+      const letzterBlock = abrufe[1].gruppe;
+      falscheBindung = true;
+      A.deepEqual((await lesen(quelle)).map(row => row.original_url), letzterBlock);
+      A.deepEqual(await lesen({ ...quelle, type: "person" }), []);
+      A.equal(abrufe.length, 4);
+    } finally {
+      globalThis.fetch = fetchVorher;
+      for (const [key, value] of Object.entries(vorher)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+  await test("Bestätigte Rohfassung einmal lesen und neue Fassung nach Schreibantwort belegen", async () => {
+    const { erzeuge, standHash } = require("../lib/helmut/roh-quellenstaende");
+    const operationen = [], stand = new Map();
+    const speicher = erzeuge({ storeId: "fixture", request: async (pfad, optionen) => {
+      if (optionen?.method === "POST") {
+        operationen.push("POST");
+        const zeile = JSON.parse(optionen.body);
+        stand.set(zeile.id, zeile);
+        throw Error("Schreibantwort verloren");
+      }
+      operationen.push("GET");
+      const id = new URL(pfad, "http://localhost").searchParams.get("id").slice(3);
+      return stand.has(id) ? [stand.get(id)] : [];
+    } });
+    const artikel = { id: "rd-" + "a".repeat(64), url: "https://verlag.fixture.invalid/a", title: "Beratung", summary: "Erste Fassung" };
+    const hash = await speicher.sichern(artikel);
+    A.equal(hash, standHash(artikel));
+    A.deepEqual(operationen.splice(0), ["GET", "POST", "GET"]);
+    A.equal(await speicher.sichern({ ...artikel, retrieved_at: "2026-11-20T03:00:00Z" }), hash);
+    A.deepEqual(operationen.splice(0), ["GET"]);
+    const geaendert = { ...artikel, summary: "Zweite Fassung" };
+    const neuerHash = await speicher.sichern(geaendert);
+    A.notEqual(neuerHash, hash);
+    A.deepEqual(operationen, ["GET", "POST", "GET"]);
+    A.deepEqual(await speicher.lesen(artikel.id, hash), artikel);
+    A.deepEqual(await speicher.lesen(artikel.id, neuerHash), geaendert);
+  });
   await test("Abgleich findet fehlenden Katalogweg, verlorenes Enqueue und fremdes oder zu spätes Morgenpaket", async () => {
     const job = { id, idempotency_key: "pflicht", tenant_id: null, first_due_at: due, due_at: due,
       freshness_window: "2026-11-19T00Z", priority: 40, status: "erledigt", finished_at: "2026-11-19T04:33:00Z",
