@@ -141,6 +141,16 @@ async function runRoute(cronName, selected, f, fails = false) {
     assert.equal(r.quellenAbdeckung.persistenz.gespeichert, false);
     assert.equal(r.quellenAbdeckung.persistenz.grund, "pruefung_speicherfehler");
   });
+  await test("Ein vollständig ausgeführter Slot quittiert eine fehlende Abrufdefinition als Lücke", async () => {
+    const f = fixture();
+    f.deps.leseFaelligkeiten = async () => ({ zustand: "eingeschraenkt", planluecken: 1,
+      luecken: [{ wegId: "rp-fixture", grund: "abrufdefinition_abweichend" }], faelligkeiten: [] });
+    const r = await audit.runQuellenCronMitAbdeckung(async () => ({ ok: true }), opts, f.deps);
+    assert.equal(r.quellenAbdeckung.summary.fehlendePlanpositionen, 1);
+    assert.equal(r.quellenAbdeckung.summary.fehlendeAbrufwege, 1);
+    assert(r.quellenAbdeckung.findingCodes.includes("abrufdefinition_abweichend"));
+    assert(!JSON.stringify(r.quellenAbdeckung).includes("rp-fixture"));
+  });
   await test("Prozessfilter wird vor dem relationalen Leselimit angewendet", async () => {
     let query;
     const rows = await storage.listProcessRuns({ process: "quellen-abdeckung", limit: 1 }, {

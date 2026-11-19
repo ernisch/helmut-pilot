@@ -59,7 +59,7 @@ async function main() {
   });
   await check("echte Planreste und faellige Queueauftraege erlauben Fortsetzung", async () => {
     const w = welt(); w.fertig(); w.alt = [{ zustand: "offen" }];
-    assert.equal((await w.pruefe()).grund, "automatik-erledigt", "Historische Planreste oeffnen kein heutiges Fenster");
+    assert.equal((await w.pruefe()).grund, "automatik-restarbeit", "Historische Planreste werden regulär fortgesetzt");
     w.plan = { zustand: "offen", cursor: 0, auftraege: [{}] };
     assert.equal((await w.pruefe()).grund, "automatik-restarbeit"); w.plan.zustand = "fertig"; w.plan.cursor = 1;
     w.alt = []; w.offen = w.faellig = [{ id: "synthetischer-auftrag", attempts: 0, max_attempts: 3 }];
@@ -111,7 +111,7 @@ async function main() {
       if (part === "alt") w.deps.journal.offene = async () => null;
       if (part === "queue") w.offen = null;
       if (part === "widerspruch") w.faellig = [{ id: "unbelegt", attempts: 0, max_attempts: 3 }];
-      assert.equal((await w.pruefe()).grund, part === "alt" ? "automatik-erledigt" : "automatik-unbekannt", part);
+      assert.equal((await w.pruefe()).grund, "automatik-unbekannt", part);
     }
     const w = welt(); w.deps.request = async () => { throw Error("Leseausfall"); };
     assert.equal((await w.pruefe()).grund, "automatik-unbekannt");

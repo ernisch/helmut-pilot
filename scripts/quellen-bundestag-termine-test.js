@@ -237,12 +237,58 @@ test("Spaeter Katalog-/Speicherzugriff eroeffnet keine neue Schreibphase nach de
   const s=B.baueStand(q,[doc()],new Date(now()).toISOString(),"a".repeat(64));
   await A.rejects(store.sichern(s),/zeitbudget/);A.equal(posts,0);
 });
+test("PDF und ICS setzen nach Tageswechsel den bestätigten Teil mit genau einer Originalreservierung fort", async () => {
+  for (const quelle of [q, B.QUELLEN[4]]) {
+    const kalender = quelle.art === "kalender";
+    const endpoint = "https://www.bundestag.de/ajax/filterlist/de" + new URL(q.url).pathname + "/1057676-1057676";
+    const urls = kalender ? [0,1].map(n => `https://www.bundestag.de/resource/blob/1231438/termin-${n}.ics`) : [url(0), url(1)];
+    let clock = now(), kontingent = 1, reserve = 0, stand;
+    const storeRows = new Map(), abgerufen = [];
+    const catalogRows = kalender ? {
+      retrievalPaths: [{ ...catalog().retrievalPaths[0], id: quelle.retrievalPathId, url: quelle.url,
+        legacy_source_id: quelle.id, method: quelle.crawlMethod }],
+      packages: [{ id: quelle.packageId, status: "active" }],
+      packagePaths: [{ package_id: quelle.packageId, retrieval_path_id: quelle.retrievalPathId }]
+    } : catalog();
+    const teilspeicher = B.speicher({ storeId: "isoliert", now: () => clock, request: async (path, opts) => {
+      if (opts?.method === "POST") {
+        const row = JSON.parse(opts.body); A(!storeRows.has(row.id)); storeRows.set(row.id, row);
+        throw Error("verlorene Schreibantwort");
+      }
+      if (path.includes("retrievedAt=lt.")) return [];
+      const id = /id=(eq|like)\.([^&*]+)/.exec(path);
+      return [...storeRows.values()].filter(r => id[1] === "eq" ? r.id === id[2] : r.id.startsWith(id[2]));
+    } });
+    const abruf = laufId => B.aufnahme(quelle, { katalog: catalogRows, now: () => clock, deadlineMs: clock + 60000,
+      auftragId: laufId, teilspeicher, reserveOriginal: async () => { reserve++; return { erlaubt: kontingent-- > 0, geprueft: true }; },
+      fetchUrl: async u => {
+        let text = "User-agent: *";
+        if (u === quelle.url) text = kalender ? urls.map(a => `<a href="${a}">Sitzungswochen</a>`).join("") : JSON.stringify({ endpoint });
+        else if (u === endpoint) text = row(0) + row(1);
+        else if (urls.includes(u)) { abgerufen.push(u); text = kalender ? ics() : "%PDF-fixture"; }
+        return { status: 200, finalUrl: u, bytes: Buffer.from(text) };
+      }, pdfText: async () => [body()], save: async s => {
+        stand = s; return { ok: true, standHash: s.standHash, belegHash: s.belegHash };
+      }
+    });
+    A.equal((await abruf("lauf-a")).zurueckgestellt, true);
+    A.equal(storeRows.size, 1); A.equal(abgerufen.length, 1); A.equal(reserve, 2);
+    clock += 86400000; kontingent = 1; reserve = 0;
+    A.equal((await abruf("lauf-a")).documents, 2);
+    A.equal(stand.retrievedAt, new Date(now()).toISOString());
+    A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
+    kontingent = 0; reserve = 0;
+    A.equal((await abruf("lauf-b")).zurueckgestellt, true, "Eine neue Fälligkeit bestätigt ihre eigene Beobachtung");
+    A.equal(reserve, 1); A.deepEqual(abgerufen, urls);
+  }
+});
 test("Produktiver Quellenhandler sperrt unbekannte IDs und Rechte vor generischem Crawl/Modell", async () => {
   const handler = SP.HANDLER.source_fetch; let generic = 0, frees = 0;
   const deps = { env: { HELMUT_SCALABLE_PIPELINE: "on" }, now, leseBundestagTermineKatalog: async () => ({ retrievalPaths: [] }),
     crawlAllSources: async () => { generic++; }, klassen: { belege: async () => ({ erlaubt: true, slot: "fixture" }), gebeFrei: async () => { frees++; } } };
   const result = await handler({ id: "fixture", payload: { quelle: q } }, deps, { auftragsDeadlineMs: now()+60000 });
-  A.equal(result.uebersprungen, true); A.equal(generic, 0); A.equal(frees, 1);
+  A.equal(result.zurueckgestellt, true); A.equal(result.bundestagAbrufpauseMs, 86400000);
+  A.equal(generic, 0); A.equal(frees, 1);
   await A.rejects(handler({ payload: { quelle: { ...q, url: q.url + "?fremd" } } }, deps), /bundestag-termine-quelle/);
   await A.rejects(C.crawlSource(q), /nur-quellenauftrag/);
 });

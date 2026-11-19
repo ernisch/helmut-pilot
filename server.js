@@ -1358,10 +1358,14 @@ async function handleRequest(request, response) {
       // Gespeicherte technische Quittungen koennen zu einem unvollstaendigen
       // Morgenpaket gehoeren. Die kanonische Versorgungsbilanz gilt deshalb
       // auch fuer den Gesamtabschluss, nicht nur fuer die Lauftelemetrie.
-      return { ...summary, ok: versorgung.status === "success", status: versorgung.status,
+      const antwort = { ...summary, ok: versorgung.status === "success", status: versorgung.status,
         vollstaendig: versorgung.vollstaendig,
         ...(!summary.reason && versorgung.status !== "success" ? { reason: "morgenversorgung-unvollstaendig" } : {}),
         versorgung, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
+      return require("./lib/helmut/quellen-arbeitsfenster-aktiv").aktiv()
+        ? require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(async () => antwort, {
+          runId: helmutRunId("briefing-morning", t0), deadlineAt: t0 + 250000, cronName: "morning-briefing"
+        }) : antwort;
     });
   }
 
@@ -7372,6 +7376,9 @@ async function buildAdminSourcesStatus() {
     console.error("[admin] Quellenabdeckung nicht prüfbar:", error && error.message);
     abdeckung = { status: "unbekannt", summary: null, findings: [], limits: ["Die Quellenprüfung konnte nicht abgeschlossen werden."] };
   }
+  const faelligkeitsabgleich = await require("./lib/helmut/quellenarchitektur/faelligkeitsabgleich").lese({
+    catalog: rows, profiles: mandate
+  }).catch(() => ({ zustand: "unbekannt", grund: "faelligkeitsabgleich-lesefehler" }));
 
   return {
     generatedAt: new Date().toISOString(),
@@ -7384,6 +7391,7 @@ async function buildAdminSourcesStatus() {
     stoerungen,
     paketInventur,
     abdeckung,
+    faelligkeitsabgleich,
     letzteAutomatischeAbdeckungspruefung: require("./lib/helmut/quellenarchitektur/cron-abdeckung").abdeckungAusProzesslauf(abdeckungslaeufe[0]),
     googleNews,
     letzterShadowLauf: shadow

@@ -349,7 +349,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       sichereManifest: async (tag, data) => (plan = { ...data, tag, cursor: 0, zustand: "offen" }),
       bewegeCursor: async (tag, vor, next) => (plan = { ...plan, cursor: next,
         zustand: next === plan.auftraege.length ? "fertig" : "offen" }) };
-    const jobs = Array.from({ length: 36 }, (_, n) => ({ jobType: "source_fetch", idempotencyKey: "resume-" + n, payload: { quelle: { id: "q" + n } } }));
+    const jobs = Array.from({ length: 36 }, (_, n) => ({ jobType: "source_fetch", idempotencyKey: "resume-" + n,
+      dueAt: new Date(start).toISOString(), payload: { quelle: { id: "q" + n } } }));
     const dep = { planungsrest: journal, now: () => clock, listFullProfiles: async () => [],
       sourceDemand: { kompiliereQuellenbedarf: async () => { kompiliert++; return { auftraege: jobs, statistik: {} }; },
         planeMandatsarbeit: () => ({ auftraege: [], fenster: "2026-11-09T00Z" }) },
@@ -520,7 +521,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   const dipEnv = { ...env, DIP_API_KEY: "declared-offline-only", HELMUT_ANBIETER_STEUERUNG: "on" };
   const dipDeps = extra => ({ env: dipEnv, now: () => start, listFullProfiles: async () => [profile], leseDipKatalog: async () => katalog,
     dipDocToRawItem: doc => S.dipDocToRawItem(doc, { primary: true }), ...extra });
-  await test("DIP bleibt derselbe Sourcejob im bestaetigten Manifest; andere Wege bleiben identisch", async () => {
+  await test("DIP bildet einen mandantenneutralen Sourcejob; andere Wege bleiben identisch", async () => {
     const plans = [];
     const termin = require("../lib/helmut/quellen-bundestag-termine").QUELLEN[0];
     const bmas = require("../lib/helmut/sources").v1Sources.find(s => s.id === "bmas");
@@ -542,7 +543,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }
     const added = plans[1].filter(j => j.payload.quelle?.crawlMethod === "dip");
     assert.equal(added.length, 1); assert.equal(added[0].jobType, "source_fetch");
-    assert.equal(added[0].tenantId, profile.id); assert(!JSON.stringify(added).includes("declared-offline-only"));
+    assert.equal(added[0].tenantId, null); assert.equal(added[0].payload.art, "dip-geteilt");
+    assert(!JSON.stringify(added).includes("declared-offline-only"));
     assert.deepEqual(plans[1].filter(j => j.payload.quelle?.crawlMethod !== "dip"), plans[0]);
     const sourceJobs = plans[1].filter(j => j.jobType === "source_fetch");
     assert.deepEqual(sourceJobs.map(j => j.payload.quelle.id), ["dip", termin.id, bmas.id, person.id, google.id]);
@@ -568,9 +570,9 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     let calls = 0;
     const d = dipDeps({ dipQueueDocuments: async () => { calls++; throw Error("nicht erreichen"); } });
     assert.equal((await P.HANDLER.source_fetch(dipJob, { ...d, leseDipKatalog: async () => ({ ...katalog,
-      retrievalPaths: [{ ...katalog.retrievalPaths[0], status: "paused" }] }) }, { auftragsDeadlineMs: start + 120000 })).uebersprungen, true);
+      retrievalPaths: [{ ...katalog.retrievalPaths[0], status: "paused" }] }) }, { auftragsDeadlineMs: start + 120000 })).zurueckgestellt, true);
     assert.equal((await P.HANDLER.source_fetch(dipJob, { ...d, listFullProfiles: async () => [{ ...profile, profileActive: false }] },
-      { auftragsDeadlineMs: start + 120000 })).uebersprungen, true);
+      { auftragsDeadlineMs: start + 120000 })).zurueckgestellt, true);
     assert.equal((await P.HANDLER.source_fetch(dipJob, d, { auftragsDeadlineMs: start + 20000 })).zurueckgestellt, true);
     await assert.rejects(P.HANDLER.source_fetch({ ...dipJob, tenantId: "fremd" }, d, { auftragsDeadlineMs: start + 120000 }), /dip-auftrag/);
     await assert.rejects(P.HANDLER.source_fetch(dipJob, { ...d, listFullProfiles: async () => [profile, { ...profile, id: "fremd" }] },

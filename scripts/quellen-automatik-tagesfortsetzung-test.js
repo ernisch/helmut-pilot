@@ -5,7 +5,7 @@ const A = require("node:assert/strict"), Q = require("../lib/helmut/quellen-auto
 const ENV = { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SOURCE_MODE: "on" };
 const day = "2026-11-13", now = Date.parse(day + "T04:00:00Z");
 function welt() {
-  const w = { plan: { zustand: "fertig", cursor: 1, auftraege: [{}] }, reads: [],
+  const w = { plan: { zustand: "fertig", cursor: 1, auftraege: [{}] }, reads: [], alt: [],
     offen: [{ id: "heute-gut" }], faellig: [{ id: "heute-gut", attempts: 0, max_attempts: 3 }], fehler: [],
     run: { runId: "synthetischer-slot", process: "warteschlange-crawl", status: "partial",
       startedAt: day + "T03:15:00Z", finishedAt: day + "T03:19:00Z",
@@ -14,7 +14,7 @@ function welt() {
   w.deps = {
     leseLaeufe: async o => o.process === "warteschlange-crawl" ? [w.run] : [],
     journal: { lesen: async tag => { A.equal(tag, day); return w.plan; },
-      offene: async () => A.fail("Historische Planreste duerfen keinen heutigen Slot ausloesen") },
+      offene: async ({ bisTag }) => { A.equal(bisTag, "2026-11-12"); return { plaene: w.alt, weitereVorhanden: false }; } },
     request: async (url, options) => {
       A.equal(options, undefined); w.reads.push(url);
       if (url.startsWith("/rest/v1/helmut_anbieter_fenster")) return [
@@ -53,15 +53,26 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       const w = welt(); change(w.run); A.equal((await w.pruefe()).erlaubt, false);
     }
   });
-  await test("historische Planreste und heute beendete Altfehler sind kein heutiger Taktgeber", async () => {
+  await test("nur offene Altmanifeste und fällige Quellen sind historische Taktgeber", async () => {
     const w = welt(); Object.assign(w.run, { status: "success", fehlerklasse: null });
     w.offen = []; w.faellig = [];
     A.equal((await w.pruefe()).grund, "automatik-erledigt");
     A.equal(w.reads.filter(s => s.startsWith("/rest/v1/helmut_jobs")).length, 3);
     A.ok(w.reads.every(s => !s.includes("finished_at=")));
+    A.match(decodeURIComponent(w.reads.find(s => s.includes("select=id,attempts"))), /job_type.in.\(source_fetch,document_understanding\)/);
+    w.alt = [{ tag: "2026-11-12", zustand: "offen" }];
+    A.equal((await w.pruefe()).grund, "automatik-restarbeit");
+    w.alt = [];
+    w.offen = w.faellig = [{ id: "gestern", attempts: 0, max_attempts: 5 }];
+    A.equal((await w.pruefe()).grund, "automatik-restarbeit");
+    w.run.status = "partial";
+    Object.assign(w.run, { fehlerklasse: "lease-ohne-fortschritt", zielmenge: 3,
+      processed: 0, deferred: 3, fehlgeschlagen: 0, wiederholt: 0 });
+    A.equal((await w.pruefe()).erlaubt, true);
   });
   await test("heutiger offener Plancursor darf ohne Lesen historischer Plaene fortgesetzt werden", async () => {
     const w = welt(); w.plan = { zustand: "offen", cursor: 0, auftraege: [{}] };
+    w.deps.journal.offene = async () => A.fail("Heutigen Cursor direkt fortsetzen");
     A.equal((await w.pruefe()).grund, "automatik-restarbeit");
     A.equal(w.reads.length, 1);
   });

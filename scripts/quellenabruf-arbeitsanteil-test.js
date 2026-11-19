@@ -198,6 +198,22 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.q.hole(quelle.id).status, "erledigt"); A.deepEqual(w.trace, ["2026-11-12T00Z"]);
     A.equal(r.bilanzen[0].phasen[1].erledigt, 1); A.equal(r.bilanzen[0].verfuegbar, true);
   });
-  A.equal(count, 8);
+  await test("Der 03:30-Slot behält den Altvorrang bis zur ersten alten Lease und arbeitet danach normal weiter", async () => {
+    const w = welt(), prioritaeten = [];
+    w.weiter(30 * 60000);
+    const neu = await enqueue(w, "source_fetch");
+    const alt = await enqueue(w, "source_fetch", { freshnessWindow: "2026-11-13T00Z" });
+    w.q.hole(alt.id).first_due_at = "2026-11-13T03:00:00Z";
+    w.deps.claimQuellenfaelligkeit = async ({ altVorrang, ...args }) => {
+      prioritaeten.push(altVorrang);
+      return w.q.claim(args);
+    };
+    w.deps.handler = { source_fetch: async a => { w.trace.push(a.id); return { ok: true }; } };
+    await w.run();
+    A.deepEqual(w.trace, [neu.id, alt.id]);
+    A.deepEqual(prioritaeten, [true, true, false]);
+    A.equal(w.quotas.length, 3);
+  });
+  A.equal(count, 9);
   console.log(`${count}/${count} neue Quellenabruf-Arbeitsanteilgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });

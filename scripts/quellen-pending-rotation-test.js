@@ -125,7 +125,8 @@ async function test(name, fn) {
       listKoDocuments: async id => [{ id: "rd-" + Number(id.slice(id.lastIndexOf("-") + 1)).toString(16).padStart(64, "0") }],
       enqueue: async job => { jobs.push(job); return { verfuegbar: true, neu: true }; },
       sourceDemand: {
-        kompiliereQuellenbedarf: async () => { planned++; return { auftraege: [{ jobType: "source_fetch", idempotencyKey: "quelle-folgt-pending", freshnessWindow: "2026-11-10T00Z", payload: {} }], statistik: {}, fehlerhafteProfile: [] }; },
+        kompiliereQuellenbedarf: async () => { planned++; return { auftraege: [{ jobType: "source_fetch", idempotencyKey: "quelle-folgt-pending", freshnessWindow: "2026-11-10T00Z",
+          dueAt: "2026-11-10T03:00:00Z", payload: {} }], statistik: {}, fehlerhafteProfile: [] }; },
         planeMandatsarbeit: () => ({ auftraege: [], fenster: "2026-11-10T00Z" }) } };
     const supply = extra => V.lese({ mandat: profile.id, jetztMs: jetzt, env, deps: { request: S.supabaseRequest, ...extra } });
     await test("Tagesplanung bleibt trotz historischem Pending-Lesefehler verfuegbar", async () => {
@@ -140,10 +141,12 @@ async function test(name, fn) {
       A.deepEqual(await journal.lesen("2026-11-09"), alt, "Offenes historisches Manifest bleibt unveraendert; heutiger Plan trotzdem fertig");
       mode = "normal";
     });
-    await test("Folgefenster lesen weder Pendingrotation noch kompilieren sie Tagesquellen erneut", async () => {
+    await test("Folgefenster setzen das ältere Manifest automatisch fort und planen den Tag nicht neu", async () => {
       const before = planned, calls = requests.length, oldJobs = jobs.length;
       const replay = await P.setzePlanungFort({ jetztMs: jetzt + 900000, env, deps: dep, darfNeuPlanen: true });
-      A.equal(replay.ok, true); A.equal(jobs.length, oldJobs); A.equal(planned, before);
+      A.equal(replay.ok, true); A.equal(replay.altrest.zustand, "fertig");
+      A.equal(jobs.length, oldJobs + 1); A.equal(planned, before);
+      A.equal(jobs.at(-1).idempotencyKey, "historischer-rest");
       A(requests.slice(calls).every(x => !x.path.endsWith("knowledge_objects")));
     });
     await test("Fertiges Enqueue ist kein Lektuerebeweis: technische Briefingsperre bleibt bis bestaetigter Verarbeitung", async () => {
@@ -154,7 +157,11 @@ async function test(name, fn) {
         const b = C.toBriefingContractV3({ ...base, versorgung: { version: 1, zustand } });
         A.equal(b.currentHelmutState.emptyState.kind, "gap");
       }
-      const ready = await supply({ offeneVorbedingungen: async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 }) });
+      const keineQueue = async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 });
+      const abdeckung = fehlendePlanpositionen => async () => [{ startedAt: new Date(jetzt).toISOString(),
+        status: "partial", ergebnisse: { fehlendePlanpositionen, offeneAbrufbelege: 0 } }];
+      A.equal((await supply({ offeneVorbedingungen: keineQueue, leseAbdeckung: abdeckung(1) })).zustand, "offen");
+      const ready = await supply({ offeneVorbedingungen: keineQueue, leseAbdeckung: abdeckung(0) });
       A.equal(ready.zustand, "kein-bekannter-rueckstand");
     });
     await test("Echter Planer und beide Standard-RPC-Adapter bestaetigen frische Quellen ohne historischen Vorschub", async () => {

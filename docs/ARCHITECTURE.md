@@ -127,6 +127,30 @@ Drei sauber getrennte Ebenen (Details:
 - **Paket** (`packages`) — wofür gebündelt wird; Profile bekommen Pakete über den
   Resolver, nicht einzelne Quellen.
 
+**Quellenfälligkeiten nach [#1266](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004523155).**
+Der vorhandene Manifest-Cursor setzt frühere Pläne im regulären Quellenfenster fort.
+Die Queue bewahrt die ursprüngliche Fälligkeit, der Manifestauftrag die fachliche
+Frist. `due_at` hält die Wiedervorlage. Amtliche Morgenarbeit hat Vorrang. Um
+03:30 und 04:30 UTC erhält danach eine fällige Altaufgabe Platz vor der übrigen
+Tagesarbeit, solange das vorhandene Abrufbudget reicht. Der service-only Claim
+verwendet die bestehenden Queue-Leases. Bei fehlendem RPC greift der bisherige
+Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` und ihr
+Rückweg sind für die gesonderte Production-Freigabe vorbereitet.
+
+DIP bündelt die neutrale HTTP-Abfrage pro Tagesfenster. Die bestehende
+Profilauswahl und die Prüfung von Mandatsbezug und Fundstelle gelten bei der
+Ausgabe. PDF und ICS speichern zulässige Fakten je bestätigtem Originalteil mit
+Fassungsfingerabdruck. Ein Retry prüft Katalog, Rechte, Zugriff und Dokumentliste
+erneut. Identische geprüfte Teile desselben Auftrags brauchen keine weitere
+Originalreservierung. Bestätigte Google-Originaladressen können andere Abrufe
+im selben Slot wiederverwenden.
+
+Der Abdeckungsbericht vergleicht aktive Abrufwege und Paketbedarf mit Tagesmanifest,
+Queue und Ergebnisbelegen. Analyse, Lage und das zugehörige gespeicherte Morgenpaket
+werden separat geprüft. Abschluss ohne Ergebnisbeleg, abweichende Abrufdefinition,
+Wiedervorlage und verspätete Ausgabe sind sichtbare Befunde. Die lesende
+Produktionsbilanz und die Kapazitätsrechnung stehen im [Betriebsbeleg](betrieb/quellenfaelligkeit-20261119.md).
+
 **DIP Dokumentangaben (20.09.2026).** Der bestehende Drucksachenadapter
 bewahrt Originaltitel, expliziten Dokumenttyp, oeffentliche Urheber und
 Ressortlabels getrennt in `raw.helmutDipQuellfelder`. Der begrenzte Vertrag
