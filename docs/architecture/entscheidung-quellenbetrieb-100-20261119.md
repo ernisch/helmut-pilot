@@ -3,6 +3,7 @@
 **Entscheidung des Betreibers: 19.11.2026.**
 **Status: verbindliche Zielrichtung, noch keine technische Umsetzung oder Produktionsabnahme.**
 **Geltungsbereich: HELMUT Quellenversorgung, Verarbeitung und Morgenausgabe.**
+**Ergänzende bestätigte Produktentscheidung vom 20.11.2026:** [Morgenbriefing bis 07:30 Uhr Berliner Zeit, Redaktionsschluss 06:45 Uhr](../produkt/morgenbriefing-0730-20261120.md). Redaktionelles Ziel, keine bereits umgesetzte oder freigegebene Produktionsumstellung.
 
 ## 1. Entscheidung
 
