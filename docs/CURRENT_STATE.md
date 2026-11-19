@@ -8,6 +8,8 @@ Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.
 
 **24-Stunden-Entwurf.** Isoliert Rückstand 754 → 377 → 3. Beide Pakete um 07:30 Berlin abrufbar, am ersten Tag mit belegter DIP-Priorität, am zweiten ohne Tagespriorität. 0/2 vollständige Morgen. Je Tag 16 verschiedene Originale ohne Wiederholungen, an beiden Tagen mindestens ein Pflichtweg am Kontingent vertagt. 100er-Kapazität offen. [Entwurf](https://github.com/ernisch/helmut-pilot/pull/1281) · [Zweitagesbericht](https://github.com/ernisch/helmut-pilot/actions/runs/44630786421) · [Erstlauf mit Runnerlimit](https://github.com/ernisch/helmut-pilot/actions/runs/44629355853)
 
+**Originalprobe 20.11.** Elf Adressen für fünf Pflichtwege. Arbeit/Soziales mit ungeklärter Sitzungsnummer. Die 16er-Quote trägt den beobachteten Bedarf. [Einzelbilanz](betrieb/quellen-originalbedarf-20261120.md)
+
 **Erhaltene Betriebsbelege vom 17.–19.11.** [Damaliger Status mit Einzelwerten](https://github.com/ernisch/helmut-pilot/blob/bbd15da9/docs/CURRENT_STATE.md) · [Quellenbilanz](betrieb/quellen-abnahme-20261117.md) · [Briefingqualität](betrieb/briefing-qualitaet-20261117.md)
 
 **Nächster Schritt.** Ein regulär erzeugtes Pilotpaket mit autorisierter Kundensitzung auf individuelle Priorität, Original und Auslieferungsfrist abnehmen.
