@@ -182,12 +182,12 @@ async function main() {
       url: feed, rssUrl: feed, crawlMethod: "rss" };
     const beleg = { source_id: source.id, retrieval_path_id: source.retrievalPathId, original_url: proxy, found_at: "2026-11-18T17:00:00Z",
       raw_documents: { title, url: original, published_at: new Date(published).toISOString(), link_type: "direct" } };
-    async function run(fundstellen, quelle = source) {
+    async function run(fundstellen, quelle = source, ziel = original) {
       const abrufe = [];
       let lesungen = 0;
       const r = await crawlAllSources([quelle], { now: () => jetzt, deadlineMs: jetzt + 1500,
         googleOriginale: new Map(),
-        fetchUrl: async url => { abrufe.push(url); return url === feed ? { body } : { finalUrl: original, body: "" }; },
+        fetchUrl: async url => { abrufe.push(url); return url === feed ? { body } : { finalUrl: ziel, body: "" }; },
         leseGoogleArtikelfundstellen: async (_quelle, urls, { timeoutMs }) => {
           A.deepEqual(urls, [proxy]); A.equal(timeoutMs, 600); lesungen++;
           return fundstellen;
@@ -205,7 +205,12 @@ async function main() {
       const neu = await run(schlechte);
       A.deepEqual(neu.abrufe, [feed, proxy]); A.equal(neu.result.gespeicherteGoogleLinks, undefined);
     }
-    A.equal((await run([beleg], { ...source, type: "person", queryTerms: ["Haushalt"] })).lesungen, 0);
+    const person = { ...source, type: "person", queryTerms: ["Haushalt"] };
+    A.equal((await run([beleg], person)).lesungen, 0);
+    const ohneOriginal = await run([beleg], person, proxy);
+    A.deepEqual(ohneOriginal.abrufe, [feed, proxy]);
+    A.equal(ohneOriginal.result.items[0].url, "");
+    A.equal(ohneOriginal.result.items[0].originalUrl, proxy);
     const ohneBezug = await run([], { ...source, type: "person", queryTerms: ["Fiktiver Fremdname"] });
     A.deepEqual(ohneBezug.abrufe, [feed]); A.equal(ohneBezug.result.itemCount, 0);
     let posts = 0;
@@ -266,22 +271,37 @@ async function main() {
     const beleg = await QStore.sichern({ id, tenantId: profile.id, firstDueAt: due, payload: job.payload },
       { art: "rohfassungen", rohIds: [dokument], analyse: [{ rohId: dokument, stand, jobId }] },
       Date.parse("2026-11-20T03:10:00Z"));
-    const ausgaben = new Map([[`2026-11-20|${profile.id}`, { user_id: profile.id, generated_at: "2026-11-20T05:14:00Z",
-      payload: { briefing: { currentHelmutState: { primaryItem: { sourceIds: [dokument] } } } } }]]);
+    const schluessel = `2026-11-20|${profile.id}`;
+    const paket = { user_id: profile.id, generated_at: "2026-11-20T05:14:00Z",
+      payload: { briefing: { currentHelmutState: { primaryItem: { sourceIds: [dokument] } } } } };
+    const ausgaben = new Map([[schluessel, paket]]);
+    const analyseJob = { id: jobId, status: "erledigt", finished_at: "2026-11-20T03:20:00Z",
+      payload: { quellenstaende: { [dokument]: stand } } };
     const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
-      manifest: null, jobs: [job], belege: new Map([[id, beleg]]), analyseJobs: [{ id: jobId, status: "erledigt",
-        payload: { quellenstaende: { [dokument]: stand } } }], ausgaben, jetztMs: Date.parse("2026-11-20T06:00:00Z"), env };
+      manifest: null, jobs: [job], belege: new Map([[id, beleg]]), analyseJobs: [analyseJob],
+      ausgaben, jetztMs: Date.parse("2026-11-20T06:00:00Z"), env };
     const r = C.abgleichen(basis);
     A.equal(r.faelligkeiten[0].produkt, "mandatspaket_belegt");
     A.equal(r.faelligkeiten[0].grund, "frist_verfehlt");
     A.equal(r.faelligkeiten[0].verspaetet, true);
+    const nurRohdaten = { ...paket, payload: { briefing: { currentRadarState: {
+      articles: [{ documentId: dokument }], anzeige: { articles: [] } } } } };
+    A.equal(C.abgleichen({ ...basis, ausgaben: new Map([[schluessel, nurRohdaten]]) }).faelligkeiten[0].grund,
+      "zuordnung_nicht_belegt");
+    nurRohdaten.payload.briefing.currentRadarState.anzeige.mentions = [{ documentId: dokument }];
+    A.equal(C.abgleichen({ ...basis, ausgaben: new Map([[schluessel, nurRohdaten]]) }).faelligkeiten[0].produkt,
+      "mandatspaket_belegt");
+    A.equal(C.abgleichen({ ...basis, analyseJobs: [{ ...analyseJob, finished_at: "2026-11-20T05:15:01Z" }] })
+      .faelligkeiten[0].grund, "analyse_nach_ausgabe");
+    A.equal(C.abgleichen({ ...basis, analyseJobs: [{ ...analyseJob, finished_at: null }] })
+      .faelligkeiten[0].grund, "analyse_nicht_belegt");
     const weiteres = "rd-" + "b".repeat(64), weitererJob = "00000000-0000-4000-8000-000000000003";
     const { ergebnis } = beleg;
     const teilbeleg = await QStore.sichern({ id, tenantId: profile.id, firstDueAt: due, payload: job.payload },
       { ...ergebnis, rohIds: [...ergebnis.rohIds, weiteres], analyse: [...ergebnis.analyse, { rohId: weiteres, stand, jobId: weitererJob }] },
       Date.parse("2026-11-20T03:10:00Z"));
     const luecke = C.abgleichen({ ...basis, belege: new Map([[id, teilbeleg]]),
-      analyseJobs: [...basis.analyseJobs, { id: weitererJob, status: "erledigt", payload: { quellenstaende: { [weiteres]: stand } } }] });
+      analyseJobs: [...basis.analyseJobs, { ...analyseJob, id: weitererJob, payload: { quellenstaende: { [weiteres]: stand } } }] });
     A.equal(luecke.faelligkeiten[0].grund, "zuordnung_nicht_belegt");
   });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {

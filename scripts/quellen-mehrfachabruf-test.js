@@ -296,7 +296,7 @@ function abrufUntergrenze(dauern, g) {
     check("1.2b Die gesamte Weiterleitungskette laeuft in EINER Anbieterreservierung",
       /if \(redirectDepth > 0\) return fetchUrlRoh\(url, redirectDepth, deps\);/.test(src));
     check("1.3 `resolveArticleUrl` kann je Eintrag 1x `fetchUrl` + bis zu 2x `postForm` ausloesen",
-      /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/.test(src) && /await postForm\(/.test(src));
+      /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/.test(src) && /await \(deps\.postForm \|\| postForm\)\(/.test(src));
     check("1.4 `enrichPersonArticleImages` ist eine SEQUENZIELLE Schleife mit Netzarbeit je Eintrag",
       /for \(const item of items\) \{[\s\S]{0,900}?await resolveArticleUrl\([\s\S]{0,900}?await fetchText\(/.test(src));
     installiereHttpErsatz();
@@ -327,8 +327,8 @@ function abrufUntergrenze(dauern, g) {
     console.log(`  [Messung] EINE Google-Suchquelle mit ${FEED_ITEMS} Eintraegen:`
       + ` ${anfragen.length} HTTP-Anfragen (davon ${posts} POST/batchexecute),`
       + ` Dauer ${dauerMs} ms = ${faktorSuche.toFixed(1)} x ANFRAGE_MS`);
-    check("2.1 die Quelle loest deutlich MEHR als eine HTTP-Anfrage aus",
-      anfragen.length >= 3 * FEED_ITEMS, `${anfragen.length} Anfragen`);
+    check("2.1 je Eintrag genau ein Auflösungs-POST bei bestätigter leerer Antwort",
+      posts === FEED_ITEMS && anfragen.length === 1 + 2 * FEED_ITEMS, `${anfragen.length} Anfragen`);
     check("2.2 die Quelle dauert laenger als EINE Anfrage — die 7-s-Grenze traegt nicht",
       faktorSuche > 2, `${faktorSuche.toFixed(1)} x ANFRAGE_MS`);
     check("2.3 der Feedabruf hat Eintraege geliefert (der Test misst echte Arbeit)",

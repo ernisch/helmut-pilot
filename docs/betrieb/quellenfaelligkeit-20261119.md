@@ -50,6 +50,9 @@ berühren höchstens 48 feste Minuten der Anbieterquote. Selbst bei 1.440
 Reservierungen würden beim beobachteten Mix höchstens 84 Google-Aufträge
 abgeschlossen. Gegenüber den 2.475 benötigten Reservierungen fehlen selbst
 dann 1.035. Die am 19.11. gemessenen 500 Buchungen sind der Ist-Verbrauch.
+Für 145 Google-Abschlüsse muss der Mix selbst beim rechnerischen Maximum
+auf höchstens 9,93 Reservierungen je Abschluss fallen. Mit 25 Prozent
+Reserve wären es höchstens 7,91 bei 182 Abschlüssen.
 Für 754 Altaufträge in fünf Tagen wären bei 162 neuen Aufträgen je Tag
 mindestens 313 Abschlüsse pro Tag nötig, davon 151 für den Rückstand.
 
@@ -61,8 +64,9 @@ verlangt die passende Abrufweg-ID, Fund-URL, Titel, Publikationszeit und
 den Herausgeberhost. Der Feed bleibt eine aktuelle Beobachtung. Ein
 Offline-Fall mit bestätigter Bindung spart einen von zwei Abrufen.
 Personensuchen prüfen den aktuellen Profilbezug vor der Linkauflösung.
-Ein POST mit bestätigter Antwort ohne
-Artikellink wird mit derselben Eingabe nicht wiederholt. Eine belastbare
+Eine ungeklärte Originaladresse führt im selben Auftrag zu keinem weiteren
+Abruf für das Vorschaubild. Bei 12 simulierten fehlerfreien POST-Antworten
+ohne Adresse sinkt die Zahl der HTTP-Anfragen von 37 auf 25. Eine belastbare
 Wiederverwendungsrate folgt erst aus regulären Abrufbelegen.
 
 ## Abgleich von Katalog und Ausgabe
@@ -111,6 +115,12 @@ Archivwechsel 450. Die fünf amtlichen Originalwege und DIP werden je
 Tagesfenster einmal als Auftrag eingeplant. Die Zahl ausgabefähiger Lagen
 wächst mit der Mandatszahl.
 
+Beim gemessenen Mix wären für 100 Mandate rund 4.392 Google-Reservierungen
+je Durchschnittstag und 5.855 am Archivwechsel nötig. Gegenüber der
+Obergrenze von 1.440 fehlen damit 2.952 beziehungsweise 4.415. Für die
+Grundlast ohne Reserve müsste der Mix im Mittel auf 5,60 und am
+Archivwechsel auf 4,20 Reservierungen je Google-Abschluss fallen.
+
 Aus den paarweise beobachteten Modellkosten des 18. und 19.11. ergeben sich
 bei täglich neu zu erzeugenden und zu prüfenden Lagen **1,905–1,913 USD** für
 100 und **7,264–7,506 USD** für 500 Mandate. Das Szenario enthält keine
@@ -135,7 +145,9 @@ Pflichttag. Bei übrigen Tagesquellen kann auch ein späteres Paket die
 Verarbeitung belegen. Eine verfehlte Frist bleibt sichtbar. Ein amtlicher
 Beleg in der Lage und derselbe Beleg in der gebundenen Morgenausgabe sind
 getrennte Bedingungen. Der bestätigte Sitzungskalender ist über die
-gespeicherte Morgenquittung an das Paket gebunden.
+gespeicherte Morgenquittung an das Paket gebunden. Bei Artikeln zählt nur
+die sichtbare Ausgabe, sofern die zugehörige Analysefassung beim Erstellen
+dieser Ausgabe bereits fertig war.
 
 [PR #1271](https://github.com/ernisch/helmut-pilot/pull/1271) hat die
 Pflicht-CI ohne historische Mengenläufe auf `main` gebracht. Die neue

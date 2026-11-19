@@ -232,7 +232,7 @@ function main() {
   check("8.4 Die neuen Module benutzen nur Node-Kernmodule",
     (() => {
       const module_ = [pipelineSrc, fs.readFileSync(path.join(ROOT, "lib/helmut/source-demand.js"), "utf8")];
-      const erlaubt = new Set(["crypto"]);
+      const erlaubt = new Set(["crypto", "node:util"]);
       return module_.every((src) => [...src.matchAll(/require\("([^".]+)"\)/g)]
         .every((m) => erlaubt.has(m[1])));
     })());
