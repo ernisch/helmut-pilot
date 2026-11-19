@@ -121,7 +121,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": "{.github/workflows/briefing-watchdog.yml,.github/workflows/health-watch.yml,verwaltung/**,scripts/original-verwaltung-paket.js,node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs,node_modules/@napi-rs/canvas/**,node_modules/@napi-rs/canvas-linux-x64-gnu/**,node_modules/@napi-rs/canvas-linux-arm64-gnu/**}"
+      "includeFiles": "{.github/workflows/briefing-watchdog.yml,.github/workflows/health-watch.yml,verwaltung/**,scripts/original-verwaltung-paket.js,node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs}"
     }
   },
   "routes": [
