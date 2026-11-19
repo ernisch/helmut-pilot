@@ -274,24 +274,43 @@ async function main() {
     assert(!tagbetrieb.vorSchnitt({ created_at: "2026-11-20T05:46:00Z", published_at: "2026-11-19" }, schnitt));
     assert(!tagbetrieb.vorSchnitt({ published_at: "2026-11-19" }, schnitt));
   });
-  await check("Ganztag nimmt nach fehlendem Slot auf, dedupliziert und schützt Originale", async () => {
+  await check("Ganztag schützt elf Pflichtoriginale und einen Wiederholungsplatz vor Altaufträgen", async () => {
     const w = welt();
     const ganztag = arbeit => fenster.fuehreAus({ env: ENV, deps: w.deps, ganztags: true, arbeit });
     w.setze("2026-11-19T00:45:00Z");
     const original = pflichtOriginal => fenster.reserviereOriginal({ env: ENV, deps: w.deps, pflichtOriginal });
+    const [quelle] = require("../lib/helmut/quellen-bundestag-termine").QUELLEN;
+    let katalogLesungen = 0;
+    const handler = require("../lib/helmut/scalable-pipeline").HANDLER.source_fetch;
+    const termin = firstDueAt => handler({ id: "termin-fixture", firstDueAt, payload: { quelle } },
+      { env: ENV, now: w.zeit, leseBundestagTermineKatalog: async () => { katalogLesungen++; return {}; } },
+      { auftragsDeadlineMs: w.zeit() + 60000 });
+    const alt = "2026-11-18T00:00:00Z";
     const erste = await ganztag(async () => {
+      const vertagt = await termin(alt);
+      assert.equal(vertagt.grund, "bundestag-termine-heutige-pflichtquellen-vorrang");
+      assert.equal(vertagt.bundestagAbrufpauseMs, Date.parse("2026-11-19T06:30:00Z") - w.zeit());
+      assert.equal(katalogLesungen, 0);
+      assert.equal((await termin("2026-11-19T00:00:00Z")).grund, "bundestag-termine-rechte-oder-aktivierung-offen");
       for (let i = 0; i < 4; i++) assert((await original(false)).erlaubt);
       assert(!((await original(false)).erlaubt));
-      assert((await original(true)).erlaubt);
+      for (let i = 0; i < 12; i++) assert((await original(true)).erlaubt);
+      assert(!((await original(true)).erlaubt));
       return { ok: true };
     });
     assert.equal(erste.arbeitsfenster.grenzen.fenster, 96);
     assert.equal(erste.arbeitsfenster.grenzen.originale, 16);
-    assert.equal(w.stand(fenster.SCHLUESSEL.originale), 5);
+    assert.equal(w.stand(fenster.SCHLUESSEL.originale), 16);
     await ganztag(() => assert.fail("Paralleler Abruf im selben Fenster"));
     w.setze("2026-11-19T01:15:00Z");
     assert((await ganztag(async () => ({ ok: true }))).ok);
     assert.equal(w.stand(fenster.SCHLUESSEL.fenster), 2);
+    w.setze("2026-11-19T06:30:00Z");
+    assert((await ganztag(async () => {
+      assert.equal((await termin(alt)).grund, "bundestag-termine-rechte-oder-aktivierung-offen");
+      assert.equal(katalogLesungen, 2);
+      return { ok: true };
+    })).ok);
   });
   await check("17Nov ab09:16 genau ein global gebuchtes Zusatzfenster ohne weitere Originalrechte", async () => {
     const w = operatorWelt(); let arbeiten = 0;
