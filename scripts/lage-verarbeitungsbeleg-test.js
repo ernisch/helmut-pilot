@@ -129,13 +129,24 @@ async function main() {
     finish.forEach(resolve=>resolve("fertig"));await Promise.all([a,b]);A.equal(active,0);
     let called=false;await A.rejects(G.begrenzt(()=>{called=true;},{klasseBelege:async()=>{throw Error("db");}}),{kiNichtGesendet:true});A.equal(called,false);
   });
-  await test("Tagesversorgung liest keine unbeteiligten historischen Rueckstaende",async()=>{
+  await test("Tagesversorgung prüft einen begrenzten Planrest und nur den mandatsgebundenen Queue-Stand",async()=>{
     const V=require("../lib/helmut/quellen-versorgungsstand"),queries=[];
     const base={mandat:args.userId,jetztMs:args.now.getTime(),fenster:args.tag+"T00Z",
       env:{HELMUT_SCALABLE_PIPELINE:"on",HELMUT_QUELLEN_ARBEITSFENSTER:"on"},
-      deps:{planungsrest:{lesen:async()=>({zustand:"fertig"}),offene:async()=>{throw Error("historischer Scan verboten");}},
-        offeneVorbedingungen:async q=>{queries.push(q);A.ok(q.fenster);return {verfuegbar:true,offen:0,fehlgeschlagen:0};}}};
-    A.equal((await V.lese(base)).zustand,"kein-bekannter-rueckstand");A.equal(queries.length,1);A.equal(queries[0].mandat,args.userId);
+      deps:{planungsrest:{lesen:async()=>({zustand:"fertig"}),offene:async q=>{
+        A.deepEqual(q,{bisTag:"2026-11-12",limit:1});return {plaene:[],weitereVorhanden:false};
+      }},offeneVorbedingungen:async q=>{
+        queries.push(q);
+        return {verfuegbar:true,offen:0,fehlgeschlagen:q.fenster?0:1};
+      },leseAbdeckung:async()=>[{startedAt:args.now.toISOString(),status:"success",
+        ergebnisse:{fehlendePlanpositionen:0,offeneAbrufbelege:0}}]}};
+    A.equal((await V.lese(base)).zustand,"kein-bekannter-rueckstand");
+    A.equal(queries.length,2);A.ok(queries[0].fenster);A.equal(queries[1].fenster,null);
+    A.deepEqual(queries[1].typen,["source_fetch","document_understanding"]);
+    A.ok(queries.every(q=>q.mandat===args.userId));
+    A.equal((await V.lese({...base,deps:{...base.deps,leseAbdeckung:async()=>[]}})).zustand,"unbekannt");
+    base.deps.offeneVorbedingungen=async q=>({verfuegbar:true,offen:q.fenster?0:1,fehlgeschlagen:0});
+    A.equal((await V.lese(base)).zustand,"offen");
     base.deps.offeneVorbedingungen=async()=>({verfuegbar:true,offen:1,fehlgeschlagen:0});A.equal((await V.lese(base)).zustand,"offen");
     base.deps.offeneVorbedingungen=async()=>({verfuegbar:false});A.equal((await V.lese(base)).zustand,"unbekannt");
   });

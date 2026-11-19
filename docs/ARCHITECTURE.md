@@ -127,6 +127,36 @@ Drei sauber getrennte Ebenen (Details:
 - **Paket** (`packages`) — wofür gebündelt wird; Profile bekommen Pakete über den
   Resolver, nicht einzelne Quellen.
 
+**Quellenfälligkeiten nach [#1266](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004523155).**
+Der vorhandene Manifest-Cursor setzt frühere Pläne im regulären Quellenfenster fort.
+Die Queue bewahrt die ursprüngliche Fälligkeit, der Manifestauftrag die fachliche
+Frist. `due_at` hält die Wiedervorlage. Fällige Morgenpflichten erhalten in
+allen Fenstern Vorrang. Um 03:30 und 04:30 UTC folgt jeweils eine fällige
+Altaufgabe vor der übrigen Tagesarbeit. Der service-only Claim
+verwendet die bestehenden Queue-Leases. Bei fehlendem RPC greift der bisherige
+Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` und ihr
+Rückweg sind für die gesonderte Production-Freigabe vorbereitet.
+
+DIP bündelt die neutrale HTTP-Abfrage pro Tagesfenster. Die bestehende
+Profilauswahl und die Prüfung von Mandatsbezug und Fundstelle gelten bei der
+Ausgabe. PDF und ICS speichern zulässige Fakten je bestätigtem Originalteil mit
+Fassungsfingerabdruck. Ein Retry prüft Katalog, Rechte, Zugriff und Dokumentliste
+erneut. Identische geprüfte Teile desselben Auftrags brauchen keine weitere
+Originalreservierung. Öffentliche Google-Suchen verwenden bestätigte
+Originaladressen auch über Slots hinweg, wenn Abrufweg-ID, Fund-URL, Titel,
+Publikationszeit und Herausgeberhost belegt passen. Für die aktiven
+Katalog-Einzelabfragen zählt die bestätigte Feed-URL. Personensuchen prüfen
+vor der Linkauflösung den gespeicherten Profilbezug und den zugehörigen
+Tages- oder Archiv-Feed. Sie übernehmen keine gemeinsam gespeicherten Suchbelege.
+
+Der Abdeckungsbericht vergleicht aktive Abrufwege und Paketbedarf mit Tagesmanifest,
+Queue und Ergebnisbelegen. Wiederkehrende Archivschlüssel behalten die Fälligkeit
+ihres ersten Manifests. Analyse, Lage und die quittierte Fassung der Morgenausgabe
+werden separat geprüft. Bei übrigen Tagesquellen kann auch ein späteres Paket
+die Verarbeitung belegen. Abschluss ohne Ergebnisbeleg, abweichende Abrufdefinition,
+Wiedervorlage und verspätete Ausgabe sind sichtbare Befunde. Die lesende
+Produktionsbilanz und die Kapazitätsrechnung stehen im [Betriebsbeleg](betrieb/quellenfaelligkeit-20261119.md).
+
 **DIP Dokumentangaben (20.09.2026).** Der bestehende Drucksachenadapter
 bewahrt Originaltitel, expliziten Dokumenttyp, oeffentliche Urheber und
 Ressortlabels getrennt in `raw.helmutDipQuellfelder`. Der begrenzte Vertrag

@@ -77,6 +77,23 @@ const LEGACY = [
 // --- 2) Plan mit einem aktiven Profil -----------------------------------------------------
 const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [PROFIL], legacySources: LEGACY });
 const aktivIds = plan.aktiv.map((p) => p.id);
+{
+  const { toCrawlerSource } = require("../lib/helmut/quellenarchitektur/source-mode");
+  const katalog = { ...PATHS.find(p => p.id === "rp-sozial-news"), publisher_id: "aggregator-google-news" };
+  const alt = "https://news.google.com/rss/search?q=andere-fachdefinition";
+  const legacy = { id: katalog.legacy_source_id, crawlMethod: "rss", type: "media", rssUrl: alt, maxItems: 8 };
+  const zuordnung = new Map([[legacy.id, legacy]]);
+  const quelle = toCrawlerSource(katalog, zuordnung);
+  check("Gemeinsame Google-Quelle plant die aktive Katalog-URL mit vorhandenen Abrufgrenzen",
+    quelle.url === katalog.url && quelle.rssUrl === katalog.url && quelle.rssUrls.length === 1 && quelle.rssUrls[0] === katalog.url
+    && quelle.maxItems === 8 && quelle.crawlMethod === "rss" && quelle.retrievalPathId === katalog.id);
+  check("Fremder Host oder Anbieter verändert den bisherigen Abrufweg nicht",
+    toCrawlerSource({ ...katalog, url: "https://fremd.invalid/rss/search?q=soziales" }, zuordnung).rssUrl === alt
+    && toCrawlerSource({ ...katalog, publisher_id: "fremd" }, zuordnung).rssUrl === alt);
+  check("Personensuchen und mehrteilige Abrufwege behalten ihre eigene Definition",
+    toCrawlerSource(katalog, new Map([[legacy.id, { ...legacy, type: "person" }]])).rssUrl === alt
+    && toCrawlerSource(katalog, new Map([[legacy.id, { ...legacy, rssUrls: [alt, katalog.url] }]])).rssUrl === alt);
+}
 check("2a Bundestag (always_on) im Plan", aktivIds.includes("rp-bundestag"));
 check("2b BMAS (bund-basis referenziert) im Plan", aktivIds.includes("rp-bmas"));
 check("2c Sozial-Suche (arbeit-und-soziales via Ausschuss) im Plan", aktivIds.includes("rp-sozial-news"));

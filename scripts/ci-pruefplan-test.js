@@ -135,6 +135,14 @@ check("Alte Datenbank-Mengenläufe bleiben im Workflow erhalten und bei jedem Er
     && step.includes("verarbeitungskern-claim-datenbank-test.js") && /^        if: steps\.plan\.outputs\.database == 'true'$/m.test(step)));
 });
 
+check("Quellenmigration läuft nach dem kleinen Queue-Test in der netzlosen Pflichtprüfung", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const schritt = workflow.split(/^      - name: /m).find(step => step.startsWith("Queue-Leases,"));
+  assert.match(schritt, /^        if: steps\.plan\.outputs\.database == 'true'$/m);
+  assert(schritt.includes("--network none"));
+  assert.match(schritt, /verarbeitungskern-claim-datenbank-test\.js\n +node scripts\/lokal\.js -- bash scripts\/quellenfaelligkeit-datenbank-test\.sh/);
+});
+
 check("GitHub Workflow Aenderungen bleiben konservativ", () => {
   for (const file of [".github/workflows/ci.yml", ".github/workflows/health-watch.yml"]) {
     const p = P.plan([file]);

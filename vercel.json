@@ -189,11 +189,11 @@
     },
     {
       "path": "/api/cron/lage-briefing",
-      "schedule": "0 5 * * *"
+      "schedule": "55 4 * * *"
     },
     {
       "path": "/api/cron/morning-briefing",
-      "schedule": "15 5 * * *"
+      "schedule": "10 5 * * *"
     }
   ],
   "ignoreCommand": "node scripts/vercel-ignore-build.js"

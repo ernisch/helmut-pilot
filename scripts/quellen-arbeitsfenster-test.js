@@ -241,7 +241,7 @@ async function main() {
       assert.equal(calls, 1); assert.equal(fenster.freigabeGueltig(receipt, w.zeit()), false);
     } finally { pipeline.arbeite = alt; }
   });
-  await check("Cronplan: acht Quellenfenster, zwei Briefings, mindestens15min Abstand", () => {
+  await check("Cronplan hält die acht Quellenslots und lässt Lage und Morgenausgabe vor ihrer Frist starten", () => {
     const termine = [];
     for (const cron of config.crons) {
       const [minute, stunde, ...rest] = cron.schedule.split(" "); assert.deepEqual(rest, ["*", "*", "*"]);
@@ -250,8 +250,13 @@ async function main() {
     termine.sort((a, b) => a.minute - b.minute);
     assert.deepEqual(termine.filter(t => t.path.startsWith("/api/cron/crawl")).map(t => t.minute), [180, 195, 210, 225, 240, 255, 270, 285]);
     assert.equal(termine.length, 10); assert.equal(config.functions["api/index.js"].maxDuration, fenster.FENSTER_SEKUNDEN);
-    for (let i = 1; i < termine.length; i++) assert.ok(termine[i].minute - termine[i - 1].minute >= 15);
-    assert.equal(termine[8].path, "/api/cron/lage-briefing"); assert.equal(termine[9].path, "/api/cron/morning-briefing");
+    assert.deepEqual(termine.slice(8), [{ path: "/api/cron/lage-briefing", minute: 295 },
+      { path: "/api/cron/morning-briefing", minute: 310 }]);
+    const letzterStart = Date.parse("2026-11-19T04:49:59.999Z");
+    assert.equal(fenster.slotFuerZeit(letzterStart), "04:45");
+    assert.equal(fenster.slotFuerZeit(letzterStart + 1), null);
+    assert(letzterStart + fenster.FENSTER_SEKUNDEN * 1000
+      < Date.parse("2026-11-19T00:00:00Z") + termine[8].minute * 60000);
   });
   await check("17Nov ab09:16 genau ein global gebuchtes Zusatzfenster ohne weitere Originalrechte", async () => {
     const w = operatorWelt(); let arbeiten = 0;

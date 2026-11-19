@@ -740,6 +740,7 @@ jobs:
           done
           docker exec "$HELMUT_TEST_CORE_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
           node scripts/lokal.js -- node scripts/verarbeitungskern-claim-datenbank-test.js
+          node scripts/lokal.js -- bash scripts/quellenfaelligkeit-datenbank-test.sh
 
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
         if: steps.plan.outputs.database == 'true'
