@@ -130,9 +130,9 @@ Drei sauber getrennte Ebenen (Details:
 **Quellenfälligkeiten nach [#1266](https://github.com/ernisch/helmut-pilot/issues/1266#issuecomment-7004523155).**
 Der vorhandene Manifest-Cursor setzt frühere Pläne im regulären Quellenfenster fort.
 Die Queue bewahrt die ursprüngliche Fälligkeit, der Manifestauftrag die fachliche
-Frist. `due_at` hält die Wiedervorlage. Amtliche Morgenarbeit hat Vorrang. Um
-03:30 und 04:30 UTC erhält danach eine fällige Altaufgabe Platz vor der übrigen
-Tagesarbeit, solange das vorhandene Abrufbudget reicht. Der service-only Claim
+Frist. `due_at` hält die Wiedervorlage. Die Morgenarbeit erhält amtlichen
+Vorrang. Um 03:30 und 04:30 UTC erhält je eine fällige Altaufgabe außerhalb
+der amtlichen Originalwege zuerst Platz im bestehenden Abrufanteil. Der service-only Claim
 verwendet die bestehenden Queue-Leases. Bei fehlendem RPC greift der bisherige
 Claim. Die Migration `20261119091317_quellenfaelligkeit_claim.sql` und ihr
 Rückweg sind für die gesonderte Production-Freigabe vorbereitet.
@@ -146,8 +146,8 @@ Originalreservierung. Bestätigte Google-Originaladressen können andere Abrufe
 im selben Slot wiederverwenden.
 
 Der Abdeckungsbericht vergleicht aktive Abrufwege und Paketbedarf mit Tagesmanifest,
-Queue und Ergebnisbelegen. Analyse, Lage und das zugehörige gespeicherte Morgenpaket
-werden separat geprüft. Abschluss ohne Ergebnisbeleg, abweichende Abrufdefinition,
+Queue und Ergebnisbelegen. Analyse, Lage und die belegte Morgenausgabe des
+Fälligkeitstages werden separat geprüft. Abschluss ohne Ergebnisbeleg, abweichende Abrufdefinition,
 Wiedervorlage und verspätete Ausgabe sind sichtbare Befunde. Die lesende
 Produktionsbilanz und die Kapazitätsrechnung stehen im [Betriebsbeleg](betrieb/quellenfaelligkeit-20261119.md).
 

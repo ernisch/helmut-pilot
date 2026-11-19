@@ -36,22 +36,37 @@ async function main() {
       }
       return [...rows.values()].filter(r => path.includes("id=eq." + r.id + "&"));
     } });
-    const job = { id, job_type: "source_fetch", tenant_id: null, payload: { quelle },
+    const job = { id, job_type: "source_fetch", tenant_id: null,
+      payload: { quelle: { id: "fixture-direkt", url: "https://quelle.example/feed", active: true } },
       first_due_at: due, max_attempts: 5, attempts: 1 };
     let fetches = 0, finishes = 0;
     const deps = { env, now: () => jetzt, klassen: {}, quellenbelegSpeicher: () => S,
-      handler: { source_fetch: async () => { fetches++; return { ok: true, abrufErgebnis: inhalt }; } },
+      handler: P.HANDLER, hardeningConfig: () => ({ enabled: false }),
+      crawlAllSources: async () => { fetches++; return { results: [{ ok: true, status: "empty", items: [] }] }; },
       finish: async () => (++finishes === 1 ? { verfuegbar: false } : { verfuegbar: true, uebernommen: true }) };
     A.equal((await P.fuehreAuftragAus({ auftrag: job, deps })).ausgang, "nicht-uebernommen");
     A.equal((await P.fuehreAuftragAus({ auftrag: { ...job, attempts: 2 }, deps })).ausgang, "erledigt");
     A.equal(fetches, 1); A.equal(rows.size, 1);
     await A.rejects(S.lesen({ id, tenantId: "fremd", firstDueAt: due, payload: job.payload }), /quellenbeleg-leseantwort/);
   });
+  await test("Späte Belegschreibantwort startet nach der Auftragsfrist keinen Rücklesezugriff", async () => {
+    let zeit = jetzt, lesungen = 0;
+    const S = Q.speicher({ storeId: "fixture", now: () => zeit, deadlineMs: jetzt + 1000,
+      request: async (_path, opts) => {
+        if (opts?.method === "POST") { zeit += 1000; throw Error("Schreibantwort verspätet"); }
+        lesungen++; return [];
+      } });
+    await A.rejects(S.sichern({ id, tenantId: null, firstDueAt: due, payload: { quelle } }, inhalt, jetzt), /quellenbeleg-zeitbudget/);
+    A.equal(lesungen, 0);
+  });
   await test("Historisches Jobpayload allein berechtigt weder Abruf noch Übertrag auf ein anderes Profil", async () => {
-    const job = { id, tenantId: profile.id, firstDueAt: "2026-11-18T03:00:00Z",
-      payload: { quelle: { id: "fixture-aktiv", url: "https://daten.example/feed", crawlMethod: "rss" } } };
+    const job = { id: "fixture-historisch", tenantId: profile.id, firstDueAt: "2026-11-18T03:00:00Z",
+      payload: { quelle: { id: "fixture-aktiv", url: "https://daten.example/alter-fallback",
+        rssUrl: "https://daten.example/feed", crawlMethod: "rss" } } };
     for (const variante of [
       { leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...job, jobType: "source_fetch", tenantId: "fremd" }] }) },
+      { leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...job, jobType: "source_fetch",
+        payload: { quelle: { ...job.payload.quelle, url: "https://daten.example/neuer-fallback" } } }] }) },
       { leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...job, jobType: "source_fetch" }] }),
         getActiveProfile: async () => ({ ...profile, profileActive: false }) }
     ]) {
@@ -97,7 +112,8 @@ async function main() {
     const binding = { id, tenantId: null, firstDueAt: due, payload: job.payload };
     const speicher = Q.speicher({ storeId: "fixture", request: async (_path, o) => [JSON.parse(o.body)] });
     const beleg = await speicher.sichern(binding, inhalt, jetzt);
-    const planAuftrag = { jobType: "source_fetch", idempotencyKey: "pflicht", tenantId: null, payload: job.payload };
+    const planAuftrag = { jobType: "source_fetch", idempotencyKey: "pflicht", tenantId: null,
+      freshnessWindow: job.freshness_window, payload: job.payload };
     const catalog = { retrievalPaths: [{ id: quelle.retrievalPathId, legacy_source_id: quelle.id,
       url: quelle.url, method: quelle.crawlMethod, activation_mode: "always_on", status: "healthy" },
     { id: "rp-fehlt", url: "https://amt.example/feed", method: "rss", activation_mode: "always_on", status: "healthy" }],
@@ -108,15 +124,20 @@ async function main() {
         { jobType: "source_fetch", idempotencyKey: "verloren", payload: { art: "geteilt" } }] },
       jobs: [job], analyseJobs: [], belege: new Map([[id, beleg]]) };
     const lage = { user_id: profile.id, payload: { amtlicheQuellenbelege: [proof] }, generated_at: "2026-11-19T04:58:00Z" };
-    const ausgabe = { user_id: profile.id, payload: { lageAnsicht: { parlamentsKontext: { belege: [proof] } } },
+    const ausgabe = { user_id: profile.id, payload: { briefing: { currentHelmutState: { tagesAnlass: { belege: [proof] } } } },
       generated_at: "2026-11-19T05:14:00Z" };
-    function abgleich(morgen) {
-      return C.abgleichen({ ...basis, ausgaben: new Map([[profile.id, morgen]]), lageAusgaben: new Map([[profile.id, lage]]) });
+    const key = `2026-11-19|${profile.id}`;
+    function abgleich(morgen, override) {
+      return C.abgleichen({ ...basis, ...override, ausgaben: new Map([[key, morgen]]), lageAusgaben: new Map([[key, lage]]) });
     }
     const richtig = abgleich(ausgabe);
     A(richtig.luecken.some(l => l.wegId === "rp-fehlt" && l.grund === "abrufweg_nicht_eingeplant"));
     A(richtig.luecken.some(l => l.grund === "queue_eintrag_fehlt"));
     A.equal(richtig.faelligkeiten[0].produkt, "mandatspaket_belegt");
+    A.equal(abgleich({ ...ausgabe, payload: { lageAnsicht: { parlamentsKontext: { belege: [proof] } } } }).faelligkeiten[0].grund,
+      "zuordnung_nicht_belegt");
+    A.equal(abgleich(ausgabe, { jetztMs: Date.parse("2026-11-20T06:00:00Z"), manifest: null }).faelligkeiten[0].grund, null);
+    A(abgleich(ausgabe, { jobs: [{ ...job, tenant_id: "fremd" }] }).luecken.some(l => l.grund === "queue_auftrag_abweichend"));
     A.equal(abgleich({ ...ausgabe, user_id: "fremd" }).faelligkeiten[0].grund, "zuordnung_nicht_belegt");
     A.equal(abgleich({ ...ausgabe, generated_at: "2026-11-19T05:15:01Z" }).faelligkeiten[0].grund, "morgenpaket_verspaetet");
     basis.belege.clear();

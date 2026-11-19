@@ -89,6 +89,11 @@ den atomaren Abschluss und das Zurückrollen. Gezielt geprüft sind außerdem
 der reguläre Tageswechsel, Rechte, PDF- und ICS-Teilfortschritt, einmalige
 Ergebnisbelege, der Katalogabgleich und die Mandatsausgabe.
 
+Die Ausgabeprüfung liest vorhandene, mandatsgefilterte Pakete für den
+Fälligkeitstag. Ein amtlicher Beleg in der Lage und derselbe Beleg in der
+gebundenen Morgenausgabe sind getrennte Bedingungen. Die ursprüngliche
+Bestätigung bleibt auch beim Tageswechsel maßgeblich.
+
 Die vorhandene Pflicht-CI wählt bei der SQL- und Kernänderung den vollen
 Datenbankpfad einschließlich der 500er-Suiten. Die gezielte Verifizierung
 läuft lokal. Eine PR-Eröffnung würde die Vollprüfung automatisch auslösen.
@@ -101,6 +106,14 @@ einer freigegebenen Anwendung prüft Funktionskörper, Rechte und Migrationsvers
 Das Rückweg-SQL entfernt den Einsprung. Bereits bestätigte Manifeste,
 Teilstände und Ergebnisse bleiben bei einem Rückweg erhalten. Änderungen an
 Produktionskatalog und Cron benötigen ihre jeweils konkrete Freigabe.
+
+Für eine getrennte Terminfreigabe kommen 04:55 UTC für die Lage und 05:10 UTC
+für die Morgenausgabe in Betracht. Das letzte Quellenfenster hat bei später
+regulärer Zustellung bis 04:54 UTC Zeit. Die beiden neuen Zeiten geben den
+Ausgabepfaden je fünf Minuten bis zur Frist. Vor einer Anwendung sind die
+gemessenen Laufzeitgrenzen und die Überschneidung mit dem Quellenfenster
+gegen den zu integrierenden Stand abzugleichen. Der Rückweg wären die
+vorhandenen Termine 05:00 und 05:15 UTC.
 
 Die Abnahme erfordert zusammenhängende lesende Belege aus mehreren regulären
 Tageswechseln und einem Archivwechsel. Der vorbereitete Stand liefert keine

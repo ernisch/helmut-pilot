@@ -18,10 +18,10 @@ begin
       ('source_fetch','alt','2026-11-18T00Z',100,v_tag,v_tag - interval '1 day'),
       ('source_fetch','vertagt','2026-11-18T00Z',35,now() + interval '1 minute',v_tag - interval '1 day'),
       ('document_understanding','analyse','2026-11-19T00Z',0,v_tag,v_tag);
-  assert (select idempotency_key from public.helmut_claim_quellenfaelligkeit('a',60000,true)) = 'offiziell';
   select id, first_due_at into strict v_auftrag, v_erster
     from public.helmut_claim_quellenfaelligkeit('b',60000,true) where idempotency_key = 'alt';
   assert v_erster = v_tag - interval '1 day';
+  assert (select idempotency_key from public.helmut_claim_quellenfaelligkeit('a',60000,false)) = 'offiziell';
   assert (select idempotency_key from public.helmut_claim_quellenfaelligkeit('c',60000,false)) = 'neu';
   assert (select count(*) from public.helmut_claim_quellenfaelligkeit('d',60000,true)) = 0;
   update public.helmut_jobs set lease_expires_at=now()-interval '1 second' where id=v_auftrag;
