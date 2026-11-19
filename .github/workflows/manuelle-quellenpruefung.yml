@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       quelle:
-        description: Einzelne Quelle oder Adapter mit Offline-Prüfdaten
+        description: Einzelner Adapter oder produktionsnaher Quellenprüfstand
         required: true
         type: choice
         default: bundestag-kalender
@@ -14,6 +14,7 @@ on:
           - bundestag-pdf
           - destatis-rss
           - dip-quellfelder
+          - produktionsnah
       mandat:
         description: Optionales synthetisches Mandat für bundestag-kalender
         required: true
@@ -35,7 +36,7 @@ jobs:
   offline:
     if: github.repository == 'ernisch/helmut-pilot' && github.ref_type == 'branch'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: ${{ inputs.quelle == 'produktionsnah' && 10 || 5 }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -47,6 +48,7 @@ jobs:
       - name: Gepinnte Abhängigkeiten bereitstellen
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Genau eine Offline-Quellenprüfung ausführen
+        if: inputs.quelle != 'produktionsnah'
         env:
           PRUEFQUELLE: ${{ inputs.quelle }}
           PRUEFMANDAT: ${{ inputs.mandat }}
@@ -64,10 +66,121 @@ jobs:
               GITHUB_RUN_ATTEMPT="$4" GITHUB_SHA="$5" \
               node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$6" "$7"
           ' offline "$(id -un)" "$PATH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$PRUEFQUELLE" "$PRUEFMANDAT"
+      - name: PostgreSQL, pgvector und PostgREST aus der bestehenden CI übernehmen
+        if: inputs.quelle == 'produktionsnah' && inputs.mandat == 'ohne'
+        uses: ./.github/actions/w15-existing-tools
+        with:
+          native-vector-diagnostic: 'true'
+      - name: Kontrollierte Datenbankuhr vorbereiten
+        if: inputs.quelle == 'produktionsnah'
+        timeout-minutes: 4
+        env:
+          PRUEFMANDAT: ${{ inputs.mandat }}
+        run: |
+          set -euo pipefail
+          test "$PRUEFMANDAT" = ohne
+          tools="$RUNNER_TEMP/quellenpruefstand-werkzeuge"
+          mkdir -p "$tools/db-uhr" "$RUNNER_TEMP/quellenpruefstand"
+          chmod 0755 "$tools/db-uhr"
+          if ! command -v psql >/dev/null; then
+            sudo -n apt-get update -qq
+            sudo -n apt-get install -y -qq --no-install-recommends postgresql-client
+          fi
+          # Bookworm-Paket passend zur glibc des PostgreSQL-Containers.
+          curl -fsSL --max-time 30 -o "$tools/libfaketime.deb" \
+            https://deb.debian.org/debian/pool/main/f/faketime/libfaketime_0.9.10-2.1_amd64.deb
+          echo "b09481e7690680966005330c3f907bba4b5eefc35e1faaea4783cc55655d1150  $tools/libfaketime.deb" | sha256sum -c -
+          dpkg-deb -x "$tools/libfaketime.deb" "$tools"
+          test "$("$W15_POSTGREST_SOURCE" --version)" = 'PostgREST 12.2.3'
+      - name: Produktionsnahe Quellenfenster mit kontrollierter Datenbankuhr ausführen
+        if: inputs.quelle == 'produktionsnah'
+        timeout-minutes: 5
+        env:
+          PRUEFQUELLE: ${{ inputs.quelle }}
+          PRUEFMANDAT: ${{ inputs.mandat }}
+        run: |
+          set -euo pipefail
+          docker_local=(docker --host=unix:///var/run/docker.sock)
+          container="helmut-quellenpruefstand-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          tools="$RUNNER_TEMP/quellenpruefstand-werkzeuge"
+          clock="$tools/db-uhr/zeit"
+          faketime="$tools/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1"
+          test -f "$faketime"
+          printf '%s\n' '2026-01-01 00:00:00' > "$clock"
+          chmod 0644 "$clock"
+          # Init und Server laufen unter derselben UID wie libfaketime.
+          "${docker_local[@]}" run -d --pull never --network none --user postgres --name "$container" \
+            --mount "type=bind,src=$faketime,dst=/libfaketime.so.1,readonly" \
+            --mount "type=bind,src=$tools/db-uhr,dst=/helmut-uhr,readonly" \
+            -e POSTGRES_HOST_AUTH_METHOD=trust -e TZ=UTC -e LD_PRELOAD=/libfaketime.so.1 \
+            -e FAKETIME_TIMESTAMP_FILE=/helmut-uhr/zeit -e FAKETIME_NO_CACHE=1 \
+            -e FAKETIME_DONT_FAKE_MONOTONIC=1 -e FAKETIME_DONT_FAKE_STAT=1 "$W15_IMAGE_ID" \
+            postgres -c max_connections=60 -c superuser_reserved_connections=3
+          trap '"${docker_local[@]}" rm -fv "$container" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if [[ "$("${docker_local[@]}" inspect --format '{{.State.Running}}' "$container")" != true ]]; then
+              "${docker_local[@]}" logs --tail 40 "$container"
+              exit 1
+            fi
+            if "${docker_local[@]}" exec "$container" pg_isready -q -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          "${docker_local[@]}" exec "$container" pg_isready -h 127.0.0.1 -U postgres
+          pg_sql() {
+            "${docker_local[@]}" exec "$container" psql -X -h 127.0.0.1 -U postgres \
+              -d postgres -At -v ON_ERROR_STOP=1 -c "$1"
+          }
+          test "$(pg_sql 'show server_version_num')" = 170006
+          test "$(pg_sql 'show max_connections')" = 60
+          test "$(pg_sql 'show superuser_reserved_connections')" = 3
+          test "$(pg_sql 'select extract(epoch from now())::bigint')" = 1767225600
+          printf '%s\n' '2026-01-02 00:00:00' > "$clock.tmp"
+          chmod 0644 "$clock.tmp"
+          mv -- "$clock.tmp" "$clock"
+          test "$(pg_sql 'select extract(epoch from now())::bigint')" = 1767312000
+          echo 'PostgreSQL 17.6 bestätigt beide kontrollierten UTC-Tage und 60 Verbindungen (3 reserviert).'
+          test "$("${docker_local[@]}" inspect --format '{{.HostConfig.NetworkMode}}' "$container")" = none
+          pg_pid="$("${docker_local[@]}" inspect --format '{{.State.Pid}}' "$container")"
+          test "$pg_pid" -gt 1
+          # GitHub-Runner können Docker als Primärgruppe haben.
+          sudo -n -- nsenter --target "$pg_pid" --net -- \
+            setpriv --reuid "$(id -u)" --regid "$(id -g nobody)" --clear-groups --no-new-privs \
+            env -i PATH="$PATH" TZ=UTC GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" GITHUB_SHA="$GITHUB_SHA" \
+            HELMUT_TEST_PG_HOST=127.0.0.1 HELMUT_TEST_PG_PORT=5432 HELMUT_TEST_PG_USER=postgres \
+            HELMUT_TEST_POSTGREST_BIN="$W15_POSTGREST_SOURCE" HELMUT_QUELLEN_DB_UHR="$clock" \
+            HELMUT_QUELLEN_PRUEFBERICHT="$RUNNER_TEMP/quellenpruefstand/bericht" bash -c '
+              set -euo pipefail
+              test "$(ip -o link show | wc -l)" -eq 1
+              test -z "$(ip route show)"
+              test -z "$(ip -6 route show default)"
+              test ! -w /var/run/docker.sock
+              echo "Isolation bestätigt: nur Loopback, keine externe Route, kein Dockerzugriff"
+              exec node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$1" "$2"
+            ' offline "$PRUEFQUELLE" "$PRUEFMANDAT"
+      - name: Prüfbericht sichern
+        if: ${{ always() && inputs.quelle == 'produktionsnah' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: quellenpruefstand-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/quellenpruefstand/bericht.json
+            ${{ runner.temp }}/quellenpruefstand/bericht.md
+          if-no-files-found: error
+          retention-days: 30
       - name: Ausführungsstatus dokumentieren
         if: always()
         env:
           PRUEFSTATUS: ${{ job.status }}
+          PRUEFQUELLE: ${{ inputs.quelle }}
         run: |
           printf 'Entwicklungsprüfung (offline) · Run %s/%s · Commit %s · %s\n' \
             "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$PRUEFSTATUS" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PRUEFQUELLE" = produktionsnah ]]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            if [[ -f "$RUNNER_TEMP/quellenpruefstand/bericht.md" ]]; then
+              cat "$RUNNER_TEMP/quellenpruefstand/bericht.md" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo 'Prüfbericht fehlt. Die Abnahme ist offen.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi

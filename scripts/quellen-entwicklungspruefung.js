@@ -9,7 +9,8 @@ const auswahl = Object.freeze({
   "bundestag-kalender": __filename,
   "bundestag-pdf": "quellen-bundestag-termine-pdf-test.js",
   "destatis-rss": "quellen-destatis-rss-stand-test.js",
-  "dip-quellfelder": "dip-quellfelder-test.js"
+  "dip-quellfelder": "dip-quellfelder-test.js",
+  produktionsnah: "quellen-pruefstand.js"
 });
 
 // Das Dokument enthält frei erfundene, für den Parser passende Kalenderdaten.
@@ -96,6 +97,12 @@ function start(args) {
   if (process.env.HELMUT_LOKALER_SCHUTZ !== "aktiv" || schutz.simulierteUmgebung() || schutz.pruefe().length) {
     console.error("quellen-entwicklungspruefung: lokaler-schutz-fehlt");
     return 3;
+  }
+  if (quelle === "produktionsnah") {
+    const result = spawnSync(process.execPath, [path.join(__dirname, auswahl[quelle])], {
+      stdio: "inherit", timeout: 240000, killSignal: "SIGKILL"
+    });
+    return result.status === 0 ? 0 : 1;
   }
   const { GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT, GITHUB_SHA } = process.env;
   const meta = {
