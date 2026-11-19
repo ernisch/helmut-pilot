@@ -12,6 +12,7 @@ const VERLAG = "https://nachrichten.fixture.invalid";
 const AZURE = "https://helmut-fixture.openai.azure.com";
 const DIP = "https://search.dip.bundestag.de/api/v1";
 const DIP_TITEL = "Antrag zur Beratung über Arbeitsmarktpolitik";
+const DIP_RESSORT = "Bundesministerium für Arbeit und Soziales";
 const mandat = Object.freeze({
   id: "synthetik-quellenpruefstand", fullName: "Mara Beispiel", name: "Mara Beispiel",
   party: "Fraktionslos", parliamentType: "Bundestag", constituency: "Beispielregion",
@@ -128,16 +129,39 @@ function termine() {
 
 function modellAntwort(schema, eingabe) {
   const basis = require("./z3-plattform").baueSchemaAntwort(schema);
+  if (typeof eingabe !== "string") return basis;
+  const zeilen = eingabe.split("\n");
+  const json = text => { try { return JSON.parse(text); } catch { return null; } };
+  const aussagen = [
+    { text: "Der Antrag sieht eine Beratung über Arbeitsmarktpolitik vor.", belegfeld: "titel" },
+    { text: "DIP führt das " + DIP_RESSORT + " als Ressort des Antrags auf.", belegfeld: "auszug" }
+  ];
+  const mandatstext = "Arbeit und Soziales: Der Antrag betrifft die Beratung zur Arbeitsmarktpolitik.";
+  const amtlich = q => q?.titel === DIP_TITEL && q.auszug?.includes(DIP_RESSORT) && q.quelle === "DIP Bundestag";
+  if (schema?.properties?.paragraphs) {
+    const quellen = zeilen.filter(z => z.startsWith("[vg-")).map(z => json(z.slice(z.indexOf("] ") + 2)));
+    const quelle = quellen.find(v => amtlich(v?.quellenbelege?.[0]));
+    if (!quelle) return basis;
+    return { paragraphs: aussagen.map(({ text }) => ({ text, vorgang_ids: [quelle.vorgang_id],
+      quelle_id: quelle.quelle_id, auswahlbegruendung: mandatstext,
+      mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } })) };
+  }
+  if (schema?.properties?.pruefungen && schema.properties.vergleiche) {
+    const aus = prefix => json(zeilen.find(z => z.startsWith(prefix))?.slice(prefix.length));
+    const quellen = aus("QUELLEN: "), absaetze = aus("ABSAETZE: ");
+    const quelle = quellen?.flatMap(v => v.quellenbelege).find(amtlich);
+    if (!quelle || absaetze?.length !== 2 || !absaetze.every((p, i) =>
+      p.quelle_id === quelle.quelle_id && p.text === aussagen[i].text)) return basis;
+    return { pruefungen: aussagen.map(({ belegfeld }, absatz) => ({ absatz, quelle_id: quelle.quelle_id,
+      belegfeld, pruefbegruendung: "Die jeweilige Angabe steht im DIP-Beleg.", vollstaendig_belegt: true,
+      themenrein: true, mandatsbegruendung: mandatstext, profilbezug: true, textart: "konkreter_sachverhalt" })),
+      vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
+        pruefbegruendung: "Beratungsgegenstand und gelistetes Ressort sind zwei getrennte Angaben." }] };
+  }
   // Nur das vorhandene synthetische DIP-Dokument besitzt eine fachlich
   // passende Fixture-Antwort. Die übrigen Modell- und Quellenfälle bleiben.
-  if (!schema?.properties?.was_ist_passiert || typeof eingabe !== "string") return basis;
-  const quellen = eingabe.split("\n").flatMap(zeile => {
-    if (!zeile.startsWith("{")) return [];
-    try {
-      const quelle = JSON.parse(zeile);
-      return quelle.quelle_id && quelle.titel ? [quelle] : [];
-    } catch { return []; }
-  });
+  if (!schema?.properties?.was_ist_passiert) return basis;
+  const quellen = zeilen.filter(z => z.startsWith("{")).map(json).filter(q => q?.quelle_id && q.titel);
   if (quellen.length !== 1 || quellen[0].titel !== DIP_TITEL
     || quellen[0].herausgeber !== "DIP Bundestag") return basis;
   return {
@@ -145,9 +169,9 @@ function modellAntwort(schema, eingabe) {
     headline: DIP_TITEL, display_title: DIP_TITEL, confidence_score: 80, source_document_count: 1,
     status: "neu", zeitdruck: "keiner", decision_level: "bund", event_type: "antrag",
     was_ist_passiert: DIP_TITEL + ".", warum_wichtig: "Der Antrag betrifft die Arbeitsmarktpolitik.",
-    wer_ist_betroffen: "Das Bundesministerium für Arbeit und Soziales ist als Ressort gelistet.",
+    wer_ist_betroffen: "Das " + DIP_RESSORT + " ist als Ressort gelistet.",
     handlungsempfehlung: "Die weitere Beratung zur Arbeitsmarktpolitik beobachten.",
-    ministerien: ["Bundesministerium für Arbeit und Soziales"]
+    ministerien: [DIP_RESSORT]
   };
 }
 
@@ -181,7 +205,7 @@ function antworten(uhr) {
         id: 990001, titel: DIP_TITEL, drucksachetyp: "Antrag",
         dokumentart: "Drucksache", datum: "2026-11-19", wahlperiode: 21,
         urheber: [{ titel: "Bundesregierung" }],
-        ressort: [{ titel: "Bundesministerium für Arbeit und Soziales" }],
+        ressort: [{ titel: DIP_RESSORT }],
         fundstelle: { pdf_url: "https://dserver.bundestag.de/btd/21/099/2109900.pdf" }
       }] }) };
     if (url.origin === GOOGLE && url.pathname === "/rss/search") {

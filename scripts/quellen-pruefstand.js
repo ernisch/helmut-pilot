@@ -314,7 +314,8 @@ async function main(schreibeZwischenstand) {
           simulierteMs: uhr.now() - soll * 1000,
           ...(istLage ? { lage: { gespeichert: r.data.prewarmed ?? 0, vollstaendig: r.data.vollstaendig === true,
             ergebnisse: (r.data.results || []).map(({ available, reason, diagnose }) => ({ available, reason, diagnose })) } } : {}),
-          ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null } : {}) });
+          ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null,
+            morgenergebnisse: (r.data.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
       uhr.setze(Date.parse(`${tag}T05:16:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);
