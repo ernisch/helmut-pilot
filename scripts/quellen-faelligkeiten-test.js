@@ -304,6 +304,32 @@ async function main() {
       analyseJobs: [...basis.analyseJobs, { ...analyseJob, id: weitererJob, payload: { quellenstaende: { [weiteres]: stand } } }] });
     A.equal(luecke.faelligkeiten[0].grund, "zuordnung_nicht_belegt");
   });
+  await test("Eine analysierte amtliche Pflichtquelle belegt auch die Lage erst nach Analyseabschluss", async () => {
+    const rohId = "rd-" + "c".repeat(64), stand = "d".repeat(64);
+    const jobId = "00000000-0000-4000-8000-000000000004";
+    const job = { id, idempotency_key: "dip-pflicht", tenant_id: null, first_due_at: due, due_at: due,
+      freshness_window: "2026-11-19T00Z", priority: 35, status: "erledigt", finished_at: "2026-11-19T04:33:00Z",
+      payload: { art: "dip-geteilt", quelle: { id: "dip", retrievalPathId: "rp-dip", crawlMethod: "dip" } } };
+    const qs = Q.speicher({ storeId: "fixture", request: async (_path, o) => [JSON.parse(o.body)] });
+    const beleg = await qs.sichern({ id, tenantId: null, firstDueAt: due, payload: job.payload },
+      { art: "rohfassungen", rohIds: [rohId], analyse: [{ rohId, stand, jobId }] },
+      Date.parse("2026-11-19T04:31:00Z"));
+    const key = `2026-11-19|${profile.id}`;
+    const sichtbarerBezug = { documentId: rohId };
+    const paket = { user_id: profile.id, generated_at: "2026-11-19T05:10:00Z",
+      payload: { briefing: { currentHelmutState: { primaryItem: sichtbarerBezug } } } };
+    const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
+      manifest: null, jobs: [job], belege: new Map([[id, beleg]]), ausgaben: new Map([[key, paket]]),
+      analyseJobs: [{ id: jobId, status: "erledigt", finished_at: "2026-11-19T04:40:00Z",
+        payload: { quellenstaende: { [rohId]: stand } } }], jetztMs: Date.parse("2026-11-19T06:00:00Z"), env };
+    function pruefeLage(generated_at) {
+      return C.abgleichen({ ...basis, lageAusgaben: new Map([[key, { user_id: profile.id, generated_at,
+        payload: { paragraphs: [sichtbarerBezug] } }]]) }).faelligkeiten[0];
+    }
+    A.equal(pruefeLage("2026-11-19T04:39:59Z").grund, "lagefrist_nicht_belegt");
+    A.equal(pruefeLage("2026-11-19T04:40:01Z").grund, null);
+    A.equal(pruefeLage("2026-11-19T05:00:01Z").grund, "lage_verspaetet");
+  });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {
     const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";
     const auftrag = { jobType: "source_fetch", idempotencyKey: "archiv", tenantId: profile.id,
