@@ -165,7 +165,7 @@ async function main() {
     A.equal(r.faelligkeiten[0].grund, "frist_verfehlt");
     A.equal(r.faelligkeiten[0].verspaetet, true);
   });
-  await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", () => {
+  await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {
     const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";
     const auftrag = { jobType: "source_fetch", idempotencyKey: "archiv", tenantId: profile.id,
       priority: 300, freshnessWindow: start, dueAt: due,
@@ -177,14 +177,55 @@ async function main() {
     const plan = a => ({ cursor: 1, auftraege: [a] });
     const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
       belege: new Map(), analyseJobs: [], ausgaben: new Map(), env };
-    const pruefe = (j, manifest, archivVorgaenger, zeit) => C.abgleichen({ ...basis,
-      jobs: [j], manifest, archivVorgaenger, jetztMs: Date.parse(zeit) }).faelligkeiten[0];
-    A.equal(pruefe({ ...job, first_due_at: "2026-11-19T00:01:00Z" }, plan(erstmals), [], due).grund, "queue_auftrag_abweichend");
-    A.equal(pruefe(job, plan(heute), [], morgen).grund, "queue_auftrag_abweichend");
-    const original = pruefe(job, plan(heute), [plan(erstmals)], morgen);
+    const pruefe = (j, manifest, archivUrspruenge, zeit) => C.abgleichen({ ...basis,
+      jobs: [j], manifest, archivUrspruenge, jetztMs: Date.parse(zeit) }).faelligkeiten[0];
+    A.equal(pruefe({ ...job, first_due_at: "2026-11-19T00:01:00Z" }, plan(erstmals), new Map(), due).grund,
+      "queue_auftrag_abweichend");
+    A.equal(pruefe(job, plan(heute), new Map(), morgen).grund, "queue_auftrag_abweichend");
+    const original = pruefe(job, plan(heute), new Map([[auftrag.idempotencyKey, erstmals]]), morgen);
     A.equal(original.grund, "abruf_ausstehend");
     A.equal(original.urspruenglichFaelligAm, "2026-11-19T03:00:00.000Z");
     A.equal(original.frist, "2026-11-26T00:00:00.000Z");
+
+    // Beim Tageswechsel fehlt die Archivposition noch in der Queue. Das neue
+    // Manifest kann zuerst eintreffen, ohne die ursprüngliche Fälligkeit zu verdrängen.
+    const alterTag = "2026-11-19", neuerTag = "2026-11-20";
+    const altPlan = { tag: alterTag, cursor: 0, auftraege: [erstmals], zustand: "offen" };
+    const plaene = new Map([[alterTag, altPlan]]), queue = new Map();
+    const journal = {
+      lesen: async tag => plaene.get(tag) || null,
+      offene: async ({ bisTag }) => ({ plaene: [...plaene.values()].filter(p => p.tag <= bisTag && p.zustand === "offen") }),
+      sichereManifest: async (tag, daten) => {
+        const plan = { ...daten, tag, cursor: 0, zustand: "offen" };
+        plaene.set(tag, plan); return plan;
+      },
+      bewegeCursor: async (tag, plan, cursor) => {
+        const naechster = { ...plan, cursor, zustand: cursor === plan.auftraege.length ? "fertig" : "offen" };
+        plaene.set(tag, naechster); return naechster;
+      }
+    };
+    const deps = { planungsrest: journal, listFullProfiles: async () => [],
+      sourceDemand: { kompiliereQuellenbedarf: async () => ({ auftraege: [heute], statistik: {} }),
+        planeMandatsarbeit: () => ({ auftraege: [], fenster: `${neuerTag}T00Z` }) },
+      enqueue: async j => {
+        const neu = !queue.has(j.idempotencyKey);
+        if (neu) queue.set(j.idempotencyKey, j);
+        return { verfuegbar: true, neu };
+      } };
+    const folgetag = { env: { ...env, DIP_API_KEY: "" }, deps, jetztMs: Date.parse(morgen), darfNeuPlanen: true };
+    A.equal((await P.setzePlanungFort(folgetag)).ok, true);
+    A.deepEqual(queue.get(auftrag.idempotencyKey), erstmals);
+    A.equal(plaene.get(alterTag).cursor, 0);
+    A.equal(plaene.get(neuerTag).auftraege[0].dueAt, morgen);
+    A.equal((await P.setzePlanungFort(folgetag)).altrest.vorhanden, 1);
+    A.equal(plaene.get(alterTag).zustand, "fertig");
+    A.equal(queue.size, 1);
+    const wechsel = "2026-11-26";
+    const naherPlan = { tag: wechsel, auftraege: [{ ...heute, idempotencyKey: "archiv-neu",
+      freshnessWindow: `${wechsel}T00Z`, dueAt: `${wechsel}T03:00:00Z` }] };
+    const urspruenge = await require("../lib/helmut/quellen-planungsrest").leseArchivUrspruenge(naherPlan,
+      { lesen: async () => A.fail("Ein neues Archivfenster braucht keinen alten Manifestauftrag") });
+    A.equal(urspruenge.size, 0);
   });
   console.log(`${n}/${n} Fälligkeitsgruppen bestanden`);
 }
