@@ -160,7 +160,11 @@ function main() {
           + "|/api/cron/understanding-rueckstand@30 11 * * *|/api/cron/understanding-rueckstand@30 17 * * *";
     })());
   check("6.7 Kein Cron ruft die OP-30-Maschinerie unmittelbar auf",
-    !/jobqueue|scalable|worker/i.test(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8")));
+    (() => {
+      const { crons } = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      return Array.isArray(crons) && crons.every(c =>
+        typeof c?.path === "string" && !/jobqueue|scalable|worker/i.test(c.path));
+    })());
   check("6.8 Der zweite Morgenslot bricht bei ausgeschalteten Flags VOR jedem Schreibzugriff ab",
     (() => {
       const i = serverSrc.indexOf('url.pathname === "/api/cron/lage-briefing-nachlauf"');
