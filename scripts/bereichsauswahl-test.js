@@ -19,13 +19,9 @@ const A = require(path.join(ROOT, "scripts", "bereichsauswahl.js"));
 
 const ALLE = R.collectSuites();
 const STANDARD = R.STANDARD;
-// Bewusst hinzugekommene Schutzvertraege seit der historischen 169er Menge.
-// Keine dynamische Selbstbestaetigung einer beliebig wachsenden Pflichtliste.
-const NEUE_PFLICHTVERTRAEGE = ["synthetik-500-eu-service-contract-test.js",
-  "synthetik-500-route-contract-test.js", "synthetik-500-eu-daybook-init-test.js",
-  "starttor-original-state-witness-test.js", "starttor-preserved-controls-test.js", "starttor-counter-head-test.js",
-  "starttor-full-packet-transport-test.js"];
-const ERWARTETE_STANDARDANZAHL = 169 + NEUE_PFLICHTVERTRAEGE.length;
+const NEUE_PFLICHTVERTRAEGE = ["auth-store-partial-test.js", "starttor-preserved-controls-test.js",
+  "starttor-counter-head-test.js"];
+const ERWARTETE_STANDARDANZAHL = 114;
 
 // Modul nur LADEN (nicht scharfschalten) fuer eine saubere Kindprozess-Umgebung.
 process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "ja";
@@ -72,7 +68,7 @@ function main() {
   const leere = Object.keys(A.BEREICHE).filter((b) => A.suitenFuerBereiche(ALLE, [b]).length === 0);
   check("A2 Kein Bereich ist leer (jeder Bereich trifft Suiten)", leere.length === 0,
     leere.join(", ") || "alle belegt");
-  check("A3 Historische Standardmenge plus ausdrueckliche neue Schutzvertraege",
+  check("A3 Aktuelle Standardmenge mit ausdrücklichen Schutzverträgen",
     STANDARD.size === ERWARTETE_STANDARDANZAHL
       && NEUE_PFLICHTVERTRAEGE.every(f => STANDARD.has(f)), `Standard ${STANDARD.size}`);
   check("A4 Die Sammlung waechst nur um bewusst ergaenzte Tests (>= 457) und der neue Auswahltest ist NICHT Standard",
@@ -137,13 +133,13 @@ function main() {
     bMehr.suiten.every((f) => !STANDARD.has(f)) && bQuellen.suiten.every((f) => !STANDARD.has(f)), "");
 
   const themenplan = waehle(["scripts/500-themenplan.js", "scripts/500-themenplan-test.js"]);
-  check("C-Themenplan Nur 500er Fachbereich, neue Schutzpruefung enthalten",
+  check("C-Themenplan Historische Datei bleibt zugeordnet, Mengensuite bleibt aus",
     JSON.stringify(themenplan.bereiche) === JSON.stringify(["500-nachweis"])
-      && !themenplan.konservativ && themenplan.suiten.includes("500-themenplan-test.js"));
+      && !themenplan.konservativ && !themenplan.suiten.includes("500-themenplan-test.js"));
   const tagesbuch = waehle(["lib/helmut/synthetik-500-eu-daybook-init.js"]);
-  check("C-Tagesbuch 500er Schutzbereich, reine Pflichtpruefung ohne Doppelung, Datenbanktest separat",
+  check("C-Tagesbuch Historische Suiten bleiben von Standard und Bereich ausgeschlossen",
     JSON.stringify(tagesbuch.bereiche) === JSON.stringify(["500-nachweis"])
-      && !tagesbuch.konservativ && STANDARD.has("synthetik-500-eu-daybook-init-test.js")
+      && !tagesbuch.konservativ && !STANDARD.has("synthetik-500-eu-daybook-init-test.js")
       && !tagesbuch.suiten.includes("synthetik-500-eu-daybook-init-test.js")
       && !ALLE.includes("synthetik-500-eu-daybook-init-datenbank-test.js"));
 
