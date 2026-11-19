@@ -133,8 +133,9 @@ Gezielte lokale Befehle jeweils mit dem folgenden Schutzstarter verwenden:
     `scripts/bereichsauswahl.js` (ausgewertet im CI-Schritt „Bereichs-Regression“ und über
     `--aendert`/`--bereich`). Eine fachlich relevante, nicht zuordenbare Datei wird
     **nicht** still übersprungen, sondern erzwingt die konservative Sammelmenge.
-  - **Extended (bewusst):** die vollständige Regression über `--extended` bzw.
-    `npm run test:offline:extended`.
+  - **Extended (bewusst):** alle aktiven Offline-Suiten über `--extended` bzw.
+    `npm run test:offline:extended`. Archivierte 500er Mengenläufe bleiben nach
+    Betreiberentscheidung #1266 auch hier gesperrt.
   Eine neue Testdatei wird weder automatisch Schnellkern noch Standard. Wer sie dort braucht,
   trägt sie bewusst in `FAST_CORE` bzw. `STANDARD` ein. Bereiche gezielt:
   `--bereich <name>` oder `--extended --only <substring>`; Übersicht: `--bereiche`.

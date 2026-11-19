@@ -119,6 +119,22 @@ check("CI Aenderung prueft die CI selbst voll", () => {
   assert.equal(p.browser, true);
 });
 
+check("Alte Datenbank-Mengenläufe bleiben im Workflow erhalten und bei jedem Ereignis gesperrt", () => {
+  const workflow = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+  const steps = workflow.split(/^      - name: /m).slice(1);
+  const alt = /scripts\/(?:auth-store-cas-datenbank|testfenster-null500-datenbank|realkohorte-500-(?:endweg|runtime)-datenbank|synthetik-500-(?:import-test|runtime-datenbank|native-import-test|native-d-new-datenbank|eu-time-datenbank)|end500-unabhaengig-datenbank)/;
+  const mengen = steps.filter(step => alt.test(step));
+  assert.equal(mengen.length, 10);
+  assert(mengen.every(step => /^        if: \$\{\{ false \}\}/m.test(step)));
+  assert(!workflow.includes("node scripts/test-synthetik-500-resource-diagnostic.js"));
+  for (const suite of ["auth-quellen-kern-datenbank-test.js", "anbietersteuerung-datenbank-test.js",
+    "lage-quellen-rest-datenbank-test.js", "vorbedingung-mandatsfilter-datenbank-test.js"]) {
+    assert(steps.some(step => step.includes(suite) && /^        if: steps\.plan\.outputs\.database == 'true'$/m.test(step)), suite);
+  }
+  assert(steps.some(step => step.startsWith("Queue-Leases,") && step.includes("--network none")
+    && step.includes("verarbeitungskern-claim-datenbank-test.js") && /^        if: steps\.plan\.outputs\.database == 'true'$/m.test(step)));
+});
+
 check("GitHub Workflow Aenderungen bleiben konservativ", () => {
   for (const file of [".github/workflows/ci.yml", ".github/workflows/health-watch.yml"]) {
     const p = P.plan([file]);

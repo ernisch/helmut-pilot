@@ -5,9 +5,8 @@
 // Haelt die Testorganisation technisch fest:
 //   * Der STANDARD-Pflichtlauf (und damit das CI-Gate) fuehrt NUR die explizite Kernmenge
 //     STANDARD aus scripts/run-offline-tests.js aus — aktuelle Schutz-/Sicherheitsvertraege,
-//     aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen Production-Pfads.
-//   * Die vollstaendige Regression bleibt ueber `--extended` bewusst ausfuehrbar; historische
-//     und bereichsspezifische Suiten sind NICHT geloescht, sondern nur nicht mehr Pflicht.
+//     die grundlegenden Vertraege des heutigen Production-Pfads.
+//   * Historische Mengenläufe bleiben erhalten und aus aktiven Auswahlen ausgeschlossen.
 //   * Eine neue Testdatei wird NICHT automatisch Pflicht (siehe `offline-suite-auswahl-test`).
 //
 // KEIN echter Netzzugriff und KEIN Testlauf: der Beweis fuehrt ausschliesslich `--list` des
@@ -48,7 +47,7 @@ const MUSS_STANDARD = [
   "alarm-payload-test.js",
   "login-eine-mutation-test.js",
   "invite-flow-test.js",
-  "store-cas-test.js",
+  "auth-store-partial-test.js",
   "pipeline-lock-atomic-test.js",
   "nachhol-schreibgate-test.js",
   // Budget / Kosten / KI-Riegel
@@ -56,18 +55,8 @@ const MUSS_STANDARD = [
   "llm-budget-test.js",
   "llm-reservation-test.js",
   "testkosten-budget-test.js",
-  "synthetik-500-eu-daybook-init-test.js",
-  // aktueller 500er-Schutzvertrag
   "verstehen-169-neuversuch-test.js",
   "verstehen-169-kosten-deckel-test.js",
-  "testfenster-null500-test.js",
-  "verdraengungsschutz-test.js",
-  "github-direkt500-test.js",
-  "testkohorte-vorwaerts-test.js",
-  "synthetik-500-import-test.js",
-  "synthetik-500-native-import-test.js",
-  "synthetik-500-runtime-test.js",
-  "synthetik-500-nachweis-test.js",
   // grundlegende Vertraege des heutigen Production-Pfads
   "flags-test.js",
   "source-mode-test.js",
@@ -81,7 +70,11 @@ const HISTORISCH = [
   "narrativ-stress-1000-test.js",
   "narrativ-stufen-test.js",
   "skalierung-simulation-test.js",
-  "skalierung-stufen-test.js"
+  "skalierung-stufen-test.js",
+  "auth-store-cas-test.js", "store-cas-test.js", "source-demand-test.js",
+  "admin-profile-inventory-test.js", "starttor-full-packet-transport-test.js",
+  "testfenster-null500-test.js", "synthetik-500-import-test.js", "realkohorte-500-runtime-test.js",
+  "github-direkt500-test.js", "end500-waechter-beleg-test.js"
 ];
 
 // Bereichsspezifische/historische Suiten, die NICHT Pflicht sind (Beispiele je Domäne).
@@ -94,8 +87,7 @@ const NICHT_PFLICHT_BEISPIELE = [
   "helmut-tab-ui-test.js",      // UI
   "pardok-parser-test.js",      // PARDOK/Landesebene
   "berlin-neutralitaet-test.js",// Berlin/Landesmodul
-  "prosa-36er-test.js",         // Prosa/Entwicklungsvertrag
-  "funktionstest-ablaufkette-test.js" // abgeschlossener Sprint
+  "prosa-36er-test.js"          // Prosa/Entwicklungsvertrag
 ];
 
 let pass = 0;
@@ -165,9 +157,8 @@ function main() {
   check("B2 Der erweiterte Lauf ist eine Obermenge des Standardlaufs",
     [...standard.suiten].every((f) => erweitert.suiten.has(f)),
     [...standard.suiten].filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
-  check("B3 Der erweiterte Lauf enthaelt die historischen Skalierungssuiten",
-    HISTORISCH.every((f) => erweitert.suiten.has(f)),
-    HISTORISCH.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
+  check("B3 Auch --extended startet keine historischen Mengensuiten",
+    HISTORISCH.every((f) => !erweitert.suiten.has(f)));
   check("B4 Der erweiterte Lauf enthaelt die bereichsspezifischen Suiten",
     NICHT_PFLICHT_BEISPIELE.every((f) => erweitert.suiten.has(f)),
     NICHT_PFLICHT_BEISPIELE.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
@@ -186,13 +177,23 @@ function main() {
   check("B6 Die erweiterte Liste traegt KEINE Standard-Kennzeichnung als Pflichtlauf",
     /erweitert = vollstaendige Regression/.test(erweitert.aus), "");
   check("B7 Standard und erweitert nennen zusammen exakt die ausgelagerten Suiten",
-    mehr.length > 0 && HISTORISCH.every((f) => mehr.includes(f)), `ausgelagert: ${mehr.length}`);
+    mehr.length > 0 && NICHT_PFLICHT_BEISPIELE.every((f) => mehr.includes(f)), `ausgelagert: ${mehr.length}`);
+  for (const args of [["--nur-bereich", "--bereich", "500-nachweis"],
+    ["--nur-bereich", "--aendert", "lib/helmut/storage.js"], ["--extended", "--only", "synthetik-500"]]) {
+    const bereich = liste(...args);
+    check(`Mengenstopp in ${args.join(" ")}`, bereich.status === 0
+      && HISTORISCH.every(f => !bereich.suiten.has(f)));
+  }
+  const abgelehnt = spawnSync(process.execPath, [RUNNER, "--extended", "--only", "synthetik-500-import-test.js"],
+    { encoding: "utf8", env: sauber(), timeout: 10000 });
+  check("Ausdrückliche historische Auswahl scheitert vor Ausführung", abgelehnt.status === 1
+    && /Keine aktive Suite/.test(abgelehnt.stderr));
 
   console.log("\n== C · Erhalt und neue Tests ==");
   check("C1 Jede Standard-Suite existiert als Datei",
     [...standard.suiten].every((f) => fs.existsSync(path.join(ROOT, "scripts", f))),
     [...standard.suiten].filter((f) => !fs.existsSync(path.join(ROOT, "scripts", f))).join(", ") || "alle");
-  check("C2 Alle vier historischen Skalierungssuiten bleiben im Repo erhalten",
+  check("C2 Historische Tests bleiben im Repo erhalten",
     HISTORISCH.every((f) => fs.existsSync(path.join(ROOT, "scripts", f))),
     HISTORISCH.filter((f) => !fs.existsSync(path.join(ROOT, "scripts", f))).join(", ") || "alle");
   check("C3 Eine unbekannte neue Suite ist NICHT Standard (Testauswahl bleibt bewusst)",

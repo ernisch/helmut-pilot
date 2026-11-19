@@ -326,6 +326,10 @@ fail closed nach tatsaechlichen Dateien:
 - Datenbank, Kapazitaets-/Mock100-Schutz, geteilte Kerndateien, CI-Auswahl,
   Abhaengigkeiten oder unklare Zuordnung: konservative Offline-/DB-Pruefungen.
 
+Gemäß Betreiberentscheidung in #1266 bleiben historische 500er Läufe in
+allen aktiven Auswahlen gesperrt. Kleine native Prüfungen für Rechte,
+Mandantentrennung, Leases, Anbieterreservierungen und Rückwege bleiben Pflicht.
+
 Bewussten Skip ehrlich benennen; er ist kein ausgefuehrter Test. Pflicht-CI nicht
 lokal duplizieren. Status in sinnvollen Abstaenden pruefen, keine Sekundenabfragen.
 Produkt- und Umgebungsfehler unterscheiden. Hoechstens zwei gezielte Versuche desselben

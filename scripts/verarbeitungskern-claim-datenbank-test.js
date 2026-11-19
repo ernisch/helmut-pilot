@@ -199,10 +199,12 @@ async function main() {
     const index = sql("select indexdef from pg_indexes where indexname='helmut_jobs_tagesarbeit_idx';");
     assert.match(index,/COALESCE\(last_seen_window, freshness_window\)/); assert.match(index,/priority, due_at, created_at, id/); assert.match(index,/WHERE.*wartend/); assert.doesNotMatch(index,/payload/);
   });
-  const state = sql("select md5(string_agg(row_to_json(j)::text,',' order by id)) from public.helmut_jobs j;");
+  const jobbestand = "select md5(string_agg((to_jsonb(j) - 'last_seen_window')::text,',' order by id)) from public.helmut_jobs j;";
+  const state = sql(jobbestand);
   sql(file(rollback));
   check("Rueckweg erhaelt Daten, OIDs und Rechte", () => {
-    assert.equal(meta(),before); assert.equal(sql("select md5(string_agg(row_to_json(j)::text,',' order by id)) from public.helmut_jobs j;"),state);
+    assert.equal(meta(),before); assert.equal(sql(jobbestand),state);
+    assert.equal(sql("select count(*) from information_schema.columns where table_schema='public' and table_name='helmut_jobs' and column_name='last_seen_window';"),"0");
     assert.equal(sql("select count(*) from pg_indexes where indexname='helmut_jobs_tagesarbeit_idx';"),"0");
   });
   console.log(`${passed}/${passed} gezielte SQL-Pruefungen bestanden; kein Last-/Production-Test.`);
