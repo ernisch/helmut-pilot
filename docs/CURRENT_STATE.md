@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
-**19.11.2026: Quellenversorgung TEILWEISE.** PR #1272 live auf `da61adfe`. SQL-Claim und Vercel-Termine 04:55/05:10 UTC bestätigt. Ausgang 41/162 technisch erledigt, 754 offen, 1/5 amtlich. Abnahme im Regelbetrieb ausstehend. [Betriebsbelege](betrieb/quellenfaelligkeit-20261119.md).
-**Entwicklung 19.11.2026.** [Quellenprüfstand](betrieb/quellenpruefstand-20261119.md).
+**19.11.2026, Pilotmorgen TEILWEISE.** Ausgang 41/162 Abrufe, 754 offen, 0/1 Mandate. [Betriebsbelege](betrieb/quellenfaelligkeit-20261119.md).
+Reparaturkandidat: PDF-/ICS-Teile, DIP-Analyse, Lagezitate und JSONB-Rücklesebeleg. Fristen 05:00/05:15 UTC. Abnahme offen. [Prüfstand](betrieb/quellenpruefstand-20261119.md).
 **Erhaltener Stand17.11.2026,10:54UTC: damalige Reparaturen live; Gesamtversorgung und Verkaufsabnahme offen.**
 Letzte Runtimeaenderung189da49f(PR1247), regulaer VercelREADY/oeffentlicherAlias bestaetigt. PR1241/1242/1243/1245/1246/1247 mit beiden gruenen exakten Pflichtchecks und unabhaengigen Reviews integriert. [Quellenbilanz](betrieb/quellen-abnahme-20261117.md) · [Briefingqualitaet/Livebelege](betrieb/briefing-qualitaet-20261117.md).
 Quellen:5bestaetigte Codeursachen behoben (Null-Abruf-Vertagung,Morgen-CAS,CET/CEST,spaeterPlanbedarf,JSON-Readback). Geschuetzter autonomer Maschinenstart eingerichtet. EchterAbschluss:3Abruf+7Dokumentauftraege erledigt,18neueRohbelege. BMG12Titel/Link/Datumsbelege und12/12Herkunftsreader gueltig, keinVolltextnachweis. ZweiweitereWege erfolgreich; Zusatzwirkungnichtunbelegtbeziffern.42Endstopps/158Jobvertagungen/Planrest0 nachUrsachengetrennt;123Anbieterquittungen betreffen115Quellkennungen. ParteiGoogle/minutengegrenzt, direkterFraktionsfeedheuteerledigt; Wachengetrennt, keinweitererMotorfehlerbelegt.
