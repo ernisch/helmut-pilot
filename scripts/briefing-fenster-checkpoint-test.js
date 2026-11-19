@@ -207,9 +207,10 @@ async function main() {
     const end=source.indexOf("        const briefing = await withTimeout",start);A(start>0&&end>start);
     const script=new vm.Script("(async()=>{"+source.slice(start,end)+"return {heutiger,fenster};})()");
     const w=welt([stand(day),stand("2026-11-13"),stand("2026-11-12","inhalt")]);
-    const run=()=>script.runInNewContext({briefingFrische:{...F,vertragAktiv:()=>true},briefingLauf:L,
-      storageModul:w.storage,profile,berlinTag:day,t0:now.getTime(),Date});
+    const run=(ganztags=false)=>script.runInNewContext({briefingFrische:{...F,vertragAktiv:()=>true},briefingLauf:L,
+      storageModul:w.storage,profile,berlinTag:day,t0:now.getTime(),Date,ganztags});
     A.equal((await run()).fenster.start,"2026-11-12T08:26:31.371Z");
+    A.equal((await run(true)).fenster.start,"2026-11-12T05:45:00.000Z");
     w.map.get(day).receipt.payload.ausgabeBeleg.briefingHash="0".repeat(64);
     await A.rejects(run(),{code:"BRIEFING_FENSTER_UNBEKANNT"});
   });

@@ -645,7 +645,7 @@ async function main() {
       && (serverQuelltext.match(/async function narrativSlotLauf/g) || []).length === 1);
     check("8.4 Der Direktpfad bindet die Facharbeit an die aufgeloeste aktive Kennung",
       /const profile = await activeProfile\(tenantId\)/.test(routenBlock)
-      && /buildLageBriefing\(profile, \{ politicianId: tenantId, \.\.\.\(versorgung \? \{ versorgung \} : \{\}\) \}\)/.test(routenBlock)
+      && /buildLageBriefing\(profile, \{ politicianId: tenantId, quellenBis, \.\.\.\(versorgung \? \{ versorgung \} : \{\}\) \}\)/.test(routenBlock)
       && /quellen-versorgungsstand[\s\S]{0,100}\.lese\(\{ mandat: tenantId \}\)/.test(routenBlock));
 
     // Standardverdrahtung: die Narrativ-Abhaengigkeit loest sich wirklich auf (12.9-Lehre).

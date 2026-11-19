@@ -314,12 +314,13 @@ async function main(schreibeZwischenstand) {
           const stand = r.data;
           const kopf = stand.currentHelmutState;
           const prioritaeten = [kopf?.primaryItem, ...(kopf?.items || [])].filter(Boolean);
-          morgenstand = { abrufbar: stand.available === true,
+          morgenstand = { abrufbar: stand.available === true, vollstaendig: stand.paketStatus?.vollstaendig === true,
+            lageAbsaetze: stand.lageBriefing?.paragraphs?.length || 0,
             prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
             mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)) };
           assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
           note(`Produktleser um 07:30 Uhr Berlin am ${tag}`, "geprueft",
-            `Abrufbar: ${morgenstand.abrufbar}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
+            `Abrufbar: ${morgenstand.abrufbar}. Vollständig: ${morgenstand.vollstaendig}. Lageabsätze: ${morgenstand.lageAbsaetze}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
           schreibeZwischenstand();
         }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
