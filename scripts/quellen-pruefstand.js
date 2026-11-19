@@ -318,6 +318,9 @@ async function main(schreibeZwischenstand) {
             prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
             mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)) };
           assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
+          note(`Produktleser um 07:30 Uhr Berlin am ${tag}`, "geprueft",
+            `Abrufbar: ${morgenstand.abrufbar}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
+          schreibeZwischenstand();
         }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
         const resultate = await Promise.all(Array.from({ length: parallel ? 2 : 1 }, () => app.cron(slot.path)));

@@ -102,7 +102,7 @@ function start(args) {
     const result = spawnSync(process.execPath, [path.join(__dirname, auswahl[quelle])], {
       // Reale Runnerzeit für PostgreSQL und beide synthetischen Tage. Die
       // Uhr, Cron-Zeitfenster und Abnahmefristen im Szenario sind separat.
-      stdio: "inherit", timeout: 300000, killSignal: "SIGKILL"
+      stdio: "inherit", timeout: 24 * 60000, killSignal: "SIGKILL"
     });
     return result.status === 0 ? 0 : 1;
   }

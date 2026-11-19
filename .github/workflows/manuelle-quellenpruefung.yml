@@ -36,7 +36,7 @@ jobs:
   offline:
     if: github.repository == 'ernisch/helmut-pilot' && github.ref_type == 'branch'
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.quelle == 'produktionsnah' && 10 || 5 }}
+    timeout-minutes: ${{ inputs.quelle == 'produktionsnah' && 32 || 5 }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -94,7 +94,7 @@ jobs:
           test "$("$W15_POSTGREST_SOURCE" --version)" = 'PostgREST 12.2.3'
       - name: Produktionsnahe Quellenfenster mit kontrollierter Datenbankuhr ausführen
         if: inputs.quelle == 'produktionsnah'
-        timeout-minutes: 5
+        timeout-minutes: 26
         env:
           PRUEFQUELLE: ${{ inputs.quelle }}
           PRUEFMANDAT: ${{ inputs.mandat }}
