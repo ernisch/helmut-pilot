@@ -1,0 +1,13 @@
+# HELMUT Quellenprüfstand
+
+Unter **Actions → HELMUT manuelle Quellenprüfung → Run workflow** den zu prüfenden Branch und `produktionsnah` mit `mandat=ohne` auswählen. Das Szenario legt ein synthetisches Bundestagsmandat in einer frischen lokalen Datenbank an. Die bisherigen Einzeladapter bleiben auswählbar. Der Lauf veröffentlicht `bericht.md` und `bericht.json` mit Git-SHA, Szenario, Konfiguration, Lauf-ID und Versuch. Das Jobresultat beschreibt die Ausführung des Szenarios. Die fachliche und kapazitative Abnahme steht separat im Bericht.
+
+Der Prüfstand startet `api/index.js` und ruft die vorhandenen Cron-Routen aus `vercel.json` auf. Der relationale Quellenkatalog, Mandatsresolver, Planungsjournal, Queue, Belege, Modellkostenwachen, Matching und Ausgabepfade laufen gegen das vorhandene Schema und die ausgewiesenen Migrationen. Die PostgreSQL-Uhr läuft gemeinsam mit der Testuhr. Das kontrollierte Loopback liefert synthetisches RSS, DIP, PDF, ICS und Modellantworten. Der Bericht führt gebuchte Reservierungen, einzelne Abruf- und Produktbefunde, Fristlücken und alte Fälligkeiten aus persistierten Daten auf.
+
+Die am 19.11. gemessenen 754 offenen Fälligkeiten sind ein nachgelagerter Produktionssnapshot. Im Szenario bilden 754 erzeugte Google-Altaufträge den Startbestand. Die neuen 162 Fälligkeiten entsprechen am Archivwechsel der dokumentierten Mengenverteilung. Der Katalog enthält fiktive Entsprechungen für die Google- und direkten RSS-Wege. Die fünf amtlichen Terminadapter und DIP behalten ihre echten Abrufdefinitionen und lesen ausschließlich lokale Antworten. Die Modellantworten prüfen den technischen Vertrag. Die fachliche Qualität, reale Reuse-Quote und Kosten bleiben live zu belegen. [Betriebsausgang](quellenfaelligkeit-20261119.md) · [Infrastrukturabgleich](quellenpruefstand-infrastruktur-20261119.md)
+
+## Gezielte Korrektur
+
+Für einen bestätigten leeren RSS-Feed, dessen Startadresse die Feed-Adresse ist, entfällt der zweite Abruf als HTML. Dieselbe leere RSS-Antwort ergab auf `7b1f55b0` zwei Abrufe mit einer als Meldung interpretierten XML-Hülle. Die Korrektur ergibt einen Abruf und null Fundstücke. Fehler eines Feeds und eine abweichende HTML-Adresse behalten den bisherigen Pfad. Der gezielte Fälligkeitstest prüft die Korrektur. Der Gegenversuch und die Wiederholbarkeit sind im Laufbericht sichtbar.
+
+Die Einsparung betrifft direkte, bestätigte Leerabrufe. Die erreichte Google-Reservierungsrate, die Ausgabefristen und der Rückstand haben eigene Abnahmekriterien. Der Bericht berechnet den Bedarf für 100 Mandate aus gemeinsam genutzten Abrufen und persönlichen Suchen. Ein tatsächlicher Lauf mit 100 Mandaten gehört nicht zu diesem Prüfstand.

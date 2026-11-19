@@ -18,6 +18,19 @@ let n = 0;
 async function test(name, fn) { await fn(); n++; console.log("PASS " + name); }
 
 async function main() {
+  await test("Bestätigter leerer RSS-Feed erzeugt weder zweiten Abruf noch Meldung", async () => {
+    const url = "https://nachrichten.fixture.invalid/feeds/9.xml";
+    const abrufe = [];
+    const lauf = await crawlAllSources([{ id: "mess-feed", url, rssUrl: url, crawlMethod: "rss", active: true }], {
+      fetchUrl: async adresse => {
+        abrufe.push(adresse);
+        return { status: 200, finalUrl: adresse, body: "<rss><channel></channel></rss>" };
+      }
+    });
+    A.deepEqual(abrufe, [url]);
+    A.equal(lauf.results[0].status, "empty");
+    A.deepEqual(lauf.rawItems, []);
+  });
   await test("Fristen für Morgen, übrige Tagesarbeit und exaktes Archivfenster bleiben erhalten", () => {
     const frist = Q.fristen({ priority: 40 }, due);
     A.deepEqual(frist, { urspruenglichFaelligAm: "2026-11-19T03:00:00.000Z",
