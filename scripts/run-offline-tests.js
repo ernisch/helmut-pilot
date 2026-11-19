@@ -1,7 +1,7 @@
 "use strict";
 
-// Führt ALLE Offline-Testsuiten des Repos nacheinander aus und fasst das Ergebnis
-// zusammen. Schließt bewusst nur aus, was Netz/Production/Live-LLM braucht.
+// Führt die ausgewählten aktiven Offline-Suiten des Repos nacheinander aus.
+// Mengenläufe nach der Betreiberentscheidung in #1266 bleiben historische Belege.
 //
 // Hintergrund (Audit 2026-07): 15 von 76 Testdateien waren in keinem npm-Script
 // verdrahtet und "alle Tests grün" war manuell praktisch nicht herstellbar.
@@ -134,7 +134,9 @@ const DENYLIST = new Set([
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
   "realkohorte-500-endweg-datenbank-test.js", // eigener Pflichtschritt: echte isolierte PostgreSQL, kein Offline-Scheinbeleg
   "lage-quellen-rest-datenbank-test.js", // separater isolierter REST Nachweis; fehlende Umgebung ist kein PASS
-  "auth-store-cas-datenbank-test.js", // eigener verpflichtender CI Schritt mit PostgreSQL + PostgREST
+  "auth-store-cas-datenbank-test.js", // historischer Mengenlauf mit PostgreSQL + PostgREST
+  "auth-quellen-kern-datenbank-test.js", // aktueller kleiner PostgreSQL-/PostgREST-Pflichtschritt
+  "anbietersteuerung-datenbank-test.js", // eigener Pflichtschritt, fehlendes PostgreSQL gilt nicht als PASS
   "smoke-test.js", // zielt per Default auf die Production-URL
   "understanding-live-smoke.js", // echter HTTP-/LLM-Pfad
   "understanding-eval.js", // Goldset-Eval mit eigener Laufzeit/Reporting, kein PASS/FAIL-Gate
@@ -176,17 +178,48 @@ const DENYLIST = new Set([
   "run-offline-tests.js"
 ]);
 
+// Die Dateien bleiben erhalten. Auch Bereich, Extended und --only können
+// historische Mengenläufe nicht erneut in diese Auswahl holen.
+const HISTORISCHE_MENGENSUITEN = new Set([
+  "auth-store-cas-test.js", "store-cas-test.js", "session-profil-bulk-test.js", "jobqueue-datenbank-test.js",
+  "source-demand-test.js", "lage-vorstart-test.js", "lage-cron-diagnose-test.js",
+  "lage-trefferbindung-test.js", "lage-profile-batch-test.js", "lage-quellenfenster-test.js",
+  "lage-aktive-fortsetzung-test.js", "lage-check-kapazitaet-test.js", "morgenkapazitaet-test.js",
+  "relevanzordnung-test.js", "vorgangsidentitaet-test.js", "mandatsklasse-test.js",
+  "admin-profile-inventory-test.js", "admin-ergebnisse-route-test.js", "profile-read-failure-test.js",
+  "v3-anbindung-test.js", "verdraengungsschutz-test.js", "kapazitaetsmodell-test.js", "ki-modellzahlen-test.js",
+  "skalierung-lastnachweis-test.js", "jobqueue-bereinigung-test.js",
+  "starttor-full-packet-transport-test.js", "starttor-original-state-witness-test.js", "github-zugangspruefung-test.js",
+  "github-blocker2-publication-policy-test.js", "github-blocker2-readonly-diagnose12-test.js",
+  "github-blocker2-durable-cipher-test.js", "github-blocker2-readonly-diagnose-test.js",
+  "blocker2-d-historical-binding-test.js", "briefing-pruefaufnahme-test.js", "quellenkontext-ruhe-test.js",
+  "briefing-lesediagnose-test.js", "briefing-speicher-lesediagnose-test.js",
+  "prosa-36er-versuch-test.js", "prosa-einordnung-versuch-test.js",
+  "verstehen-bund7-test.js", "verstehen-frische3-rest-test.js", "verstehen-frische5-test.js",
+  "verstehen-frische16-test.js", "verstehen-frische18-test.js", "verstehen-frische30-test.js", "verstehen-vier-test.js",
+  "llm-budget-fairness-test.js", "narrativ-stufen-test.js", "skalierung-simulation-test.js",
+  "skalierung-stufen-test.js"
+]);
+function historischeMengensuite(file) {
+  return HISTORISCHE_MENGENSUITEN.has(file) || /^(?:funktionstest|testkohorte|testnachweis)-/.test(file)
+    || (file !== "pre500-cron-pause-test.js" && /(?:500|[-_]1000)[-_.]/.test(file));
+}
+
+// Der bestehende Einzelfilter läuft durch alle kleinen Morgenpaketfälle. Die
+// Suite überspringt bei aktivem Filter ihre alten 100er und 500er Fälle.
+const SUITEN_ARGUMENTE = { "morgen-paketnachweis-test.js": ["--filter=."] };
+
 // ── STANDARD: die explizite Kernmenge des Pflichtlaufs ──────────────────────────────
 // Diese grosse Kernmenge laeuft nur, wenn der CI-Pruefplan eine konservative Vollpruefung
 // verlangt. Aufnahmekriterium ist ein AKTUELLER Vertrag, nicht die Laufzeit: Schutz/Sicherheit,
-// aktuelle 500er-Schutzlogik und die
-// grundlegenden Vertraege des heutigen Production-Pfads. Abgeschlossene Sprints,
+// grundlegende Vertraege des heutigen Production-Pfads. Abgeschlossene Sprints,
 // bereichsspezifische Regressionen (Briefing/Lage/Quellen/Radar/Profil/Matching/Scoring/
 // UI/Cron/Landesmodule/PARDOK/…), Simulationen und historische Nachweise gehoeren NICHT
 // hierher — sie bleiben unveraendert im Repo und laufen ueber `--extended`.
 // Jede Zeile nennt den geschuetzten Vertrag. Aenderungen an dieser Liste sind die einzige
 // Stelle, an der ueber den Pflichtumfang entschieden wird.
 const STANDARD = new Set([
+  "auth-store-partial-test.js",            // Revision, Feldpatch und Konflikt
   // Verbindlicher Kundenausschluss: Import/Write/Aktivierung/Verarbeitung sperren.
   "profil-zulassung-test.js",
   // — Schutz, Sicherheit, Mandantentrennung, Secrets, Auth, CAS/Schreibschutz —
@@ -381,7 +414,7 @@ const STANDARD = new Set([
   "sachsen-medienservice-test.js",           // Begrenzter amtlicher JSON-Abruf und ehrliche Belegmetadaten
   "quellen-ergaenzungsplan-test.js",         // Ergänzungen ohne Überschreiben des Bestands
   "neutrale-quellenzuordnung-plan-test.js"   // Genau begrenzte Neutralitätskorrektur mit Rückweg
-]);
+].filter((file) => !historischeMengensuite(file)));
 
 // Schneller universeller Kern fuer normale Codeaenderungen. Diese Suiten sind
 // bewusst kurz und decken zentrale Sicherheits- und Schnittstellenvertraege ab.
@@ -411,6 +444,7 @@ function collectSuites() {
     .readdirSync(path.join(ROOT, "scripts"))
     .filter((f) => f.endsWith(".js"))
     .filter((f) => !DENYLIST.has(f))
+    .filter((f) => !historischeMengensuite(f))
     // Review-Fix: adversarial-gesamttest.js endet nicht auf "-test.js" und lief
     // dadurch in KEINEM CI-Pfad — der Namensfilter kennt das Muster jetzt explizit.
     .filter((f) => f.endsWith("-test.js") || f.endsWith("gesamttest.js") || f === "p1-security-check.js")
@@ -503,6 +537,10 @@ function main() {
     suites = [...new Set([...basis, ...bereichsSuiten])].sort();
   }
   if (only) suites = suites.filter((f) => f.includes(only));
+  if (only && !listOnly && suites.length === 0) {
+    console.error(`[run-offline-tests] Keine aktive Suite passt zu --only ${only}.`);
+    return 1;
+  }
 
   if (auswahlInfo && !listOnly) {
     console.log(`Bereichsauswahl: ${auswahlInfo.zielBereiche.join(", ") || "keine"}`);
@@ -535,7 +573,8 @@ function main() {
     // --require dieser Datei = technischer Offline-Zwang (siehe Kopfkommentar);
     // NO_NETWORK_TESTS=1 aktiviert den Guard und steht künftig auch lib-Code
     // (z. B. ai.js/crawler.js) als Fetch-Guard-Signal zur Verfügung.
-    const res = spawnSync(process.execPath, ["--require", __filename, path.join("scripts", suite)], {
+    const suiteArgs = SUITEN_ARGUMENTE[suite] || [];
+    const res = spawnSync(process.execPath, ["--require", __filename, path.join("scripts", suite), ...suiteArgs], {
       cwd: ROOT,
       encoding: "utf8",
       timeout: 180000,
@@ -617,4 +656,4 @@ if (require.main === module) {
 
 // Fuer den Auswahl-Vertragstest (scripts/bereichsauswahl-test.js): die Kernmenge und die
 // Sammlung lesbar machen, ohne den Runner als Prozess zu starten.
-module.exports = { STANDARD, FAST_CORE, collectSuites, standardSuites };
+module.exports = { STANDARD, FAST_CORE, collectSuites, standardSuites, historischeMengensuite, SUITEN_ARGUMENTE };

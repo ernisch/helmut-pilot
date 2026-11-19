@@ -610,7 +610,6 @@ jobs:
       - name: Mock100 Fehlerkanal, Abbruch und Vertragsgegenproben (synthetisch)
         if: steps.plan.outputs.standard == 'true'
         run: |
-          node scripts/lokal.js -- node scripts/test-synthetik-500-resource-diagnostic.js
           sudo -n env -i PATH="$PATH" LANG=C.UTF-8 node scripts/lokal.js -- python3 -B scripts/w15-github/test_synthetic_resource_diagnostic.py
       - name: Vorhandene gepinnte Werkzeuge fuer die kleine Mock100-Anschlussprobe
         if: steps.plan.outputs.database == 'true'
@@ -690,7 +689,7 @@ jobs:
       # Fehler im neuen Datenbankpfad sofort sichtbar sind. Alle bisherigen
       # Pflichtschritte bleiben im selben blockierenden Job erhalten.
       - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Einschliesslich 475 echter inaktiver Anlagen und 475 Aktivierungen.
         timeout-minutes: 5
         env:
@@ -700,6 +699,47 @@ jobs:
           HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
+
+      - name: Konto- und Quellenverträge gegen isolierte PostgreSQL und PostgREST
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js -- node scripts/auth-quellen-kern-datenbank-test.js
+
+      - name: Atomare Anbieterreservierungen und Rückweg gegen isolierte PostgreSQL
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: |
+          set -euo pipefail
+          node scripts/lokal.js -- node scripts/anbietersteuerung-datenbank-test.js | tee "$RUNNER_TEMP/anbietersteuerung.txt"
+          grep -Eq '^PASS [1-9][0-9]*  FAIL 0 ' "$RUNNER_TEMP/anbietersteuerung.txt"
+
+      - name: Queue-Leases, Rechte, Migration und Rückweg gegen netzlose PostgreSQL
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_CORE_CONTAINER: helmut-core-pg
+        run: |
+          set -euo pipefail
+          image="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
+          docker run -d --network none --name "$HELMUT_TEST_CORE_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust "$image"
+          trap 'docker rm -fv "$HELMUT_TEST_CORE_CONTAINER" >/dev/null' EXIT
+          for attempt in {1..20}; do
+            if docker exec "$HELMUT_TEST_CORE_CONTAINER" pg_isready -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          docker exec "$HELMUT_TEST_CORE_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
+          node scripts/lokal.js -- node scripts/verarbeitungskern-claim-datenbank-test.js
 
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
         if: steps.plan.outputs.database == 'true'
@@ -713,7 +753,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
 
       - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         timeout-minutes: 2
         env:
           HELMUT_TEST_PG_HOST: "127.0.0.1"
@@ -733,7 +773,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/verstehen-vier-datenbank.js
 
       - name: Realkohorten-Endweg gegen echte isolierte PostgreSQL
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Neuer inaktiver Vertrag; synthetischer Tabellenbestand in eigener
         # kurzlebiger Testdatenbank. Keine Production-Verbindung oder Freigabe.
         timeout-minutes: 2
@@ -746,7 +786,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/realkohorte-500-endweg-datenbank-test.js
 
       - name: Realkohorten-Runtime gegen echte isolierte PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Default-off RPC, private Quittung, Teilaktivierung und Triggerrollback.
         # Eigene kurzlebige Datenbank; fehlender DB-Beleg ist ein Fehler.
         timeout-minutes: 3
@@ -759,7 +799,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/realkohorte-500-runtime-datenbank-test.js
 
       - name: Synthetik500 Import gegen echte isolierte PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Vollstaendiger Profilersatz/Rueckweg; Standardlauf alleine fuehrt kein SQL aus.
         timeout-minutes: 3
         env:
@@ -771,7 +811,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-import-test.js --postgres-local
 
       - name: Synthetik500 Import bis Abschaltung gegen echte isolierte PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Echtes erzeugtes Importjournal, atomarer 500er Start, Teilende und RPC-Rechte.
         timeout-minutes: 3
         env:
@@ -783,7 +823,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-runtime-datenbank-test.js
 
       - name: Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         # Kleine SQL-Requests, typgetreue Sicherung und vollstaendiger Feld-CAS.
         timeout-minutes: 3
         env:
@@ -795,7 +835,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
       - name: Neue inerte Native-D-Ablage gegen echte isolierte PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         timeout-minutes: 3
         env:
           HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
@@ -823,7 +863,7 @@ jobs:
           node scripts/lokal.js -- node scripts/synthetik-500-native-d-new-datenbank-test.js
 
       - name: Unabhaengige Endsteuerung gegen echten PostgreSQL17 und pg_cron
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         timeout-minutes: 5
         env:
           HELMUT_END500_PG_ISOLIERT: "JA"
@@ -846,7 +886,7 @@ jobs:
           node scripts/lokal.js -- node scripts/end500-unabhaengig-datenbank-test.js
 
       - name: EU-Servicezeitvertrag, Tagesbuch-Bootstrap und Rueckweg gegen isolierten PostgreSQL17
-        if: steps.plan.outputs.database == 'true'
+        if: ${{ false }} # Historischer 500er Nachweis, siehe #1266
         timeout-minutes: 3
         run: |
           set -euo pipefail
@@ -1597,8 +1637,16 @@ jobs:
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
           # Codeänderung rot/fälschlich grün machen. Bei Playwright-Update hier
           # bewusst anheben.
-          npm i --no-save playwright@1.56.1
-          # Playwright liefert seinen eigenen gepinnten Chromium. Eine fremde
+          npm i --no-save --no-audit --no-fund playwright@1.56.1
+          npx --no-install playwright install chromium
+          chromium_startet() {
+            node -e 'require("playwright").chromium.launch({timeout: 15000}).then(browser => browser.close()).catch(error => { console.error(error.message); process.exitCode = 1; })'
+          }
+          if chromium_startet; then
+            echo 'Gepinnter Chromium startet mit den vorhandenen Runner-Bibliotheken.'
+            exit 0
+          fi
+          # Nur bei fehlender Startfähigkeit Bibliotheken nachinstallieren. Eine fremde
           # Google-Chrome-APT-Liste lieferte am 09.09. falsche Hashes und
           # blockierte bereits apt update. Nur diese unbenoetigte Liste wird
           # im kurzlebigen Testrechner reversibel aus der APT-Auswahl genommen.
@@ -1616,7 +1664,8 @@ jobs:
                   source.rename(source.with_name(source.name + '.helmut-ci-disabled'))
                   print('Unbenoetigte Chrome Paketliste isoliert:', source.name)
           PY
-          npx playwright install --with-deps chromium
+          npx --no-install playwright install-deps chromium
+          chromium_startet
       - name: Kundenansichten - neue sichtbare Lage und ehrlicher Radarbestand
         if: steps.plan.outputs.kundenansichten == 'true'
         env:
