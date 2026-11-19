@@ -85,7 +85,7 @@ const aktivIds = plan.aktiv.map((p) => p.id);
   const zuordnung = new Map([[legacy.id, legacy]]);
   const quelle = toCrawlerSource(katalog, zuordnung);
   check("Gemeinsame Google-Quelle plant die aktive Katalog-URL mit vorhandenen Abrufgrenzen",
-    quelle.rssUrl === katalog.url && quelle.rssUrls.length === 1 && quelle.rssUrls[0] === katalog.url
+    quelle.url === katalog.url && quelle.rssUrl === katalog.url && quelle.rssUrls.length === 1 && quelle.rssUrls[0] === katalog.url
     && quelle.maxItems === 8 && quelle.crawlMethod === "rss" && quelle.retrievalPathId === katalog.id);
   check("Fremder Host oder Anbieter verändert den bisherigen Abrufweg nicht",
     toCrawlerSource({ ...katalog, url: "https://fremd.invalid/rss/search?q=soziales" }, zuordnung).rssUrl === alt

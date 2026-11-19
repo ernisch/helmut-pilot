@@ -68,13 +68,41 @@ async function main() {
       { leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...job, jobType: "source_fetch",
         payload: { quelle: { ...job.payload.quelle, url: "https://daten.example/neuer-fallback" } } }] }) },
       { leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...job, jobType: "source_fetch" }] }),
-        getActiveProfile: async () => ({ ...profile, profileActive: false }) }
+        leseQuellenprofil: async () => ({ ...profile, profileActive: false }) }
     ]) {
       const ausgang = await P.HANDLER.source_fetch(job, { ...variante, env, now: () => jetzt,
         crawlAllSources: async () => A.fail("gesperrter Altauftrag") }, { auftragsDeadlineMs: jetzt + 120000 });
       A.equal(ausgang.zurueckgestellt, true);
       A.equal(ausgang.bundestagAbrufpauseMs, 86400000);
     }
+  });
+  await test("Bestätigter alter Google-Feed läuft ohne überholten HTML-Ersatz weiter", async () => {
+    const feed = "https://news.google.com/rss/search?q=fixture";
+    const alt = { id: "fixture-google", retrievalPathId: "rp-fixture-google", type: "media", crawlMethod: "rss",
+      url: "https://news.google.com/search?q=fixture", rssUrl: feed, active: true };
+    const job = { id: "fixture-alt", tenantId: null, firstDueAt: "2026-11-18T03:00:00Z",
+      payload: { art: "geteilt", quelle: alt } };
+    const neu = { ...alt, url: feed };
+    const abrufe = [];
+    const deps = { env, now: () => jetzt, hardeningConfig: () => ({ enabled: false }),
+      leseHeutigenQuellenplan: async () => ({ auftraege: [{ jobType: "source_fetch", tenantId: null,
+        payload: { art: "geteilt", quelle: neu } }] }),
+      crawlAllSources: (sources, opts) => crawlAllSources(sources, { ...opts, fetchUrl: async url => {
+        abrufe.push(url); return { body: "<rss><channel></channel></rss>" };
+      } }) };
+    const lauf = () => P.HANDLER.source_fetch(job, deps, { auftragsDeadlineMs: jetzt + 120000 });
+    A.equal((await lauf()).abrufErgebnis.art, "keine-funde");
+    A.deepEqual(abrufe, [feed]);
+    A.equal(job.payload.quelle.url, alt.url);
+    neu.url = neu.rssUrl = `${feed}-anders`;
+    A.equal((await lauf()).grund, "quellenbedarf-nicht-mehr-bestaetigt");
+    A.deepEqual(abrufe, [feed]);
+    const fehlerAbrufe = [];
+    const fehler = await crawlAllSources([{ ...alt, url: feed }], { fetchUrl: async url => {
+      fehlerAbrufe.push(url); throw Error("Fixture-Abruffehler");
+    } });
+    A.equal(fehler.results[0].ok, false);
+    A.deepEqual(fehlerAbrufe, [feed]);
   });
   await test("DIP wird einmal gemeinsam geplant und Personensuchen behalten zwei getrennte Mandate", async () => {
     let manifest;
@@ -92,6 +120,45 @@ async function main() {
     A.equal(dip.tenantId, null); A.equal(doppelte.length, 0); A(!Object.hasOwn(dip.payload, "mandatsId"));
     A.deepEqual(new Set(manifest.filter(j => j.payload.art === "person-aktuell").map(j => j.tenantId)),
       new Set([profile.id, zweites.id]));
+  });
+  await test("Personenauftrag prüft den richtigen Profilbezug vor der Artikelsuche", async () => {
+    const S = require("../lib/helmut/scheduler");
+    const D = require("../lib/helmut/source-demand");
+    const eigen = { ...profile, fullName: "Mara Beispiel" };
+    const plan = await D.kompiliereQuellenbedarf({ profile: [eigen], env, jetztMs: jetzt,
+      quellenFuerProfil: async p => [S.personNewsSource(p)] });
+    const geplant = plan.auftraege.find(j => j.payload.art === "person-aktuell");
+    A(!Object.hasOwn(geplant.payload.quelle, "queryTerms"));
+    const job = { id, tenant_id: eigen.id, job_type: "source_fetch", attempts: 1, first_due_at: due, payload: geplant.payload };
+    const url = "https://fixture.example/politik/mandat", feed = geplant.payload.quelle.rssUrl;
+    const fremd = "https://news.google.com/rss/articles/CBMi_fixture-andere-person";
+    const body = `<rss><channel><item><title>Mara Beispiel zur Infrastruktur</title><description>Ein Bericht</description>`
+      + `<pubDate>Thu, 12 Nov 2026 10:00:00 GMT</pubDate><link>${url}</link></item>`
+      + `<item><title>Andere Person zur Infrastruktur</title><description>Ein anderer Bericht</description>`
+      + `<pubDate>Thu, 12 Nov 2026 10:00:00 GMT</pubDate><link>${fremd}</link></item></channel></rss>`;
+    const abrufe = [], gespeichert = [];
+    const deps = { env, now: () => jetzt, klassen: {}, handler: P.HANDLER, googleOriginale: new Map(),
+      leseQuellenprofil: async mandatsId => { A.equal(mandatsId, eigen.id); return eigen; },
+      hardeningConfig: () => ({ enabled: false }), quellenbelegSpeicher: () => ({
+        sichern: async (_auftrag, beleg) => { A.equal(beleg.art, "rohfassungen"); } }),
+      crawlAllSources: (sources, opts) => crawlAllSources(sources, { ...opts, fetchUrl: async adresse => {
+        abrufe.push(adresse); return { body: adresse === feed ? body : "" };
+      } }),
+      persistRohdokumente: async items => {
+        gespeichert.push(...items.map(item => item.url)); return { ok: true, bestaetigteIds: ["rd-" + "a".repeat(64)] };
+      },
+      finish: async r => { A.equal(r.ok, true); return { verfuegbar: true, uebernommen: true }; },
+      zurueckstellen: async r => { A.equal(r.delayMs, 86400000); return { verfuegbar: true }; } };
+    A.equal((await P.fuehreAuftragAus({ auftrag: job, deps })).ausgang, "erledigt");
+    A.deepEqual(gespeichert, [url]);
+    A.deepEqual(abrufe, [feed, url]);
+    for (const profil of [null, { ...eigen, id: "anderes-mandat" }, { ...eigen, profileActive: false }]) {
+      const abgewiesen = await P.fuehreAuftragAus({ auftrag: job, deps: { ...deps, leseQuellenprofil: async () => profil } });
+      A.equal(abgewiesen.grund, "quellenmandat-nicht-mehr-aktiv");
+    }
+    const archiv = { ...job, payload: { ...job.payload, art: "person-archiv" } };
+    A.equal((await P.fuehreAuftragAus({ auftrag: archiv, deps })).grund, "personensuche-nicht-mehr-bestaetigt");
+    A.deepEqual(abrufe, [feed, url]);
   });
   await test("Bestätigte Google-Auflösung teilt exakt eine Anfrage; ungeklärte Originale werden nicht zwischengespeichert", async () => {
     const googleOriginale = new Map();
@@ -113,7 +180,7 @@ async function main() {
       + `<pubDate>${published}</pubDate><link>${proxy}</link><source url="${publisher}">Fixture Zeitung</source></item></channel></rss>`;
     const source = { id: "fixture", retrievalPathId: "rp-fixture", name: "Fixture", type: "media", active: true,
       url: feed, rssUrl: feed, crawlMethod: "rss" };
-    const beleg = { source_id: source.id, retrieval_path_id: null, original_url: proxy, found_at: "2026-11-18T17:00:00Z",
+    const beleg = { source_id: source.id, retrieval_path_id: source.retrievalPathId, original_url: proxy, found_at: "2026-11-18T17:00:00Z",
       raw_documents: { title, url: original, published_at: new Date(published).toISOString(), link_type: "direct" } };
     async function run(fundstellen, quelle = source) {
       const abrufe = [];
@@ -132,6 +199,7 @@ async function main() {
     A.equal(wieder.result.items[0].url, original); A.equal(wieder.result.items[0].originalUrl, proxy);
     A.equal(wieder.result.gespeicherteGoogleLinks, 1);
     for (const schlechte of [[{ ...beleg, source_id: "fremd" }], [{ ...beleg, retrieval_path_id: "rp-fremd" }],
+      [{ ...beleg, retrieval_path_id: null }],
       [{ ...beleg, found_at: "2026-11-10T17:00:00Z" }], [{ ...beleg, raw_documents: { ...beleg.raw_documents, title: "Andere Fassung" } }],
       [beleg, { ...beleg, raw_documents: { ...beleg.raw_documents, url: `${publisher}politik/anders` } }]]) {
       const neu = await run(schlechte);
@@ -200,12 +268,21 @@ async function main() {
       Date.parse("2026-11-20T03:10:00Z"));
     const ausgaben = new Map([[`2026-11-20|${profile.id}`, { user_id: profile.id, generated_at: "2026-11-20T05:14:00Z",
       payload: { briefing: { currentHelmutState: { primaryItem: { sourceIds: [dokument] } } } } }]]);
-    const r = C.abgleichen({ catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
+    const basis = { catalog: { retrievalPaths: [], packages: [], packagePaths: [] }, profiles: [profile],
       manifest: null, jobs: [job], belege: new Map([[id, beleg]]), analyseJobs: [{ id: jobId, status: "erledigt",
-        payload: { quellenstaende: { [dokument]: stand } } }], ausgaben, jetztMs: Date.parse("2026-11-20T06:00:00Z"), env });
+        payload: { quellenstaende: { [dokument]: stand } } }], ausgaben, jetztMs: Date.parse("2026-11-20T06:00:00Z"), env };
+    const r = C.abgleichen(basis);
     A.equal(r.faelligkeiten[0].produkt, "mandatspaket_belegt");
     A.equal(r.faelligkeiten[0].grund, "frist_verfehlt");
     A.equal(r.faelligkeiten[0].verspaetet, true);
+    const weiteres = "rd-" + "b".repeat(64), weitererJob = "00000000-0000-4000-8000-000000000003";
+    const { ergebnis } = beleg;
+    const teilbeleg = await QStore.sichern({ id, tenantId: profile.id, firstDueAt: due, payload: job.payload },
+      { ...ergebnis, rohIds: [...ergebnis.rohIds, weiteres], analyse: [...ergebnis.analyse, { rohId: weiteres, stand, jobId: weitererJob }] },
+      Date.parse("2026-11-20T03:10:00Z"));
+    const luecke = C.abgleichen({ ...basis, belege: new Map([[id, teilbeleg]]),
+      analyseJobs: [...basis.analyseJobs, { id: weitererJob, status: "erledigt", payload: { quellenstaende: { [weiteres]: stand } } }] });
+    A.equal(luecke.faelligkeiten[0].grund, "zuordnung_nicht_belegt");
   });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {
     const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";

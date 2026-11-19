@@ -65,6 +65,8 @@ async function scenario(mode){
       env:{HELMUT_SCALABLE_PIPELINE:"on"},now:()=>Date.parse("2026-11-13T04:00:00Z"),
       klassen:{belege:async()=>({erlaubt:true,slot:"synthetisch"}),gebeFrei:async()=>{}},
       hardeningConfig:()=>({enabled:false}),crawlAllSources:async()=>({rawItems:items,results:[{ok:true}]}),
+      ladeRohdokumentStaende:async(ids,staende)=>[...archive.values()].map(r=>r.data)
+        .filter(r=>ids.includes(r.dokument.id)&&staende[r.dokument.id]===r.quellenHash).map(r=>r.dokument),
       persistRohdokumente:async()=>result,enqueue:async job=>{children.push(job);return {verfuegbar:true,id:"synthetisches-kind",neu:true};}
     }),/fundstellen-persistenz-nicht-bestaetigt/);
     A.equal(children.length,2);A.equal(children.filter(job=>job.payload.artikelFehler).length,1);

@@ -55,11 +55,13 @@ mindestens 313 Abschlüsse pro Tag nötig, davon 151 für den Rückstand.
 
 Seit 13.11. sind 632 bestätigte direkte Google-Fundstellen für aktive
 öffentliche Katalogsuchwege gespeichert. Sie enthalten 610 verschiedene
-Proxy-Adressen. Der neue Leser bindet die bekannte Originaladresse an
-Suchweg, Proxy, Titel, Publikationszeit und Herausgeberhost. Der Feed bleibt
-eine aktuelle Beobachtung. Ein Offline-Fall spart beim wiedergefundenen
-Artikel einen von zwei Google-Abrufen. Personensuchen prüfen die gleichen
-Suchbegriffe vor der Linkauflösung. Ein POST mit bestätigter Antwort ohne
+Proxy-Adressen. Alle 632 Bestandszeilen haben eine leere Abrufweg-ID und
+qualifizieren sich deshalb nicht für die Wiederverwendung. Der neue Leser
+verlangt die passende Abrufweg-ID, Fund-URL, Titel, Publikationszeit und
+den Herausgeberhost. Der Feed bleibt eine aktuelle Beobachtung. Ein
+Offline-Fall mit bestätigter Bindung spart einen von zwei Abrufen.
+Personensuchen prüfen den aktuellen Profilbezug vor der Linkauflösung.
+Ein POST mit bestätigter Antwort ohne
 Artikellink wird mit derselben Eingabe nicht wiederholt. Eine belastbare
 Wiederverwendungsrate folgt erst aus regulären Abrufbelegen.
 
@@ -135,9 +137,10 @@ Beleg in der Lage und derselbe Beleg in der gebundenen Morgenausgabe sind
 getrennte Bedingungen. Der bestätigte Sitzungskalender ist über die
 gespeicherte Morgenquittung an das Paket gebunden.
 
-PR #1271 bereitet die Pflicht-CI ohne historische Mengenläufe vor.
-Die neue Queue-Migration erhält eine gezielte PostgreSQL-Prüfung als Teil
-des Pflichtlaufs.
+[PR #1271](https://github.com/ernisch/helmut-pilot/pull/1271) hat die
+Pflicht-CI ohne historische Mengenläufe auf `main` gebracht. Die neue
+Queue-Migration ist als gezielte Prüfung in der regulären
+netzlosen PostgreSQL-Prüfung eingebunden.
 
 Die vorbereitete Migration ergänzt genau die Funktion
 `public.helmut_claim_quellenfaelligkeit(text,bigint,boolean)` mit Ausführungsrecht
