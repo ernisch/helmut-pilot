@@ -386,7 +386,8 @@ async function main() {
   check("8.5 Anbieterpause ruft nur die versuchserhaltende Vertagung mit derselben Lease auf",
     minute.finish.length === 0 && minute.defer.length === 1
     && minute.defer[0].id === "quelle-synthetisch" && minute.defer[0].owner === "worker-synthetisch"
-    && minute.defer[0].grund === "anbietergrenze: anbietergrenze-minutengrenze");
+    && minute.defer[0].grund === "anbietergrenze: anbietergrenze-minutengrenze"
+    && minute.defer[0].delayMs === 59000);
   check("8.6 Kein Dokumentwrite und Klassenslot auch bei Vertagung freigegeben",
     minute.persist === 0 && minute.frei.length === 1 && minute.frei[0] === "slot-synthetisch");
   const lang = await quellenFall({ grund: "anbietergrenze-tag", wartenMs: 86400000, vorAbruf: true });

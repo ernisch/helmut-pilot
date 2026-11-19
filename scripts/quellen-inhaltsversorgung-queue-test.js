@@ -522,14 +522,20 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     dipDocToRawItem: doc => S.dipDocToRawItem(doc, { primary: true }), ...extra });
   await test("DIP bleibt derselbe Sourcejob im bestaetigten Manifest; andere Wege bleiben identisch", async () => {
     const plans = [];
+    const termin = require("../lib/helmut/quellen-bundestag-termine").QUELLEN[0];
+    const bmas = require("../lib/helmut/sources").v1Sources.find(s => s.id === "bmas");
+    const google = { id: "offizielle-suche", type: "official", active: true,
+      rssUrl: "https://news.google.com/rss/search?q=amtlich" };
+    const person = { id: "personenradar", type: "person", active: true,
+      rssUrl: "https://news.google.com/rss/search?q=person" };
     for (const active of [false, true]) {
       let manifest = null; const jobs = [];
       const journal = { lesen: async () => manifest, sichereManifest: async (tag, data) => (manifest = { tag, ...data, cursor: 0, zustand: "offen" }),
         bewegeCursor: async (_tag, before, cursor) => (manifest = { ...before, cursor, zustand: cursor === before.auftraege.length ? "fertig" : "offen" }) };
       const r = await P.planeArbeit({ jetztMs: start, env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
         ...(active ? { DIP_API_KEY: "declared-offline-only" } : {}) }, deps: {
-        listFullProfiles: async () => [profile], planungsrest: journal,
-        quellenFuerProfil: async () => [{ id: "unchanged", active: true, type: "media", rssUrl: "https://offline.invalid/rss" }],
+        listFullProfiles: async () => [{ ...profile, parliamentType: "Bundestag" }], planungsrest: journal,
+        quellenFuerProfil: async () => [person, google, bmas, termin],
         enqueue: async j => { jobs.push(j); return { verfuegbar: true, neu: true }; }
       } });
       assert.equal(r.ok, true); assert.equal(manifest.cursor, jobs.length); plans.push(jobs);
@@ -538,6 +544,11 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.equal(added.length, 1); assert.equal(added[0].jobType, "source_fetch");
     assert.equal(added[0].tenantId, profile.id); assert(!JSON.stringify(added).includes("declared-offline-only"));
     assert.deepEqual(plans[1].filter(j => j.payload.quelle?.crawlMethod !== "dip"), plans[0]);
+    const sourceJobs = plans[1].filter(j => j.jobType === "source_fetch");
+    assert.deepEqual(sourceJobs.map(j => j.payload.quelle.id), ["dip", termin.id, bmas.id, person.id, google.id]);
+    assert.deepEqual(sourceJobs.map(j => j.priority), [35, 40, 50, 60, 100]);
+    assert(sourceJobs.slice(0, 3).every(j => j.dueAt === "2026-11-09T03:00:00.000Z"));
+    assert(sourceJobs.filter(j => [termin.id, bmas.id, google.id].includes(j.payload.quelle.id)).every(j => j.tenantId === null));
   });
   await test("DIP Sourcejob erhaelt Datums-/Quellfelder, Fundstellenweg und gemeinsame Persistenz/Understanding", async () => {
     const accepted = [], queued = [];
