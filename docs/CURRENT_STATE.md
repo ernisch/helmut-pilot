@@ -6,7 +6,7 @@ Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.
 
 **Betrieb und Kosten.** Quellen alle 15 Minuten. Lage 06:45/06:55, Paket 07:10/07:20 Uhr Berlin. Grenzen 16 Originale und 1 USD Modellkosten pro UTC-Tag, 30 USD insgesamt. Vor Umstellung 4,282173 USD abgerechnet und 6,190173 USD gebunden.
 
-**Verwaltungskosten 20.11.** Lesend um 11:23 UTC belegt: 102 Tagesbuchungen über 0,790428 USD, 0 offene Tagesbuchungen. Die alte Anzeige stufte dieselben 102 Beträge als unbekannt ein. Die Korrektur liest den geprüften Tagesstand des Betriebsbuchs und zeigt offene Reserven getrennt.
+**Verwaltungskosten 20.11.** [PR #1291](https://github.com/ernisch/helmut-pilot/pull/1291) auf `217a6142` live. Anzeige und Betriebsbuch beim lesenden Abgleich um 12:07 UTC bestätigt. 102 Tagesbuchungen über 0,790428 USD, 0 offen. Zuvor zeigte die Altstatistik 0 USD und 102 unbepreiste Aufrufe.
 
 Folgefenster 01:00–01:04 UTC erfolgreich. Fällig 683, Altbestand 754 → 753, 0,138698 USD heute. Dauerhafter Abbau und kompletter Pilotmorgen offen.
 
