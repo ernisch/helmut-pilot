@@ -614,6 +614,39 @@ async function main() {
     });
     check("10.12 Ein ehrlicher Leerzustand ist KEIN Fehlschlag",
       b.ok === true && b.verfuegbar === false && b.grund === "no-vorgaenge");
+
+    const ersterTag = "2026-11-20T06:30:00.000Z", folgetag = "2026-11-21T06:30:00.000Z";
+    let jetzt = Date.parse(folgetag), beimBauWechseln = false, gelesen = 0;
+    const geschrieben = [];
+    const materialisiere = (firstDueAt, tagesbetrieb = true) => SP.HANDLER.briefing_materialization({
+      firstDueAt, payload: { mandatsId: "m1", tagesbetrieb }
+    }, {
+      env: {}, now: () => jetzt,
+      getActiveProfile: async () => { gelesen++; return { id: "m1" }; },
+      buildV3Briefing: async () => {
+        if (beimBauWechseln) jetzt = Date.parse(folgetag);
+        return { available: false };
+      },
+      materialisiereBriefing: async ({ now }) => {
+        geschrieben.push(now.toISOString());
+        return { ok: true, gespeichert: true };
+      }
+    });
+    const alt = await materialisiere(ersterTag);
+    check("10.13 Verspäteter Tagesauftrag bleibt ohne Profil- oder Paketzugriff",
+      alt.grund === "briefing-tagesauftrag-veraltet" && gelesen === 0 && geschrieben.length === 0);
+    const altOhneMarkierung = await materialisiere(ersterTag, false);
+    check("10.16 Verspäteter Legacy-Auftrag bleibt ohne Profil- oder Paketzugriff",
+      altOhneMarkierung.grund === alt.grund && gelesen === 0 && geschrieben.length === 0);
+    jetzt = Date.parse("2026-11-20T22:59:59.000Z");
+    beimBauWechseln = true;
+    const gewechselt = await materialisiere(ersterTag);
+    check("10.14 Berliner Tageswechsel während des Baus sperrt die alte Ausgabe",
+      gewechselt.grund === alt.grund && gelesen === 1 && geschrieben.length === 0);
+    beimBauWechseln = false;
+    const heute = await materialisiere(folgetag);
+    check("10.15 Aktueller Tagesauftrag speichert mit gebundener Uhrzeit",
+      heute.gespeichert === true && geschrieben.length === 1 && geschrieben[0] === folgetag);
   }
 
   // ─────────────────────────────────────────────────────────────────────────

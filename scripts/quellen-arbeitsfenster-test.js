@@ -312,6 +312,23 @@ async function main() {
       return { ok: true };
     })).ok);
   });
+  await check("Verspätetes Original-OK verbraucht die Buchung ohne Abrufrecht", async () => {
+    const w = welt();
+    const result = await fenster.fuehreAus({ env: ENV, deps: w.deps, ganztags: true, arbeit: async () => {
+      const original = await fenster.reserviereOriginal({ env: ENV, pflichtOriginal: true, deps: {
+        reserviere: async args => {
+          const buchung = await w.deps.reserviere(args);
+          w.weiter(fenster.FENSTER_SEKUNDEN * 1000);
+          return buchung;
+        }
+      } });
+      assert.equal(original.erlaubt, false);
+      assert.equal(original.grund, "originalfenster-abgelaufen");
+      return { ok: true };
+    } });
+    assert.equal(result.ok, true);
+    assert.equal(w.stand(fenster.SCHLUESSEL.originale), 1);
+  });
   await check("17Nov ab09:16 genau ein global gebuchtes Zusatzfenster ohne weitere Originalrechte", async () => {
     const w = operatorWelt(); let arbeiten = 0;
     const r = await operatorLauf(w, async ({ freigabe }) => {
