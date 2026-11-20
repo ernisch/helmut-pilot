@@ -4794,6 +4794,20 @@ function uiRelevanzText(value) {
   return uiSieText(text.slice(0, start)) + text.slice(start, end + 1) + uiSieText(text.slice(end + 1));
 }
 
+const CUSTOMER_COMPACT_QUERY = "(max-width: 767px)";
+
+function compactCustomerLayout() {
+  return typeof window !== "undefined" && window.matchMedia?.(CUSTOMER_COMPACT_QUERY)?.matches === true;
+}
+
+function renderCustomerDisclosure(label, content) {
+  if (!content) return "";
+  return `<details class="ui-customer-disclosure">
+    <summary>${escapeHtml(label)}${uiIcon("chevron")}</summary>
+    <div class="ui-customer-disclosure-content">${content}</div>
+  </details>`;
+}
+
 // Profilkontext der vorhandenen Mandatsebene. Keine neue Profilklassifikation.
 function renderUiMandateContext() {
   const parliament = profileParliamentType();
@@ -5543,14 +5557,15 @@ function lageGepruefteAbsaetze(data) {
       && isDirectArticleHref(q.url, q)));
 }
 
-function renderLageEinordnung(data) {
+function renderLageEinordnung(data, compact = false) {
   const paragraphs = lageGepruefteAbsaetze(data);
   if (!paragraphs.length) return "";
-  return `<section class="ui-lage-einordnung" data-ui-lage-einordnung aria-label="Geprüfte Lageeinordnung">
-    <h2>Geprüfte Lageeinordnung</h2>
+  const content = `
     <p class="ui-evidence-note">Gespeicherte KI-Einordnung · kein Originalauszug. Die Originalquellen sind je Absatz verlinkt.</p>
     ${paragraphs.map(p => `<article class="ui-lage-einordnung-absatz"><p data-ui-lage-absatz>${escapeHtml(p.text)}</p>${lageAbsatzMandatsbezugHtml(p)}
-      <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}
+      <div class="vsheet-sources">${p.sources.map(vsheetSourceRow).join("")}</div></article>`).join("")}`;
+  return `<section class="ui-lage-einordnung" data-ui-lage-einordnung aria-label="Geprüfte Lageeinordnung">
+    ${compact ? renderCustomerDisclosure("Geprüfte Lageeinordnung", content) : `<h2>Geprüfte Lageeinordnung</h2>${content}`}
   </section>`;
 }
 
@@ -5565,11 +5580,13 @@ function renderLageView() {
 function renderLageViewInhalt() {
   const data = lageData();
   if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
+  const compact = compactCustomerLayout();
   const items = lageVisibleVorgaenge(data);
   const header = `<div class="ui-lage-page-heading">${renderUiPageHeader("Politische Lage", "Relevante Vorgänge, aktueller Sachstand und belastbare Quellen.")}</div>`;
-  const einordnung = renderLageEinordnung(data);
+  const einordnung = renderLageEinordnung(data, compact);
   if (!items.length) {
-    return header + einordnung + renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
+    const empty = renderLageEmpty("Politische Lage", lageDateLabel(), data && data.emptyState, data);
+    return header + (compact ? empty + einordnung : einordnung + empty);
   }
   const selected = items.find(v => lageAnzeigeId(v) === uiLageSelectedId) || items[0];
   const selectedId = lageAnzeigeId(selected);
@@ -5584,7 +5601,7 @@ function renderLageViewInhalt() {
     ${data.demo ? '<p class="ui-preview-label">Beispiel-Lage · Demodaten</p>' : ""}
     ${data.teilstand?.version === 1 ? '<div data-ui-lage-teilstand>' + renderUiEmpty("Lage als geprüfter Teilstand", "Ein geprüfter Absatz ist verfügbar; ein weiterer wurde wegen fehlenden Profilbezugs zurückgehalten.") + '</div>' : ""}
     ${disruption ? `<div data-ui-lage-partial>${renderUiEmpty("Lage nur teilweise verfügbar", `${disruption.sub} Vorhandene Vorgangskarten bleiben sichtbar.`)}</div>` : ""}
-    ${einordnung}
+    ${compact ? "" : einordnung}
     <div class="ui-master-detail ui-lage-workspace ${uiLageDetailOpen ? "is-detail" : ""}">
       <section class="ui-master" aria-label="Politische Vorgänge">
         <div class="ui-section-heading"><span>Politische Vorgänge</span><span>${stand ? `<span data-lage-stand>${escapeHtml(stand)}</span>` : `${items.length} Vorgänge`}${checked && freshness ? `<br><span data-lage-source-recency>${escapeHtml(freshness)}</span>` : ""}</span></div>
@@ -5607,7 +5624,8 @@ function renderLageViewInhalt() {
         ${vsheetContentHtml(selected).replace('id="vsheet-title"', 'id="ui-lage-detail-title"')}
         ${lageOfficeDecision(selected) ? `<button class="secondary-button" type="button" data-lage-office="${escapeAttribute(selectedId)}">Im Büro öffnen ${uiIcon("arrow")}</button>` : ""}
       </article>
-    </div>`;
+    </div>
+    ${compact ? einordnung : ""}`;
 }
 
 // Merkt sich die Scroll-Position übers volle Re-Rendern hinweg (z. B. Menü/Update-
@@ -6556,7 +6574,6 @@ function renderHelmutStandView() {
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
-      <nav class="ui-jump" data-ui-jump aria-label="Themen heute"></nav>
       ${renderUiBriefingHero(state, details)}
       ${renderHstandItems(state)}
       ${renderUiBriefingColumns(state)}
@@ -6594,6 +6611,7 @@ function renderStrukturierterBriefingbeleg(beleg) {
 }
 
 function renderUiBriefingHero(state, details = "") {
+  const compact = compactCustomerLayout();
   const item = state.primaryItem;
   const title = hstandText(item.displayTitle) || hstandText(item.title);
   const recommendation = hstandText(state.recommendation);
@@ -6605,28 +6623,38 @@ function renderUiBriefingHero(state, details = "") {
   const officeAvailable = Boolean(briefingOfficeDecision() && activeOfficeFormats().length);
   const v = lageVorgangZumBriefing(item);
   const sub = !orientierung && v ? lageField(v.displaySummary) : "";
-  const count = Number(item.sourceCount) || 0;
   const when = hstandText(item.zeitLabel) || hstandWhen(item.meldungAt);
   const chips = `${urgency}${hstandContextChips(item.contextChips, 2)}`;
+  const context = `${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
+    ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}`;
+  const href = hstandQuelleHref(item);
+  const original = href ? `<a class="ui-source-direct" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, href)}${renderDipBeratungsstand(item, href)}` : "";
+  const lageLink = briefingLageVerweis(item);
+  const action = recommendation ? `<span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span>${!compact && !orientierung ? '<span class="ui-next-cta">Im Büro öffnen</span>' : ""}</span>` : "";
+  const officeHint = recommendation && !orientierung && !officeAvailable
+    ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : "";
+  const officeButton = compact && !orientierung && recommendation
+    ? `<button type="button" class="compact-button" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}>Im Büro öffnen ${uiIcon("arrow")}</button>` : "";
+  const extended = compact ? (recommendation ? context : "") + (!officeAvailable ? officeButton + officeHint : "") + (details || lageLink) : details;
   return `<section class="ui-briefing-hero ${stale ? "is-stale" : ""}" aria-label="Wichtigster Vorgang" data-topic-title="${escapeAttribute(title)}">
     <div class="ui-hero-main"><span class="ui-eyebrow"><span class="ui-priority-dot" aria-hidden="true"></span>${eyebrow}</span>
       <h2>${escapeHtml(title)}</h2>
-      ${sub ? `<p class="ui-hero-sub">${escapeHtml(uiSieText(sub))}</p>` : ""}
-      ${chips.trim() ? `<div class="hstand-chiprow">${chips}</div>` : ""}
-      ${hstandQuelleHref(item) ? `<a class="ui-source-direct" href="${escapeAttribute(hstandQuelleHref(item))}" target="_blank" rel="noopener noreferrer">Originalquelle öffnen${item.sourceName ? ` · ${escapeHtml(item.sourceName)}` : ""} ↗</a>${renderSourceNotice(item, hstandQuelleHref(item))}${renderDipBeratungsstand(item, hstandQuelleHref(item))}` : ""}
-      ${briefingLageVerweis(item)}
+      ${!compact || !recommendation ? context : ""}
+      ${compact ? "" : original + lageLink}
     </div>
     <div class="ui-hero-next">
-      ${orientierung ? `<div class="ui-arrow-action"><span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span></span></div>`
-        : recommendation ? `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span><span class="ui-next-text"><span class="ui-next-label">Möglicher nächster Schritt</span><span class="ui-next-step">${escapeHtml(uiSieText(recommendation))}</span><span class="ui-next-cta">Im Büro öffnen</span></span></button>` : ""}
+      ${action && (compact || orientierung ? `<div class="ui-arrow-action">${action}</div>`
+        : `<button type="button" class="ui-arrow-action" data-briefing-office ${officeAvailable ? "" : 'disabled aria-describedby="ui-office-binding-hint"'}><span class="ui-arrow-circle">${uiIcon("arrow")}</span>${action}</button>`)}
       ${why ? `<p class="ui-recommendation-why"><strong>${recommendation ? "Mandatsbezug und Anlass:" : "Warum heute relevant:"}</strong> ${escapeHtml(uiSieText(why))}</p>` : ""}
-      ${recommendation && !orientierung && !officeAvailable ? '<p id="ui-office-binding-hint" class="ui-row-meta">Kein eindeutig zugeordneter Büroentwurf verfügbar. Prüfen Sie den Vorgang und seine Quellen.</p>' : ""}
+      ${compact ? original : ""}
+      ${officeAvailable ? officeButton : ""}
+      ${compact ? "" : officeHint}
       ${orientierung?.terminOriginal ? renderStrukturierterBriefingbeleg(orientierung)
         : orientierung ? `<details class="ui-evidence-note"><summary>Beleg für die Vorbereitung</summary><blockquote>${escapeHtml(orientierung.text)}</blockquote><p>Gespeicherter Originalauszug; der Prüfauftrag ist eine Empfehlung.</p></details>`
         : `<p class="ui-evidence-note">${recommendation ? "KI-Empfehlung und Begründung" : "KI-Einordnung"} · vor Verwendung prüfen. Aussagebezogene Originalauszüge werden hier nicht mitgeliefert.</p>`}
-      <p class="ui-hero-meta">${when ? `<span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span>` : ""}</p>
+      ${!compact && when ? `<p class="ui-hero-meta"><span>${HELMUT_ICON_CLOCK}Quellenstand ${escapeHtml(when)}</span></p>` : ""}
     </div>
-    ${details ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${details}</div></details>` : ""}
+    ${extended ? `<details class="ui-hero-details"><summary class="ui-hero-more"><span class="ui-more-closed">Ausführlich lesen</span><span class="ui-more-open">Weniger anzeigen</span>${uiIcon("arrow")}</summary><div class="ui-hero-details-body">${extended}</div></details>` : ""}
   </section>`;
 }
 
@@ -8357,17 +8385,20 @@ function renderRadarInner(state) {
       environmentPreviewHidden: radarOpenableItems(state.environment?.[active]).length > 0 && remaining === 0,
       dynamics: take(state.dynamics), articles: take(state.articles) };
   }
-  const body = (!fullState || !radarStateHasContent(fullState))
+  const hasContent = fullState && radarStateHasContent(fullState);
+  const compact = hasContent && compactCustomerLayout();
+  const summary = hasContent ? renderRadarSummary(fullState) : "";
+  const body = !hasContent
     ? renderRadarEmpty(state)
     : `
-        ${renderRadarSummary(fullState)}
+        ${compact ? "" : summary}
         ${state.mentions?.length || !radarOpenableItems(fullState.mentions).length ? renderRadarAboutYou(state) : ""}
         ${renderRadarEnvironment(state)}
         ${state.dynamics?.length || !radarOpenableItems(fullState.dynamics).length ? renderRadarDynamics(state) : ""}
         ${state.articles?.length ? renderRadarArticles(state) : ""}
       `;
   const more = visibleCount > 3 ? `<button class="secondary-button" type="button" data-radar-expand="all" aria-expanded="${radarSignalsExpanded}">${radarSignalsExpanded ? "Weniger anzeigen" : `Alle Signale anzeigen (${visibleCount})`}</button>` : "";
-  return `${renderRadarHeader(fullState)}${body}${more}`;
+  return `${renderRadarHeader(fullState)}${body}${more}${compact ? renderCustomerDisclosure("Zusammenfassung", summary) : ""}`;
 }
 
 function radarStateHasContent(state) {
@@ -8381,6 +8412,7 @@ function radarStateHasContent(state) {
 
 // --- Kopf -------------------------------------------------------------------
 function renderRadarHeader(state) {
+  const compact = compactCustomerLayout();
   const updated = state && state.lastUpdated;
   const sourceDate = radarTime(updated);
   const disruption = radarDisruption(state);
@@ -8392,21 +8424,20 @@ function renderRadarHeader(state) {
     : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
   const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
     ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
-  const provenance = `${created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`;
+  const provenance = `<p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(`${!compact && created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`)}</p>`;
+  const status = `<div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
+    <span class="radar2-status-dot" aria-hidden="true"></span><span>${escapeHtml(label)}</span>
+  </div>`;
   const disruptionNote = disruption && radarStateHasContent(state)
     ? `<p class="radar2-refresh-note" data-radar-read-error>${escapeHtml(disruption.title)}. ${escapeHtml(disruption.sub)} Vorhandene Inhalte bleiben sichtbar.</p>` : "";
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
-        ${renderUiPageHeader("Radar", "Belegte Hinweise aus Ihrem politischen Umfeld.")}
+        ${renderUiPageHeader("Radar", compact ? "" : "Belegte Hinweise aus Ihrem politischen Umfeld.")}
       </div>
       ${disruptionNote}
       ${stale && radarStateHasContent(state) ? '<p class="radar2-refresh-note">In diesem gespeicherten Radar liegt kein neuerer belegter Hinweis vor. Vorhandene Hinweise bleiben sichtbar.</p>' : ""}
-      <p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(provenance)}</p>
-      <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
-        <span class="radar2-status-dot" aria-hidden="true"></span>
-        <span>${escapeHtml(label)}</span>
-      </div>
+      ${compact ? status + provenance : provenance + status}
     </header>
   `;
 }
@@ -8472,26 +8503,30 @@ function radarLageVerweis(item) {
 }
 
 function renderRadarMentionCard(m) {
+  const compact = compactCustomerLayout();
   const href = radarItemHref(m);
   const time = radarTime(m.publishedAt);
   const tag = m.mentionLabel
     ? `<span class="radar2-tag radar2-tag--${m.mentionTone === "critical" ? "critical" : "neutral"}">${escapeHtml(m.mentionLabel)}</span>`
     : "";
+  const meta = `<div class="radar2-meta">
+    ${compact ? "" : radarSourceBadge(m)}
+    <span class="radar2-source-name">${escapeHtml(m.sourceName || "Quelle")}</span>
+    ${time ? `<span class="radar2-dot" aria-hidden="true">·</span><span class="radar2-time">${escapeHtml(time)}</span>` : ""}
+  </div>`;
+  const title = `<h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>`;
+  const context = (m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(m.evidence))}</p>` : "") + radarAdditionalContext(m);
   const inner = `
     <div class="radar2-card-body">
-      <div class="radar2-meta">
-        ${radarSourceBadge(m)}
-        <span class="radar2-source-name">${escapeHtml(m.sourceName || "Quelle")}</span>
-        ${time ? `<span class="radar2-dot" aria-hidden="true">·</span><span class="radar2-time">${escapeHtml(time)}</span>` : ""}
-      </div>
-      <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
+      ${compact ? title + meta : meta + title}
       ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
-      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(m.evidence))}</p>` : ""}
-      ${radarAdditionalContext(m)}
+      ${compact ? "" : context}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarCardWrap(href, inner, "mention"), m, href) + radarLageVerweis(m);
+  return withSourceNotice(radarCardWrap(href, inner, "mention"), m, href)
+    + (compact ? renderCustomerDisclosure(m.evidence ? "Beleg zur Zuordnung" : "Zum Hinweis", context) : "")
+    + radarLageVerweis(m);
 }
 
 // --- Dein Umfeld (Partei / Wahlkreis / Ausschüsse) --------------------------
@@ -8523,20 +8558,24 @@ function renderRadarEnvironment(state) {
 }
 
 function renderRadarEnvRow(e) {
+  const compact = compactCustomerLayout();
   const href = radarItemHref(e);
   const time = radarTime(e.publishedAt);
   const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(uiSieText(e.relationLabel))}</span>` : "";
+  const evidence = e.beobachtungsBeleg && e.evidence;
+  const context = (evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(evidence))}</p>` : "") + radarAdditionalContext(e);
   const inner = `
-    ${radarSourceBadge(e, { small: true })}
+    ${compact ? "" : radarSourceBadge(e, { small: true })}
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
-      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block"><strong>Beleg zur Zuordnung:</strong> ${escapeHtml(uiSieText(e.evidence))}</p>` : ""}
-      ${radarAdditionalContext(e)}
+      ${compact ? "" : context}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarRowWrap(href, inner), e, href) + radarLageVerweis(e);
+  return withSourceNotice(radarRowWrap(href, inner), e, href)
+    + (compact ? renderCustomerDisclosure(evidence ? "Beleg zur Zuordnung" : "Zum Hinweis", context) : "")
+    + radarLageVerweis(e);
 }
 
 // --- Neue Dynamiken ---------------------------------------------------------
@@ -8556,20 +8595,24 @@ function renderRadarDynamics(state) {
 }
 
 function renderRadarDynamicCard(d) {
+  const compact = compactCustomerLayout();
   const href = radarItemHref(d);
   const time = radarTime(d.lastUpdatedAt);
   const tag = d.signalLabel ? `<span class="radar2-tag radar2-tag--signal">${escapeHtml(d.signalLabel)}</span>` : "";
+  const context = (d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(uiSieText(d.evidence))}</p>` : "") + radarAdditionalContext(d);
   const inner = `
-    <div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>
+    ${compact ? "" : `<div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>`}
     <div class="radar2-card-body">
       <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
-      ${d.evidence ? `<p class="radar2-dyn-evidence"><strong>Beleg zum Signal:</strong> ${escapeHtml(uiSieText(d.evidence))}</p>` : ""}
-      ${radarAdditionalContext(d)}
-      <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
+      ${compact ? "" : context}
+      <div class="radar2-card-foot">${tag}${compact ? `<span class="radar2-card-sub">${escapeHtml(d.sourceName || "Quelle")}${time ? ` · Signalstand ${escapeHtml(time)}` : ""}</span>`
+        : time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
-  return withSourceNotice(radarCardWrap(href, inner, "dynamic"), d, href) + radarLageVerweis(d);
+  return withSourceNotice(radarCardWrap(href, inner, "dynamic"), d, href)
+    + (compact ? renderCustomerDisclosure(d.evidence ? "Beleg zum Signal" : "Zum Hinweis", context) : "")
+    + radarLageVerweis(d);
 }
 
 // --- Alle relevanten Artikel + Filter ---------------------------------------
@@ -10501,22 +10544,6 @@ function bindActions() {
 
   bindDetailOpen(app);
 
-  // Themen-Sprungliste (mobil): aus den tatsaechlich gerenderten Eintraegen in
-  // ihrer Reihenfolge; ohne mindestens zwei Themen bleibt sie leer und unsichtbar.
-  app.querySelectorAll("[data-ui-jump]").forEach((nav) => {
-    const topics = [...(nav.closest(".hstand") || app).querySelectorAll("[data-topic-title]")];
-    if (topics.length < 2) { nav.remove(); return; }
-    nav.innerHTML = `<p class="ui-jump-head"><span>Auf einen Blick</span><span>${topics.length}</span></p><ol class="ui-jump-list">` + topics.map((el, i) => {
-      el.id = `ui-topic-${i + 1}`;
-      // Hauptvorgang mit echter Tagespriorität: in der Übersicht als „Heute entscheidend“ markiert.
-      const lead = el.classList.contains("ui-briefing-hero");
-      const flag = lead ? `<span class="ui-jump-flag">${escapeHtml(el.querySelector(".ui-eyebrow")?.textContent.trim() || "Heute entscheidend")}</span>` : "";
-      return `<li${lead ? ' class="is-lead"' : ""}><button type="button" data-jump="${i + 1}"><span class="ui-jump-num">${String(i + 1).padStart(2, "0")}</span><span class="ui-jump-text">${flag}<span class="ui-jump-title">${escapeHtml(el.dataset.topicTitle)}</span></span><span class="ui-jump-go" aria-hidden="true">↓</span></button></li>`;
-    }).join("") + "</ol>";
-    nav.querySelectorAll("[data-jump]").forEach((btn) => btn.addEventListener("click", () => {
-      app.querySelector(`#ui-topic-${btn.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }));
-  });
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     // Ganze Eintraege (role=button) sind antippbar; Links/Knoepfe darin behalten
     // ihre eigene Aktion (Quelle oeffnet im neuen Tab, kein zusaetzlicher Sprung).
@@ -12500,6 +12527,12 @@ function renderStartFailure(error) {
       showToast(error?.code === "AUTH_UNAVAILABLE" ? "Anmeldung derzeit nicht erreichbar" : "Briefing konnte nicht geladen werden");
     }
     hideStartupSplash();
+}
+
+if (typeof window !== "undefined") {
+  window.matchMedia?.(CUSTOMER_COMPACT_QUERY)?.addEventListener?.("change", () => {
+    if (["helmut", "briefing", "radar"].includes(currentView)) render();
+  });
 }
 
 loadBriefing()
