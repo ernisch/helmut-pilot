@@ -3264,7 +3264,7 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/stats/budget-today" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, async () => {
-      const heute = await getLlmUsageBreakdownToday();
+      const heute = await getLlmUsageBreakdownToday(null, { mitBetriebsbuch: true });
       const monthStart = `${String(heute.day || "").slice(0, 7)}-01`;
       const monat = /^\d{4}-\d{2}-01$/.test(monthStart)
         ? await getLlmCostSince(null, monthStart).catch(() => null)

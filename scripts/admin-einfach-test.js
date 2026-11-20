@@ -365,6 +365,23 @@ async function run({browser=false,evidenceDir=null}={}){
    assert.ok(consoleErrors.every(message=>message.includes('400 (Bad Request)')),'Nur der bewusst erzwungene Profilfehler darf einen HTTP400-Konsolenhinweis erzeugen');consoleErrors.length=0;
    await page.locator('[data-nav="settings"]').click();await page.locator('[data-setting="budget"]').click();await page.getByRole('heading',{name:'Kosten',exact:true}).waitFor();
    await check('Kostenansicht liest die vorhandene Route',async()=>assert.ok(requests.some(r=>r.url==='/api/admin/stats/budget-today')));
+   await page.getByText('Kosten heute',{exact:true}).waitFor();
+   const budgetPattern='**/api/admin/stats/budget-today';
+   let betriebsbuch={verfuegbar:true,abgerechnetUsd:0.790428,offenUsd:0.208,offeneBuchungen:1};
+   await context.route(budgetPattern,route=>route.fulfill({json:{betriebsbuch,kostenwahrheit:{gesamt:{kostenUsd:0,kostenUnbekannt:102}}}}));
+   await page.locator('[data-action="settings"]').click();await page.locator('[data-setting="budget"]').click();
+   await check('Kostenansicht zeigt das Betriebsbuch vor der alten Statistik',async()=>{
+    await page.getByText('0,790428 USD',{exact:true}).waitFor();
+    await page.getByText('0,208000 USD reserviert',{exact:true}).waitFor();
+    assert.equal(await page.getByText('102',{exact:true}).count(),0);
+   });
+   betriebsbuch={verfuegbar:false};
+   await page.locator('[data-action="settings"]').click();await page.locator('[data-setting="budget"]').click();
+   await check('Nicht bestaetigtes Betriebsbuch erscheint ohne Nullbetrag',async()=>{
+    await page.getByText('Der Stand des Betriebsbuchs konnte nicht bestätigt werden.',{exact:true}).waitFor();
+    assert.equal(await page.getByText('0,0000 USD',{exact:true}).count(),0);
+   });
+   await context.unroute(budgetPattern);
    await page.setViewportSize({width:1440,height:1000});
    await page.locator('[data-action="settings"]').click();await page.locator('[data-setting="sources"]').click();
    await page.locator('.source-details > summary').click();
