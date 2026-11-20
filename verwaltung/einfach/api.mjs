@@ -163,6 +163,14 @@ export function createSimpleApi({ fetcher=globalThis.fetch, timeoutMs=12000, now
    if(confirmed.length!==1||!consistent(confirmed[0]))throw new AdminMutationError(0,true);
    return confirmed[0];
   });},
+  deleteCustomer(id){return mutate(async()=>{
+   if(!validId(id))throw new AdminMutationError(400);
+   const unconfirmed=()=>new AdminMutationError(0,true,{message:'Die Löschung konnte nicht bestätigt werden. Laden Sie den Kundenstand neu.'});
+   let result;
+   try{result=await request(`/api/admin/users/${encodeURIComponent(id)}`,{method:'DELETE'});}
+   catch(error){if(error.outcomeUnknown||error.status===409)throw unconfirmed();throw error;}
+   if(result.ok!==true||result.deletedUserId!==id)throw unconfirmed();
+  });},
   invite(id){return mutate(()=>invite(id));},
   async settings(key){if(!['budget','sources','runs'].includes(key))throw new AdminMutationError(400);return reader.read(key);},
   dispose(){disposed=true;writesAllowed=false;sourceListener=()=>{};sourceController?.dispose();reader.dispose();actions.dispose();for(const c of pending)c.abort();}
