@@ -133,6 +133,57 @@ function entry(createdAt, callType, opts = {}) {
     check("gestrige 50 nicht enthalten", b.byCallType.understanding.calls === 600);
   }
 
+  console.log("== 9) Betriebsbuch und Nutzungsstatistik getrennt auswerten ==");
+  {
+    const assert = require("node:assert/strict");
+    const budget = require("../lib/helmut/betriebskosten-budget");
+    const env = { [budget.ENV]: JSON.stringify({ version: 1, profileId: "offline",
+      startsAt: "2026-07-15T00:00:00.000Z", dailyLimitUsd: 1, totalLimitUsd: 30,
+      route: { provider: "azure", responsesUrl: "https://offline.openai.azure.com/openai/v1/responses", model: "gpt-5-mini-eu" }
+    }) };
+    const contract = budget.vertrag(env);
+    const book = { version: 1, contract, contractHash: contract.contractHash, bound: 0, calls: {} };
+    const reservation = budget.kosten(400000, 2000);
+    const add = (id, createdAt, status, settlement = {}) => {
+      book.calls[id] = { id, requestHash: "a".repeat(64), day: createdAt.slice(0, 10), createdAt,
+        model: contract.route.model, maxOutputTokens: 2000, reserved: reservation, status, ...settlement };
+      book.bound += settlement.cost ?? reservation;
+    };
+    const log = Array.from({ length: 102 }, (_, i) => {
+      const usageReceiptId = `usage-${i}`;
+      add(`call-${i}`, REF, "abgerechnet", { cost: i === 0 ? 7678 : 7750, usageReceiptId });
+      return { ...entry(REF, "understanding", { model: contract.route.model, cost: "unknown" }), id: usageReceiptId };
+    });
+    add("gestern", "2026-07-15T23:59:59.000Z", "ungeklaert");
+    add("nicht-gesendet", REF, "nicht-gesendet", { cost: 0 });
+    const read = { env, mitBetriebsbuch: true, readAuth: async ({ fields }) => {
+      assert.deepEqual(fields, ["llmUsage", budget.KEY]);
+      return { llmUsage: log, [budget.KEY]: book };
+    } };
+    const first = await storage.getLlmUsageBreakdownToday(REF, read);
+    check("102 altstatistisch unbepreiste Aufrufe sind mit 0,790428 USD abgerechnet",
+      first.kostenwahrheit.gesamt.kostenUnbekannt === 102 && first.kostenwahrheit.gesamt.kostenUsd === 0
+      && first.betriebsbuch.abgerechnetUsd === 0.790428);
+    check("Vortagsreserve und Nichtaufruf bleiben aus der Liste offener Tagesbuchungen",
+      first.betriebsbuch.offeneBuchungen === 0 && first.betriebsbuch.offenUsd === 0);
+    add("heute-offen", REF, "reserviert");
+    const before = structuredClone(book);
+    const second = await storage.getLlmUsageBreakdownToday(REF, read);
+    assert.deepEqual(book, before);
+    check("Offene Reservierung getrennt, gelesener Buchstand unveraendert",
+      second.betriebsbuch.abgerechnetUsd === 0.790428 && second.betriebsbuch.offenUsd === 0.208 && second.betriebsbuch.offeneBuchungen === 1);
+    book.calls["heute-offen"].status = "ungeklaert";
+    assert.deepEqual((await storage.getLlmUsageBreakdownToday(REF, read)).betriebsbuch, second.betriebsbuch);
+    book.bound -= 1;
+    const invalid = await storage.getLlmUsageBreakdownToday(REF, read);
+    const absent = await storage.getLlmUsageBreakdownToday(REF, { ...read, readAuth: async () => ({ llmUsage: log }) });
+    assert.deepEqual(invalid.betriebsbuch, { verfuegbar: false });
+    check("Beschaedigtes oder fehlendes Betriebsbuch liefert keinen bestaetigten Kostenwert",
+      absent.betriebsbuch.verfuegbar === false && !Object.hasOwn(absent.betriebsbuch, "abgerechnetUsd"));
+    const legacy = await storage.getLlmUsageBreakdownToday(REF, { ...deps(log), env: {}, mitBetriebsbuch: true });
+    check("Altbetrieb ohne aktives Buch behaelt die vorhandene Statistik", !Object.hasOwn(legacy, "betriebsbuch") && legacy.kostenwahrheit.gesamt.kostenUnbekannt === 102);
+  }
+
   // Env wiederherstellen
   if (origLimit === undefined) delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY; else process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = origLimit;
   if (origReserve === undefined) delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING; else process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = origReserve;

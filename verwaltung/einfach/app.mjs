@@ -6,6 +6,19 @@ const button=(text,action,primary=false,disabled=false)=>`<button type="button" 
 const title=(text,sub='',action='')=>`<div class="head"><div><h1 tabindex="-1">${e(text)}</h1>${sub?`<p class="sub">${e(sub)}</p>`:''}</div>${action}</div>`;
 const check=(name,detail,value,tone='')=>`<div class="check"><div><strong>${e(name)}</strong><small>${e(detail)}</small></div>${tag(value,tone)}</div>`;
 const icon='<span aria-hidden="true">›</span>';
+
+function kostenPanel(data) {
+ const buch = data.betriebsbuch;
+ if (buch) {
+  if (!buch.verfuegbar) return `<section class="panel">${check('Kosten heute','Der Stand des Betriebsbuchs konnte nicht bestätigt werden.','Nicht bestätigt')}</section>`;
+  const usd = value => value.toLocaleString('de-DE', { minimumFractionDigits: 6, maximumFractionDigits: 6 }) + ' USD';
+  const offen = buch.offeneBuchungen ? `${usd(buch.offenUsd)} reserviert` : 'Keine Beträge offen oder reserviert.';
+  return `<section class="panel">${check('Kosten heute','Verbuchte Modellkosten laut Betriebsbuch · Tag nach UTC',usd(buch.abgerechnetUsd))}${check('Offene Buchungen',offen,String(buch.offeneBuchungen),buch.offeneBuchungen?'warn':'')}</section>`;
+ }
+ const sum = data.kostenwahrheit?.gesamt;
+ return `<section class="panel">${check('Kosten heute',Number.isFinite(sum?.kostenUnbekannt)&&sum.kostenUnbekannt>0?'Weitere Kosten sind noch offen.':'Schätzwert in USD · UTC-Tag',Number.isFinite(sum?.kostenUsd)?sum.kostenUsd.toFixed(4)+' USD':'Nicht bestätigt')}${check('Bekannte offene Anteile','Unbekannte Beträge werden nicht als null gerechnet.',Number.isFinite(sum?.kostenUnbekannt)?String(sum.kostenUnbekannt):'Nicht bestätigt')}</section>`;
+}
+
 export function mountAdministration(root,{api,preview=false}={}) {
  let data=null,page='overview',id=null,loading=true,busy=false,error='',detail=null,detailError='',query='',locked=false,closed=false,epoch=0,invite=null,setting=null,settingData=null,feedback='';
  const emptyCustomer=()=>({name:'',email:'',party:'',faction:'',parliamentType:'',state:'',constituency:'',topics:''});
@@ -82,7 +95,7 @@ export function mountAdministration(root,{api,preview=false}={}) {
  function settingsPage(){if(setting==='sources')return sourcesPage();const labels={sources:'Quellen & Versorgung',budget:'Kosten',runs:'Letzte Abläufe'};
   if(setting){let body=`<button class="link back" type="button" data-action="settings">← Einstellungen</button>${title(labels[setting])}`;
    if(!settingData)body+='<p class="quiet">Stand wird geladen.</p>';
-   else if(setting==='budget'){const sum=settingData.kostenwahrheit?.gesamt;body+=`<section class="panel">${check('Kosten heute',Number.isFinite(sum?.kostenUnbekannt)&&sum.kostenUnbekannt>0?'Weitere Kosten sind noch offen.':'Schätzwert in USD · UTC-Tag',Number.isFinite(sum?.kostenUsd)?sum.kostenUsd.toFixed(4)+' USD':'Nicht bestätigt')}${check('Bekannte offene Anteile','Unbekannte Beträge werden nicht als null gerechnet.',Number.isFinite(sum?.kostenUnbekannt)?String(sum.kostenUnbekannt):'Nicht bestätigt')}</section>`;}
+   else if(setting==='budget'){body+=kostenPanel(settingData);}
    else{const runs=settingData.processRuns||settingData.runs;body+=`<section class="panel">${Array.isArray(runs)&&runs.length?runs.slice(0,15).map(r=>check(r.process||r.type||'Verarbeitung',dateTime(r.startedAt||r.started_at),r.status||'Nicht bekannt')).join(''):'<p class="empty">Keine Laufbelege gelesen.</p>'}</section>`;}
    return body+errorBox();
   }
