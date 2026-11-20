@@ -59,7 +59,8 @@ async function normaleAppAusgabe(briefing, { suche = "", storage = S, zeit = now
       if(name==="./lib/helmut/publication-eligibility")return require("../lib/helmut/publication-eligibility");
       if(name==="./lib/helmut/parlamentsbelege-produkt")return T;
       throw Error("Unerwarteter Apppfad: "+name);
-    },storageModul:storage,Date:class extends Date { constructor(){ super(zeit); } },prepareBriefingResponse:value=>value});
+    },storageModul:storage,quellenTagesbetrieb:require("../lib/helmut/quellen-tagesbetrieb"),
+    Date:class extends Date { constructor(){ super(zeit); } },prepareBriefingResponse:value=>value});
   return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing"+suche)});
 }
 async function main(){
@@ -177,9 +178,9 @@ async function main(){
         const lauf = L.quittung({ tenantId: mandat.id, berlinTag: tag, status: L.STATUS_ERFOLG,
           ausgabeBeleg: result.ausgabeBeleg, erzeugtAm: new Date(now() + 5000) });
         const zeit = now() + 120000;
-        A.deepEqual(paketLeser.quittierterVorgaenger(paket, lauf,
+        A.deepEqual(paketLeser.quittierteFassung(paket, lauf,
           { day: tag, profile: mandat, now: zeit }), vorwert);
-        A.equal(paketLeser.quittierterVorgaenger({ ...paket, payload: { ...paket.payload,
+        A.equal(paketLeser.quittierteFassung({ ...paket, payload: { ...paket.payload,
           vorherigerStand: { ...vorwert, user_id: "fremdes-mandat" } } }, lauf,
         { day: tag, profile: mandat, now: zeit }), false);
         const job = { id: "00000000-0000-4000-8000-000000000001", idempotency_key: "kalender", tenant_id: null,

@@ -54,7 +54,8 @@ async function run(profiles = [profile], options = {}) {
     getBriefingFenstergrundlage: async (id, tag) => {
       const row = saved.rows.get(`bf-${id}-${B.SLOT}-${tag}`);
       return row ? { id: row.id, user_id: row.user_id, slot: row.slot,
-        generated_at: row.generated_at, briefing: clone(row.payload.briefing) } : null;
+        generated_at: row.generated_at, briefing: clone(row.payload.briefing), inhaltHash: row.payload.inhaltHash,
+        profilHash: row.payload.profilHash, erzeugtAm: row.payload.erzeugtAm } : null;
     },
     getRenderedBriefingV3: async (id, slot, tag) => {
       if (options.readError && slot === B.SLOT) throw new Error("offline-read-error");
@@ -154,7 +155,11 @@ async function test(name, fn) {
     assert.equal(row.payload.pruefung.bestanden, false);
     assert.equal(second.response.versorgung.fachlicheAbnahme, "offen");
     assert.equal(second.saved.pushes.length, 1);
-    assert.equal(second.saved.writes.filter(s => s === L.SLOT_ERFOLG).length, 1);
+    assert.equal(second.saved.writes.filter(s => s === L.SLOT_ERFOLG).length, 2);
+    const receipt = second.saved.rows.get(L.laufId(profile.id, day)).payload;
+    const A = require("../lib/helmut/briefing-ausgabebeleg");
+    assert.equal(A.quittiert(receipt, row), true);
+    assert.equal(A.quittiert(receipt, before), false, "derselbe Briefinginhalt bindet keine andere Lageversion");
     const writes = second.saved.writes.length;
     const third = await run([profile], { saved: second.saved, nowMs: startMs + 7200000, runId: "third" });
     assert.equal(third.response.versorgung.vollstaendig, true);
@@ -210,6 +215,47 @@ async function test(name, fn) {
     assert.deepEqual(second.saved.rows.get(id), before);
     assert.equal(second.saved.pushes.length, 1);
   });
+  await test("Parallele Quittungen publizieren atomar genau eine Paketversion und behalten den Vorbeleg", async () => {
+    const { saved } = await run(), id = L.laufId(profile.id, day), before = clone(saved.rows.get(id));
+    const old = saved.rows.get(before.payload.ausgabeBeleg.paketId);
+    const newer = clone(old), late = new Date(startMs + 31 * 60000);
+    newer.generated_at = newer.payload.erzeugtAm = late.toISOString();
+    newer.payload.vorherigerStand = old;
+    saved.rows.set(newer.id, newer);
+    const A = require("../lib/helmut/briefing-ausgabebeleg");
+    assert.equal(A.quittiert(before.payload, newer), false);
+    let arrivals = 0, unblock;
+    const waiting = new Promise(resolve => { unblock = resolve; });
+    const storage = {
+      getRenderedBriefingV3: async (owner, slot, dayKey) => clone(saved.rows.get(`bf-${owner}-${slot}-${dayKey}`) || null),
+      saveRenderedBriefingV3: row => S.saveRenderedBriefingV3(row, {
+        bereit: true, lese: storage.getRenderedBriefingV3, request: async (url, opts) => {
+          const filters = new URL(url, "https://local.invalid").searchParams;
+          assert.equal(opts.method, "PATCH");
+          assert.equal(filters.get("id"), `eq.${id}`);
+          assert.equal(filters.get("user_id"), `eq.${profile.id}`);
+          assert.equal(filters.get("slot"), `eq.${L.SLOT_ERFOLG}`);
+          assert.equal(filters.get("generated_at"), `eq.${before.generated_at}`);
+          if (++arrivals === 2) unblock();
+          await waiting;
+          if (`eq.${saved.rows.get(id).generated_at}` !== filters.get("generated_at")) return [];
+          const committed = { ...clone(before), ...JSON.parse(opts.body) };
+          saved.rows.set(id, committed);
+          return [clone(committed)];
+        }
+      })
+    };
+    const publish = seconds => L.schreibeQuittung(storage, L.quittung({ tenantId: profile.id, berlinTag: day,
+      status: L.STATUS_ERFOLG, erzeugtAm: new Date(late.getTime() + seconds * 1000),
+      signatur: L.inhaltsSignatur(newer.payload.briefing), ausgabeBeleg: A.ausPaket(newer, 2) }));
+    const results = await Promise.all([publish(1), publish(2)]);
+    assert.equal(results.filter(r => r.verifiziert).length, 1);
+    const current = saved.rows.get(id).payload;
+    assert.deepEqual(current.vorherigeQuittung, before.payload);
+    assert.equal(A.quittiert(current, newer), true);
+    assert(Date.parse(current.erzeugtAm) > startMs + 30 * 60000, "eine spaete Quittung behaelt ihre tatsaechliche Zeit");
+    assert.equal(A.quittiert(current, old), false);
+  });
   await test("Unbestaetigte Quittung bleibt trotz vollstaendig gespeichertem Paket fehlgeschlagen", async () => {
     const saved = state(), l = lage(profile.id); saved.rows.set(l.id, l);
     const r = await run([profile], { saved, receiptError: true });
@@ -218,6 +264,7 @@ async function test(name, fn) {
     assert.equal(r.response.versorgung.versorgt, 0);
     assert.equal(r.saved.telemetry[0].status, "failed");
     assert.equal(r.response.fairness.erfolgreich.length, 0);
+    assert.equal(r.saved.pushes.length, 0);
   });
   await test("Leeres Briefing bleibt ein gespeicherter Leerstand ohne Vollversorgung", async () => {
     const r = await run([profile], { briefing: { available: false, items: [], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} } });
@@ -235,7 +282,8 @@ async function test(name, fn) {
     const before = clone(row);
     const r = await run([profile], { saved, nowMs: startMs + 3600000 });
     assert.equal(r.response.versorgung.vollstaendigePakete, 0);
-    assert.equal(r.saved.telemetry.at(-1).status, "partial");
+    assert.equal(r.saved.telemetry.at(-1).status, "failed");
+    assert.equal(r.response.results[0].error, "briefing-fenstergrundlage-unbekannt");
     assert.deepEqual(saved.rows.get(row.id), before, "Kein automatisches Umschreiben vollstaendiger Altbelege");
   });
   await test("500 aktive Profile behalten den vollen Nenner bei Zeitende und gespeicherter Fortsetzung", async () => {

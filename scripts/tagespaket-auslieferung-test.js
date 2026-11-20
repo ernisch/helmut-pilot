@@ -163,13 +163,31 @@ function bindeTeststand(f) {
     const r = await f.read(); A.equal(r.briefing.available, false);
     A.equal(r.briefing.reason, "tagespaket-fehlt"); A.equal(r.briefing.generatedAt, null);
     A.equal(r.briefing.lageBriefing.demo, false); A.equal(r.briefing.lageBriefing.latestUpdatedAt, null);
-    A.deepEqual(r.briefing.lageBriefing.vorgaenge, []); A.equal(f.reads.length, 1);
+    A.deepEqual(r.briefing.lageBriefing.vorgaenge, []); A.equal(f.reads.length, 2);
+  });
+  await test("Nur-Anlage der Tageswarteschlange ueberschreibt auch bei parallelem Erstinsert nichts", async () => {
+    const f = await state({ partial: true }), before = clone(f.row);
+    const input = { profile, userId: profile.id, now: new Date(now.getTime() + 1000),
+      briefing: { ...f.briefing, reason: "spaeterer Bau" }, lageAnsicht: f.lageAnsicht, storage: f.storage, nurAnlegen: true };
+    let inserts = 0, get = f.storage.getRenderedBriefingV3;
+    f.storage.insertRenderedBriefingV3 = async () => { inserts++; return { saved: false, reason: "existing-result" }; };
+    f.storage.ergaenzeUnvollstaendigesBriefing = async () => A.fail("keine Queue-Ersetzung");
+    A.equal((await B.materialisiere(input)).bereitsVorhanden, true);
+    A.equal(inserts, 0);
+    let erstesPaketLesen = true;
+    f.storage.getRenderedBriefingV3 = (owner, slot, dayKey) => {
+      if (slot === B.SLOT && erstesPaketLesen) { erstesPaketLesen = false; return null; }
+      return get(owner, slot, dayKey);
+    };
+    A.equal((await B.materialisiere(input)).bereitsVorhanden, true);
+    A.equal(inserts, 1);
+    A.deepEqual(f.rows.get(before.id), before);
   });
   await test("Berliner Tag wechselt schon vor dem UTC-Tag; alte Pakete werden nicht umetikettiert", async () => {
     const f = await state();
     const r = await f.read({ now: new Date(day + "T23:30:00Z") });
     A.equal(r.briefing.paketStatus.tag, "2026-09-14"); A.equal(r.briefing.available, false);
-    A.equal(f.reads[0][2], "2026-09-14"); A.equal(f.reads.length, 1);
+    A(f.reads.every(r => r[2] === "2026-09-14")); A.equal(f.reads.length, 3);
   });
   await test("Fremde Zeile, geaendertes Profil und manipulierte Quellen werden geschlossen abgewiesen", async () => {
     for (const change of [f => { f.rows.get(f.row.id).user_id = "foreign"; },
@@ -182,15 +200,15 @@ function bindeTeststand(f) {
     A.equal((await f.read({ profile: { ...profile, focusTopics: ["anderes Thema"] } })).briefing.available, false);
     await A.rejects(f.read({ userId: "foreign" }), /profil-abweichend/);
   });
-  await test("Fremder Quittungsinhalt stuft Frische herab, behaelt aber alle geprueften Inhalte", async () => {
+  await test("Fremder Quittungsinhalt gibt keinen ungebundenen Ersatz frei", async () => {
     const f = await state(); f.rows.get(L.laufId(profile.id,day)).payload.ausgabeBeleg.briefingHash = "f".repeat(64);
-    const r = await f.read(); A.equal(r.frischeKontext.lauf, null);
-    A.equal(r.briefing.paketStatus.quittungGebunden, false); A.deepEqual(r.briefing.items, f.briefing.items);
+    const r = await f.read(); A.equal(r.frischeKontext, null);
+    A.equal(r.briefing.reason, "tagespaket-quittung-nicht-bestaetigt"); A.equal(r.briefing.available, false);
   });
   await test("Neue Quellensperre gilt sofort ohne Modell oder Ranglistenaufbau", async () => {
     const f = await state(); process.env.HELMUT_SOURCE_BLOCKLIST = "example.invalid";
     try { const r = await f.read(); A.equal(r.briefing.available, false);
-      A.equal(r.briefing.reason, "tagespaket-quellenstand-nicht-bestaetigt"); A.equal(f.reads.length, 1); }
+      A.equal(r.briefing.reason, "tagespaket-quellenstand-nicht-bestaetigt"); A.equal(f.reads.length, 2); }
     finally { delete process.env.HELMUT_SOURCE_BLOCKLIST; }
   });
   await test("Aktive Publikationssperre prueft neue Quellenverknuepfungen der gespeicherten IDs", async () => {
@@ -200,13 +218,13 @@ function bindeTeststand(f) {
         koSHA256: "b".repeat(64), sourceSHA256: "c".repeat(64) } }] });
     try {
       const row = f.rows.get(f.row.id); row.payload.briefing.publicationEligibilityPolicy = P.publicInfo();
-      row.payload.quellenStand = D.quellenStand(row.payload); row.payload.inhaltHash = B.inhaltHash(row.payload);
+      bindeTeststand(f);
       let identityReads = 0;
       f.storage.getPublicationSourceIdentities = async deps => { identityReads++;
         A.deepEqual(deps.map(d => d.id), ["ko-synth-1","ko-synth-2"]);
         return { "ko-synth-1": [{ url: "https://example.invalid/held" }], "ko-synth-2": [] }; };
       A.equal((await f.read()).briefing.available, false); A.equal(identityReads, 1);
-      A.equal(f.reads.length, 1);
+      A.equal(f.reads.length, 2);
     } finally { delete process.env[P.ENV]; }
   });
   await test("Quellenschutzmanifest ist selbst an den Inhaltshash gebunden",async()=>{
@@ -216,7 +234,7 @@ function bindeTeststand(f) {
   });
   await test("Neuer Profil- oder Quellenkontext bekommt keinen abgewiesenen alten Lagecache", async () => {
     for (const geaendert of ["profil", "quellen"]) {
-      const f = await state(); f.rows.delete(f.row.id);
+      const f = await state(); f.rows.delete(f.row.id); f.rows.delete(L.laufId(profile.id, day));
       const aktuell = geaendert === "profil" ? { ...profile, focusTopics: ["Bildung"] } : profile;
       const ansicht = { ...clone(f.lageAnsicht), fromCache: false, pendingNarrative: true,
         paragraphs: [], quellenBindung: undefined };
@@ -272,7 +290,7 @@ function bindeTeststand(f) {
     } finally { Object.assign(S, old); safety.guardKnowledgeObject = oldSafety; ai.generateLageBriefing = oldAi; }
   });
   await test("Lage-only-Karten behalten ihre Quellenbindung bei unbeteiligter Publikationssperre", async () => {
-    const f = await state(); f.rows.delete(f.row.id);
+    const f = await state(); f.rows.delete(f.row.id); f.rows.delete(L.laufId(profile.id, day));
     process.env[P.ENV] = JSON.stringify({ version: 1, holds: [{ publicationUrl: "https://example.invalid/unbeteiligt",
       reason: "unresolved-event-relation", review: { id: "synthetic", receiptSHA256: "a".repeat(64),
         koSHA256: "b".repeat(64), sourceSHA256: "c".repeat(64) } }] });
