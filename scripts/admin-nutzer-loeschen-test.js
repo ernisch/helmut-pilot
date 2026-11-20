@@ -130,35 +130,6 @@ function loadPlaywright() {
   check("renderAdminUserEditRow ruft renderAdminUserDeleteSection auf (Loesch-Bereich ist Teil der geoeffneten Nutzerkarte)",
     /\$\{renderAdminUserDeleteSection\(user\)\}/.test(editRowSrc));
 
-  const restoreViewSrc = clientSrc.match(/function restorePersistedView\(\) \{[\s\S]*?\n}\n/)[0];
-  const sectionBodySrc = clientSrc.match(/function renderAdmSectionBody\(section\) \{[\s\S]*?\n}\n/)[0];
-  const renderDirectLink = new Function("hash", "role", `
-    const location = { search: "?admin-tools=1", hash };
-    const isAccountMode = () => true;
-    const userRole = () => role;
-    const localStorage = { getItem: () => null };
-    const admSectionLoadingState = () => ({});
-    const admCard = (_, __, html) => html;
-    const admEmpty = (message) => message;
-    const escapeHtml = String, escapeAttribute = String;
-    const admData = { overview: { users: [
-      { id: "user-kunde", name: "Testkunde", role: "abgeordneter" },
-      { id: "user-admin", role: "admin" }
-    ] } };
-    let currentView, admSection, admUserDeleteTargetId, admUserDeleteConfirm;
-    ${restoreViewSrc}
-    ${sectionBodySrc}
-    ${deleteSectionSrc}
-    restorePersistedView();
-    return admSection ? renderAdmSectionBody(admSection) : "";
-  `);
-  check("Direktlink zeigt die bestehende Bestaetigung fuer genau das gewaehlte Konto",
-    /data-user-delete-confirm="user-kunde"/.test(renderDirectLink("#nutzer-loeschen=user-kunde", "admin")));
-  check("Direktlink bietet bei Admin-Konto, unbekannter ID oder nicht berechtigtem Nutzer keine Loeschaktion an",
-    !/data-user-delete/.test(renderDirectLink("#nutzer-loeschen=user-admin", "admin"))
-    && !/data-user-delete/.test(renderDirectLink("#nutzer-loeschen=user-unbekannt", "admin"))
-    && renderDirectLink("#nutzer-loeschen=user-kunde", "abgeordneter") === "");
-
   console.log("\n== Quelltext: Event-Bindung (kein Erfolg ohne Bestaetigung, kein Erfolg bei Fehler) ==");
   const bindSrc = (clientSrc.match(/function bindAdmActions\(\) \{[\s\S]*?\n}\n/) || [""])[0];
   check("bindAdmActions gefunden", bindSrc.length > 500);

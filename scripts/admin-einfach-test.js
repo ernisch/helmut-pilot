@@ -181,6 +181,35 @@ async function run({browser=false,evidenceDir=null}={}){
    assert.equal(writes,1);assert.equal((await accounts.getUserByIdRaw(managed.id)).active,false);p.dispose();
    await api.load();await api.setAccess(managed.id,true);
   });
+  await check('Direkte Loeschung entfernt nur das bestaetigte Konto und dessen Kundensitzung',async()=>{
+   const target=await accounts.createUser({name:'Fiktives Loeschkonto',email:'loeschen@example.invalid',role:'abgeordneter',password:'Only-Synthetic-123!',politicianId:user.politicianId});
+   const targetCookie=await login(target.email);
+   const profile=await storage.getProfile(user.politicianId),sentBefore=mailCalls.length;
+   await api.load();
+   await api.deleteCustomer(target.id);
+   assert.equal(await accounts.getUserByIdRaw(target.id),null);
+   assert.equal((await (await fetch(base+'/api/auth/session',{headers:{Cookie:targetCookie}})).json()).authenticated,false);
+   assert.ok(await accounts.getUserByIdRaw(user.id));
+   assert.deepEqual(await storage.getProfile(user.politicianId),profile);
+   assert.equal(mailCalls.length,sentBefore);
+   assert.ok(!(await api.load()).customers.some(c=>c.userId===target.id));
+  });
+  await check('Loeschung verlangt bestaetigte Ziel-ID und wiederholt keinen unklaren Auftrag',async()=>{
+   let deletes=0;
+   const p=createSimpleApi({origin:base,fetcher:(url,options={})=>{
+    if(options.method!=='DELETE')return authenticated(url,options);
+    assert.equal(url,'/api/admin/users/'+managed.id);
+    assert.ok(options.headers['X-CSRF-Token']);
+    deletes++;
+    return new Response(JSON.stringify({ok:true,deletedUserId:user.id}),{status:200});
+   }});
+   try{
+    await p.load();
+    await assert.rejects(p.deleteCustomer(managed.id),e=>e.outcomeUnknown===true);
+    assert.equal(deletes,1);
+    assert.ok(await accounts.getUserByIdRaw(managed.id));
+   }finally{p.dispose();}
+  });
   await check('Status aus aktuellen gebundenen Antwortpositionen; Qualitaetsurteil bleibt offen',async()=>{
    const d=await api.load(),c=d.customers.find(c=>c.userId===user.id),pos={stufe:3,ursache:null};
    d.resultDay=berlinDay(d.now);d.results={[user.politicianId]:{positionen:{briefing:pos,zustellung:pos,lage:pos}}};
@@ -193,7 +222,7 @@ async function run({browser=false,evidenceDir=null}={}){
    let writes=0;const p=createSimpleApi({fetcher:async(url,options={})=>{
     if(options.method&&options.method!=='GET')writes++;
     return {ok:true,status:200,json:async()=>url.includes('customers')?{kunden:[],customerScope:'regular'}:url.includes('overview')?{mandates:[],system:{deploy:{environment:'preview'}}}:{verfuegbar:false}};
-   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);await assert.rejects(p.setAccess('synthetic-customer',false),/Vorschau/);assert.equal(writes,0);p.dispose();
+   }});await p.load();await assert.rejects(p.createCustomer({name:'Fiktiv',email:'f@example.invalid'}),/Vorschau/);await assert.rejects(p.sourceRun.start(),/Vorschau/);await assert.rejects(p.setAccess('synthetic-customer',false),/Vorschau/);await assert.rejects(p.deleteCustomer('synthetic-customer'),/Vorschau/);assert.equal(writes,0);p.dispose();
   });
   await check('401 entfernt statt erfolgreichem Leerbestand den gesamten Zugriff',async()=>{
    const denied=createSimpleApi({fetcher:async()=>({ok:false,status:401,json:async()=>({})})});await assert.rejects(denied.load(),e=>e.status===401);denied.dispose();

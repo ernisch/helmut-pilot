@@ -245,7 +245,6 @@ let admCostDays = 30;            // Zeitraum der KI-Kosten-Ansicht (Tage)
 let admPrivacyConfirm = null;    // aktive DSGVO-Loesch-Bestaetigung { politicianId }
 let admBackfillState = null;     // Zustand/Ergebnis des KO-Backfill-Aufrufs
 let admUserDeleteConfirm = null; // aktive Nutzer-Loesch-Bestaetigung { userId }
-let admUserDeleteTargetId = null;
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
@@ -309,12 +308,6 @@ function restorePersistedView() {
     // Fester Übergangsweg aus der Verwaltung; Berechtigungen bleiben unverändert.
     if (new URLSearchParams(location.search).get("admin-tools") === "1" && isAccountMode() && userRole() === "admin") {
       currentView = "admin";
-      const userId = new URLSearchParams(location.hash.slice(1)).get("nutzer-loeschen");
-      if (userId && /^[a-z0-9][a-z0-9-]{0,119}$/i.test(userId)) {
-        admSection = "nutzer-loeschen";
-        admUserDeleteTargetId = userId;
-        admUserDeleteConfirm = { userId };
-      }
       return;
     }
     const saved = localStorage.getItem(VIEW_PERSIST_KEY);
@@ -1647,7 +1640,6 @@ const ADM_SECTION_ENDPOINTS = {
   kosten: ["costs", "budget", "costsPerUser", "runCosts"],
   daten: ["overview"],
   nutzer: ["overview", "customers"],
-  "nutzer-loeschen": ["overview"],
   system: ["overview", "tenantMode", "recovery", "audit", "setupStatus"],
   quellen: ["sources", "crawl", "crawlReport"]
 };
@@ -1657,7 +1649,6 @@ function admResetState() {
   admData = {}; admErrors = {}; admLoading = {}; admLoadedAt = {};
   admSort = {}; admSearchTerms = {}; admPrivacyConfirm = null; admBackfillState = null;
   admUserDeleteConfirm = null;
-  admUserDeleteTargetId = null;
 }
 
 // Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
@@ -3150,14 +3141,6 @@ function renderAdmSectionBody(section) {
     case "kosten": return renderAdmKosten();
     case "daten": return renderAdmDaten();
     case "nutzer": return renderAdmNutzer();
-    case "nutzer-loeschen": {
-      const users = admData.overview?.users;
-      const user = Array.isArray(users) ? users.find((entry) => entry.id === admUserDeleteTargetId) : null;
-      const content = user && user.role !== "admin"
-        ? renderAdminUserDeleteSection(user)
-        : admEmpty(Array.isArray(users) ? "Dieses Konto ist nicht verfügbar oder kann nicht gelöscht werden." : "Der Kontostand ist noch nicht bestätigt.");
-      return admCard("Nutzer löschen", undefined, content);
-    }
     case "system": return renderAdmSystem();
     case "quellen": return renderAdmQuellen();
     default: return renderAdmUebersicht();
@@ -3193,7 +3176,6 @@ function renderAdminView() {
 function bindAdmActions() {
   app.querySelectorAll("[data-adm-section]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (admSection === "nutzer-loeschen") admUserDeleteConfirm = null;
       admSection = btn.dataset.admSection;
       render();
       try { window.scrollTo({ top: 0 }); } catch (_) {}
@@ -3324,7 +3306,6 @@ function bindAdmActions() {
           btn.disabled = false;
           return;
         }
-        if (admSection === "nutzer-loeschen") admSection = "nutzer";
         admUserDeleteConfirm = null;
         expandedAdminUsers.delete(userId);
         await admAfterMutation();
