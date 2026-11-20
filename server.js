@@ -44,6 +44,7 @@ const workerBetrieb = require("./lib/helmut/worker-betrieb");
 // fail-closed-Rueckfall jedes ungueltigen Werts) wird von hier nichts betreten.
 const jobDispatch = require("./lib/helmut/job-dispatch");
 const quellenArbeitsfenster = require("./lib/helmut/quellen-arbeitsfenster");
+const quellenTagesbetrieb = require("./lib/helmut/quellen-tagesbetrieb");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -389,7 +390,8 @@ async function handleRequest(request, response) {
     if (!quellenArbeitsfenster.aktiv()) {
       return handleAsync(response, async () => ({ ok: true, uebersprungen: true, grund: "arbeitsfenster-aus" }));
     }
-    return handleAsync(response, () => runQuellenArbeitsfenster(url.pathname.endsWith("pipeline") ? "pipeline" : "crawl"));
+    return handleAsync(response, () => runQuellenArbeitsfenster(url.pathname.endsWith("pipeline") ? "pipeline" : "crawl", null,
+      { ganztags: url.pathname === "/api/cron/crawl" && url.searchParams.get("betrieb") === quellenTagesbetrieb.MODUS }));
   }
 
   if (await serveOriginalAdministration(request, response, url)) return;
@@ -1184,6 +1186,10 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const t0 = Date.now();
+      const ganztags = url.searchParams.get("betrieb") === quellenTagesbetrieb.MODUS;
+      if (ganztags && !quellenTagesbetrieb.ausgabeFaellig("briefing", t0))
+        return { ok: true, uebersprungen: true, grund: "kein-berliner-ausgabefenster" };
+      const quellenBis = ganztags ? quellenTagesbetrieb.zeiten(t0).redaktionsschluss : null;
       // ALLE aktiven Mandate isoliert (kein Flag, kein bevorzugtes/geratenes Mandat):
       // jedes Mandat erhaelt seinen Morgen-Build + Push. 0 KI (reine Lese-Transformation);
       // Push nur bei echtem Inhalt; deaktivierte Profile werden uebersprungen.
@@ -1197,9 +1203,9 @@ async function handleRequest(request, response) {
         // Ein technisch gespeicherter Gap konsumiert keine Meldungen; echte
         // Abschluesse behalten fuer Wiederholungen exakt ihr bestehendes Fenster.
         const { heutiger, fenster } = briefingFrische.vertragAktiv()
-          ? await briefingLauf.fensterFuerMorgen(storageModul, profile, berlinTag, { jetzt: new Date(t0) })
+          ? await briefingLauf.fensterFuerMorgen(storageModul, profile, berlinTag, { jetzt: new Date(t0), redaktionsschluss: ganztags })
           : { heutiger: { lauf: null, fehler: "vertrag-aus" }, fenster: null };
-        const briefing = await withTimeout(buildV3Briefing(profile, tenantId, { frischeFenster: fenster }), 60000, "cron-briefing-build")
+        const briefing = await withTimeout(buildV3Briefing(profile, tenantId, { frischeFenster: fenster, quellenBis }), 60000, "cron-briefing-build")
           .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
         // P29-1: ein Timeout ist KEIN Erfolg. Der Befund wird in die Mandats-
         // antwort gehoben, damit die Fairness-Buchfuehrung ihn sieht
@@ -1211,7 +1217,7 @@ async function handleRequest(request, response) {
         // Die vollstaendige Lageansicht wird einmal im Hintergrund gebunden.
         // Sie darf hier nur vorhandene gepruefte Texte/Karten lesen, keine KI.
         const lageAnsicht = !buildTimeout && !speicherfehler
-          ? await withTimeout(buildLageBriefing(profile, { politicianId: tenantId, cacheOnly: true }), 15000, "morgen-lage-ansicht")
+          ? await withTimeout(buildLageBriefing(profile, { politicianId: tenantId, cacheOnly: true, quellenBis }), 15000, "morgen-lage-ansicht")
             .catch(() => null) : null;
         const paket = !buildTimeout && !speicherfehler
           ? await morgenversorgung.speicherePaket({ profile, userId: tenantId, briefing,
@@ -2018,6 +2024,11 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const lageBriefingStartMs = Date.now();
+      const ganztags = url.searchParams.get("betrieb") === quellenTagesbetrieb.MODUS;
+      if (ganztags
+        && !quellenTagesbetrieb.ausgabeFaellig("lage", lageBriefingStartMs))
+        return { ok: true, uebersprungen: true, grund: "kein-berliner-ausgabefenster" };
+      const quellenBis = ganztags ? quellenTagesbetrieb.zeiten(lageBriefingStartMs).redaktionsschluss : null;
       const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
       // ═══ FUENFTER AUFTRAGSTYP (E1, OP-30): NARRATIV UEBER DIE WARTESCHLANGE ═══════════
       // DEFAULT AUS. Nur wenn BEIDE Flags gesetzt sind (`HELMUT_SCALABLE_PIPELINE` und
@@ -2041,7 +2052,7 @@ async function handleRequest(request, response) {
             return { userId: tenantId, available: false, reason: "profil-deaktiviert", ok: false };
           const versorgung = await require("./lib/helmut/quellen-versorgungsstand").lese({ mandat: tenantId });
           const rueckstand = versorgung && versorgung.zustand !== "kein-bekannter-rueckstand";
-          const res = await buildLageBriefing(profile, { politicianId: tenantId, ...(versorgung ? { versorgung } : {}) })
+          const res = await buildLageBriefing(profile, { politicianId: tenantId, quellenBis, ...(versorgung ? { versorgung } : {}) })
             .catch(e => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
           const diagnose = lageDiagnose.sichereDiagnose(res.diagnose);
           const ergebnis = lageDiagnose.mandatsErgebnis(tenantId, res);
@@ -3611,10 +3622,24 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
       ? await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(gespeicherteAusgabe,profile)
       : gespeicherteAusgabe, { previewMode, compact, frischeKontext: null });
   }
-  const paket = await require("./lib/helmut/tagespaket-auslieferung").lese({
+  const tagespaket = require("./lib/helmut/tagespaket-auslieferung");
+  const paket = await tagespaket.lese({
     userId: politicianId, profile, storage: storageModul });
-  const ausgabe = previewMode ? paket.briefing
-    : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(paket.briefing,profile);
+  const jetzt = new Date();
+  const term = quellenTagesbetrieb.zeiten(jetzt.getTime());
+  let stand = paket.briefing;
+  if (!previewMode && term && jetzt.getTime() > term.frist
+    && Date.parse(stand.redaktionsschluss || "") === term.redaktionsschluss) {
+    // Der gespeicherte Morgenstand bleibt Grundlage für das Briefing. Die
+    // Tagesansichten dürfen nur lesend dieselben Fach- und Quellengrenzen nutzen.
+    const [aktuell, lage] = await Promise.all([
+      withTimeout(buildV3Briefing(profile, politicianId), 5000, "tagesradar").catch(() => null),
+      withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 5000, "tageslage").catch(() => null)
+    ]);
+    stand = tagespaket.aktualisiereTagesansichten(stand, aktuell, lage, { now: jetzt, profile });
+  }
+  const ausgabe = previewMode ? stand
+    : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(stand, profile);
   return prepareBriefingResponse(ausgabe, { previewMode, compact, frischeKontext: paket.frischeKontext });
 }
 
@@ -3690,6 +3715,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     publicationEligibility.assertSame(publicationPolicy);
     const policyInfo = publicationEligibility.publicInfo(publicationPolicy);
     if (policyInfo) briefing.publicationEligibilityPolicy = policyInfo;
+    if (Number.isFinite(opts.quellenBis)) briefing.redaktionsschluss = new Date(opts.quellenBis).toISOString();
     briefing.tagespaketGrundlage = require("./lib/helmut/tagespaket-auslieferung").grundlage(briefing, kos);
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
@@ -3780,9 +3806,10 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // sourcesByVorgang:{} verschwanden belegte Eigenerwaehnungen ohne
   // best_source_url auf genau diesen Leerpfaden weiterhin still.
   const emptyKeepMentions = async (reason, kandidaten = understood) => {
-    const mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang
+    let mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang
       : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(kandidaten, opts) : {};
     if (!korrekturDaten) await loadMentionSourcesInto(profile, kandidaten, mentionSources);
+    mentionSources = quellenTagesbetrieb.quellenstandBis(mentionSources, opts.quellenBis);
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
       knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || []))
@@ -3830,7 +3857,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // Die interne Inhaltsabnahme muss auch begruendete Auslassungen ausserhalb
   // der automatischen Vorauswahl beurteilen koennen. Nur bereits eingelesene,
   // verarbeitete KOs; keine neuen Kandidaten im normalen Appabruf.
-  const sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang
+  let sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang
     : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(understood, opts)
       : await loadSourcesByVorgang(selected);
   // Radar-Erwähnungen belegen (Audit-Folgebranch): "Über dich" zeigt eine
@@ -3841,6 +3868,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // für die wenigen Erwähnungs-KOs ohne geladene Quelle diese gezielt nachladen
   // (deterministisch, 0 KI, hart gedeckelt). Nur ADDITIV — keine Decision entsteht.
   if (!korrekturDaten) await loadMentionSourcesInto(profile, understood, sourcesByVorgang);
+  sourcesByVorgang = quellenTagesbetrieb.quellenstandBis(sourcesByVorgang, opts.quellenBis);
   // Ein heutiges KO.updated_at kann eine reine Metadatenkorrektur sein.
   // Erst mit den bereits geladenen Quellen die zusaetzlichen Kandidaten
   // binden; regulaere Top-50 und heutige Erstaufnahmen bleiben erhalten.
@@ -8700,8 +8728,8 @@ async function narrativSlotLauf({ slot = "morgen", startMs = Date.now(), runId =
   };
 }
 
-async function runQuellenArbeitsfenster(cronName, adminAuftrag = null, { operator = false } = {}) {
-  const result = await quellenArbeitsfenster.fuehreAus({ adminAuftrag, arbeit: async ({ freigabe, startMs }) => {
+async function runQuellenArbeitsfenster(cronName, adminAuftrag = null, { operator = false, ganztags = false } = {}) {
+  const result = await quellenArbeitsfenster.fuehreAus({ adminAuftrag, ganztags, arbeit: async ({ freigabe, startMs }) => {
     const runId = adminAuftrag ? require("./lib/helmut/quellen-adminstart").laufId(adminAuftrag) : helmutRunId(`cron-${cronName}`, startMs);
     return require("./lib/helmut/quellenarchitektur/cron-abdeckung").runQuellenCronMitAbdeckung(
       () => withTimeout(runCronUeberWarteschlange(cronName, {
@@ -8784,7 +8812,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   const plan = await plane({
     jetztMs: start,
     planungsDeadlineMs: Math.min(start + deadlineMs - 10000, Date.now() + planBudgetMs),
-    ...(arbeitsfenster ? { darfNeuPlanen: true } : {})
+    ...(arbeitsfenster ? { darfNeuPlanen: true, ganztags: arbeitsfenster.ganztags === true } : {})
   }).catch((error) => ({
     ok: false,
     grund: "planung-fehler",

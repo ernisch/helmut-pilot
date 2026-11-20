@@ -35,8 +35,10 @@ const PRODUKTIONSBASIS = Object.freeze({
   beobachtetesBriefingUtc: "05:15:44.627"
 });
 
-const MAX_GOOGLE_RESERVIERUNGEN = PRODUKTIONSBASIS.fenster
-  * (PRODUKTIONSBASIS.sekundenJeFenster / 60 + 1) * PRODUKTIONSBASIS.googleMinutengrenze;
+// Ein Fenster kann bei einem Start außerhalb der vollen Minute zwei Teilminuten berühren.
+const GOOGLE_RESERVIERUNGEN_JE_FENSTER = (PRODUKTIONSBASIS.sekundenJeFenster / 60 + 1)
+  * PRODUKTIONSBASIS.googleMinutengrenze;
+const MAX_GOOGLE_RESERVIERUNGEN = PRODUKTIONSBASIS.fenster * GOOGLE_RESERVIERUNGEN_JE_FENSTER;
 const GOOGLE_MIX = PRODUKTIONSBASIS.googleMixReservierungen / PRODUKTIONSBASIS.googleMixAbschluesse;
 const RESERVE = 0.25;
 const TAGESMESSWERTE = ["bedarf", "eingeplant", "technischErledigt", "fristgerecht", "blockiert",
@@ -73,11 +75,19 @@ function tagesbedarf(mandate, archivwechsel, fixtureMix) {
   const gesamt = b.geteilteQuellenOhneDip + b.dipJeFenster + persoenlich + archiv;
   const googleMitReserve = Math.ceil(google * (1 + RESERVE));
   const reservierungen = Math.ceil(google * GOOGLE_MIX);
+  const reservierungenMitReserve = Math.ceil(googleMitReserve * GOOGLE_MIX);
+  const mindestfenster = Math.ceil(reservierungenMitReserve / GOOGLE_RESERVIERUNGEN_JE_FENSTER);
   const fixtureReservierungen = fixtureMix === null ? null : Math.ceil(google * fixtureMix);
   const fixtureReservierungenMitReserve = fixtureMix === null ? null : Math.ceil(googleMitReserve * fixtureMix);
   return {
     gesamt: rund(gesamt), google: rund(google), gesamtMitReserve: Math.ceil(gesamt * (1 + RESERVE)),
     googleMitReserve, reservierungenBeimBeobachtetenMix: reservierungen,
+    googleMindestbedarfMitReserve: {
+      reservierungen: reservierungenMitReserve,
+      anbieterminuten: Math.ceil(reservierungenMitReserve / b.googleMinutengrenze),
+      arbeitsfenster: mindestfenster,
+      reservierteSekunden: mindestfenster * b.sekundenJeFenster
+    },
     zusaetzlicheReservierungenBeimBeobachtetenMix: Math.max(0, reservierungen - MAX_GOOGLE_RESERVIERUNGEN),
     reservierungenBeimFixtureMix: fixtureReservierungen,
     zusaetzlicheReservierungenBeimFixtureMix: fixtureReservierungen === null ? null
@@ -220,6 +230,17 @@ function formatiereBericht(bericht) {
         bedarf.zusaetzlicheReservierungenBeimBeobachtetenMix,
         [bedarf.reservierungenMitReserveBeimFixtureMix, bedarf.zusaetzlicheReservierungenMitReserveBeimFixtureMix].map(anzeige).join(" / "),
         bedarf.zulaessigerMixMitReserve]));
+    }
+  }
+  zeilen.push("", "### Rechnerischer Google-Mindestbedarf im 24-Stunden-Entwurf", "",
+    `Beim beobachteten Mix und ${k.reserveProzent} % Reserve auf ganze Abschlüsse aufgerundet. Selbst bei vollständig nutzbaren Anbieterminuten und Fünfminutenfenstern kann die Verteilung der bestehenden ${b.fenster} Fenster die ausgewiesenen Mengen nicht tragen. Reale Anbietergrenzen, Laufzeit weiterer Arbeit, Originale und Kosten brauchen eigene Nachweise.`, "",
+    "| Mandate | Tag | Reservierungen | Anbieterminuten | Fünfminutenfenster | Reservierte Sekunden |",
+    "| ---: | --- | ---: | ---: | ---: | ---: |");
+  for (const mandat of k.mandate) {
+    for (const [tag, bedarf] of [["Tagesmittel", mandat.tagesmittel], ["Archivwechsel", mandat.archivwechsel]]) {
+      const minimum = bedarf.googleMindestbedarfMitReserve;
+      zeilen.push(tabellenzeile([mandat.anzahl, tag, minimum.reservierungen, minimum.anbieterminuten,
+        minimum.arbeitsfenster, minimum.reservierteSekunden]));
     }
   }
   zeilen.push("", `Für den Abbau von ${b.rueckstand} Altaufträgen in fünf Tagen bei ${b.bedarf} neuen Aufträgen täglich wären ${k.abschluesseFuerRueckstandInFuenfTagen} bestätigte Abschlüsse pro Tag nötig. Der beobachtete Originalbedarf lag bei mindestens ${k.mindestensOriginalbedarfAmBeobachtetenTag} gegenüber ${b.originalReservierungen} Buchungen.`,

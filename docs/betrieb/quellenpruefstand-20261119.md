@@ -12,6 +12,8 @@ Für einen bestätigten leeren RSS-Feed, dessen Startadresse die Feed-Adresse is
 
 Die Einsparung betrifft direkte, bestätigte Leerabrufe. Die erreichte Google-Reservierungsrate, die Ausgabefristen und der Rückstand haben eigene Abnahmekriterien. Der Bericht berechnet den Bedarf für 100 Mandate aus gemeinsam genutzten Abrufen und persönlichen Suchen. Ein tatsächlicher Lauf mit 100 Mandaten gehört nicht zu diesem Prüfstand.
 
+Der Bericht weist für 1 und 100 Mandate auch die rechnerische Untergrenze an Google-Anbieterminuten und Fünfminutenfenstern aus. Die [Prioritätsmatrix](quellenbetrieb-24h-vorbereitung-20261120.md) dokumentiert die tatsächlichen Quellen, ihre Fälligkeiten und die offenen Bedingungen für die Verteilung über 24 Stunden.
+
 ## Google-Originaladressen und unveränderte Rohfassungen
 
 Ein neuer öffentlicher Google-Feed im vorhandenen Fixture-Mix belegt 17 Reservierungen. Das sind ein Feed-Abruf, zwölf Artikel-GETs und vier Auflösungs-POSTs. Acht GETs leiten zum belegten Verlag weiter. Bei der Wiederholung wurde nur für acht der zwölf Feed-Einträge nach gespeicherten Adressen gesucht. Vier bestätigte Umleitungen mussten deshalb erneut durchlaufen werden. Die Suche folgt jetzt für alle Einträge demselben Speicherzeitbudget mit größenbegrenzten Abfragen. Quelle, Abrufweg, bekannter Verlag, Titel und Publikationszeit müssen weiterhin übereinstimmen. Bei fehlender eindeutiger Bestätigung bleibt der normale Abrufweg zuständig.

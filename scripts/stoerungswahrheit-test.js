@@ -158,15 +158,15 @@ function check(name, cond, detail = "") {
   check("Kopfzeilen behaupten keine 'neuen'/'heutigen' Vorgänge mehr",
     !clientSource.includes("Heute gibt es <b>")
     && !/totalLine = `Heute gibt es/.test(clientSource)
-    && clientSource.includes('${countWord} in deiner Lage.'));
+    && clientSource.includes('${items.length} Vorgänge'));
 
   // ── 4) Morgenablauf: IMMER alle aktiven Mandate isoliert (kein Flag, kein Default-Mandant)
   const serverSource = fs.readFileSync(path.join(root, "server.js"), "utf8");
   check("morning-briefing-Cron verarbeitet ALLE aktiven Mandate ueber runCronForTenants (kein Flag)",
-    /morning-briefing[\s\S]{0,600}runCronForTenants\("morning-briefing"/.test(serverSource)
+    /morning-briefing[\s\S]{0,1200}runCronForTenants\("morning-briefing"/.test(serverSource)
     && !serverSource.includes("HELMUT_MORNING_PUSH_ALL_PROFILES"));
   check("morning-briefing ueberspringt deaktivierte Profile (val.disabled)",
-    /morning-briefing[\s\S]{0,1200}val\.disabled/.test(serverSource));
+    /morning-briefing[\s\S]{0,1600}val\.disabled/.test(serverSource));
   // Seit OP-25 liegen Schleife, Isolation und Zeitbudget in lib/helmut/cron-fairness.js
   // (offline testbar); server.js delegiert dorthin und reicht das Budget durch.
   const fairnessSource = fs.readFileSync(path.join(root, "lib", "helmut", "cron-fairness.js"), "utf8");
@@ -183,9 +183,9 @@ function check(name, cond, detail = "") {
   check("Mandatsbezogene Crons brauchen KEINE mandantenspezifische Env-Variable",
     !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT|HELMUT_MORNING_PUSH_ALL_PROFILES/.test(serverSource));
   const crons = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8")).crons;
-  check("Lage und Briefing starten mit Puffer vor den unveränderten UTC-Fristen",
-    crons.find(c => c.path === "/api/cron/lage-briefing")?.schedule === "55 4 * * *"
-    && crons.find(c => c.path === "/api/cron/morning-briefing")?.schedule === "10 5 * * *");
+  check("Lage und Briefing haben Start- und Reservetermine für beide Berliner UTC-Versätze",
+    crons.find(c => c.path === "/api/cron/lage-briefing?betrieb=24h")?.schedule === "45,55 4,5 * * *"
+    && crons.find(c => c.path === "/api/cron/morning-briefing?betrieb=24h")?.schedule === "10,20 5,6 * * *");
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

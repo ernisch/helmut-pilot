@@ -12,7 +12,7 @@ Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.
 
 **Erhaltene Betriebsbelege vom 17.–19.11.** [Damaliger Status mit Einzelwerten](https://github.com/ernisch/helmut-pilot/blob/bbd15da9/docs/CURRENT_STATE.md) · [Quellenbilanz](betrieb/quellen-abnahme-20261117.md) · [Briefingqualität](betrieb/briefing-qualitaet-20261117.md)
 
-**Nächster Schritt.** Ein regulär erzeugtes Pilotpaket mit autorisierter Kundensitzung auf individuelle Priorität, Original und Auslieferungsfrist abnehmen.
+**Nächster Schritt.** Betreiber-GO für die kontrollierte 24-Stunden-Aktivierung einholen. [Plan](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md)
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
 Amtlicher Beleg CELEX 32026D2505 / DEU / COM / OJ-L 2026/2505, Publikation 13.11., 142 Zeichen. Rechtsdokument-Reuse primär belegt; CC0 nur Metadaten, keine Fremdwerke, Bilder, Anhänge oder Volltexte.

@@ -86,6 +86,7 @@ async function run(profiles = [profile], options = {}) {
     request: {}, response: {}, url: new URL("http://localhost/api/cron/morning-briefing"),
     authorizeCron: () => true, handleAsync: (_r, fn) => fn(), storageModul: st,
     briefingFrische: { ...require("../lib/helmut/briefing-frische"), vertragAktiv: () => options.contract !== false }, briefingLauf: L,
+    quellenTagesbetrieb: require("../lib/helmut/quellen-tagesbetrieb"),
     withTimeout: p => p, sendBriefingReadyPush: async b => { saved.pushes.push(clone(b)); if (options.pushError) throw new Error("offline-push-error"); return { skipped: true }; },
     tenantContext: { resolveCronTenants: () => T.resolveCronTenants({ listProfiles: async () => {
       if (options.listError) throw new Error("offline-list-error"); return profiles;

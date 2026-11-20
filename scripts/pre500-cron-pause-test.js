@@ -6,12 +6,10 @@ const root = path.join(__dirname, "..");
 const hash = x => crypto.createHash("sha256").update(x).digest("hex");
 const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
 assert.deepEqual(config.crons, [
-  { path: "/api/cron/crawl", schedule: "0 4 * * *" },
-  { path: "/api/cron/crawl?arbeitsfenster=1", schedule: "0,15,30,45 3 * * *" },
-  { path: "/api/cron/crawl?arbeitsfenster=1", schedule: "15,30,45 4 * * *" },
-  { path: "/api/cron/lage-briefing", schedule: "55 4 * * *" },
-  { path: "/api/cron/morning-briefing", schedule: "10 5 * * *" }
-], "Only ordered daily supply plus gated source continuations; no old 500-profile schedule");
+  { path: "/api/cron/crawl?arbeitsfenster=1&betrieb=24h", schedule: "*/15 * * * *" },
+  { path: "/api/cron/lage-briefing?betrieb=24h", schedule: "45,55 4,5 * * *" },
+  { path: "/api/cron/morning-briefing?betrieb=24h", schedule: "10,20 5,6 * * *" }
+], "Tagesversorgung und Berliner Morgenausgabe verwenden drei wiederkehrende Pläne");
 const others = structuredClone(config); delete others.crons;
 assert.equal(config.git.deploymentEnabled["fix/cem-single-profile-20261106"], false);
 const historicalPath = path.join(__dirname, "fixtures/scheduled-crons-before-pre500-pause.json");
@@ -34,5 +32,5 @@ assert.ok(paused.konflikte.some(x => x.art === "cronliste-fehlt"));
 assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: [{path:"/api/x",schedule:"invalid"}] }).startErlaubt, false);
 assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: historical, minimalCronAktiv: false }).startErlaubt, true);
 assert.equal(require("./vercel-ignore-build").shouldSkip(["vercel.json", ".github/workflows/briefing-watchdog.yml"]), false);
-console.log(JSON.stringify({ status: "PASS_BOUNDED_SOURCE_SCHEDULE_AND_HISTORICAL_RESTORE", preparedCronDefinitions: 5, restoreCronCount: 13,
+console.log(JSON.stringify({ status: "PASS_BOUNDED_SOURCE_SCHEDULE_AND_HISTORICAL_RESTORE", preparedCronDefinitions: config.crons.length, restoreCronCount: 13,
   remainingWorkflowBytesUnchanged: true, historicalEmptyScheduleFailsClosed: true, productionCalls: 0 }));

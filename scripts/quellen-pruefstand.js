@@ -9,15 +9,16 @@ const http = require("node:http");
 const { performance } = require("node:perf_hooks");
 const { Worker } = require("node:worker_threads");
 const schutz = require("./lokaler-netzschutz");
-const { erstelleBericht, formatiereBericht, PRODUKTIONSBASIS } = require("./quellen-pruefstand-bericht");
+const { erstelleBericht, formatiereBericht } = require("./quellen-pruefstand-bericht");
+const tagesbetrieb = require("../lib/helmut/quellen-tagesbetrieb");
 
 const TAG = 86400000;
-const START = Date.parse("2026-11-19T02:50:00Z");
+const START = Date.parse("2026-11-19T00:00:00Z");
 const terminkonfig = require("../vercel.json");
 const pruefzeiten = ["2026-11-19", "2026-11-20"];
 const konfiguration = {
   node: process.version, mandatsprofile: 1, maxDurationS: terminkonfig.functions["api/index.js"].maxDuration,
-  region: terminkonfig.regions, fenster: 8, fensterSekunden: 300, originalReservierungen: 16,
+  region: terminkonfig.regions, fenster: tagesbetrieb.MAX_FENSTER, fensterSekunden: 300, originalReservierungen: 16,
   googleReservierungenJeMinute: 30, modellTageslimitUsd: 1, modellGesamtlimitUsd: 30,
   arbeitstage: pruefzeiten, historischWartendZuBeginn: 754,
   transportMillisekunden: { google: 2000, modell: 2000, sonstige: 1000 },
@@ -139,9 +140,11 @@ async function startApp() {
 
 function termine(pfad) {
   return terminkonfig.crons.filter(cron => pfad.test(cron.path)).flatMap(({ path, schedule }) => {
-    const match = /^(\d+(?:,\d+)*) (\d+) \* \* \*$/.exec(schedule);
-    assert(match, "Cron-Ausdruck des Prüfstands weicht ab");
-    return match[1].split(",").map(m => ({ path, zeit: [match[2], m].map(n => n.padStart(2, "0")).join(":") }));
+    const [minuten, stunden, ...rest] = schedule.split(" ");
+    assert.deepEqual(rest, ["*", "*", "*"], "Cron-Ausdruck des Prüfstands weicht ab");
+    const ms = minuten === "*/15" ? [0, 15, 30, 45] : minuten.split(",").map(Number);
+    const hs = stunden === "*" ? Array.from({ length: 24 }, (_, i) => i) : stunden.split(",").map(Number);
+    return hs.flatMap(h => ms.map(m => ({ path, zeit: [h, m].map(n => String(n).padStart(2, "0")).join(":") })));
   }).sort((a, b) => a.zeit.localeCompare(b.zeit));
 }
 
@@ -247,9 +250,10 @@ async function main(schreibeZwischenstand) {
   assert(![".env.local", ".env", "env.local", "env.local.html"].some(pfad => existsSync(pfad)),
     "Prüfstand braucht einen Checkout ohne lokale Zugangsdaten");
   assert.equal(konfiguration.maxDurationS, 300, "Maximale Funktionsdauer weicht vom geprüften Quellenfenster ab");
-  const slots = termine(/^\/api\/cron\/crawl(\?|$)/), ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)$/);
-  assert.deepEqual(slots.map(s => s.zeit), ["03:00", "03:15", "03:30", "03:45", "04:00", "04:15", "04:30", "04:45"]);
-  assert.deepEqual(ausgaben.map(s => s.zeit), [PRODUKTIONSBASIS.lageStartUtc, PRODUKTIONSBASIS.briefingStartUtc]);
+  const slots = termine(/^\/api\/cron\/crawl(\?|$)/), ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)(\?|$)/);
+  assert.equal(slots.length, 96);
+  assert.equal(ausgaben.length, 8);
+  const ablauf = [...slots, ...ausgaben].sort((a, b) => a.zeit.localeCompare(b.zeit));
   const uhr = uhrStart(process.env.HELMUT_QUELLEN_DB_UHR);
   let db, transport, app;
   try {
@@ -296,19 +300,37 @@ async function main(schreibeZwischenstand) {
 
     for (const tag of pruefzeiten) {
       const beginn = performance.now(), start = await queue(db, tag), laeufe = [];
-      for (const slot of [...slots, ...ausgaben]) {
-        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "04:45" ? 240 : 0;
+      const frist = tagesbetrieb.zeiten(Date.parse(`${tag}T00:00:00Z`)).frist;
+      let morgenstand = null;
+      for (const slot of ablauf) {
+        if (tag === pruefzeiten[1] && slot.zeit === "00:15" && slots.includes(slot)) continue;
+        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "05:30" && slots.includes(slot) ? 240 : 0;
         const soll = sekunde(`${tag}T${slot.zeit}:00Z`) + verzoegerung;
         uhr.setze(soll * 1000);
         assert.equal(Number(await db.psql("select extract(epoch from now())::bigint")), soll, "Anwendungs- und SQL-Uhr weichen ab");
+        if (soll * 1000 === frist && morgenstand === null) {
+          const r = await app.cron(`/api/cron/briefing-nachweis?mandat=${encodeURIComponent(profil.id)}`);
+          assert.equal(r.status, 200, "Gespeicherte Kundenausgabe nicht rücklesbar");
+          const stand = r.data;
+          const kopf = stand.currentHelmutState;
+          const prioritaeten = [kopf?.primaryItem, ...(kopf?.items || [])].filter(Boolean);
+          morgenstand = { abrufbar: stand.available === true, vollstaendig: stand.paketStatus?.vollstaendig === true,
+            lageAbsaetze: stand.lageBriefing?.paragraphs?.length || 0,
+            prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
+            mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)) };
+          assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
+          note(`Produktleser um 07:30 Uhr Berlin am ${tag}`, "geprueft",
+            `Abrufbar: ${morgenstand.abrufbar}. Vollständig: ${morgenstand.vollstaendig}. Lageabsätze: ${morgenstand.lageAbsaetze}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
+          schreibeZwischenstand();
+        }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
         const resultate = await Promise.all(Array.from({ length: parallel ? 2 : 1 }, () => app.cron(slot.path)));
         assert(resultate.every(r => r.status === 200), `Cron-Transportfehler ${slot.path}`);
         const mitFenster = resultate.filter(r => r.data.arbeitsfenster);
         if (parallel) assert.equal(mitFenster.length, 1, "Keine eindeutige Arbeitsfensterreservierung bei Parallelstart");
         const r = mitFenster[0] || resultate[0];
-        const istLage = slot.path === "/api/cron/lage-briefing";
-        const istMorgen = slot.path === "/api/cron/morning-briefing";
+        const istLage = slot.path.startsWith("/api/cron/lage-briefing?");
+        const istMorgen = slot.path.startsWith("/api/cron/morning-briefing?");
         laeufe.push({ slot: slot.zeit, startVerzoegerungS: verzoegerung, pfad: slot.path, ok: r.data.ok ?? null,
           grund: r.data.grund || r.data.reason || null, arbeitsfenster: Boolean(r.data.arbeitsfenster),
           simulierteMs: uhr.now() - soll * 1000,
@@ -317,8 +339,10 @@ async function main(schreibeZwischenstand) {
           ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null,
             morgenergebnisse: (r.data.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
-      uhr.setze(Date.parse(`${tag}T05:16:00Z`));
+      uhr.setze(Date.parse(`${tag}T23:59:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);
+      tagesbericht.morgenstand = morgenstand;
+      tagesbericht.briefingFrist &&= morgenstand?.abrufbar === true;
       tage.push(tagesbericht);
       schreibeZwischenstand();
       assert.equal(tagesbericht.eingeplant, tagesbericht.bedarf, `Tagesplan oder Queue unvollständig für ${tag}`);
