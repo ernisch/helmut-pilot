@@ -1072,9 +1072,9 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         if (isMobile) {
           const next = page.locator(".ui-next-step");
           const original = page.locator(".ui-briefing-hero .ui-source-direct");
-          assert(await next.isVisible() && await original.isVisible());
-          assert(await next.evaluate(el => Boolean(el.compareDocumentPosition(el.closest(".ui-briefing-hero").querySelector(".ui-source-direct")) & Node.DOCUMENT_POSITION_FOLLOWING)));
-          assert.equal(await lageFromBriefing.isVisible(), false);
+          check(`${label}: Briefing zeigt nächsten Schritt vor der Quelle und Lageverweis erst in der Vertiefung`,
+            await next.isVisible() && await original.isVisible() && !await lageFromBriefing.isVisible()
+              && await next.evaluate(el => Boolean(el.compareDocumentPosition(el.closest(".ui-briefing-hero").querySelector(".ui-source-direct")) & Node.DOCUMENT_POSITION_FOLLOWING)));
           await page.locator(".ui-hero-more").click();
         }
         await lageFromBriefing.click();
@@ -1124,7 +1124,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
         if (isMobile) {
-          assert(!(await page.locator("#radar2-root").innerText()).includes("nennt Ihren Namen"));
+          check(`${label}: Radar zeigt den langen Zuordnungsbeleg erst auf Wunsch`,
+            !(await page.locator("#radar2-root").innerText()).includes("nennt Ihren Namen"));
           await page.locator(".ui-customer-disclosure > summary").filter({ hasText: "Beleg zur Zuordnung" }).first().click();
         }
         const radarText = await page.locator("#radar2-root").innerText();
