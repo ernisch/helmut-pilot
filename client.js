@@ -4716,6 +4716,7 @@ function rememberLageHistory(id) {
   const scrollTop = current?.kind === "detail" ? current.scrollTop || 0 : app.querySelector(".ui-page")?.scrollTop || 0;
   if (current?.kind !== "detail") {
     const back = currentView === "briefing" ? { kind: "list", id, scrollTop } : { kind: "view", view: currentView, scrollTop };
+    if (currentView === "helmut" && app.querySelector(".ui-hero-details")?.open) back.briefingDetailsOpen = true;
     if (!writeLageHistory(back)) return;
     writeLageHistory({ kind: "detail", id, origin, scrollTop }, true);
   } else writeLageHistory({ kind: "detail", id, origin, scrollTop });
@@ -4735,6 +4736,10 @@ function restoreLageHistory(state) {
     if (entry.kind === "detail" && !found) writeLageHistory({ kind: "list", scrollTop });
   } else return false;
   navOpen = false; updatesOpen = false; persistView(currentView); render();
+  if (entry.kind === "view" && entry.view === "helmut" && entry.briefingDetailsOpen === true) {
+    const details = app.querySelector(".ui-hero-details");
+    if (details) details.open = true;
+  }
   app.querySelector(".ui-page")?.scrollTo({ top: uiLageDetailOpen ? 0 : scrollTop, behavior: "instant" });
   if (uiLageDetailOpen) app.querySelector(".ui-mobile-back")?.focus({ preventScroll: true });
   else Array.from(app.querySelectorAll("[data-ui-lage-select]")).find(el => el.dataset.uiLageSelect === entry.id)?.focus({ preventScroll: true });

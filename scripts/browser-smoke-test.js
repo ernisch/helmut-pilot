@@ -1068,7 +1068,16 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
           displayed.proposals === 1 && displayed.why === 1
             && await page.locator(".ui-recommendation-why").isVisible(), JSON.stringify(displayed));
-        await page.locator(".hstand [data-vorgang]").first().click();
+        const lageFromBriefing = page.locator(".hstand [data-vorgang]").first();
+        if (isMobile) {
+          const next = page.locator(".ui-next-step");
+          const original = page.locator(".ui-briefing-hero .ui-source-direct");
+          assert(await next.isVisible() && await original.isVisible());
+          assert(await next.evaluate(el => Boolean(el.compareDocumentPosition(el.closest(".ui-briefing-hero").querySelector(".ui-source-direct")) & Node.DOCUMENT_POSITION_FOLLOWING)));
+          assert.equal(await lageFromBriefing.isVisible(), false);
+          await page.locator(".ui-hero-more").click();
+        }
+        await lageFromBriefing.click();
         await page.waitForSelector(".vsheet-title", { timeout: 5000 });
         const sheetText = await page.locator(".vsheet-lede").innerText();
         check(`${label}: Briefing Link oeffnet genau den vorhandenen Lage Text mit Quelle`,
@@ -1114,6 +1123,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             && await page.locator("[data-lage-source-recency]").count() === 0);
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
+        if (isMobile) {
+          assert(!(await page.locator("#radar2-root").innerText()).includes("nennt Ihren Namen"));
+          await page.locator(".ui-customer-disclosure > summary").filter({ hasText: "Beleg zur Zuordnung" }).first().click();
+        }
         const radarText = await page.locator("#radar2-root").innerText();
         const radarLinks = await page.locator('#radar2-root a[href]').evaluateAll(nodes => nodes.map(n => n.href));
         check(`${label}: Radar zeigt belegte Erwaehnung mit Quelle genau einmal trotz Ausschussbezug`,
@@ -1368,6 +1381,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         });
         await page.waitForSelector('.ui-briefing-hero');
         const crossLink = page.locator('[data-lage-verweis][data-vorgang="desktop-scroll-8"]').first();
+        await page.locator('.ui-hero-more').click();
         await crossLink.scrollIntoViewIfNeeded();
         const briefingScroll = await page.locator('.ui-page').evaluate(el => el.scrollTop);
         await crossLink.click();
@@ -1376,7 +1390,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         await page.goBack();
         await page.waitForFunction(() => currentView === 'helmut');
         check(`${label}: Browser Zurueck aus Querverweis erhaelt Ursprungsbriefing und Position`,
-          !await detail.isVisible() && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - briefingScroll) < 2);
+          !await detail.isVisible() && await crossLink.isVisible()
+            && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - briefingScroll) < 2);
         await page.goForward();
         await page.waitForFunction(() => currentView === 'briefing' && uiLageDetailOpen);
         await page.locator('[data-ui-lage-back]').click();
