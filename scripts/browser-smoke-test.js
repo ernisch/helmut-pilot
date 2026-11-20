@@ -473,6 +473,13 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             }, qualifiziert);
             const hero = page.locator('.ui-briefing-hero'); await hero.waitFor({ state: 'visible' });
             const visible = await hero.innerText();
+            if (isMobile) {
+              const action = hero.locator(".ui-next-step");
+              const source = hero.locator(".ui-source-direct");
+              assert(await action.isVisible() && await source.isVisible());
+              assert(await action.evaluate(el => Boolean(el.compareDocumentPosition(el.closest(".ui-briefing-hero").querySelector(".ui-source-direct")) & Node.DOCUMENT_POSITION_FOLLOWING)));
+              assert.equal(await page.locator("[data-ui-jump]").count(), 0);
+            }
             check(`${label}: belegte Vorbereitung bleibt kurz, optional und ohne behauptete Tagesentscheidung`,
               visible.includes("Möglicher nächster Schritt") && visible.includes("Prüfen Sie")
               && !visible.includes("Heute entscheidend") && !visible.includes("Ihr nächster Schritt")
@@ -538,6 +545,11 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           await page.locator(`${nav} [data-view="briefing"]`).click();
           const einordnung = page.locator("[data-ui-lage-einordnung]");
           await einordnung.waitFor({ state: "visible" });
+          if (isMobile) {
+            assert.equal(await einordnung.locator("[data-ui-lage-absatz]").first().isVisible(), false);
+            await einordnung.locator("summary").click();
+            assert(await einordnung.locator("[data-ui-lage-absatz]").first().isVisible());
+          }
           const texte = await einordnung.locator("[data-ui-lage-absatz]").allTextContents();
           assert.deepEqual(texte, text.payload.paragraphs.map(p => p.text));
           const mandatsgruende = await einordnung.locator("[data-ui-lage-mandatsbezug]").allTextContents();
@@ -588,30 +600,36 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           assert(Object.values(grenzen).every(Boolean));
           await page.locator(`${nav} [data-view="helmut"]`).click();
           const gap = page.locator('.hstand-state-card[data-empty-kind="gap"]'); await gap.waitFor({ state: "visible" });
-          check(`${label}: gepruefte Lage ist direkt lesbar mit eigenen Quellen, kompaktem Titel und ehrlichem Briefinggap`,
-            vorKarten && texte.length === 2 && (await gap.innerText()).includes("Quellenlage noch nicht ausreichend ausgewertet")
+          check(`${label}: gepruefte Lage behaelt eigene Quellen sowie den passenden Platz und ehrlichen Briefinggap`,
+            vorKarten === !isMobile && texte.length === 2 && (await gap.innerText()).includes("Quellenlage noch nicht ausreichend ausgewertet")
             && await page.locator("[data-ui-lage-einordnung]").count() === 0
             && await page.locator(".ui-briefing-hero").count() === 0);
           await page.locator(`${nav} [data-view="radar"]`).click();
           const summary = page.locator(".radar2-summary"), lines = summary.locator(".radar2-summary-line");
           const originalLine1 = briefing.currentRadarState.anzeige.summary.line1;
-          const plural = await lines.nth(1).innerText();
-          assert.equal(await lines.first().innerText(), originalLine1);
+          if (isMobile) {
+            assert.equal(await summary.isVisible(), false);
+            assert(await page.locator("[data-radar-provenance]").isVisible());
+            await page.locator(".ui-customer-disclosure").filter({ has: summary }).locator("summary").click();
+            assert(await summary.isVisible());
+          }
+          const plural = await lines.nth(1).textContent();
+          assert.equal(await lines.first().textContent(), originalLine1);
           assert.equal(await page.locator(".radar2-card--dynamic").count(), 2);
           await page.evaluate(() => { briefing.currentRadarState.anzeige.dynamics = briefing.currentRadarState.anzeige.dynamics.slice(0, 1); rerenderRadar(); });
-          const singular = await lines.nth(1).innerText();
+          const singular = await lines.nth(1).textContent();
           await page.evaluate(() => {
             briefing.currentRadarState.anzeige.dynamics = [{ title: "Kein oeffnender Dynamikbeleg", sourceUrl: "https://example.invalid/" }];
             briefing.currentRadarState.anzeige.environment = { party: [{ vorgangId: "vg-synth-1", title: "Gespeicherter Umfeldhinweis",
               sourceName: "Synthetische Quelle", sourceUrl: "https://example.invalid/dokument/1" }], constituency: [], committees: [] };
             rerenderRadar();
           });
-          const ohneDynamik = await lines.nth(1).innerText();
+          const ohneDynamik = await lines.nth(1).textContent();
           check(`${label}: Radar beschreibt nur oeffnende beobachtete Entwicklungen ohne alte Neuigkeitsbehauptung`,
             plural.endsWith("werden 2 Entwicklungen beobachtet.") && singular.endsWith("wird eine Entwicklung beobachtet.")
             && ohneDynamik.startsWith("Eine Entwicklung aus ") && ohneDynamik.endsWith("politischen Umfeld ist relevant.")
             && await page.locator(".radar2-card--dynamic").count() === 0
-            && await lines.first().innerText() === originalLine1 && !/neue Signale|neues Signal/.test(await summary.innerText()));
+            && await lines.first().textContent() === originalLine1 && !/neue Signale|neues Signal/.test(await summary.textContent()));
           assert.equal(packageReads - readsBefore, 2); assert.equal(identityReads - identityReadsBefore, 2);
           assert.deepEqual(pageErrors, []); assert.deepEqual(apiErrors, []); assert.deepEqual(unexpected, []);
           assert(methods.every(method => method === "GET"));
@@ -1050,7 +1068,16 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
           displayed.proposals === 1 && displayed.why === 1
             && await page.locator(".ui-recommendation-why").isVisible(), JSON.stringify(displayed));
-        await page.locator(".hstand [data-vorgang]").first().click();
+        const lageFromBriefing = page.locator(".hstand [data-vorgang]").first();
+        if (isMobile) {
+          const next = page.locator(".ui-next-step");
+          const original = page.locator(".ui-briefing-hero .ui-source-direct");
+          check(`${label}: Briefing zeigt nächsten Schritt vor der Quelle und Lageverweis erst in der Vertiefung`,
+            await next.isVisible() && await original.isVisible() && !await lageFromBriefing.isVisible()
+              && await next.evaluate(el => Boolean(el.compareDocumentPosition(el.closest(".ui-briefing-hero").querySelector(".ui-source-direct")) & Node.DOCUMENT_POSITION_FOLLOWING)));
+          await page.locator(".ui-hero-more").click();
+        }
+        await lageFromBriefing.click();
         await page.waitForSelector(".vsheet-title", { timeout: 5000 });
         const sheetText = await page.locator(".vsheet-lede").innerText();
         check(`${label}: Briefing Link oeffnet genau den vorhandenen Lage Text mit Quelle`,
@@ -1096,6 +1123,11 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             && await page.locator("[data-lage-source-recency]").count() === 0);
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
+        if (isMobile) {
+          check(`${label}: Radar zeigt den langen Zuordnungsbeleg erst auf Wunsch`,
+            !(await page.locator("#radar2-root").innerText()).includes("nennt Ihren Namen"));
+          await page.locator(".ui-customer-disclosure > summary").filter({ hasText: "Beleg zur Zuordnung" }).first().click();
+        }
         const radarText = await page.locator("#radar2-root").innerText();
         const radarLinks = await page.locator('#radar2-root a[href]').evaluateAll(nodes => nodes.map(n => n.href));
         check(`${label}: Radar zeigt belegte Erwaehnung mit Quelle genau einmal trotz Ausschussbezug`,
@@ -1350,6 +1382,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         });
         await page.waitForSelector('.ui-briefing-hero');
         const crossLink = page.locator('[data-lage-verweis][data-vorgang="desktop-scroll-8"]').first();
+        await page.locator('.ui-hero-more').click();
         await crossLink.scrollIntoViewIfNeeded();
         const briefingScroll = await page.locator('.ui-page').evaluate(el => el.scrollTop);
         await crossLink.click();
@@ -1358,7 +1391,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         await page.goBack();
         await page.waitForFunction(() => currentView === 'helmut');
         check(`${label}: Browser Zurueck aus Querverweis erhaelt Ursprungsbriefing und Position`,
-          !await detail.isVisible() && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - briefingScroll) < 2);
+          !await detail.isVisible() && await crossLink.isVisible()
+            && Math.abs(await page.locator('.ui-page').evaluate(el => el.scrollTop) - briefingScroll) < 2);
         await page.goForward();
         await page.waitForFunction(() => currentView === 'briefing' && uiLageDetailOpen);
         await page.locator('[data-ui-lage-back]').click();

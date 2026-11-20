@@ -9394,65 +9394,15 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
 .hstand .ui-briefing-status .hstand-frische--muted { padding: 4px 0 0; border: 0; font-size: 14px; line-height: 1.5; color: var(--ui-dim); }
 .hstand .ui-briefing-status .hstand-frische--muted svg { width: 15px; height: 15px; flex: 0 0 15px; }
 
-/* Orientierung: Anzahl je Abschnitt, laufende Nummern, Themen-Sprungliste (mobil). */
+/* Abschnittszähler für die Desktopansicht. */
 .ui-count { order: 2; flex: 0 0 auto; padding: 2px 10px; border: 1px solid var(--ui-border); border-radius: 999px; font: 500 12px/1.6 var(--ui-mono); letter-spacing: .06em; color: var(--ui-muted); }
 .ui-section-rule::after { order: 3; }
-[data-topic-title] { scroll-margin-top: 88px; }
-.ui-jump { display: none; }
-@media (max-width: 767px) {
-  .ui-jump { display: flex; gap: 8px; margin: 14px -20px 4px; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .ui-jump::-webkit-scrollbar { display: none; }
-  .ui-jump-label { flex: 0 0 auto; align-self: center; padding-right: 2px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ui-label); }
-  .ui-jump button { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; max-width: 70vw; min-height: 36px; padding: 0 14px 0 6px; border: 1px solid var(--ui-border); border-radius: 999px; background: var(--ui-panel); color: var(--ui-text); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ui-jump button span { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--ui-hover); color: var(--ui-muted); font: 500 12px/1 var(--ui-mono); }
-}
-@media (max-width: 767px) {
-  .ui-jump button { max-width: 58vw; }
-}
 
-/* „Auf einen Blick“ (mobil): kleine Inhaltsübersicht wie in einer Zeitung –
-   nummerierte Themen untereinander, ein Tipp springt zum Thema. */
-@media (max-width: 767px) {
-  .ui-jump { display: block; margin: 18px 0 8px; padding: 14px 16px 6px; overflow: visible; background: var(--ui-panel); border: 1px solid var(--ui-panel-line); border-radius: 14px; }
-  .ui-jump-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 4px; font: 500 11px/1.6 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-label); }
-  .ui-jump-head span:last-child { color: var(--ui-accent); }
-  .ui-jump-list { margin: 0; padding: 0; list-style: none; }
-  .ui-jump-list li + li { border-top: 1px solid var(--hairline); }
-  .ui-jump .ui-jump-list button { display: grid; grid-template-columns: 30px minmax(0,1fr) 16px; align-items: center; gap: 10px; width: 100%; max-width: none; min-height: 48px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--ui-text); text-align: left; white-space: normal; overflow: visible; }
-  .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
-  .ui-jump-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 400 16px/1.3 var(--ui-serif); color: var(--ui-text); }
-  .ui-jump-go { justify-self: end; font-size: 15px; color: var(--ui-dim); }
-  .ui-jump .ui-jump-list button:active .ui-jump-title { color: var(--ui-accent); }
-  .ui-jump-label { display: none; }
-}
-@media (max-width: 767px) {
-  .ui-jump .ui-jump-list button span { display: block; place-items: initial; flex: none; width: auto; height: auto; border-radius: 0; background: none; }
-  .ui-jump .ui-jump-list button .ui-jump-title { display: -webkit-box; }
-  .ui-jump .ui-jump-list button .ui-jump-num { font: 400 18px/1 var(--ui-serif); color: var(--ui-dim); }
-  .ui-jump .ui-jump-list button .ui-jump-go { font: 400 15px/1 var(--ui-sans); color: var(--ui-dim); }
-}
-@media (max-width: 767px) {
-  .ui-jump .ui-jump-list button .ui-jump-title { font: 400 16.5px/1.3 var(--ui-serif); letter-spacing: 0; text-transform: none; color: var(--ui-text); }
-}
-
-/* Kompakter (mobil): weniger Leerraum, Uebersicht direkt unter dem Status. */
 @media (max-width: 767px) {
   .view-helmut .ui-page-header { min-height: 0; padding-bottom: 10px; }
   .hstand { gap: 10px; }
   .hstand .ui-briefing-status { gap: 6px 10px; }
   .hstand .ui-briefing-status .hstand-frische--muted { padding: 0; font-size: 13px; line-height: 1.45; }
-  .ui-jump { margin: 6px 0 4px; padding: 10px 14px 2px; border-radius: 12px; }
-  .ui-jump-head { margin-bottom: 0; }
-  .ui-jump .ui-jump-list button { grid-template-columns: 24px minmax(0,1fr) 14px; gap: 8px; min-height: 44px; padding: 7px 0; }
-  .ui-jump .ui-jump-list button .ui-jump-num { font-size: 15px; }
-  .ui-jump .ui-jump-list button .ui-jump-title { font-size: 15px; line-height: 1.28; }
-  .ui-jump .ui-jump-list button .ui-jump-go { font-size: 13px; }
-}
-@media (max-width: 767px) {
-  .ui-jump .ui-jump-list button .ui-jump-text { display: grid; gap: 2px; min-width: 0; }
-  .ui-jump .ui-jump-list button .ui-jump-flag { display: flex; align-items: center; gap: 6px; font: 500 10.5px/1.4 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ui-accent); }
-  .ui-jump .ui-jump-list button .ui-jump-flag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .ui-jump .ui-jump-list li.is-lead .ui-jump-num { color: var(--ui-accent); }
 }
 
 /* Ruhiger Tag (06.11.2026): ehrlicher Leerzustand im Briefing, Lage nur als Zahl + Weg. */
@@ -9627,9 +9577,6 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .ui-lage-workspace .ui-row-source .ui-row-source-name {
     white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere;
   }
-  .view-helmut .ui-jump .ui-jump-list button .ui-jump-title {
-    display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: anywhere;
-  }
   .view-helmut .ui-briefing-hero { gap: 14px 0; padding: 18px 16px; }
   .view-helmut .ui-hero-next { padding-top: 14px; gap: 12px; }
   .view-helmut .ui-hero-details-body { gap: 18px; margin-top: 18px; padding-top: 18px; }
@@ -9647,6 +9594,61 @@ body .shell > .loading-card { margin: 0 auto; width: 100%; }
   .view-radar .radar2 .radar2-card { padding: 14px 0; }
   .view-radar .radar2 :is(.radar2-card-title, .radar2-row-title) { font-size: 20px; line-height: 1.3; }
   .view-radar .radar2 .radar2-empty { padding: 10px 0; }
+
+  .app-frame:is(.view-helmut, .view-briefing, .view-radar) .ui-page-header {
+    padding-top: calc(68px + env(safe-area-inset-top, 0px));
+  }
+  .app-frame:is(.view-helmut, .view-briefing, .view-radar) .ui-footer--inline:not(:has(.ui-preview-label)) {
+    display: none;
+  }
+  .view-helmut .ui-briefing-hero .ui-next-step {
+    font: 400 17px/1.45 var(--ui-sans);
+    overflow-wrap: anywhere;
+  }
+  .view-helmut .ui-briefing-hero .ui-source-direct { width: fit-content; }
+  .view-helmut .ui-briefing-hero .compact-button { justify-self: start; align-self: flex-start; }
+  .view-helmut .ui-hero-details { margin-top: 0; border-top: 1px solid var(--hairline); }
+  .view-helmut .ui-hero-more {
+    justify-content: space-between; padding: 0; border: 0; border-radius: 0; color: var(--ui-text);
+  }
+  .view-helmut .ui-hero-more .ui-icon { transform: rotate(90deg); }
+  .view-helmut .ui-hero-details[open] .ui-hero-more .ui-icon { transform: rotate(-90deg); }
+  .view-helmut .hstand .ui-count,
+  .view-helmut .hstand .hstand-rel::before { display: none; }
+  .view-helmut .hstand .hstand-rel { grid-template-columns: minmax(0, 1fr); padding: 12px 0; }
+  .view-helmut .hstand .hstand-rel.is-tappable { grid-template-columns: minmax(0, 1fr) 16px; }
+  .view-helmut .hstand .hstand-rel > * { grid-column: 1; }
+  .view-helmut .hstand .hstand-rel.is-tappable::after { grid-column: 2; }
+
+  .ui-lage-workspace .ui-vorgang-row { grid-template-columns: minmax(0, 1fr) 14px; padding: 12px 0; }
+  .ui-lage-workspace .ui-row-content { grid-column: 1; gap: 3px; }
+  .ui-lage-workspace .ui-row-chevron { grid-column: 2; }
+  .ui-lage-workspace .ui-row-content > :is(.ui-eyebrow, .ui-row-relevance, .ui-row-source),
+  .ui-lage-workspace .ui-row-number { display: none; }
+  .ui-lage-workspace .ui-row-summary { font-size: 14px; }
+  .ui-lage-einordnung:has(> .ui-customer-disclosure) { max-width: none; padding: 0; border: 0; }
+  .ui-page .ui-lage-workspace [data-ui-lage-expand],
+  .ui-page .radar2 [data-radar-expand="all"] {
+    width: 100%; min-height: 44px; margin: 0; padding: 0;
+    border: 0; border-bottom: 1px solid var(--hairline); border-radius: 0;
+    background: none; color: var(--ui-accent); text-align: left;
+  }
+
+  .ui-customer-disclosure { min-width: 0; border-bottom: 1px solid var(--hairline); }
+  .ui-customer-disclosure > summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 44px; padding: 6px 0; list-style: none; cursor: pointer;
+    color: var(--ui-accent); font: 500 15px/1.4 var(--ui-sans);
+  }
+  .ui-customer-disclosure > summary::-webkit-details-marker { display: none; }
+  .ui-customer-disclosure > summary .ui-icon { width: 16px; height: 16px; flex: 0 0 16px; transform: rotate(90deg); }
+  .ui-customer-disclosure[open] > summary .ui-icon { transform: rotate(-90deg); }
+  .ui-customer-disclosure-content { padding: 0 0 12px; overflow-wrap: anywhere; }
+  .ui-customer-disclosure-content .radar2-card-sub--block { display: block; overflow: visible; }
+  .view-radar .radar2 .radar2-meta { flex-wrap: wrap; margin: 2px 0 0; }
+  .view-radar .radar2 .radar2-source-name { max-width: none; white-space: normal; overflow-wrap: anywhere; }
+  .view-radar .radar2 .radar2-cards { gap: 0; }
+  .view-radar .radar2 .radar2-header > [data-radar-provenance] { margin: 0; }
 }
 
 /* Büro: Lesen kostet keinen Entwurf. Eine kompakte Themenliste führt erst
