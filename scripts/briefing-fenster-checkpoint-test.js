@@ -185,7 +185,7 @@ async function main() {
     const request=w.requests.find(r=>r.includes("vorherigerStand")),q=new URL(request,"https://local.invalid");
     A.equal(q.searchParams.get("id"),"eq."+e.basis.id);A.equal(q.searchParams.get("user_id"),"eq."+profile.id);
     A.equal(q.searchParams.get("slot"),"eq.mandatsbriefing");A.equal(q.searchParams.get("limit"),"2");
-    const columns=q.searchParams.get("select").split(",");A.equal(columns.length,12);
+    const columns=q.searchParams.get("select").split(",");A.equal(columns.length,13);
     A(columns.every(c=>c.split(":")[1].startsWith("payload->vorherigerStand->")));
     A(!columns.some(c=>/lage|pruefung|\*|:payload$|->vorherigerStand$/.test(c)));
     A(request.length<2000,"keine riesige History-URL fuer den echten Ein-Stufenfall");
@@ -197,7 +197,7 @@ async function main() {
     const q=new URL(w.requests[0],"https://local.invalid");
     A.equal(q.searchParams.get("id"),"eq."+e.basis.id);A.equal(q.searchParams.get("user_id"),"eq."+profile.id);
     A.equal(q.searchParams.get("slot"),"eq.mandatsbriefing");
-    A.equal(q.searchParams.get("select"),"id,user_id,slot,generated_at,briefing:payload->briefing");
+    A.equal(q.searchParams.get("select"),"id,user_id,slot,generated_at,briefing:payload->briefing,inhaltHash:payload->>inhaltHash,erzeugtAm:payload->>erzeugtAm,profilHash:payload->>profilHash");
     for(const rows of [[e.basis,e.basis],[{...e.basis,user_id:"fremd"}],[{...e.basis,id:"fremd"}],{}])
       await A.rejects(S.getBriefingFenstergrundlage(profile.id,day,{bereit:true,request:async()=>rows}));
   });

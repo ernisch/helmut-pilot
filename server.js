@@ -1237,29 +1237,21 @@ async function handleRequest(request, response) {
         // Schreibvorgang. Das Narrativ dieses Tages liegt bereits im Tagescache
         // (bf-<mandat>-lage-<tag>) — es entsteht also auch kein weiterer KI-Aufruf.
         const signatur = briefingLauf.inhaltsSignatur(ausgabe);
-        // Der Beleg wurde VOR dem Bau gelesen, und der Bau darf bis zu 60 s dauern. Ein
-        // ueberlappender Lauf (Watchdog trifft auf den regulaeren Cron) haette in diesem
-        // Fenster ebenfalls "kein Beleg" gesehen und ein zweites Mal gepusht. Deshalb
-        // unmittelbar VOR Push und Schreibvorgang noch einmal nachsehen — das verkleinert
-        // das Zeitfenster von der Baudauer auf die Dauer eines Lesezugriffs. Es beseitigt
-        // das Rennen NICHT (dafuer braeuchte es eine Bedingung im Schreibvorgang selbst);
-        // die verbleibende Ueberlappung faengt die Mandatssperre der Fairnessschicht ab.
+        // Der Bau kann mit einem anderen Morgenlauf ueberlappen. Die Lesung
+        // spart Wiederholungsschreibvorgaenge. Der bedingte Quittungswriter
+        // entscheidet bei einem Rennen, welcher Paketstand publiziert wird.
         const belegVorPush = briefingFrische.vertragAktiv()
           ? (heutiger.lauf ? heutiger : await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag))
           : heutiger;
-        const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur, paket?.ausgabeBeleg || null);
-        // Eine alte Quittung ohne Volltexthash braucht einen neuen Beleg,
-        // aber allein das Vertragsupgrade darf keinen zweiten Push erzeugen.
-        const pushWiederholung = wiederholung || (laufErfolg && !belegVorPush.lauf?.ausgabeBeleg
-          && briefingLauf.istWiederholung(belegVorPush.lauf, signatur));
-
-        const push = !laufErfolg
-          ? { skipped: true, reason: "briefing-nicht-gespeichert" }
-          : pushWiederholung
-          ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
-          : await withTimeout(sendBriefingReadyPush(ausgabe, profile), 30000, "cron-briefing-push")
-            .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-        const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
+        const vorigerBeleg = belegVorPush.lauf?.ausgabeBeleg, neuerBeleg = paket?.ausgabeBeleg;
+        const gleicherAltbeleg = vorigerBeleg?.version === 1 && neuerBeleg
+          && Date.parse(neuerBeleg.paketErzeugtAm) <= Date.parse(belegVorPush.lauf.erzeugtAm)
+          && ["mandat", "tag", "paketId", "profilHash", "briefingHash"].every(k => vorigerBeleg[k] === neuerBeleg[k]);
+        const wiederholung = laufErfolg && (briefingLauf.istWiederholung(belegVorPush.lauf, signatur, neuerBeleg || null)
+          || (gleicherAltbeleg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur)));
+        // Eine neue Paketquittung fuer dieselbe Meldung erfordert keinen zweiten Push.
+        const pushWiederholung = wiederholung || (laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur)
+          && (!vorigerBeleg || vorigerBeleg.briefingHash === neuerBeleg?.briefingHash));
 
         // --- FRISCHEVERTRAG, Schritt 3: Beleg schreiben und GEGENLESEN --------
         let quittung = { uebersprungen: true, grund: briefingFrische.vertragAktiv() ? "wiederholung" : "vertrag-aus" };
@@ -1288,6 +1280,15 @@ async function handleRequest(request, response) {
           }
         }
 
+        const push = !laufErfolg
+          ? { skipped: true, reason: "briefing-nicht-gespeichert" }
+          : briefingFrische.vertragAktiv() && !wiederholung && !quittung.verifiziert
+          ? { skipped: true, reason: "frischebeleg-nicht-bestaetigt" }
+          : pushWiederholung
+          ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
+          : await withTimeout(sendBriefingReadyPush(ausgabe, profile), 30000, "cron-briefing-push")
+            .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+        const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
         return {
           available: Boolean(ausgabe && ausgabe.available),
           paketBeleg: paket?.beleg || { tag: berlinTag, gespeichert: false, verifiziert: false, vollstaendig: false },
