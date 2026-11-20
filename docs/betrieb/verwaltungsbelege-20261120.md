@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Anmeldung und Übersicht | Die bereits angemeldete Betreibersitzung zeigte am 20.11. Übersicht, Kundenliste und Kundendetail. Partei, Fraktion, Wahlkreis, Schwerpunkte, aktiver Zugang und Mandatsstatus waren beim Pilotmandat sichtbar. Frühere Produktionsbelege bestätigen HTTP 401 ohne Sitzung. [Verwaltungsrollout](../ui/verwaltung-marke-kundenstatus-20261113/README.md) | Bei der Begehung wurde die vorhandene Betreibersitzung genutzt. |
 | Einladung und erster Kundenzugang | Beim eigenen bestehenden Demokonto nahm der Mailserver die Einladung am 12.11. um 17:57:10 UTC an. Das Betriebsprotokoll ordnet die Nutzung desselben Einladungslinks um 18:28:09 UTC, die erste Sitzung ab 18:28:11 UTC und das Setzen des Passworts demselben Konto zu. Abgleich am 20.11. rein lesend. [Versandbeleg](https://github.com/ernisch/helmut-pilot/pull/1169) | Separater Posteingangsnachweis und Rücksetzung in Production sind offen. |
-| Nutzer löschen | Der Link im Kundendetail öffnete am 20.11. die vorhandene Bestätigung für genau das gewählte Konto. „Abbrechen“ schloss die Bestätigung. Das Kundenmenü „Weitere Werkzeuge“ zeigte Profilansicht und „Stand neu laden“. In den Einstellungen waren Profilbestand sowie Konten, Datenschutz und Diagnose erreichbar. [Umsetzung](https://github.com/ernisch/helmut-pilot/pull/1295) · [Livebeleg](https://github.com/ernisch/helmut-pilot/pull/1296) | Die Liveprüfung endete bei „Abbrechen“. Der Rücklink reagierte in einer Probe nicht, der direkte Aufruf der Verwaltung funktionierte. |
+| Früherer Löschlink | Der Link im Kundendetail öffnete am 20.11. die vorhandene Bestätigung für genau das gewählte Konto. „Abbrechen“ schloss die Bestätigung. Das Kundenmenü „Weitere Werkzeuge“ zeigte Profilansicht und „Stand neu laden“. In den Einstellungen waren Profilbestand sowie Konten, Datenschutz und Diagnose erreichbar. [Umsetzung](https://github.com/ernisch/helmut-pilot/pull/1295) · [Livebeleg](https://github.com/ernisch/helmut-pilot/pull/1296) | Die Liveprüfung endete bei „Abbrechen“. Der Rücklink reagierte in einer Probe nicht, der direkte Aufruf der Verwaltung funktionierte. |
 | Kostenanzeige | Am 20.11. um 12:07 UTC stimmten Verwaltung und Betriebsbuch überein. 102 Tagesbuchungen über 0,790428 USD und 0 offene Buchungen. In der späteren Begehung zeigte die Verwaltung 0,863352 USD verbucht und 0,212000 USD reserviert. [Abgleich](https://github.com/ernisch/helmut-pilot/pull/1292) | Der spätere Wert ist eine Bildschirmbeobachtung, der frühere Wert ein Abgleich mit dem Betriebsbuch. |
 | Quellen, Betrieb und Briefingstatus | Quellenübersicht, Zeitplan und letzte Abläufe waren angemeldet erreichbar. Der Quellenlauf wurde als laufend angezeigt, 0 von 3 Briefings waren bereit. Das aktive Pilotbriefing wurde als unvollständig angezeigt. | Fachliche Abnahme eines vollständigen Briefings im ersten aktiven Kundenmandat offen. |
 
@@ -29,6 +29,14 @@ Der separate lokale Browsertest für das Passwortformular und der lokale Chromiu
 ## Einmaliges Betriebsbudget am 20.11. UTC
 
 [PR #1293](https://github.com/ernisch/helmut-pilot/pull/1293) dokumentiert 17 bestandene Betriebskostenprüfgruppen und 26 Prüfungen zur Tagesstatistik. Der isolierte Vertragslauf prüfte 2 USD für den freigegebenen UTC Tag, 1 USD nach Tageswechsel, die Sendesperre über die Tagesgrenze sowie die Sperren in der Vorschau und bei fehlendem Betriebsbuch. Der Gesamtdeckel betrug 30 USD. Die reguläre Verarbeitung nach dem Rollout verbuchte zusätzliche 4 Analysen für 0,029503 USD und stand um 12:50 UTC bei 0,819931 USD und 0 offenen Buchungen. [Livebeleg](https://github.com/ernisch/helmut-pilot/pull/1294)
+
+## Direkte Nutzerlöschung vom 20.11.2026
+
+[PR #1298](https://github.com/ernisch/helmut-pilot/pull/1298) ersetzte den oben dokumentierten Umweg über die ältere Verwaltung. Auf `723a1598` öffnet „Nutzer löschen“ im Kundendetail einen Bestätigungsdialog. Nach Bestätigung nutzt die Ansicht die bestehende geschützte Löschroute und kehrt bei nachgewiesenem Erfolg zur Kundenliste zurück.
+
+Lokal bestanden 25/25 Verwaltungsgruppen mit fiktiven Konten. Sie belegen unter anderem den Entzug der Sitzung des gelöschten Kontos, den Schutz des weiteren Kontos und Mandats, die Zielbindung und die Vorschaugrenze. Die gezielte DOM Probe belegt Bestätigung, Abbruch, Kundenliste und Neuladen nach einem unklaren Ausgang. [Pflichtprüfungen](https://github.com/ernisch/helmut-pilot/actions/runs/44800684548)
+
+In der angemeldeten Liveprüfung wurden der direkte Button, der Dialog und das Abbrechen in derselben Ansicht bestätigt. Das gewählte Konto blieb sichtbar. [Deployment](https://vercel.com/nohut/helmut-pilot/DmDoWkMXoCxqeeoPgAiPquvJmAqg)
 
 ## Wiederverwendung und nächste Abnahme
 
