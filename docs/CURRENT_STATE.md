@@ -4,7 +4,7 @@
 
 Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.11. das Paket von **06:15:44 Uhr Berlin** mit gebundener Quittung, zwei quellengebundenen Lageabsätzen und null Tagesprioritäten. Quellenstatus offen. 41/162 Abrufe erledigt, 754 fällig wartend, 16/16 Originalbuchungen. Der geschützte Leser belegt die Speicherung und Auslieferungslogik. Die angemeldete Kundenabnahme steht aus. [Betriebsbelege](betrieb/quellenfaelligkeit-20261119.md)
 
-**Betrieb und Kosten.** Quellen alle 15 Minuten. Lage 06:45/06:55, Paket 07:10/07:20 Uhr Berlin. Grenzen 16 Originale und 1 USD Modellkosten pro UTC-Tag, 30 USD insgesamt. Vor Umstellung 4,282173 USD abgerechnet und 6,190173 USD gebunden.
+**Betrieb und Kosten.** Quellen alle 15 Minuten. Lage 06:45/06:55, Paket 07:10/07:20 Uhr Berlin. Grenzen 16 Originale und 1 USD Modellkosten pro UTC-Tag, 30 USD insgesamt. Die Betreiberfreigabe vom 20.11. erlaubt einmalig 2 USD am 20.11. UTC im laufenden Pilotbetrieb. Vor Umstellung 4,282173 USD abgerechnet und 6,190173 USD gebunden.
 
 **Verwaltungskosten 20.11.** [PR #1291](https://github.com/ernisch/helmut-pilot/pull/1291) auf `217a6142` live. Anzeige und Betriebsbuch beim lesenden Abgleich um 12:07 UTC bestätigt. 102 Tagesbuchungen über 0,790428 USD, 0 offen. Zuvor zeigte die Altstatistik 0 USD und 102 unbepreiste Aufrufe.
 
