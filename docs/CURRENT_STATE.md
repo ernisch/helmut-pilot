@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**20.11.2026 · 24-Stunden-Betrieb aktiv.** #1281 auf `95b0763d`, Vercel `READY` in Frankfurt. Ein aktives und 500 inaktive Profile. Erster Quellenlauf 00:45–00:49 UTC, 164/164 eingeplant, 19 erledigt, 26 vertagt, 0 Endfehler. 6/6 Pflichtabrufe technisch quittiert, Arbeit/Soziales mit Quellenwiderspruch. Elf Originale, keine belegte identische Neulesung. Rücksprung auf `9632114a`. [Produktionsnachweis](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md#produktionsstart-am-20112026) · [Deployment](https://vercel.com/nohut/helmut-pilot/EkLrSr6tGL8UxZWKLxwbRUJ7h4mx)
+**20.11.2026 · 24-Stunden-Betrieb aktiv.** Gestartet mit #1281 auf `95b0763d`, Vercel Frankfurt. Ein aktives und 500 inaktive Profile. Erster Quellenlauf 00:45–00:49 UTC, 164/164 eingeplant, 19 erledigt, 26 vertagt, 0 Endfehler. 6/6 Pflichtabrufe technisch quittiert, Arbeit/Soziales mit Quellenwiderspruch. Elf Originale, keine belegte identische Neulesung. Rücksprung auf `9632114a`. [Produktionsnachweis](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md#produktionsstart-am-20112026) · [Startdeployment](https://vercel.com/nohut/helmut-pilot/EkLrSr6tGL8UxZWKLxwbRUJ7h4mx)
 
 Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.11. das Paket von **06:15:44 Uhr Berlin** mit gebundener Quittung, zwei quellengebundenen Lageabsätzen und null Tagesprioritäten. Quellenstatus offen. 41/162 Abrufe erledigt, 754 fällig wartend, 16/16 Originalbuchungen. Der geschützte Leser belegt die Speicherung und Auslieferungslogik. Die angemeldete Kundenabnahme steht aus. [Betriebsbelege](betrieb/quellenfaelligkeit-20261119.md)
 
@@ -14,7 +14,7 @@ Folgefenster 01:00–01:04 UTC erfolgreich. Fällig 683, Altbestand 754 → 753,
 
 **Erhaltene Betriebsbelege vom 17.–19.11.** [Damaliger Status mit Einzelwerten](https://github.com/ernisch/helmut-pilot/blob/bbd15da9/docs/CURRENT_STATE.md) · [Quellenbilanz](betrieb/quellen-abnahme-20261117.md) · [Briefingqualität](betrieb/briefing-qualitaet-20261117.md)
 
-**Nächster Schritt.** Pflichtquellen und echte Kundenausgabe im regulären neuen Betrieb an der Berliner Ausgabefrist prüfen. [Plan](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md)
+**Paketübergabe.** #1287 auf `c4fe5294`. Der Produktleser liefert wieder die quittierte Teilfassung von 07:20:23 Berlin. Vollständige Kundenausgabe offen. [Betriebsbeleg](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md#morgenbriefing-am-20112026)
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
 Amtlicher Beleg CELEX 32026D2505 / DEU / COM / OJ-L 2026/2505, Publikation 13.11., 142 Zeichen. Rechtsdokument-Reuse primär belegt; CC0 nur Metadaten, keine Fremdwerke, Bilder, Anhänge oder Volltexte.
