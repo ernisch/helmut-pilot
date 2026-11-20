@@ -1,18 +1,20 @@
 # CURRENT STATE — Helmut
 
-**20.11.2026 · Quellenversorgung teilweise.** PDF-/ICS-Teilstände und JSONB-Paketrücklesen aus #1280 sind seit `cfc77a27` live. DIP-Originalbindung und Google-Wiederverwendung aus #1282 laufen auf `5627ad9b`. Beide Pflichtchecks waren auf `2baead75` und `fee2fb52` grün. Vercel `READY` in Frankfurt. Alias, geschützter Paketleser und Kundenrouten-Schutz nach Deployment bestätigt. Neue DIP-/Google-Livewirkung folgt erst mit dem regulären Quellenlauf. [#1280](https://github.com/ernisch/helmut-pilot/pull/1280) · [#1282](https://github.com/ernisch/helmut-pilot/pull/1282) · [Deployment](https://vercel.com/nohut/helmut-pilot/AKJfK38ziUFj1M958m1kmjLmQEXT)
+**20.11.2026 · 24-Stunden-Betrieb aktiv.** #1281 auf `95b0763d`, Vercel `READY` in Frankfurt. Ein aktives und 500 inaktive Profile. Erster Quellenlauf 00:45–00:49 UTC, 164/164 eingeplant, 19 erledigt, 26 vertagt, 0 Endfehler. 6/6 Pflichtabrufe technisch quittiert, Arbeit/Soziales mit Quellenwiderspruch. Elf Originale, keine belegte identische Neulesung. Rücksprung auf `9632114a`. [Produktionsnachweis](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md#produktionsstart-am-20112026) · [Deployment](https://vercel.com/nohut/helmut-pilot/EkLrSr6tGL8UxZWKLxwbRUJ7h4mx)
 
 Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.11. das Paket von **06:15:44 Uhr Berlin** mit gebundener Quittung, zwei quellengebundenen Lageabsätzen und null Tagesprioritäten. Quellenstatus offen. 41/162 Abrufe erledigt, 754 fällig wartend, 16/16 Originalbuchungen. Der geschützte Leser belegt die Speicherung und Auslieferungslogik. Die angemeldete Kundenabnahme steht aus. [Betriebsbelege](betrieb/quellenfaelligkeit-20261119.md)
 
-**Betrieb und Kosten.** Acht Quellenfenster 03:00–04:45 UTC, Lage 04:55 UTC, Briefing 05:10 UTC. Am 19.11. 0,579016 USD abgerechnet, kumuliert 4,282173 USD abgerechnet und 6,190173 USD gebunden. 17,07 Google-Buchungen je Abschluss, 598 Google-Aufträge zuletzt an interner Minutengrenze.
+**Betrieb und Kosten.** Quellen alle 15 Minuten. Lage 06:45/06:55, Paket 07:10/07:20 Uhr Berlin. Grenzen 16 Originale und 1 USD Modellkosten pro UTC-Tag, 30 USD insgesamt. Vor Umstellung 4,282173 USD abgerechnet und 6,190173 USD gebunden.
 
-**24-Stunden-Entwurf.** Isoliert Rückstand 754 → 377 → 3. Beide Pakete um 07:30 Berlin abrufbar, am ersten Tag mit belegter DIP-Priorität, am zweiten ohne Tagespriorität. 0/2 vollständige Morgen. Je Tag 16 verschiedene Originale ohne Wiederholungen, an beiden Tagen mindestens ein Pflichtweg am Kontingent vertagt. 100er-Kapazität offen. [Entwurf](https://github.com/ernisch/helmut-pilot/pull/1281) · [Zweitagesbericht](https://github.com/ernisch/helmut-pilot/actions/runs/44630786421) · [Erstlauf mit Runnerlimit](https://github.com/ernisch/helmut-pilot/actions/runs/44629355853)
+Folgefenster 01:00–01:04 UTC erfolgreich. Fällig 683, Altbestand 754 → 753, 0,138698 USD heute. Dauerhafter Abbau und kompletter Pilotmorgen offen.
 
-**Originalprobe 20.11.** #1284 live auf `9632114a`. Elf Adressen für fünf Pflichtwege. Arbeit/Soziales mit ungeklärter Sitzungsnummer. [Einzelbilanz](betrieb/quellen-originalbedarf-20261120.md)
+**Isolierter Vergleich.** Rückstand 754 → 377 → 3. Beide Pakete um 07:30 Berlin abrufbar, am ersten Tag mit belegter DIP-Priorität. 0/2 vollständige Morgen. Je Tag 16 verschiedene Originale. Mindestens ein Pflichtweg pro Tag an der Quote vertagt. 100er-Kapazität offen. [Zweitagesbericht](https://github.com/ernisch/helmut-pilot/actions/runs/44630786421) · [Erstlauf mit Runnerlimit](https://github.com/ernisch/helmut-pilot/actions/runs/44629355853)
+
+**Originalprobe 20.11.** Elf Adressen für fünf Pflichtwege. Der mit #1284 eingeführte Konfliktbeleg kennzeichnet den widersprüchlichen Stand bei Arbeit/Soziales. [Einzelbilanz](betrieb/quellen-originalbedarf-20261120.md)
 
 **Erhaltene Betriebsbelege vom 17.–19.11.** [Damaliger Status mit Einzelwerten](https://github.com/ernisch/helmut-pilot/blob/bbd15da9/docs/CURRENT_STATE.md) · [Quellenbilanz](betrieb/quellen-abnahme-20261117.md) · [Briefingqualität](betrieb/briefing-qualitaet-20261117.md)
 
-**Nächster Schritt.** Betreiber-GO für die kontrollierte 24-Stunden-Aktivierung einholen. [Plan](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md)
+**Nächster Schritt.** Pflichtquellen und echte Kundenausgabe im regulären neuen Betrieb an der Berliner Ausgabefrist prüfen. [Plan](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md)
 
 **Erhaltene Reparaturen 15.11.:** PR #1231 / dc9bd6ea erhält den validierten 240-Zeichen-Legalbeleg am nativen Speicherleser; PR #1229 / d3bbb9e9 bindet den amtlichen FORMEX-Originalabsatz mit Version, Datum, Hash und Lizenz bis Briefing.
 Amtlicher Beleg CELEX 32026D2505 / DEU / COM / OJ-L 2026/2505, Publikation 13.11., 142 Zeichen. Rechtsdokument-Reuse primär belegt; CC0 nur Metadaten, keine Fremdwerke, Bilder, Anhänge oder Volltexte.
