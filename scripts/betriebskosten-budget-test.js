@@ -45,6 +45,16 @@ function fixture(contract = CONTRACT, persisted = null) {
 let count = 0;
 async function test(name, fn) { await fn(); count++; console.log(`PASS ${name}`); }
 (async () => {
+  await test("Einmalfreigabe gilt fuer genau einen UTC-Tag und den gebundenen Vertrag", () => {
+    const andererVertrag = B.vertrag(fixture().deps.env);
+    const freigegeben = { ...andererVertrag,
+      contractHash: "8c98b2e18ee5dc21c73561bbf5bad2d8cb6c76f8ccd533b3153270bbd7d9a348" };
+    assert.equal(B.tagesgrenzeMicroUsd(freigegeben, "2026-11-19"), 1000000);
+    assert.equal(B.tagesgrenzeMicroUsd(freigegeben, "2026-11-20"), 2000000);
+    assert.equal(B.tagesgrenzeMicroUsd(freigegeben, "2026-11-21"), 1000000);
+    assert.equal(B.tagesgrenzeMicroUsd(andererVertrag, "2026-11-20"), 1000000);
+    assert.equal(freigegeben.totalLimitUsd, 30);
+  });
   await test("Vertrag ist explizit, endlich, Azure-only; Aenderung setzt Buch nicht zurueck", async () => {
     assert.equal(B.aktiv({}), false); assert.equal(B.aktiv({ [B.ENV]: "" }), true);
     assert.equal(B.aktiv({ [B.ZULASSUNG_ENV]: "{}" }), true);
