@@ -8,7 +8,7 @@ Der geschützte Produktleser bestätigt für ein aktives Bundestagsmandat am 19.
 
 **Verwaltungskosten 20.11.** [PR #1291](https://github.com/ernisch/helmut-pilot/pull/1291) auf `217a6142` live. Anzeige und Betriebsbuch beim lesenden Abgleich um 12:07 UTC bestätigt. 102 Tagesbuchungen über 0,790428 USD, 0 offen. Zuvor zeigte die Altstatistik 0 USD und 102 unbepreiste Aufrufe.
 
-**Verwaltung 20.11.** PR #1295 live: Löschlink je Kunde und Bestätigung geprüft. Kein Konto gelöscht.
+**Verwaltung 20.11.** [Prüfbelege](betrieb/verwaltungsbelege-20261120.md). Löschlink live bestätigt.
 
 Folgefenster 01:00–01:04 UTC erfolgreich. Fällig 683, Altbestand 754 → 753, 0,138698 USD heute. Dauerhafter Abbau und kompletter Pilotmorgen offen.
 
