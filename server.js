@@ -3633,11 +3633,13 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
     && Date.parse(stand.redaktionsschluss || "") === term.redaktionsschluss) {
     // Der gespeicherte Morgenstand bleibt Grundlage für das Briefing. Die
     // Tagesansichten dürfen nur lesend dieselben Fach- und Quellengrenzen nutzen.
+    let radarQuellen;
     const [aktuell, lage] = await Promise.all([
-      withTimeout(buildV3Briefing(profile, politicianId), 5000, "tagesradar").catch(() => null),
+      withTimeout(buildV3Briefing(profile, politicianId, { now: jetzt,
+        erfasseRadarQuellen: quellen => { radarQuellen = quellen; } }), 5000, "tagesradar").catch(() => null),
       withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 5000, "tageslage").catch(() => null)
     ]);
-    stand = tagespaket.aktualisiereTagesansichten(stand, aktuell, lage, { now: jetzt, profile });
+    stand = tagespaket.aktualisiereTagesansichten(stand, aktuell, lage, { now: jetzt, profile, radarQuellen });
   }
   const ausgabe = previewMode ? stand
     : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(stand, profile);
@@ -3718,6 +3720,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     if (policyInfo) briefing.publicationEligibilityPolicy = policyInfo;
     if (Number.isFinite(opts.quellenBis)) briefing.redaktionsschluss = new Date(opts.quellenBis).toISOString();
     briefing.tagespaketGrundlage = require("./lib/helmut/tagespaket-auslieferung").grundlage(briefing, kos);
+    opts.erfasseRadarQuellen?.(sourcesByVorgang);
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
       // Erst nach den bestehenden Quellen- und Anzeigefiltern zaehlen. Ein
