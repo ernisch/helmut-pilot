@@ -118,6 +118,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
     // Vorhandene erfundene Quelle: ein neuerer Rohstand ist kein Beleg fuer
     // einen neueren sichtbaren Radarhinweis. Keine neue Fachselektion im Test.
     const sichtbarAm = "2026-09-08T05:00:00Z";
+    briefing.items[0].sources = briefing.items[0].sources.map(quelle => ({ ...quelle, publishedAt: sichtbarAm }));
     briefing.currentRadarState = { status: "fresh", generatedAt: now.toISOString(),
       lastUpdated: day + "T05:00:00Z", quality: { sourcesLoaded: true },
       anzeige: { status: "stale", lastUpdated: sichtbarAm, dynamics: [{
