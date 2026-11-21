@@ -8429,7 +8429,9 @@ function renderRadarHeader(state) {
     : (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Kein Quellendatum für diese Ansicht"));
   const created = state && state.generatedAt && Number.isFinite(Date.parse(state.generatedAt))
     ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.generatedAt)) : "";
-  const provenance = `<p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(`${!compact && created ? `Ansicht erstellt: ${created}. ` : ""}Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.`)}</p>`;
+  const abdeckung = radarNamenssucheLeertext(state) ? "Die Quellenabdeckung ist nicht ausgewiesen."
+    : "Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen.";
+  const provenance = `<p class="radar2-refresh-note" data-radar-provenance>${escapeHtml(`${!compact && created ? `Ansicht erstellt: ${created}. ` : ""}${abdeckung}`)}</p>`;
   const status = `<div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
     <span class="radar2-status-dot" aria-hidden="true"></span><span>${escapeHtml(label)}</span>
   </div>`;
@@ -8736,13 +8738,20 @@ function radarSectionEmptyText(state, subject) {
 
 function radarNamenssucheLeertext(state) {
   const erstellt = Date.parse(state?.generatedAt || "");
-  if (previewMode || radarDisruption(state) || state?.quality?.sourcesLoaded !== true
+  if (previewMode || radarDisruption(state) || state?.quality?.namenssucheOhneTreffer !== true
     || ["gap", "stale"].includes(state.emptyState?.kind)
     || !Number.isFinite(erstellt) || erstellt > Date.now() || !radarIsToday(new Date(erstellt))) return "";
   return "In den ausgewerteten Quellen wurden in den letzten 7 Tagen keine Artikel über Sie gefunden.";
 }
 
 function renderRadarEmpty(state) {
+  const namenshinweis = radarNamenssucheLeertext(state);
+  if (namenshinweis) return `
+    <section class="radar2-section" data-empty-kind="quiet">
+      ${radarSectionHead("person", "Über Sie", "mentions", false, false)}
+      ${radarEmptyHint(namenshinweis)}
+    </section>
+  `;
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
   // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
   const disruption = radarDisruption(state);
@@ -8754,13 +8763,13 @@ function renderRadarEmpty(state) {
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
-  const note = radarNamenssucheLeertext(state) || (disruption ? disruption.sub
+  const note = disruption ? disruption.sub
     : stale ? [lageField(es?.detail), "Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
       : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.");
+      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
   const emptyKind = disruption ? disruption.kind : stale ? "stale" : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
