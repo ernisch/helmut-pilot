@@ -73,6 +73,22 @@ async function main(){
     A.deepEqual(a,b);A.equal(a.title,actorNew);A.equal(a.lastUpdatedAt,at);A.equal(a.beobachtungsBeleg.art,"weitere-berichte");
     A.ok(a.evidence.includes("kein politischer Trend"));
   });
+  await test("Tagesradar behaelt geprueftes Signal ausserhalb der gekuerzten Briefingquellen",()=>{
+    const anzeige=produce(docs,item,true), aktuellerStand={items:[{vorgangId:vid,sources:[docs[0]]}],
+      currentRadarState:{status:"fresh",profileId:profile.id,anzeige,dynamics:clone(anzeige.dynamics)}};
+    const gespeicherterStand={currentHelmutState:{items:[]},gespeicherterNachweis:{inhaltHash:"historisch"}};
+    const vorher=clone({aktuellerStand,gespeicherterStand});
+    const aktualisiere=radarQuellen=>D.aktualisiereTagesansichten(gespeicherterStand,aktuellerStand,null,{now,profile,radarQuellen});
+    const out=aktualisiere({[vid]:docs});
+    A.equal(out.currentRadarState.anzeige.dynamics[0]?.title,actorNew);
+    A.equal(out.currentRadarState.anzeige.dynamics[0]?.sourceUrl,url);
+    A.deepEqual(out.gespeicherterNachweis,gespeicherterStand.gespeicherterNachweis);
+    A.deepEqual(out.currentHelmutState,gespeicherterStand.currentHelmutState);
+    for(const quellen of [undefined,{[vid]:[docs[0]]},{[vid]:[docs[0],{...docs[1],summary:docs[0].summary}]}])
+      A.deepEqual(aktualisiere(quellen).currentRadarState.anzeige.dynamics,[]);
+    A.ok(!JSON.stringify(out).includes("NICHT-IN-DER-ANZEIGE"));
+    A.deepEqual({aktuellerStand,gespeicherterStand},vorher);
+  });
   await test("Fehlende mehrdeutige fremde oder abweichend datierte Quellen erzeugen keine Artikelbehauptung",()=>{
     const changed=[[],[docs[0]],docs.map(d=>d.id==="rd-actor-neu"?{...d,published_at:null}:d),
       docs.map(d=>d.id==="rd-actor-neu"?{...d,published_at:day+"T05:00:00.001Z"}:d),
@@ -165,7 +181,7 @@ async function main(){
       A.equal(JSON.stringify([...f.rows]),before);
     }
   });
-  A.equal(count,8);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
+  A.equal(count,9);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of modules)Object.assign(m,old);if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
