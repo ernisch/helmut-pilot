@@ -153,6 +153,10 @@ function main() {
       person.nameQueryComplete === true && /Erika%20Beispiel|Erika\+Beispiel/.test(person.rssUrl),
       person.rssUrl.slice(0, 90));
     check("2.2 Sie hat genau zwei Abrufwege (aktuell + Archiv)", person.rssUrls.length === 2);
+    check("2.2a Aktuelle Namenssuche und Archiv haben getrennte Zeitfenster",
+      person.rssUrl === person.rssUrls[0]
+      && new URL(person.rssUrl).searchParams.get("q") === `"${helmut.fullName}" when:7d`
+      && new URL(person.rssUrls[1]).searchParams.get("q") === `"${helmut.fullName}" when:3m`);
     const mandats = sched.mandateNewsSources(helmut);
     check("2.3 Aus Ausschuss, Themen, Partei und Region entstehen mandatsbezogene Quellen",
       mandats.length >= 3, `${mandats.length} Quellen`);
