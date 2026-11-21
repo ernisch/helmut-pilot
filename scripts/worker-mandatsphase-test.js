@@ -25,7 +25,7 @@ function welt() {
     extendLease: w.q.extendLease, zurueckstellen: w.q.zurueckstellen,
     saveRawItems: async items => { w.writes.push(structuredClone(items)); return items; },
     budget: { reserviere: async () => A.fail("Kein Modellbudget in dieser Regression") } };
-  w.run = (options = {}) => F.fuehreAus({ env: ENV, deps: { now: w.now, klassen: w.klassen,
+  w.run = ({ ganztags = false, ...options } = {}) => F.fuehreAus({ env: ENV, ganztags, deps: { now: w.now, klassen: w.klassen,
     bereitschaft: async () => ({ bereit: true }), automatik: async () => ({ erlaubt: true }),
     reserviere: async o => { w.quotas.push(o); return { verfuegbar: true, erlaubt: true }; } },
     arbeit: ({ freigabe }) => W.durchlauf({ env: ENV, deps: w.deps, kennung: "synthetischer-lauf",
@@ -36,10 +36,10 @@ async function stub(w, fn, options) {
   const old = P.arbeite; P.arbeite = fn;
   try { return await w.run(options); } finally { P.arbeite = old; }
 }
-async function enqueue(w, typ, priority) {
+async function enqueue(w, typ, priority, extra = {}) {
   return w.q.enqueue({ jobType: typ, priority, idempotencyKey: typ + "|" + w.q.groesse(),
     freshnessWindow: "2026-11-13T00Z", tenantId: /projection|materialization/.test(typ) ? "synthetisches-mandat" : null,
-    payload: { mandatsId: "synthetisches-mandat" } });
+    payload: { mandatsId: "synthetisches-mandat" }, ...extra });
 }
 let count = 0;
 async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
@@ -174,6 +174,47 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     await A.rejects(w.run(), /synthetische Unterbrechung/);
     A.equal(w.q.hole(job.id).status, "erledigt"); A.equal(w.q.hole(job.id).attempts, 1);
     A.equal(w.q.hole(job.id).lease_owner, null); A.equal(w.writes.length, 0);
+  });
+  await test("Vor Redaktionsschluss folgen faellige RSS-Abrufe den amtlichen Pflichtabrufen", async () => {
+    const w = welt(); w.weiter(30 * 60000);
+    const aktuell = await enqueue(w, "source_fetch", 60, { tenantId: "synthetisches-mandat",
+      payload: { art: "person-aktuell", quelle: { crawlMethod: "rss" } } });
+    const geteilt = await enqueue(w, "source_fetch", 100, {
+      payload: { art: "geteilt", quelle: { crawlMethod: "rss" } } });
+    const amtlich = await enqueue(w, "source_fetch", 40);
+    const spaeter = await enqueue(w, "source_fetch", 100, { dueAt: "2026-11-13T05:46:00Z",
+      payload: { art: "geteilt", quelle: { crawlMethod: "rss" } } });
+    w.deps.claimQuellenfaelligkeit = ({ altVorrang, ...args }) => {
+      A.equal(altVorrang, false);
+      return w.q.claim(args);
+    };
+    w.deps.handler = { source_fetch: async a => {
+      w.trace.push(a.id); w.weiter(1000); return { ok: true };
+    } };
+    const r = await w.run({ ganztags: true });
+    A.deepEqual(w.trace, [amtlich.id, aktuell.id, geteilt.id]);
+    A.equal(r.bilanzen[0].phasen[1].erledigt, 3);
+    A.equal(w.q.hole(spaeter.id).attempts, 0);
+    A.equal(w.quotas.length, 3);
+    w.weiter(Date.parse("2026-11-13T06:00:00Z") - w.now());
+    const pause = await w.run({ ganztags: true });
+    A.equal(pause.grund, "ausserhalb-quellenarbeitsfenster");
+    A.equal(w.q.hole(spaeter.id).attempts, 0);
+    A.equal(w.quotas.length, 3);
+  });
+  await test("Altauftraege und Archiv erhalten keinen Abruf vor Redaktionsschluss", async () => {
+    for (const [art, dueAt] of [["geteilt", "2026-11-12T21:00:00Z"], ["person-archiv", "2026-11-13T00:00:00Z"]]) {
+      const w = welt(); w.weiter(30 * 60000);
+      const job = await enqueue(w, "source_fetch", 100, { dueAt,
+        payload: { art, quelle: { crawlMethod: "rss" } } });
+      w.deps.claimQuellenfaelligkeit = args => w.q.claim(args);
+      w.deps.handler = { source_fetch: async a => { w.trace.push(a.id); return { ok: true }; } };
+      const r = await w.run({ ganztags: true });
+      A.deepEqual(w.trace, []);
+      A.equal(r.zurueckgestellt, 1);
+      A.equal(w.q.hole(job.id).status, "wartend");
+      A.equal(w.q.hole(job.id).attempts, 0);
+    }
   });
   console.log(`${count}/${count} neue Worker-Mandatsphasen-Gruppen bestanden; keine externen Aufrufe.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
