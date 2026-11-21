@@ -3760,7 +3760,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     : briefingLanguage.deriveBriefingTypeFromDate(now, "Europe/Berlin");
   const frischeFenster = (opts && opts.frischeFenster) || null;
   const versorgung = opts.versorgung || await require("./lib/helmut/quellen-versorgungsstand").lese({
-    mandat: userId, jetztMs: now.getTime() });
+    mandat: userId, jetztMs: now.getTime(), quellenBis: opts.quellenBis ?? null });
   const empty = (reason) => ausgabe(briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster, versorgung, now }));
 
   // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
