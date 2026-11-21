@@ -92,13 +92,41 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A(!JSON.stringify(w.diagnosen()).includes(w.items[0].content));
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
+  await test("Amtlicher hib Feedstand wird trotz zuerst gespeicherter Suchfundstelle verarbeitet", async () => {
+    const w = welt({ gute: 0 });
+    const eingang = { ...w.items[0], url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
+      sourceId: "bundestag", sourceName: "Bundestag", sourceType: "bundestag", linkType: "direct",
+      retrievalPathId: "rp-bundestag", publishedAt: "2026-11-13T10:06:00Z" };
+    const amtlich = D.toRawDocumentRow(eingang);
+    const fundstelle = { ...amtlich, source_id: "general-hib", source_name: "Deutscher Bundestag",
+      quellenabrufpfad: "rp-general-hib", title: `${amtlich.title} - Deutscher Bundestag`,
+      published_at: "2026-11-13T10:12:25Z", summary: null };
+    A.equal(require("../lib/helmut/quellenstand-bindung").gleicherStand(amtlich, fundstelle), false);
+    w.items = [eingang]; w.kanonisch.clear(); w.archiv.clear();
+    w.kanonisch.set(amtlich.id, structuredClone(fundstelle));
+    const r = await w.run();
+    A.equal(r.abrufErgebnis.art, "rohfassungen");
+    A.equal(w.diagnosen().length, 0); A.equal(r.abrufErgebnis.analyse.length, 1);
+    const analyse = r.abrufErgebnis.analyse[0];
+    A.equal(analyse.stand, R.standHash(amtlich));
+    A.deepEqual(await w.native([amtlich.id], { [amtlich.id]: analyse.stand }), [amtlich]);
+    A.deepEqual(w.kanonisch.get(amtlich.id), fundstelle);
+
+    for (const abweichung of [{ quellenabrufpfad: null }, { source_id: "fremde-quelle" }, { link_type: "indirect" },
+      { published_at: "2026-11-13T10:05:59Z" }, { published_at: "2026-11-13T10:22:00Z" },
+      { published_at: "kein-datum" }, { url: "https://example.invalid/1234" }, { title: "Anderer Titel" }]) {
+      w.kanonisch.set(amtlich.id, { ...fundstelle, ...abweichung });
+      await A.rejects(w.native([amtlich.id], { [amtlich.id]: analyse.stand }), /quellenstand-metadatenabweichung/);
+    }
+  });
   await test("Diagnose endet einmalig vor Modell und Rohlesung und bewahrt offenen Versorgungsstatus", async () => {
     const w = welt({ gute: 0 }); await w.run();
     A.equal((await abschliessen(w)).ausgang, "endgueltig-fehlgeschlagen");
     A.equal(w.diagnosen()[0].status, "fehlgeschlagen"); A.equal(w.diagnosen()[0].attempts, 1);
     A.match(w.diagnosen()[0].last_error, /artikel-eingangsfehler: quellenstand-versionskonflikt/);
     const stand = await V.lese({ mandat: "synthetisches-mandat", jetztMs: now, env,
-      deps: { planungsrest: { lesen: async () => ({ zustand: "fertig" }) }, offeneVorbedingungen: w.q.offeneVorbedingungen } });
+      deps: { planungsrest: { lesen: async () => ({ zustand: "fertig" }),
+        offene: async () => ({ plaene: [], weitereVorhanden: false }) }, offeneVorbedingungen: w.q.offeneVorbedingungen } });
     A.deepEqual(stand, { version: 1, zustand: "offen", verarbeitungBeendet: true }); A.deepEqual(w.forbidden, []);
   });
   await test("Fehlende Canonical Lesung Archivbindung oder gefaelschter Konflikt bleiben UNKNOWN", async () => {
@@ -207,6 +235,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       await A.rejects(bad.run(), /verstehen-nicht-eingereiht/); A.equal(bad.q.groesse(), 0);
     }
   });
-  A.equal(count, 9);
+  A.equal(count, 10);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
