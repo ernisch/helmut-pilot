@@ -666,7 +666,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           const emptyText = await root.innerText();
           check(`${label}: leerer aelterer Radarstand behauptet weder Trefferlosigkeit noch fehlgeschlagene Quellenpruefung`,
             emptyText.includes("Keine belegten Hinweise in diesem älteren Stand")
-            && emptyText.includes("Die leere Ansicht belegt keine Trefferlosigkeit.")
+            && !emptyText.includes("keine Artikel über Sie gefunden")
+            && await root.locator('[data-empty-kind="stale"]').getByRole("heading", { name: "Über Sie" }).isVisible()
+            && await root.locator('[data-empty-kind="stale"] .radar2-empty').innerText()
+              === "Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt."
             && !emptyText.includes("Eine aktuelle Quellenprüfung ist nicht bestätigt.")
             && await root.locator('[data-empty-kind="stale"]').count() === 1,
             emptyText);

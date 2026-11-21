@@ -8476,15 +8476,15 @@ function radarHighlight(text) {
 }
 
 // --- Über dich (direkte Erwähnungen) ----------------------------------------
-function renderRadarAboutYou(state) {
-  const all = radarOpenableItems(state.mentions);
+function renderRadarAboutYou(state, emptyKind = "") {
+  const all = radarOpenableItems(state?.mentions);
   const expanded = radarSignalsExpanded || radarMentionsExpanded;
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarMentionCard).join("")
     : radarEmptyHint(radarNamenssucheLeertext(state) || "Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt.");
   return `
-    <section class="radar2-section">
+    <section class="radar2-section"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
       ${radarSectionHead("person", "Über Sie", "mentions", expanded, !radarSignalsExpanded && all.length > 3)}
       <div class="radar2-cards">${body}</div>
     </section>
@@ -8745,13 +8745,7 @@ function radarNamenssucheLeertext(state) {
 }
 
 function renderRadarEmpty(state) {
-  const namenshinweis = radarNamenssucheLeertext(state);
-  if (namenshinweis) return `
-    <section class="radar2-section" data-empty-kind="quiet">
-      ${radarSectionHead("person", "Über Sie", "mentions", false, false)}
-      ${radarEmptyHint(namenshinweis)}
-    </section>
-  `;
+  if (radarNamenssucheLeertext(state)) return renderRadarAboutYou(state, "quiet");
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
   // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
   const disruption = radarDisruption(state);
@@ -8763,19 +8757,13 @@ function renderRadarEmpty(state) {
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
-  const note = disruption ? disruption.sub
-    : stale ? [lageField(es?.detail), "Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
-    : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
-    : sourcesConfirmed
-      ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
-      : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
+  const note = disruption?.sub || (explicitGap ? lageField(es.detail) : "")
+    || (previewMode ? "In der Vorschau liegen keine personalisierten Radardaten vor." : "");
   const emptyKind = disruption ? disruption.kind : stale ? "stale" : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
-    <section class="radar2-section" data-empty-kind="${escapeAttribute(emptyKind)}">
-      <div class="radar2-empty">${escapeHtml(uiSieText(note))}</div>
-    </section>
+    ${note ? `<p class="radar2-refresh-note">${escapeHtml(uiSieText(note))}</p>` : ""}
+    ${renderRadarAboutYou(state, emptyKind)}
   `;
 }
 
