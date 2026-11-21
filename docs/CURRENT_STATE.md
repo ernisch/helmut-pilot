@@ -1,5 +1,7 @@
 # CURRENT STATE — Helmut
 
+**Sol Pilot 21.11.** [Vorschau bereit, Liveabnahme offen](betrieb/briefing-sol-20261121.md).
+
 **20.11.2026 · 24-Stunden-Betrieb aktiv.** Gestartet mit #1281 auf `95b0763d`, Vercel Frankfurt. Ein aktives und 500 inaktive Profile. Erster Quellenlauf 00:45–00:49 UTC, 164/164 eingeplant, 19 erledigt, 26 vertagt, 0 Endfehler. 6/6 Pflichtabrufe technisch quittiert, Arbeit/Soziales mit Quellenwiderspruch. Elf Originale, keine belegte identische Neulesung. Rücksprung auf `9632114a`. [Produktionsnachweis](betrieb/quellenbetrieb-24h-vorbereitung-20261120.md#produktionsstart-am-20112026) · [Startdeployment](https://vercel.com/nohut/helmut-pilot/EkLrSr6tGL8UxZWKLxwbRUJ7h4mx)
 
 **21.11.** 11 Lagevorgänge, 0 Radarsignale, 0 Prioritäten. 25/52 Abrufe rechtzeitig, 16/16 Originalbuchungen. Live: [#1309](https://github.com/ernisch/helmut-pilot/pull/1309) Radarprüfung mit Originalbelegen, [#1310](https://github.com/ernisch/helmut-pilot/pull/1310) Namenssuche auf 7 Tage. Suchprobe: 0 → 6 jüngere Treffer, nächster regulärer Lauf als Anzeigebeleg offen.
