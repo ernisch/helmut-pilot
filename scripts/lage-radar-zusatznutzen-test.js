@@ -62,6 +62,17 @@ for (const parliamentType of ["Bundestag","Landtag"]) test(`${parliamentType}: b
   A.equal(r.dynamics[0].summary,""); A.equal(r.articles.length,0);
   A.ok(r.dynamics[0].relationTypes.includes("subject"));
 });
+test("Radar verlinkt die belegte Entwicklung statt eines älteren Direktlinks", () => {
+  const mitDirektlink = { ...docs[0], link_type: "direct" };
+  const ohneQuellenlink = { ...docs[2], id: "ohne-link", url: "https://example.org/",
+    published_at: "2026-11-13T09:00:00Z" };
+  const r = radar({ parliamentType: "Bundestag", reportingTopics: ["Pflege"] },
+    [mitDirektlink, docs[1], docs[2], ohneQuellenlink]);
+  A.equal(r.dynamics.length, 1);
+  A.equal(r.dynamics[0].sourceUrl, docs[2].url);
+  A.equal(r.dynamics[0].lastUpdatedAt, docs[2].published_at);
+  A.equal(r.dynamics[0].beobachtungsBeleg.publishedAt, docs[2].published_at);
+});
 test("Nur Thema ohne zeitliche Veraenderung erzeugt kein Radar",()=>{
   A.equal(radar({focusTopics:["Pflege"]},docs.map(d=>({...d,published_at:docs[2].published_at}))).dynamics.length,0);
   const gleicheMeldungen=docs.map(d=>({...d,summary:"Die Pflegeversicherung wird reformiert."}));
