@@ -33,7 +33,8 @@ function stand(antwort, waehrendAufruf = () => {}) {
   const deps = {
     canSpend: async () => ({ allowed: true }),
     requestUnderstanding: async prompt => { p.aufrufe++; p.prompt = prompt; waehrendAufruf(); return structuredClone(antwort); },
-    save: async ko => { p.gespeichert.push(ko); return true; }, saveSources: async () => {},
+    save: async ko => { p.gespeichert.push(ko); return true; },
+    saveSources: async (_koId, docs) => ({ saved: docs.length }),
     markFailed: async () => { p.failed++; }, logSkip: () => {}, modelName: () => "attrappe",
     findVorgangCandidates: async () => [], listVorgangDocuments: async () => []
   };
@@ -73,6 +74,29 @@ function gerettet(r, s, modus, erwarteteParteien = []) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
+  await test("Parteiauswahl zeigt nur belegte Registerbezeichnungen aus den gesendeten Quellfeldern", async () => {
+    const c = fixture("Die SPD stellt einen Antrag; die linke Straßenseite bleibt offen und das Kürzel FDPTest ist keine Partei.");
+    c.documents[0].source_name = "Fraktion Die Linke, CDU";
+    const prompt = U.buildUnderstandingPrompt(c);
+    assert.match(prompt, /PARTEIENAUSWAHL: Im gelieferten Quellentext belegte Registerbezeichnungen: \["SPD"\]\./);
+    assert.equal(QB.pruefeAkteurslistenQuellenbindung({ parteien: ["CDU"] }, prompt).valid, false);
+    assert.deepEqual(QB.parteienAuswahl(JSON.stringify({ quelle_id: "rd-kontext", titel: "", auszug: "",
+      artikelkontext: { text: "Die FDP stellt einen Antrag." } })), ["FDP"]);
+  });
+  await test("Bei Fraktionsquellen ohne wörtlichen Parteinamen bleibt die Auswahl auch bei Wiederverarbeitung leer", async () => {
+    const c = fixture("Die Bundesregierung ändert die Regeln für Beratungsangebote. Eine Abgeordnete kritisiert die Änderung.");
+    c.documents[0].source_name = "Die Linke im Bundestag";
+    c.documents[0].title = "Stellungnahme zur Finanzbildung";
+    for (const modus of ["erst", "update"]) {
+      const s = stand(ANALYSE);
+      const r = await run(modus, c, s);
+      assert.match(s.p.prompt, /PARTEIENAUSWAHL: Im gelieferten Quellentext belegte Registerbezeichnungen: \[\]\./);
+      assert.match(s.p.prompt, /Ohne belegten Namen bleiben beide Listen leer/);
+      gerettet(r, s, modus);
+    }
+    await jeModus(c, { ...ANALYSE, parteien: ["Die Linke"] }, gesperrt);
+  });
+
   await test("Unbelegte Beteiligungspartei sperrt die gesamte Antwort (fail closed, kein Durchlasspfad)", async () => {
     // Production-Befund 2026-09-24 (Run 35987448290): DREI lokale `quellenbeleg-parteien`-Fehler.
     // Eine Reduktion NUR des Listeneintrags wurde geprueft und bewusst VERWORFEN: eine
