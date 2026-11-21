@@ -424,6 +424,28 @@ test("Gemischte Bilanz bleibt partial; Warteschlange wartet begrenzt statt Erfol
   }
 });
 
+test("Ein Wiederaufnahmeauftrag gibt nur den freigegebenen Vorgang und sein gebundenes Dokument weiter", async () => {
+  const { wiederaufnahme } = require("../lib/helmut/artikelkontext-lauf");
+  const vorgangId = "vg-wiederaufnahme-fixture", doc = { id: "rd-gebunden", summary: "Geprüfter Bestand" };
+  const storage = {
+    verstehenWiederaufnahmen: async () => ({ verfuegbar: true, vorgaenge: [vorgangId, "vg-fremd"] }),
+    listKoDocuments: async () => [{ id: doc.id, summary: "Nur für den Identitätsabgleich" }]
+  };
+  const motor = async (docs, deps) => {
+    assert.deepEqual(docs, []);
+    assert.deepEqual(await deps.listPending(), []);
+    assert.deepEqual((await deps.listWiederaufnahmen(25)).vorgaenge, [vorgangId]);
+    assert.deepEqual(await deps.listVorgangDocuments("ko-vg-fremd"), []);
+    assert.deepEqual(await deps.listVorgangDocuments("ko-" + vorgangId), [doc]);
+    assert.equal(deps.betriebskostenProfileId, "fixture");
+    return { results: [{ status: "saved" }] };
+  };
+  const r = await wiederaufnahme([doc], { wiederaufnahmeVorgangId: vorgangId, betriebskostenProfileId: "fixture" }, storage, motor);
+  assert.equal(r.processed, 1);
+  await assert.rejects(wiederaufnahme([doc, { id: "rd-fremd" }], { wiederaufnahmeVorgangId: vorgangId }, storage, motor),
+    /wiederaufnahme-quellbindung-ungueltig/);
+});
+
 (async () => {
   let pass = 0;
   for (const [name, fn] of tests) { await fn(); pass++; console.log("PASS " + name); }
