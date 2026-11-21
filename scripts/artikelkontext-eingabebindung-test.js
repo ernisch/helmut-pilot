@@ -291,13 +291,20 @@ async function main() {
       assert.deepEqual(s.p.schritte, [], "Keine Reservierung, Modellattrappe oder Speicherung bei falscher Bindung");
     }
   });
-  await test("Singlepromptbytes aus main 6763dc8e bleiben auch mit einteiligem Belegarray exakt erhalten", async () => {
+  await test("Singlepromptbytes aus main 6763dc8e werden nur um die neue Parteiauswahl ergaenzt", async () => {
     const f = fixture(), sha = s => crypto.createHash("sha256").update(s).digest("hex");
-    // Die bereits gemergten Fachthemen-/Quellenregeln veraenderten den Prompt.
-    // Beide Pins stammen aus main vor der vorliegenden Parserkorrektur.
-    assert.equal(sha(U.buildUnderstandingPrompt(f.cluster)), "5aa5cfb6be34bacb06a6727cac9ebfcc389e7ae96772a5048ebba05750f7a016");
+    const historischerPrompt = prompt => {
+      const zeilen = prompt.split("\n");
+      const start = zeilen.findIndex(zeile => zeile.startsWith("PARTEIENAUSWAHL:"));
+      assert(start >= 0);
+      assert.match(zeilen[start + 1], /^Fuer bekannte Parteien\/Fraktionen nur Bezeichnungen aus dieser Auswahl verwenden\./);
+      assert.match(zeilen[start + 2], /^Partei oder Fraktion des Herausgebers/);
+      zeilen.splice(start, 3);
+      return zeilen.join("\n");
+    };
+    assert.equal(sha(historischerPrompt(U.buildUnderstandingPrompt(f.cluster))), "5aa5cfb6be34bacb06a6727cac9ebfcc389e7ae96772a5048ebba05750f7a016");
     const single = U.buildUnderstandingPrompt(f.cluster, { artikelkontextVersuch: f.beleg });
-    assert.equal(sha(single), "32c33d3ce48818dfddec64f0f8f8ef6ce14363bccce97528e32e4b53db153461");
+    assert.equal(sha(historischerPrompt(single)), "32c33d3ce48818dfddec64f0f8f8ef6ce14363bccce97528e32e4b53db153461");
     assert.equal(U.buildUnderstandingPrompt(f.cluster, { artikelkontextBelege: [f.beleg] }), single);
     const s = pruefstand();
     await run(f, s);
