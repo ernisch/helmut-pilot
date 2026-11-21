@@ -9,6 +9,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const { buildCurrentRadarState } = require("../lib/helmut/radarState");
 const root = path.join(__dirname, "..");
 
 function loadClient(now) {
@@ -302,6 +303,38 @@ api.setBriefing({ currentRadarState: confirmedEmpty });
 check("Bestaetigte leere Datengrundlage hat eigenen Zustand ohne globale Entwarnung",
   api.render().includes('data-empty-kind="quiet"') && api.render().includes("Keine zugeordneten Signale in dieser Ansicht")
   && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
+
+const namenApi = loadClient("2026-07-11T12:00:00Z");
+const keineArtikel = "In den ausgewerteten Quellen wurden in den letzten 7 Tagen keine Artikel über Sie gefunden.";
+const artikel = { id: "rd-namenssuche", title: "Neue Regeln für kommunale Anträge",
+  summary: "Gemeinden beantragen Zuschüsse künftig digital und legen der zuständigen Behörde die Betriebskosten sowie einen Zeitplan vor.",
+  url: "https://example.invalid/kommunale-antraege", published_at: "2026-07-09T11:00:00Z" };
+function radarMitArtikel(docs, fullName = "Deniz Inal") {
+  const vorgang = { id: "ko-namenssuche", vorgang_id: "vg-namenssuche", status: "neu", understanding_status: "complete" };
+  return buildCurrentRadarState({ profile: { id: "u1", fullName }, now: new Date(confirmedEmpty.generatedAt),
+    knowledgeObjects: [vorgang], sourcesByVorgang: { [vorgang.vorgang_id]: docs } });
+}
+const suchstand = radarMitArtikel([artikel]);
+check("Vollständig leerer Radar bewahrt belegte Suche ohne Artikel zum Profil",
+  suchstand.status === "empty" && suchstand.quality.namenssucheOhneTreffer === true);
+for (const radar of [suchstand, { ...state, generatedAt: suchstand.generatedAt, mentions: [],
+  quality: { ...state.quality, namenssucheOhneTreffer: suchstand.quality.namenssucheOhneTreffer } }]) {
+  namenApi.setBriefing({ currentRadarState: radar });
+  check("Aktuelle leere Namenssuche erscheint als einzelner Satz",
+    namenApi.render().split(keineArtikel).length === 2 && namenApi.render().includes("Über Sie")
+    && !namenApi.render().includes("Radarprüfung nicht belegt"));
+}
+for (const radar of [emptyStateWith("store-error"), confirmedEmpty,
+  radarMitArtikel([]), radarMitArtikel([artikel], "Deniz"),
+  radarMitArtikel([{ ...artikel, published_at: "2026-06-30T11:00:00Z" }]),
+  radarMitArtikel([{ ...artikel, summary: "" }]),
+  radarMitArtikel([{ ...artikel, title: "Deniz Inal schlägt Änderungen vor" }]),
+  { ...suchstand, generatedAt: "2026-07-10T09:32:00Z" },
+  { ...suchstand, generatedAt: "2026-07-11T13:00:00Z" },
+  { ...suchstand, emptyState: { kind: "gap" } }]) {
+  namenApi.setBriefing({ currentRadarState: radar });
+  check("Unbestätigter Prüfstand behauptet keine ergebnislose Namenssuche", !namenApi.render().includes(keineArtikel));
+}
 
 const staleEmpty = { ...confirmedEmpty, emptyState: { kind: "stale" } };
 api.setBriefing({ currentRadarState: staleEmpty });
