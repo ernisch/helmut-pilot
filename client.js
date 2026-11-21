@@ -8394,7 +8394,7 @@ function renderRadarInner(state) {
   const compact = hasContent && compactCustomerLayout();
   const summary = hasContent ? renderRadarSummary(fullState) : "";
   const body = !hasContent
-    ? renderRadarEmpty(state)
+    ? renderRadarEmpty(state) + renderRadarEnvironment(state)
     : `
         ${compact ? "" : summary}
         ${state.mentions?.length || !radarOpenableItems(fullState.mentions).length ? renderRadarAboutYou(state) : ""}
@@ -8538,7 +8538,7 @@ function renderRadarMentionCard(m) {
 
 // --- Dein Umfeld (Partei / Wahlkreis / Ausschüsse) --------------------------
 function renderRadarEnvironment(state) {
-  const env = state.environment || { party: [], constituency: [], committees: [] };
+  const env = state?.environment || {};
   const active = RADAR_SEGMENTS.some((s) => s.key === radarSegment) ? radarSegment : "party";
   const tabs = RADAR_SEGMENTS.map((s) => {
     const isActive = s.key === active;
@@ -8550,7 +8550,7 @@ function renderRadarEnvironment(state) {
   // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
   const RADAR_ENV_PREVIEW = 3;
   const shown = (radarSignalsExpanded || radarEnvExpanded) ? items : items.slice(0, RADAR_ENV_PREVIEW);
-  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(state.environmentPreviewHidden ? "Weitere belegte Hinweise finden Sie unter „Alle Signale anzeigen“." : radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
+  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(state?.environmentPreviewHidden ? "Weitere belegte Hinweise finden Sie unter „Alle Signale anzeigen“." : radarSectionEmptyText(state, active === "party" ? "Partei- oder Fraktionssignale" : active === "constituency" ? "Wahlkreishinweise" : "Ausschusshinweise"));
   const more = !radarSignalsExpanded && items.length > RADAR_ENV_PREVIEW
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="environment">${radarEnvExpanded ? "Weniger anzeigen" : `${escapeHtml(seg.more)} (${items.length})`} <span aria-hidden="true">›</span></button>`
     : "";

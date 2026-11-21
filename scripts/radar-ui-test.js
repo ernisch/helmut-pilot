@@ -350,6 +350,15 @@ const staleEmptyHtml = api.render();
 check("Veralteter Leerstand bleibt trotz geladener Quellen von bestaetigter Leere unterscheidbar",
   staleEmptyHtml.includes('data-empty-kind="stale"') && staleEmptyHtml.includes("Keine belegten Hinweise in diesem älteren Stand")
   && !staleEmptyHtml.includes("Keine zugeordneten Signale in dieser Ansicht"));
+check("Ihr Umfeld bleibt mit allen drei Kategorien auch im leeren Radar sichtbar",
+  staleEmptyHtml.includes("Ihr Umfeld") && ["party", "constituency", "committees"].every(
+    segment => staleEmptyHtml.includes(`data-radar-segment="${segment}"`))
+  && staleEmptyHtml.includes("In dieser Ansicht werden keine belegten Partei- oder Fraktionssignale angezeigt."));
+api.setSegment("committees");
+check("Leerer Radar zeigt beim Kategorienwechsel den passenden Hinweis ohne Artikelkarte",
+  api.render().includes("In dieser Ansicht werden keine belegten Ausschusshinweise angezeigt.")
+  && !api.render().includes("radar2-row-title"));
+api.setSegment("party");
 api.setBriefing({ currentRadarState: { ...staleEmpty, available: false, status: "error" } });
 check("Technischer Fehler hat auch gegenueber veraltetem Leerstand Vorrang",
   api.render().includes('data-empty-kind="stoerung"') && !api.render().includes('data-empty-kind="stale"'));
