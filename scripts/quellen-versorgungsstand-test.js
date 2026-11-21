@@ -66,6 +66,61 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     d.offeneVorbedingungen = async ({ fenster }) => fenster ? { verfuegbar: true, offen: 0, fehlgeschlagen: 0 } : { verfuegbar: false };
     A.deepEqual(await lese(d), signal("unbekannt"));
   });
+  await test("Morgenprüfung bindet nur aktuelle fällige Abrufe und ihre Quittungen", async () => {
+    const F = require("../lib/helmut/quellen-faelligkeit");
+    const { hash } = require("../lib/helmut/briefing-speicher");
+    const morgen = new Date("2026-11-21T06:20:00Z");
+    const schnitt = require("../lib/helmut/quellen-tagesbetrieb").zeiten(morgen.getTime()).redaktionsschluss;
+    const iso = zeit => new Date(zeit).toISOString();
+    const erstelle = (name, ms, tenantId = null, art = "geteilt") => ({ jobType: "source_fetch",
+      idempotencyKey: name, tenantId, dueAt: iso(schnitt + ms), payload: { art, quelle: { id: name } } });
+    const faellig = erstelle("heute", 0);
+    const unbelangte = [erstelle("spaeter", 1), erstelle("fremd", -1, "anderes-mandat"),
+      erstelle("archiv", -1, profile.id, "person-archiv")];
+    const plan = { zustand: "offen", auftraege: [faellig, ...unbelangte] };
+    const row = { id: "00000000-0000-0000-0000-000000000001", idempotency_key: faellig.idempotencyKey,
+      tenant_id: null, first_due_at: faellig.dueAt, due_at: iso(schnitt + 3600000), status: "erledigt",
+      finished_at: iso(schnitt + 1000), payload: faellig.payload };
+    const quittieren = (bestaetigtAm = iso(schnitt), ergebnis = { art: "keine-funde", rohIds: [], analyse: [] }) => {
+      const data = { version: 1, bindung: F.quellbindung({ id: row.id, tenantId: row.tenant_id,
+        firstDueAt: row.first_due_at, payload: row.payload }), bestaetigtAm, ergebnis };
+      return [{ id: `main-quellenfaelligkeit-${row.id}`, data: { ...data, belegHash: hash(data) } }];
+    };
+    let queue = [row], belege = quittieren();
+    const deps = { planungsrest: { lesen: async () => plan, offene: async () => A.fail("Altplanung") },
+      leseAbdeckung: async () => A.fail("Tagesgesamtstand"),
+      request: async path => {
+        const url = new URL(path, "http://localhost");
+        if (url.pathname.endsWith("/helmut_jobs")) {
+          A.equal(url.searchParams.get("idempotency_key"), 'in.("heute")');
+          return queue;
+        }
+        A.equal(url.searchParams.get("id"), `in.("main-quellenfaelligkeit-${row.id}")`);
+        return belege;
+      },
+      offeneVorbedingungen: async ({ fenster, typen, mandat }) => {
+        A(fenster.length > 0);
+        A.deepEqual(typen, ["document_understanding", "mandate_projection"]);
+        A.equal(mandat, profile.id);
+        return { verfuegbar: true, offen: 0, fehlgeschlagen: 0 };
+      }
+    };
+    const pruefe = async (zustand, quellenBis = schnitt) => A.deepEqual(await V.lese({ mandat: profile.id,
+      jetztMs: morgen.getTime(), env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis }), signal(zustand));
+    await pruefe("kein-bekannter-rueckstand");
+    queue = []; await pruefe("offen");
+    for (const status of ["wartend", "laeuft", "fehlgeschlagen"]) {
+      queue = [{ ...row, status }]; await pruefe("offen");
+    }
+    queue = [{ ...row, tenant_id: "anderes-mandat" }]; await pruefe("unbekannt");
+    queue = [row]; belege = []; await pruefe("offen");
+    belege = quittieren(iso(schnitt + 1)); await pruefe("offen");
+    belege = quittieren(iso(schnitt), { art: "teilweise", rohIds: [], analyse: [] }); await pruefe("offen");
+    belege = quittieren(); belege[0].data.belegHash = "falsch"; await pruefe("unbekannt");
+    belege = quittieren(); await pruefe("unbekannt", schnitt + 1);
+    deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 1, fehlgeschlagen: 0 });
+    await pruefe("offen");
+  });
   const rows = new Map(); let updates = 0;
   const storage = { assertTenant: require("../lib/helmut/storage").assertTenant,
     getRenderedBriefingV3: async (id, slot, day) => structuredClone(rows.get(`bf-${id}-${slot}-${day}`) || null),
