@@ -217,7 +217,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const render = require("node:vm").runInNewContext(source + "; renderRadarInner", {
       RADAR_SEGMENTS: [{ key: "party" }], radarSegment: "party", radarSignalsExpanded: false,
       radarOpenableItems: values => Array.isArray(values) ? values : [],
-      radarStateHasContent: () => false, renderRadarEmpty: () => "",
+      radarStateHasContent: () => false, renderRadarEmpty: () => "", renderRadarEnvironment: () => "",
       renderRadarHeader: state => { rendered = state; return ""; }
     });
     render(b.currentRadarState);
