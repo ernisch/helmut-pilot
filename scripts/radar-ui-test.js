@@ -272,11 +272,12 @@ const blankDisplay = { status: "empty", lastUpdated: null, mentions: [], dynamic
   summary: { line1: "In dieser Radaransicht werden derzeit keine zugeordneten Signale angezeigt." } };
 api.setBriefing({ currentRadarState: { ...state, anzeige: blankDisplay } });
 const displayEmpty = api.render();
+const namenssucheOffen = "Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt.";
 check("Anzeige ohne Signale behaelt vorhandene Quellengrundlage",
   displayEmpty.includes('data-empty-kind="quiet"') && displayEmpty.includes("Keine zugeordneten Signale in dieser Ansicht")
   && !displayEmpty.includes("Radarprüfung nicht belegt"));
 check("Leeransicht behauptet keine vollstaendige Pruefung oder Abwesenheit von Erwaehnungen",
-  displayEmpty.includes("Das ist keine Bestätigung, dass es keine Erwähnungen gibt.")
+  displayEmpty.includes(namenssucheOffen)
   && displayEmpty.includes("Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen."));
 check("Ansicht nennt Erstellungszeit getrennt vom Datum angezeigter Quellen",
   displayEmpty.includes("Ansicht erstellt:") && displayEmpty.includes("11. Juli 2026")
@@ -290,7 +291,7 @@ check("Technischer Ausfall bleibt auch bei gefuellter Anzeige sichtbar",
   && failedDisplay.includes("Mustermann fordert Reform") && !failedDisplay.includes("radar2-status--fresh"));
 api.setBriefing({ currentRadarState: { ...emptyStateWith(null), anzeige: blankDisplay } });
 check("Unbestaetigte Quellen bleiben trotz generierter Anzeige unbekannt",
-  api.render().includes('data-empty-kind="unknown"') && api.render().includes("keine geladene Quellengrundlage bestätigt"));
+  api.render().includes('data-empty-kind="unknown"') && api.render().includes(namenssucheOffen));
 api.setBriefing({ currentRadarState: null });
 check("Fehlender Radarvertrag ist keine Entwarnung",
   api.render().includes("Radarprüfung nicht belegt") && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
@@ -328,13 +329,20 @@ for (const radar of [emptyStateWith("store-error"), confirmedEmpty,
   radarMitArtikel([]), radarMitArtikel([artikel], "Deniz"),
   radarMitArtikel([{ ...artikel, published_at: "2026-06-30T11:00:00Z" }]),
   radarMitArtikel([{ ...artikel, summary: "" }]),
-  radarMitArtikel([{ ...artikel, title: "Deniz Inal schlägt Änderungen vor" }]),
   { ...suchstand, generatedAt: "2026-07-10T09:32:00Z" },
   { ...suchstand, generatedAt: "2026-07-11T13:00:00Z" },
   { ...suchstand, emptyState: { kind: "gap" } }]) {
   namenApi.setBriefing({ currentRadarState: radar });
-  check("Unbestätigter Prüfstand behauptet keine ergebnislose Namenssuche", !namenApi.render().includes(keineArtikel));
+  const html = namenApi.render();
+  check("Unbestätigte Namenssuche ist sichtbar, ohne Trefferlosigkeit zu behaupten",
+    html.includes("Über Sie") && html.split(namenssucheOffen).length === 2 && !html.includes(keineArtikel));
 }
+const radarMitTreffer = radarMitArtikel([{ ...artikel, title: "Deniz Inal schlägt Änderungen vor" }]);
+namenApi.setBriefing({ currentRadarState: radarMitTreffer });
+const trefferHtml = namenApi.render();
+check("Belegter Treffer erscheint ohne Leerhinweis",
+  trefferHtml.includes("Deniz Inal schlägt Änderungen vor")
+  && !trefferHtml.includes(namenssucheOffen) && !trefferHtml.includes(keineArtikel));
 
 const staleEmpty = { ...confirmedEmpty, emptyState: { kind: "stale" } };
 api.setBriefing({ currentRadarState: staleEmpty });

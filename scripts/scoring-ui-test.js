@@ -97,7 +97,7 @@ const rConfirmed = ui.radarEmpty(quietRadar, { quality: { sourcesLoaded: true } 
 check("Radar mit Quellenbeleg: keine sichtbaren Signale beweisen keine fehlenden Erwaehnungen",
   rConfirmed.includes("Keine zugeordneten Signale in dieser Ansicht")
     && /data-empty-kind="quiet"/.test(rConfirmed)
-    && rConfirmed.includes("keine Bestätigung, dass es keine Erwähnungen gibt")
+    && rConfirmed.includes("Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt.")
     && !rConfirmed.includes("ruhig um dich herum"));
 for (const kind of ["gap", "stale"]) {
   const rGap = ui.radarEmpty({ ...gap, tab: "radar", kind });

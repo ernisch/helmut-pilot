@@ -118,6 +118,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
     // Vorhandene erfundene Quelle: ein neuerer Rohstand ist kein Beleg fuer
     // einen neueren sichtbaren Radarhinweis. Keine neue Fachselektion im Test.
     const sichtbarAm = "2026-09-08T05:00:00Z";
+    briefing.items[0].sources = briefing.items[0].sources.map(quelle => ({ ...quelle, publishedAt: sichtbarAm }));
     briefing.currentRadarState = { status: "fresh", generatedAt: now.toISOString(),
       lastUpdated: day + "T05:00:00Z", quality: { sourcesLoaded: true },
       anzeige: { status: "stale", lastUpdated: sichtbarAm, dynamics: [{
@@ -666,7 +667,10 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           const emptyText = await root.innerText();
           check(`${label}: leerer aelterer Radarstand behauptet weder Trefferlosigkeit noch fehlgeschlagene Quellenpruefung`,
             emptyText.includes("Keine belegten Hinweise in diesem älteren Stand")
-            && emptyText.includes("Die leere Ansicht belegt keine Trefferlosigkeit.")
+            && !emptyText.includes("keine Artikel über Sie gefunden")
+            && await root.locator('[data-empty-kind="stale"]').getByRole("heading", { name: "Über Sie" }).isVisible()
+            && await root.locator('[data-empty-kind="stale"] .radar2-empty').innerText()
+              === "Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt."
             && !emptyText.includes("Eine aktuelle Quellenprüfung ist nicht bestätigt.")
             && await root.locator('[data-empty-kind="stale"]').count() === 1,
             emptyText);
