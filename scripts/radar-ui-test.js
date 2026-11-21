@@ -303,6 +303,20 @@ check("Bestaetigte leere Datengrundlage hat eigenen Zustand ohne globale Entwarn
   api.render().includes('data-empty-kind="quiet"') && api.render().includes("Keine zugeordneten Signale in dieser Ansicht")
   && !api.render().includes("Heute gibt es keine neuen relevanten Signale"));
 
+const namenApi = loadClient("2026-07-11T12:00:00Z");
+const keineArtikel = "In den ausgewerteten Quellen wurden in den letzten 7 Tagen keine Artikel über Sie gefunden.";
+for (const radar of [confirmedEmpty, { ...state, generatedAt: confirmedEmpty.generatedAt, mentions: [] }]) {
+  namenApi.setBriefing({ currentRadarState: radar });
+  check("Aktuelle leere Namenssuche erscheint als einzelner Satz", namenApi.render().split(keineArtikel).length === 2);
+}
+for (const radar of [emptyStateWith("store-error"), emptyStateWith(null),
+  { ...confirmedEmpty, generatedAt: "2026-07-10T09:32:00Z" },
+  { ...confirmedEmpty, generatedAt: "2026-07-11T13:00:00Z" },
+  { ...confirmedEmpty, emptyState: { kind: "gap" } }]) {
+  namenApi.setBriefing({ currentRadarState: radar });
+  check("Unbestätigter Prüfstand behauptet keine ergebnislose Namenssuche", !namenApi.render().includes(keineArtikel));
+}
+
 const staleEmpty = { ...confirmedEmpty, emptyState: { kind: "stale" } };
 api.setBriefing({ currentRadarState: staleEmpty });
 const staleEmptyHtml = api.render();

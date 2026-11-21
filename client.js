@@ -8480,7 +8480,7 @@ function renderRadarAboutYou(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarMentionCard).join("")
-    : radarEmptyHint(radarSectionEmptyText(state, "direkten Erwähnungen"));
+    : radarEmptyHint(radarNamenssucheLeertext(state) || "Die Namenssuche für die letzten 7 Tage ist noch nicht bestätigt.");
   return `
     <section class="radar2-section">
       ${radarSectionHead("person", "Über Sie", "mentions", expanded, !radarSignalsExpanded && all.length > 3)}
@@ -8734,6 +8734,14 @@ function radarSectionEmptyText(state, subject) {
   return `In dieser Ansicht werden keine belegten ${subject} angezeigt. ${limitation}`;
 }
 
+function radarNamenssucheLeertext(state) {
+  const erstellt = Date.parse(state?.generatedAt || "");
+  if (previewMode || radarDisruption(state) || state?.quality?.sourcesLoaded !== true
+    || ["gap", "stale"].includes(state.emptyState?.kind)
+    || !Number.isFinite(erstellt) || erstellt > Date.now() || !radarIsToday(new Date(erstellt))) return "";
+  return "In den ausgewerteten Quellen wurden in den letzten 7 Tagen keine Artikel über Sie gefunden.";
+}
+
 function renderRadarEmpty(state) {
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
   // Technischer Fehler hat Vorrang vor einer leeren, ggf. alten Anzeige.
@@ -8746,13 +8754,13 @@ function renderRadarEmpty(state) {
     : explicitGap ? (es.headline || "Radarstand nicht aktuell")
     : sourcesConfirmed ? "Keine zugeordneten Signale in dieser Ansicht"
     : "Radarprüfung nicht belegt";
-  const note = disruption ? disruption.sub
+  const note = radarNamenssucheLeertext(state) || (disruption ? disruption.sub
     : stale ? [lageField(es?.detail), "Prüfzeitraum und Quellenabdeckung sind nicht ausgewiesen. Die leere Ansicht belegt keine Trefferlosigkeit."].filter(Boolean).join(" ")
     : explicitGap ? (es.detail || "Eine aktuelle Datengrundlage ist nicht bestätigt.")
     : sourcesConfirmed
       ? "Die vorhandenen Quellendaten liefern für diese Ansicht keine belegten Signale. Das ist keine Bestätigung, dass es keine Erwähnungen gibt."
       : previewMode ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.";
+      : "Für diese Ansicht ist keine geladene Quellengrundlage bestätigt. Die leere Anzeige belegt nicht, dass es keine Erwähnungen gibt.");
   const emptyKind = disruption ? disruption.kind : stale ? "stale" : explicitGap ? es.kind : sourcesConfirmed ? "quiet" : "unknown";
   return `
     ${renderRadarSummary({ summary: { line1: title } })}
