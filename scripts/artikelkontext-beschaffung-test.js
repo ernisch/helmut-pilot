@@ -226,6 +226,22 @@ test("Globales Originaltageskontingent gilt vor HTTP und belastet Cachewiederver
   }
 });
 
+test("Bestaetigte Tagesgrenze liefert nach sauberer Rueckgabe den naechsten Abrufzeitpunkt", async () => {
+  for (const rueckgabeVerloren of [false, true]) {
+    const u = umgebung({ rueckgabeVerloren });
+    Object.assign(u.deps.env, { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_QUELLEN_FENSTER_TAG: "8",
+      HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16" });
+    const wiederFaelligMs = Date.parse("2026-09-18T00:00:00.000Z");
+    u.deps.originalReservierung = { reserviere: async () => ({ verfuegbar: true, erlaubt: false,
+      grund: "tagesgrenze", fruehesteMs: wiederFaelligMs - u.deps.now().getTime() }) };
+    const r = await run(u);
+    assert.deepEqual(r, rueckgabeVerloren ? { ok: false, reason: "rueckgabe-nicht-bestaetigt" }
+      : { ok: false, reason: "original-tagesgrenze", wiederFaelligMs });
+    assert.equal(u.network.length, 0);
+    assert.equal(u.rows.size, Number(rueckgabeVerloren));
+  }
+});
+
 (async () => { for (const [name, fn] of tests) { await fn(); console.log("PASS " + name); }
   console.log(`PASS ${tests.length} Gruppen zur bestaetigten Artikelkontextbeschaffung`);
 })().catch(e => { console.error(e); process.exitCode = 1; });
