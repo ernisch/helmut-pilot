@@ -126,6 +126,30 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     await assert.rejects(understanding({ ...job, createdAt: "2020-01-01T00:00:00Z" }, deps({
       vorbereiteGespeicherteInhalte: async () => result([]) }), { auftragsDeadlineMs: start + 120000 }), /verstehen-uebersprungen-dauerhaft/);
   });
+  await test("Bestaetigte Originalgrenze vertagt den Einzelartikel bis zur Freigabe statt pauschal", async () => {
+    const doc = docs[0], wiederFaelligMs = Date.parse("2026-11-10T00:00:00.000Z");
+    const row = { id: job.id, job_type: "document_understanding", created_at: job.createdAt,
+      payload: { dokumentIds: [doc.id], quellenstaende: { [doc.id]: "a".repeat(64) } } };
+    let clock = start, vertagungen = 0;
+    const d = deps({ env: { ...env, HELMUT_SCALABLE_PIPELINE: "on", HELMUT_VERSTEHEN_CAS: "on" },
+      handler: P.HANDLER, now: () => clock, ladeRohdokumentStaende: async () => [doc],
+      vorbereiteGespeicherteInhalte: async () => {
+        clock += 2500;
+        return { ...result([]), befund: [{ id: doc.id, status: "vertagt", reason: "original-tagesgrenze", wiederFaelligMs }] };
+      },
+      budget: { reserviere: async () => assert.fail("Kein Modellbudget ohne Originalbeleg") },
+      eagerUnderstanding: async () => assert.fail("Keine Analyse ohne Originalbeleg"),
+      finish: async () => assert.fail("Vertagung darf den Job nicht abschliessen"),
+      zurueckstellen: async args => {
+        vertagungen++;
+        assert.equal(args.grund, "original-tagesgrenze");
+        assert.equal(clock + args.delayMs, wiederFaelligMs);
+        return { verfuegbar: true, uebernommen: true };
+      } });
+    const r = await P.fuehreAuftragAus({ auftrag: row, deps: d, besitzer: "queue-test", leaseMs: 300000 });
+    assert.equal(r.ausgang, "zurueckgestellt");
+    assert.equal(vertagungen, 1);
+  });
   await test("Gefilterte Quellenluecke verschwindet nicht hinter erfolgreicher Teilmenge", async () => {
     const r = await understanding(job, deps({ vorbereiteGespeicherteInhalte: async () => ({ ...result([docs[0]]),
       befund: [{ id: docs[1].id, status: "luecke", reason: "quellensichtbarkeit-fehlt" }] }),
