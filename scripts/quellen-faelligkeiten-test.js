@@ -144,6 +144,8 @@ async function main() {
     A(!Object.hasOwn(geplant.payload.quelle, "queryTerms"));
     const job = { id, tenant_id: eigen.id, job_type: "source_fetch", attempts: 1, first_due_at: due, payload: geplant.payload };
     const url = "https://fixture.example/politik/mandat", feed = geplant.payload.quelle.rssUrl;
+    const archivPlan = plan.auftraege.find(j => j.payload.art === "person-archiv");
+    const archivFeed = archivPlan.payload.quelle.rssUrl;
     const fremd = "https://news.google.com/rss/articles/CBMi_fixture-andere-person";
     const body = `<rss><channel><item><title>Mara Beispiel zur Infrastruktur</title><description>Ein Bericht</description>`
       + `<pubDate>Thu, 12 Nov 2026 10:00:00 GMT</pubDate><link>${url}</link></item>`
@@ -153,14 +155,17 @@ async function main() {
     const deps = { env, now: () => jetzt, klassen: {}, handler: P.HANDLER, googleOriginale: new Map(),
       leseQuellenprofil: async mandatsId => { A.equal(mandatsId, eigen.id); return eigen; },
       hardeningConfig: () => ({ enabled: false }), quellenbelegSpeicher: () => ({
-        sichern: async (_auftrag, beleg) => { A.equal(beleg.art, "rohfassungen"); } }),
+        sichern: async (auftrag, beleg) => { A.equal(beleg.art,
+          auftrag.payload.art === "person-archiv" ? "keine-funde" : "rohfassungen"); } }),
       crawlAllSources: (sources, opts) => crawlAllSources(sources, { ...opts, fetchUrl: async adresse => {
-        abrufe.push(adresse); return { body: adresse === feed ? body : "" };
+        abrufe.push(adresse);
+        if (adresse === archivFeed) return { status: 200, finalUrl: adresse, body: "<rss><channel></channel></rss>" };
+        return { body: adresse === feed ? body : "" };
       } }),
       persistRohdokumente: async items => {
         gespeichert.push(...items.map(item => item.url)); return { ok: true, bestaetigteIds: ["rd-" + "a".repeat(64)] };
       },
-      finish: async r => { A.equal(r.ok, true); return { verfuegbar: true, uebernommen: true }; },
+      finish: async r => { A.equal(r.ok, true, r.error); return { verfuegbar: true, uebernommen: true }; },
       zurueckstellen: async r => { A.equal(r.delayMs, 86400000); return { verfuegbar: true }; } };
     A.equal((await P.fuehreAuftragAus({ auftrag: job, deps })).ausgang, "erledigt");
     A.deepEqual(gespeichert, [url]);
@@ -171,7 +176,14 @@ async function main() {
     }
     const archiv = { ...job, payload: { ...job.payload, art: "person-archiv" } };
     A.equal((await P.fuehreAuftragAus({ auftrag: archiv, deps })).grund, "personensuche-nicht-mehr-bestaetigt");
+    const altQuelle = { ...archivPlan.payload.quelle, url: archivPlan.payload.quelle.url.replace(/%20when%3A7d$/, "") };
+    const alterArchivauftrag = quelle => ({ ...job, payload: { ...archivPlan.payload, quelle } });
+    const fremdeArchivQuelle = { ...altQuelle, url: altQuelle.url.replace("Mara", "Andere") };
+    A.equal((await P.fuehreAuftragAus({ auftrag: alterArchivauftrag(fremdeArchivQuelle), deps })).grund,
+      "personensuche-nicht-mehr-bestaetigt");
     A.deepEqual(abrufe, [feed, url]);
+    A.equal((await P.fuehreAuftragAus({ auftrag: alterArchivauftrag(altQuelle), deps })).ausgang, "erledigt");
+    A.deepEqual(abrufe, [feed, url, archivFeed]);
   });
   await test("Bestätigte Google-Auflösung teilt exakt eine Anfrage; ungeklärte Originale werden nicht zwischengespeichert", async () => {
     const googleOriginale = new Map();
@@ -515,11 +527,15 @@ async function main() {
   });
   await test("Archivschlüssel behalten die erste exakt belegte Fälligkeit des Siebentagefensters", async () => {
     const start = "2026-11-19T00Z", morgen = "2026-11-20T03:10:00Z";
+    const person = require("../lib/helmut/scheduler").personNewsSource({ ...profile, fullName: "Mara Beispiel" });
+    const archivFeed = person.rssUrls[1];
+    const altQuelle = { ...person, url: person.url.replace(/%20when%3A7d$/, ""), rssUrl: archivFeed, rssUrls: [archivFeed] };
     const auftrag = { jobType: "source_fetch", idempotencyKey: "archiv", tenantId: profile.id,
       priority: 300, freshnessWindow: start, dueAt: due,
-      payload: { art: "person-archiv", quelle: { id: "person", url: "https://fixture.invalid/feed" } } };
+      payload: { art: "person-archiv", quelle: altQuelle } };
     const erstmals = { ...auftrag, payload: { ...auftrag.payload, faelligkeit: Q.fristen(auftrag, due) } };
-    const heute = { ...auftrag, dueAt: morgen, payload: { ...auftrag.payload, faelligkeit: Q.fristen(auftrag, morgen) } };
+    const heute = { ...auftrag, dueAt: morgen, payload: { ...auftrag.payload, quelle: { ...altQuelle, url: person.url },
+      faelligkeit: Q.fristen(auftrag, morgen) } };
     const job = { id, idempotency_key: "archiv", tenant_id: profile.id, first_due_at: due, due_at: due,
       freshness_window: start, priority: 300, status: "wartend", payload: erstmals.payload };
     const plan = a => ({ cursor: 1, auftraege: [a] });
@@ -567,6 +583,11 @@ async function main() {
     A.equal(plaene.get(neuerTag).auftraege[0].dueAt, morgen);
     A.equal((await P.setzePlanungFort(folgetag)).altrest.vorhanden, 1);
     A.equal(plaene.get(alterTag).zustand, "fertig");
+    A.equal(queue.size, 1);
+    const fremd = { ...heute, payload: { ...heute.payload, quelle: { ...heute.payload.quelle, url: "https://fixture.invalid/fremd" } } };
+    plaene.set(neuerTag, { ...plaene.get(neuerTag), cursor: 0, zustand: "offen", auftraege: [fremd] });
+    A.equal((await P.setzePlanungFort(folgetag)).grund, "planung-archivursprung-abweichend");
+    A.equal(plaene.get(neuerTag).cursor, 0);
     A.equal(queue.size, 1);
     const wechsel = "2026-11-26";
     const naherPlan = { tag: wechsel, auftraege: [{ ...heute, idempotencyKey: "archiv-neu",
