@@ -183,7 +183,12 @@ async function main() {
       "personensuche-nicht-mehr-bestaetigt");
     A.deepEqual(abrufe, [feed, url]);
     A.equal((await P.fuehreAuftragAus({ auftrag: alterArchivauftrag(altQuelle), deps })).ausgang, "erledigt");
-    A.deepEqual(abrufe, [feed, url, archivFeed]);
+    const historisch = { ...alterArchivauftrag(altQuelle), first_due_at: "2026-11-18T03:00:00Z" };
+    const alteDeps = { ...deps, leseHeutigenQuellenplan: async () => ({ auftraege: [archivPlan] }) };
+    A.equal((await P.fuehreAuftragAus({ auftrag: historisch, deps: alteDeps })).ausgang, "erledigt");
+    const fremdesMandat = { ...alteDeps, leseHeutigenQuellenplan: async () => ({ auftraege: [{ ...archivPlan, tenantId: "anderes-mandat" }] }) };
+    A.equal((await P.fuehreAuftragAus({ auftrag: historisch, deps: fremdesMandat })).grund, "quellenbedarf-nicht-mehr-bestaetigt");
+    A.deepEqual(abrufe, [feed, url, archivFeed, archivFeed]);
   });
   await test("Bestätigte Google-Auflösung teilt exakt eine Anfrage; ungeklärte Originale werden nicht zwischengespeichert", async () => {
     const googleOriginale = new Map();
