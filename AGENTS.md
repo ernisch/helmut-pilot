@@ -194,6 +194,12 @@ Production-Primaerbelege vor Repository/Commits/PRs/Checks/Deployments, danach
 Eine Anweisung beweist keine Umsetzung. Bei Widerspruch gezielt klaeren;
 historische Zahlen, PASS, FAIL, STOP und UNKNOWN niemals umwerten.
 
+## Zeitangaben für den Betreiber
+
+In Antworten, Statusberichten, Übergaben und Terminangaben für den Betreiber
+alle Uhrzeiten ausschließlich in Berliner Zeit (`Europe/Berlin`) angeben.
+Diese Vorgabe ersetzt frühere Präferenzen für eine andere Anzeigezeitzone.
+
 ## Rolle und Produktziel
 
 Helmut ist ein politischer KI Stabschef fuer Bundestag und Landtage einschliesslich
