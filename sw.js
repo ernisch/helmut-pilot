@@ -90,32 +90,30 @@ async function pruneOldVersions(cache, req) {
 // Navigations-/Assetabruf darf deshalb nicht unbegrenzt den PWA-Start blockieren.
 // Das ist kein Zeitlimit fuer die privaten Briefingdaten; deren Vertrag bleibt.
 const START_RESPONSE_TIMEOUT_MS = 8000;
+function withStartResponseTimeout(pending, onTimeout) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error("start-response-timeout"));
+      onTimeout?.();
+    }, START_RESPONSE_TIMEOUT_MS);
+  });
+  return Promise.race([pending, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function fetchStartResponse(request) {
   const controller = new AbortController();
-  let timer;
   const abort = () => controller.abort();
   if (request.signal?.aborted) abort();
   else request.signal?.addEventListener("abort", abort, { once: true });
   try {
-    const timeout = new Promise((_, reject) => {
-      timer = setTimeout(() => {
-        reject(new Error("start-response-timeout"));
-        controller.abort();
-      }, START_RESPONSE_TIMEOUT_MS);
+    // Auch der vollständige Antwortinhalt muss vor der Startfrist eintreffen.
+    const response = fetch(request, { signal: controller.signal }).then(async (res) => {
+      await res.clone().arrayBuffer();
+      return res;
     });
-    // fetch() endet schon mit den Headern. Ein danach haengender HTML-Body
-    // laesst die installierte App noch vor ihrem Seiten-Watchdog stecken;
-    // ein unvollstaendiges CSS/Script blockiert ebenfalls den Start.
-    // Erst den vollstaendigen Body abwarten. Die Kopie laesst die originale
-    // Antwort samt URL, Headern und lesbarem Body fuer Browser/Cache erhalten.
-    const completeResponse = fetch(request, { signal: controller.signal }).then(async (response) => {
-      await response.clone().arrayBuffer();
-      return response;
-    });
-    // Auch bei einem Transport, der Abort nicht beachtet, endet die Wartezeit.
-    return await Promise.race([completeResponse, timeout]);
+    return await withStartResponseTimeout(response, abort);
   } finally {
-    clearTimeout(timer);
     request.signal?.removeEventListener("abort", abort);
   }
 }
@@ -149,21 +147,29 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (["style", "script", "image", "font"].includes(req.destination)) {
-    event.respondWith((async () => {
-      // Gesperrter/defekter Cache darf oeffentliche Startdateien nicht sperren.
-      const cache = await caches.open(ASSET_CACHE).catch(() => null);
-      const cached = cache ? await cache.match(req).catch(() => null) : null;
-      const network = fetchStartResponse(req).catch(() => null);
-      event.waitUntil(network.then((res) => {
-        if (cache && res && res.ok) {
-          return cache.put(req, res.clone())
-            // Nach erfolgreichem put: alte ?v-Staende desselben Pfads entsorgen.
-            .then(() => pruneOldVersions(cache, req))
-            .catch(() => {});
-        }
-      }));
-      return cached || (await network) || new Response("", { status: 504 });
-    })());
+    // Netz und Cache parallel lesen. Eine nicht antwortende Cache-Datenbank
+    // darf den Start selbst bei erreichbarem Server nicht aufhalten.
+    const network = fetchStartResponse(req).catch(() => null);
+    const cached = withStartResponseTimeout(caches.open(ASSET_CACHE).then(async (cache) => ({
+      cache,
+      response: await cache.match(req).catch(() => null)
+    }))).catch(() => ({ cache: null, response: null }));
+
+    event.waitUntil(network.then(async (response) => {
+      if (!response?.ok) return;
+      const copy = response.clone();
+      const { cache } = await cached;
+      if (cache) {
+        await cache.put(req, copy).then(() => pruneOldVersions(cache, req));
+      }
+    }).catch(() => {}));
+
+    const cachedOrNetwork = cached.then(({ response }) => response || network);
+    const available = Promise.race([
+      cachedOrNetwork,
+      network.then((response) => response?.ok ? response : cachedOrNetwork)
+    ]);
+    event.respondWith(available.then((response) => response || new Response("", { status: 504 })));
   }
 });
 

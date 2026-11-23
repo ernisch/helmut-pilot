@@ -6,17 +6,22 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const source = fs.readFileSync(require.resolve("../sw.js"), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function fixture({ fetch: transport, cacheError = false, cached = null } = {}) {
+function fixture({ fetch: transport, cacheError = false, cacheHang = null, cached = null } = {}) {
   const handlers = {}, timers = new Map(), calls = [], writes = [];
   let counter = 0;
   const cache = {
-    match: async () => cached, keys: async () => [],
+    match: async () => cacheHang === "match" ? new Promise(() => {}) : cached,
+    keys: async () => [],
     put: async (req, res) => writes.push({ url: req.url, text: await res.text() })
   };
   vm.runInNewContext(source, {
     self: { location: { origin: "https://pwa.test" }, addEventListener: (name, fn) => { handlers[name] = fn; } },
     URL, Response, AbortController,
-    caches: { open: async () => { if (cacheError) throw Error("synthetic-cache-unavailable"); return cache; } },
+    caches: { open: async () => {
+      if (cacheError) throw Error("synthetic-cache-unavailable");
+      if (cacheHang === "open") return new Promise(() => {});
+      return cache;
+    } },
     fetch: (req, opts) => { calls.push({ req, opts }); return transport(req, opts); },
     setTimeout: (fn, ms) => { assert.equal(ms, 8000); timers.set(++counter, fn); return counter; },
     clearTimeout: id => timers.delete(id)
@@ -112,6 +117,36 @@ async function unit() {
       assert.equal(await (await r.response).text(), "fresh-script"); await Promise.all(r.work);
       assert.equal(f.writes.length, cacheError ? 0 : 1);
     }
+  });
+  await test("Vorhandener Cache bleibt bei fehlerhafter Netzantwort nutzbar", async () => {
+    const f = fixture({ cached: new Response("cached-script"), fetch: async () => new Response("", { status: 503 }) });
+    const r = f.request("/client.js?v=fallback", "cors", "script");
+    assert.equal(await (await r.response).text(), "cached-script");
+    await Promise.all(r.work);
+    assert.equal(f.timers.size, 0);
+    assert.deepEqual(f.writes, []);
+  });
+  await test("Haengender Cache blockiert eine erreichbare Startdatei nicht", async () => {
+    for (const cacheHang of ["open", "match"]) {
+      const f = fixture({ cacheHang, fetch: async () => new Response("fresh-script") });
+      const r = f.request("/client.js?v=cache-stall", "cors", "script");
+      await tick();
+      assert.equal(f.calls.length, 1);
+      assert.equal(await (await r.response).text(), "fresh-script");
+      f.timeout();
+      await Promise.all(r.work);
+      assert.equal(f.timers.size, 0);
+    }
+  });
+  await test("Haengender Cache und haengendes Netz beenden den Startdatei-Abruf", async () => {
+    const f = fixture({ cacheHang: "match", fetch: () => new Promise(() => {}) });
+    const r = f.request("/styles.css?v=cache-stall", "cors", "style");
+    await tick();
+    assert.equal(f.calls.length, 1);
+    f.timeout();
+    assert.equal((await r.response).status, 504);
+    await Promise.all(r.work);
+    assert.equal(f.timers.size, 0);
   });
   await test("Private API/POST/Fremdhost unberuehrt, Verwaltung weiterhin ausschliesslich Netz", async () => {
     const f = fixture({ fetch: async () => new Response("server-protected") });
