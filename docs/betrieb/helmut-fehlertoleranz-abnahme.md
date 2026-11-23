@@ -6,7 +6,14 @@ Die Änderungen sind für `helmut_jobs` ausgelegt. Der bestehende Cron und der v
 
 `supabase/migrations/20261123110000_quellen_dlq.sql` führt eine geschützte Quarantänetabelle und eng begrenzte Datenbankfunktionen ein. Vorhandene Aufträge werden beim Anwenden der Migration weder umgeschrieben noch verschoben. Neue Abrufaufträge erhalten höchstens 3 Versuche. Das Limit bestehender Aufträge bleibt erhalten. Der endgültige Abruffehler und sein Quarantänebeleg werden atomar gespeichert. Die ID und Diagnose bleiben nachvollziehbar. Das automatische Wiederanstellen lässt quarantänisierte Aufträge aus.
 
-Lokaler Test mit einer isolierten PostgreSQL Instanz auf Port 5433:
+Lokaler Test mit einer isolierten PostgreSQL Instanz auf Port 5433. Wenn lokal Docker vorhanden ist, starte die Testdatenbank in einem eigenen Terminal:
+
+```sh
+docker run --rm --name helmut-dlq-test -p 127.0.0.1:5433:5432 \
+  -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
+```
+
+Sobald PostgreSQL bereit ist, starte im Projektordner den Test. Ein lokales `psql` wird benötigt. Die nur lokal gebundene Instanz bleibt für dieses Beispiel vom Livebetrieb getrennt.
 
 ```sh
 HELMUT_TEST_PG_HOST=127.0.0.1 HELMUT_TEST_PG_PORT=5433 HELMUT_TEST_PG_USER=postgres \
