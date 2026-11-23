@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
-const { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel } = require("../worker");
+const { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand } = require("../worker");
 
 async function pruefeSchleife() {
   const stunden = [6, 6, 6, 6, 7, 7, 7, 7], minuten = [29, 30, 31, 45, 0, 29, 30, 45];
@@ -119,6 +119,13 @@ async function main() {
     })
   };
   assert.equal(konfigurationsfehler(env), null);
+  const prod = { ...env, HELMUT_WORKER_SUPABASE_HOST: "ddckuvvpcytqbyfmbvie.supabase.co",
+    HELMUT_VERSTEHEN_CAS: "on", HELMUT_SOURCE_TELEMETRY: "on", HELMUT_COMMIT_SHA: "a".repeat(40) };
+  assert.equal(pruefeProduktionsstand(env), null);
+  assert.equal(pruefeProduktionsstand(prod), null);
+  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_VERSTEHEN_CAS: "off" }), "verstehen-cas-erforderlich");
+  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_SOURCE_TELEMETRY: "" }), "quellentelemetrie-deaktiviert");
+  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_COMMIT_SHA: "abcdef" }), "worker-commit-unbekannt");
   assert.equal(konfigurationsfehler({ ...env, HELMUT_WORKER_SUPABASE_HOST: "falsch.supabase.co" }),
     "supabase-ziel-nicht-bestaetigt");
   assert.equal(konfigurationsfehler({ ...env, VERCEL: "1" }), "vercel-laufzeit");
