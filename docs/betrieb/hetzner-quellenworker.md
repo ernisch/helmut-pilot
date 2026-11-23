@@ -127,7 +127,7 @@ sudo docker compose logs --tail=30 worker
 
 **Test:** `sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und Kostenbuch. `bereit` bestätigt diese Prüfungen. Es prüft weder den Azure Schlüssel beim Anbieter noch einen Quellenabruf.
 
-Bei einem Update im produktiven Git-Checkout zuerst den freigegebenen Merge holen. Bei lokaler Abweichung oder einem Fehler bricht die Befehlsfolge vor dem Austausch des laufenden Workers ab.
+Der Betreiber verwendet auf dem produktiven Host `~/helmut-pilot`. Wer den Klon aus Abschnitt 3 verwendet, setzt in der ersten Zeile `~/helmut-quellenworker` ein. Bei einem Update zuerst den freigegebenen Merge holen. Bei abweichender Kennung bricht die Befehlsfolge vor dem Austausch des laufenden Workers ab.
 
 ```bash
 cd ~/helmut-pilot &&
