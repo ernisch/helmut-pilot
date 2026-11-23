@@ -13,7 +13,14 @@ docker run --rm --name helmut-dlq-test -p 127.0.0.1:5433:5432 \
   -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
 ```
 
-Sobald PostgreSQL bereit ist, starte im Projektordner den Test. Ein lokales `psql` wird benötigt. Die nur lokal gebundene Instanz bleibt für dieses Beispiel vom Livebetrieb getrennt.
+Sobald der frisch gestartete Container bereit ist, lege darin die Testrollen an:
+
+```sh
+docker exec helmut-dlq-test psql -U postgres -v ON_ERROR_STOP=1 \
+  -c 'create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;'
+```
+
+Starte dann im Projektordner den Test. Ein lokales `psql` wird benötigt. Die nur lokal gebundene Instanz bleibt für dieses Beispiel vom Livebetrieb getrennt.
 
 ```sh
 HELMUT_TEST_PG_HOST=127.0.0.1 HELMUT_TEST_PG_PORT=5433 HELMUT_TEST_PG_USER=postgres \
