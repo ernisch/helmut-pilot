@@ -91,10 +91,27 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.equal(r.ok, true); assert.equal(understood.size, 2); assert.equal(receipts.size, 2);
     assert.deepEqual(budgets, [105000, 105000]); assert.equal(reservations, 2);
   });
-  await test("Kostenvertrag blockiert fremde/mehrere/deaktivierte aktive Profile vor Beschaffung", async () => {
+  await test("Abweichende Profilbindung vertagt auch den letzten Versuch vor Beschaffung und Modell", async () => {
     for (const profiles of [[{ ...profile, id: "anderes-profil" }], [profile, { ...profile, id: "zweites-profil" }], [{ ...profile, profileActive: false }]]) {
-      await assert.rejects(understanding(job, deps({ listFullProfiles: async () => profiles,
-        vorbereiteGespeicherteInhalte: async () => { throw Error("nicht erreichen"); } }), { auftragsDeadlineMs: start + 120000 }), /profilbindung-abweichend/);
+      let vertagt = 0;
+      const doc = docs[0];
+      const d = deps({ env: { ...env, HELMUT_SCALABLE_PIPELINE: "on", HELMUT_VERSTEHEN_CAS: "on" }, handler: P.HANDLER,
+        ladeRohdokumentStaende: async () => [doc],
+        listFullProfiles: async () => profiles,
+        vorbereiteGespeicherteInhalte: async () => assert.fail("Beschaffung gesperrt"),
+        eagerUnderstanding: async () => assert.fail("Modell gesperrt"),
+        finish: async () => assert.fail("Kein Fehlversuch bei abweichender Profilbindung"),
+        zurueckstellen: async args => {
+          assert.equal(args.grund, "betriebskosten-profilbindung-abweichend");
+          assert.ok(args.delayMs > 5 * 60000);
+          vertagt++;
+          return { verfuegbar: true, uebernommen: true };
+        } });
+      const r = await P.fuehreAuftragAus({ auftrag: { id: job.id, job_type: "document_understanding",
+        payload: { dokumentIds: [doc.id], quellenstaende: { [doc.id]: "a".repeat(64) } },
+        attempts: 3, max_attempts: 3 }, deps: d, besitzer: "queue-test", leaseMs: 300000 });
+      assert.equal(r.ausgang, "zurueckgestellt");
+      assert.equal(vertagt, 1);
     }
   });
   await test("Keine Restzeit nach Beschaffung reserviert weder Jobbudget noch Modell", async () => {

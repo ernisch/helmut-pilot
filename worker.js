@@ -8,7 +8,7 @@ const workerBetrieb = require("./lib/helmut/worker-betrieb");
 const abdeckung = require("./lib/helmut/quellenarchitektur/cron-abdeckung");
 const { runCronUeberWarteschlange, helmutRunId } = require("./lib/helmut/quellen-warteschlangenlauf");
 const { baueResponsesUrl } = require("./lib/helmut/azure-endpunkt");
-const { readAuthStore, supabaseRequest } = require("./lib/helmut/storage");
+const { listFullProfiles, readAuthStore, supabaseRequest } = require("./lib/helmut/storage");
 const betriebskosten = require("./lib/helmut/betriebskosten-budget");
 const { casAktiv } = require("./lib/helmut/verstehen-vertrag");
 const { sourceTelemetryEnabled } = require("./lib/helmut/source-telemetry");
@@ -24,11 +24,17 @@ function pruefeEinmalZiel(env = process.env) {
   }
 }
 
-function pruefeProduktionsstand(env = process.env) {
+async function pruefeProduktionsstand(env = process.env, leseProfile = listFullProfiles) {
   if (env.HELMUT_WORKER_SUPABASE_HOST !== PRODUKTIONS_SUPABASE_HOST) return null;
   if (!casAktiv(env)) return "verstehen-cas-erforderlich";
   if (!sourceTelemetryEnabled(env)) return "quellentelemetrie-deaktiviert";
   if (!/^[a-f0-9]{40}$/.test(env.HELMUT_COMMIT_SHA || "")) return "worker-commit-unbekannt";
+  try {
+    betriebskosten.pruefeProfile(betriebskosten.vertrag(env), await leseProfile(), env);
+  } catch (error) {
+    return error.reason === "betriebskosten-aktive-profile-abweichend"
+      ? "betriebskosten-profilbindung-abweichend" : "betriebskosten-profilbindung-nicht-bestaetigt";
+  }
   return null;
 }
 
@@ -131,7 +137,7 @@ async function main() {
       const fehler = konfigurationsfehler();
       if (fehler) throw Error(fehler);
       if (einmalig) pruefeEinmalZiel();
-      const abweichung = pruefeProduktionsstand();
+      const abweichung = await pruefeProduktionsstand();
       if (pruefen && abweichung) throw Error(abweichung);
       const status = await workerBetrieb.readiness();
       if (!status.bereit || !status.abrufErlaubt) {

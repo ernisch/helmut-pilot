@@ -121,11 +121,13 @@ async function main() {
   assert.equal(konfigurationsfehler(env), null);
   const prod = { ...env, HELMUT_WORKER_SUPABASE_HOST: "ddckuvvpcytqbyfmbvie.supabase.co",
     HELMUT_VERSTEHEN_CAS: "on", HELMUT_SOURCE_TELEMETRY: "on", HELMUT_COMMIT_SHA: "a".repeat(40) };
-  assert.equal(pruefeProduktionsstand(env), null);
-  assert.equal(pruefeProduktionsstand(prod), null);
-  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_VERSTEHEN_CAS: "off" }), "verstehen-cas-erforderlich");
-  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_SOURCE_TELEMETRY: "" }), "quellentelemetrie-deaktiviert");
-  assert.equal(pruefeProduktionsstand({ ...prod, HELMUT_COMMIT_SHA: "abcdef" }), "worker-commit-unbekannt");
+  assert.equal(await pruefeProduktionsstand(env, () => assert.fail("Kein Produktionscheck im Testprojekt")), null);
+  assert.equal(await pruefeProduktionsstand(prod, async () => [{ id: "testprofil", profileActive: true }]), null);
+  assert.equal(await pruefeProduktionsstand(prod, async () => []), "betriebskosten-profilbindung-abweichend");
+  assert.equal(await pruefeProduktionsstand(prod, async () => { throw Error("Lesefehler"); }), "betriebskosten-profilbindung-nicht-bestaetigt");
+  assert.equal(await pruefeProduktionsstand({ ...prod, HELMUT_VERSTEHEN_CAS: "off" }), "verstehen-cas-erforderlich");
+  assert.equal(await pruefeProduktionsstand({ ...prod, HELMUT_SOURCE_TELEMETRY: "" }), "quellentelemetrie-deaktiviert");
+  assert.equal(await pruefeProduktionsstand({ ...prod, HELMUT_COMMIT_SHA: "abcdef" }), "worker-commit-unbekannt");
   assert.equal(konfigurationsfehler({ ...env, HELMUT_WORKER_SUPABASE_HOST: "falsch.supabase.co" }),
     "supabase-ziel-nicht-bestaetigt");
   assert.equal(konfigurationsfehler({ ...env, VERCEL: "1" }), "vercel-laufzeit");
