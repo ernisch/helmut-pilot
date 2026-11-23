@@ -33,6 +33,7 @@ function collectFiles(dir, acc) {
 
 const productiveFiles = [
   path.join(root, "server.js"),
+  path.join(root, "worker.js"),
   path.join(root, "api", "index.js"),
   ...collectFiles(path.join(root, "lib", "helmut"), [])
 ];

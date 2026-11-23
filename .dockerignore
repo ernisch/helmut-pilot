@@ -1,0 +1,14 @@
+**
+!package.json
+!package-lock.json
+!worker.js
+!server.js
+!helmut-flags.json
+!lib/
+!lib/**
+!scripts/
+!scripts/bb-nachweis-importpaket-generator.js
+**/.env*
+**/env.local*
+**/*.pem
+**/*.key
