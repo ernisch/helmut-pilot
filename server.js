@@ -8932,7 +8932,9 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString(),
     durationMs: Date.now() - start,
     zielmenge: bilanz.reserviert || 0, processed: bilanz.erledigt || 0,
-    deferred: bilanz.zurueckgestellt || 0, fehlgeschlagen: bilanz.endgueltigFehlgeschlagen || 0,
+    // Bestaetigt zurueckgegebene Stapelreste sind reserviert und bleiben wartend.
+    deferred: (bilanz.zurueckgestellt || 0) + (bilanz.stapelrestZurueckgegeben || 0),
+    fehlgeschlagen: bilanz.endgueltigFehlgeschlagen || 0,
     wiederholt: bilanz.wiederholt || 0, leaseVerloren: bilanz.leaseVerloren || 0,
     // Nur bekannte Zaehler persistieren. Ein fehlender Wert bleibt SQL NULL; `0` ist
     // ausschliesslich die belegte Zahl null, nie der Rueckfall fuer "unbekannt".
