@@ -4,7 +4,7 @@
 
 **Sol Pilot 21.11.** [Vorschau bereit, Liveabnahme offen](betrieb/briefing-sol-20261121.md).
 
-**23.11. Hetzner, 19:10 Berlin:** Seit 16:15 Uhr 245 Quellenabschlüsse, 589 neue Rohdokumente, 0 KI-Abschlüsse. 2.155 Jobs warten auf CAS. Im Worker CAS und Telemetrie aus, Build unbekannt. 11/12 Abdeckungsprüfungen wegen Lesefrist blockiert. Neustart und Morgen offen. [Betriebsbeleg](betrieb/hetzner-live-20261123.md).
+**23.11. Hetzner, 20:20 Berlin.** `c6444d54` lief um 20:15 Uhr. Drei Quellenbelege, ein neues Rohdokument, Abdeckung nach 10,843 s eingeschränkt. 0 KI-Abschlüsse, 79 endgültige Fehler an der Profilbindung. Nur der relationale Bestand passt zur Zulassung. [Betriebsbeleg](betrieb/hetzner-live-20261123.md).
 
 **20.11.2026 · 24 Stunden Betrieb aktiv.** 1 aktives Pilotmandat. [Start, erste Abrufbilanz und Rückweg](https://github.com/ernisch/helmut-pilot/blob/fefd4d34/docs/CURRENT_STATE.md).
 

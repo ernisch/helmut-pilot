@@ -121,11 +121,12 @@ sudo docker compose logs --tail=30 worker
 | `DIP_API_KEY` | Erforderlich für Bundestagsabrufe über DIP. Für einen Probelauf eines anderen Abrufwegs optional. |
 | `HELMUT_BETRIEBSKOSTENVERTRAG_JSON`, optional `HELMUT_BETRIEBSZULASSUNG_JSON` | Für Produktion unverändert übernehmen. Die Testumgebung verwendet einen eigenen Vertrag für das zugelassene Testprofil und ihren eigenen Azure Zugang. Optionale Zeile weglassen, wenn sie in der Zielumgebung fehlt. |
 | `HELMUT_VERSTEHEN_CAS`, `HELMUT_SOURCE_TELEMETRY` | In der produktiven Worker-Env beide auf `on` setzen. Die Artikelanalyse benötigt die atomare Reservierung mit Besitzprüfung. Der Telemetrieschalter aktiviert den Einzelbeleg für gemessene Abrufe. Für die entsprechende Probe im Testprojekt gelten dieselben Werte. |
-| `HELMUT_LLM_BUDGET_FAIL_CLOSED`, `HELMUT_MAX_LLM_CALLS_PER_DAY`, `HELMUT_AUTH_PATCH_V1`, `HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE`, `HELMUT_UNDERSTANDING_GATE`, `HELMUT_PROCESS_RUNS_RELATIONAL` | Soweit gesetzt, die wirksamen Werte der Zielumgebung übernehmen. Weitere aktuell wirksame Quellenfreigaben und Limits über das [Inventar](env-inventar.md) abgleichen. |
+| `HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE` | Für den produktiven Worker beide auf `1` setzen. Nur der relationale Mandatsbestand entspricht der bestehenden Zulassung. [Produktionsprüfung vom 23.11.](hetzner-live-20261123.md) |
+| `HELMUT_LLM_BUDGET_FAIL_CLOSED`, `HELMUT_MAX_LLM_CALLS_PER_DAY`, `HELMUT_AUTH_PATCH_V1`, `HELMUT_UNDERSTANDING_GATE`, `HELMUT_PROCESS_RUNS_RELATIONAL` | Soweit gesetzt, die wirksamen Werte der Zielumgebung übernehmen. Weitere aktuell wirksame Quellenfreigaben und Limits über das [Inventar](env-inventar.md) abgleichen. |
 | `HELMUT_EXEC_LOCATION` | `hetzner-de` |
 | `HELMUT_CRAWL_EXECUTOR` | Für Probe und Bereitschaftsprüfung weglassen. Erst bei der Umschaltung `hetzner` setzen. |
 
-**Test:** `sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und Kostenbuch. `bereit` bestätigt diese Prüfungen. Es prüft weder den Azure Schlüssel beim Anbieter noch einen Quellenabruf.
+`sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und Kostenbuch. In Produktion prüft der Befehl zusätzlich die gelesenen Mandate gegen die Profilbindung des laufenden Kostenvertrags. `bereit` bestätigt diese Prüfungen. Der nachfolgende reguläre Lauf liefert die Belege für Quellenabruf und KI.
 
 Der Betreiber verwendet auf dem produktiven Host `~/helmut-pilot`. Wer den Klon aus Abschnitt 3 verwendet, setzt in der ersten Zeile `~/helmut-quellenworker` ein. Bei einem Update zuerst den freigegebenen Merge holen. Bei abweichender Kennung bricht die Befehlsfolge vor dem Austausch des laufenden Workers ab.
 
