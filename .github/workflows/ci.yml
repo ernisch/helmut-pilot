@@ -711,6 +711,19 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js -- node scripts/auth-quellen-kern-datenbank-test.js
 
+      - name: Quellen DLQ, Besitzsperren und Rückweg gegen isolierte PostgreSQL
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: |
+          set -euo pipefail
+          node scripts/lokal.js scripts/jobqueue-wiedervorlage-datenbank-test.js | tee "$RUNNER_TEMP/quellen-dlq.txt"
+          grep -Fq 'PASS  10.8 Rückweg bewahrt alle Originalaufträge und den DLQ Beleg' "$RUNNER_TEMP/quellen-dlq.txt"
+
       - name: Atomare Anbieterreservierungen und Rückweg gegen isolierte PostgreSQL
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2
