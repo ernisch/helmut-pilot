@@ -4,7 +4,7 @@
 
 **Sol Pilot 21.11.** [Vorschau bereit, Liveabnahme offen](betrieb/briefing-sol-20261121.md).
 
-**23.11. Hetzner live:** Supabase Läufe 16:15/16:30 Berlin: `hetzner-de`, 37/21/231 und 34/19/218 (erledigt/Fehler/vertagt), beide `partial`; DLQ vorhanden. [Beleg](betrieb/hetzner-live-20261123.md). Zuvor 164 geplant, Quittung 01:05 ließ 1 vertagten aus. #1320 korrigiert dies; Altquittung zunächst gesperrt. Morgen offen.
+**23.11. Hetzner, 19:10 Berlin:** Seit 16:15 Uhr 245 Quellenabschlüsse, 589 neue Rohdokumente, 0 KI-Abschlüsse. 2.155 Jobs warten auf CAS. Im Worker CAS und Telemetrie aus, Build unbekannt. Abdeckung 11/12 im Zeitlimit. Neustart und Morgen offen. [Betriebsbeleg](betrieb/hetzner-live-20261123.md).
 
 **20.11.2026 · 24 Stunden Betrieb aktiv.** 1 aktives Pilotmandat. [Start, erste Abrufbilanz und Rückweg](https://github.com/ernisch/helmut-pilot/blob/fefd4d34/docs/CURRENT_STATE.md).
 
