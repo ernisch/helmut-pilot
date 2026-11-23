@@ -1,5 +1,7 @@
 # CURRENT STATE — Helmut
 
+**23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
+
 **Sol Pilot 21.11.** [Vorschau bereit, Liveabnahme offen](betrieb/briefing-sol-20261121.md).
 
 **23.11. · Quellenlauf.** 164 eingeplant. Die Quittung um 01:05 Berlin ließ 1 nachweislich zurückgestellten Auftrag aus. [#1320](https://github.com/ernisch/helmut-pilot/pull/1320) zählt ihn als vertagt. Live auf `adb826d3`. Die alte Quittung blockiert weiter. Wirkungsnachweis beim nächsten regulären Quellenlauf offen.
