@@ -297,6 +297,47 @@ function main() {
   { encoding: "utf8" }).trim());
   check("9.2 Sie hinterlaesst KEINEN Teilzustand", rest === 0, `${rest} Funktionen`);
 
+  abschnitt("10 · Quellen DLQ im bestehenden Queue Vertrag");
+  if (!/^helmut_test(?:_|$)/.test(PG.db) || !["127.0.0.1", "localhost", "::1"].includes(PG.host))
+    throw Error("DLQ Probe braucht eine lokale isolierte Testdatenbank");
+  const dlq = M("20261123110000_quellen_dlq.sql");
+  const dlqRollback = M("rollback_20261123110000_quellen_dlq.sql");
+  psql("truncate table public.helmut_jobs;");
+  auftrag({ schluessel: "dlq-alt", typ: "source_fetch", status: "fehlgeschlagen" });
+  psql(null, { datei: dlq });
+  psql("insert into public.helmut_jobs (job_type,idempotency_key,freshness_window,payload,max_attempts) values ('source_fetch','dlq-defekt','test','{}',5),('source_fetch','dlq-nachbar','test','{}',5);");
+  check("10.1 Altauftrag unverändert, neue Abrufe maximal drei Versuche",
+    wert("select max_attempts from public.helmut_jobs where idempotency_key='dlq-alt'") === "5"
+    && zahl("select count(*) from public.helmut_jobs where idempotency_key in ('dlq-defekt','dlq-nachbar') and max_attempts=3") === 2);
+  const setzeLease = key => psql("update public.helmut_jobs set status='laeuft', attempts=attempts+1, lease_owner='dlq-test', lease_expires_at=now()+interval '1 minute' where idempotency_key='" + key + "'");
+  const schliesse = (key, ok) => wert("select neuer_status from public.helmut_finish_job((select id from public.helmut_jobs where idempotency_key='" + key + "'),'dlq-test'," + ok + ",'lokaler-pdf-fehler',0)");
+  for (let versuch = 1; versuch <= 3; versuch++) {
+    setzeLease("dlq-defekt");
+    check("10.2 Versuch " + versuch + " hat den vorgesehenen Abschluss",
+      schliesse("dlq-defekt", false) === (versuch === 3 ? "fehlgeschlagen" : "wartend"));
+  }
+  setzeLease("dlq-nachbar");
+  check("10.3 Unabhängiger Abruf wird abgeschlossen", schliesse("dlq-nachbar", true) === "erledigt");
+  const belege = "select count(*) from public.helmut_quellen_dlq d join public.helmut_jobs j on j.id=d.job_id where j.idempotency_key='dlq-defekt'";
+  check("10.4 Genau ein DLQ Beleg und keine Browserrechte",
+    zahl(belege) === 1 && wert("select has_table_privilege('anon','public.helmut_quellen_dlq','select') or has_table_privilege('authenticated','public.helmut_quellen_dlq','select')") === "f");
+  psql("update public.helmut_jobs set finished_at=now()-interval '48 hours' where idempotency_key='dlq-defekt'");
+  check("10.5 Nur der alte, nicht archivierte Fehlauftrag wird automatisch wieder vorgelegt",
+    wert("select wiedervorgelegt from public.helmut_jobs_wiedervorlage(array['source_fetch'],24,2,500,false)") === "1"
+    && wert("select status from public.helmut_jobs where idempotency_key='dlq-defekt'") === "fehlgeschlagen");
+  setzeLease("dlq-alt");
+  const altId = "(select id from public.helmut_jobs where idempotency_key='dlq-alt')";
+  check("10.6 Nur der aktuelle Halter kann die gültige Lease verlängern",
+    wert("select public.helmut_extend_job_lease(" + altId + ",'fremd',60000)") === "f"
+    && wert("select public.helmut_extend_job_lease(" + altId + ",'dlq-test',60000)") === "t");
+  psql("update public.helmut_jobs set lease_expires_at=now()-interval '1 second' where idempotency_key='dlq-alt'");
+  check("10.7 Abgelaufene Lease kann weder verlängert noch abgeschlossen werden",
+    wert("select public.helmut_extend_job_lease(" + altId + ",'dlq-test',60000)") === "f"
+    && wert("select uebernommen from public.helmut_finish_job(" + altId + ",'dlq-test',true)") === "f");
+  psql(null, { datei: dlqRollback });
+  check("10.8 Rückweg bewahrt alle Originalaufträge und den DLQ Beleg",
+    zahl("select count(*) from public.helmut_jobs") === 3 && zahl(belege) === 1);
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (Pruefungen ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }
