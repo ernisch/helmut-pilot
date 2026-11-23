@@ -113,25 +113,62 @@ sudo docker compose logs --tail=30 worker
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | URL und vorhandener Dienstschlüssel des Zielprojekts |
 | `HELMUT_WORKER_SUPABASE_HOST` | Derselbe Supabase Hostname ohne `https://` |
 | `HELMUT_SUPABASE_STORE_ID`, `HELMUT_SUPABASE_AUTH_STORE_ID` | Identisch zur gewählten bestehenden Umgebung. Falls dort nicht gesetzt, gelten `main` und `main-auth`. |
-| `HELMUT_V3_STORE`, `HELMUT_SCALABLE_PIPELINE`, `HELMUT_KLASSEN_GRENZEN`, `HELMUT_SOURCE_MODE` | Die wirksamen Einstellungen der bestehenden Quellenverarbeitung übernehmen. |
-| `HELMUT_QUELLEN_ARBEITSFENSTER`, `HELMUT_QUELLEN_FENSTER_TAG`, `HELMUT_QUELLEN_SEKUNDEN_TAG`, `HELMUT_ORIGINALABRUFE_TAG`, `HELMUT_JOB_DISPATCH_MODE` | Bestehende Quellenparameter übernehmen. Arbeitsfenster stehen auf `on`. Versandmodus bleibt `off` oder `shadow`. |
-| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `DIP_API_KEY` | Bestehende freigegebene Verbindungen für Azure und den Bundestag übernehmen. |
-| `HELMUT_BETRIEBSKOSTENVERTRAG_JSON`, optional `HELMUT_BETRIEBSZULASSUNG_JSON` | Unverändert aus der gewählten Umgebung übernehmen. Optionale Zeile weglassen, wenn die Variable dort fehlt. Das bestehende Kostenbuch muss in Supabase lesbar sein. |
-| Weitere Quellen, Mandanten und Budgetflags | Wirksame Einstellungen für den bestehenden Quellenprozess mit dem [Inventar](env-inventar.md) abgleichen. Dazu zählen je nach Umgebung Quellenfreigaben, Parser, Understanding und Budgetgrenzen. |
+| `HELMUT_V3_STORE`, `HELMUT_SCALABLE_PIPELINE`, `HELMUT_KLASSEN_GRENZEN`, `HELMUT_SOURCE_MODE` | Für die Probe `on`. Für Produktion mit den wirksamen Vercel Werten abgleichen. |
+| `HELMUT_QUELLEN_ARBEITSFENSTER`, `HELMUT_QUELLEN_FENSTER_TAG`, `HELMUT_QUELLEN_SEKUNDEN_TAG`, `HELMUT_ORIGINALABRUFE_TAG`, `HELMUT_JOB_DISPATCH_MODE` | Arbeitsfenster `on`, die 3 Zahlen aus der bestehenden Zielumgebung übernehmen. Versandmodus `off` oder `shadow`. |
+| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`, `AZURE_OPENAI_DEPLOYMENT` | Azure Basisadresse, Schlüssel und exakter Deploymentname. Endpoint und Deployment müssen zum Geldvertrag passen. |
+| `DIP_API_KEY` | Erforderlich für Bundestagsabrufe über DIP. Für einen Probelauf eines anderen Abrufwegs optional. |
+| `HELMUT_BETRIEBSKOSTENVERTRAG_JSON`, optional `HELMUT_BETRIEBSZULASSUNG_JSON` | Für Produktion unverändert übernehmen. Die Testumgebung verwendet einen eigenen Vertrag für das zugelassene Testprofil und ihren eigenen Azure Zugang. Optionale Zeile weglassen, wenn sie in der Zielumgebung fehlt. |
+| `HELMUT_LLM_BUDGET_FAIL_CLOSED`, `HELMUT_MAX_LLM_CALLS_PER_DAY`, `HELMUT_AUTH_PATCH_V1`, `HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE`, `HELMUT_UNDERSTANDING_GATE`, `HELMUT_SOURCE_TELEMETRY`, `HELMUT_PROCESS_RUNS_RELATIONAL` | Soweit gesetzt, die wirksamen Werte der Zielumgebung übernehmen. Für den Abrufbeleg in der Testdatenbank `HELMUT_SOURCE_TELEMETRY=on` setzen. Weitere aktuell wirksame Quellenfreigaben und Limits über das [Inventar](env-inventar.md) abgleichen. |
 | `HELMUT_EXEC_LOCATION` | `hetzner-de` |
-| `HELMUT_CRAWL_EXECUTOR` | Für diese Prüfung Zeile weglassen. |
+| `HELMUT_CRAWL_EXECUTOR` | Für Probe und Bereitschaftsprüfung weglassen. Erst bei der Umschaltung `hetzner` setzen. |
 
-**Test:** `sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und vorhandenes Kostenbuch. `bereit` bestätigt diese Prüfungen. Ein Azure Modellaufruf ist dabei ausgeschlossen. Die Aussage `bereit` ist daher keine Bestätigung des Azure Schlüssels oder eines vollständigen Crawls.
+**Test:** `sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und Kostenbuch. `bereit` bestätigt diese Prüfungen. Es prüft weder den Azure Schlüssel beim Anbieter noch einen Quellenabruf.
 
-## 5. Automatischen Start prüfen und Quellenbetrieb umstellen
+## 5. Einen Quellenlauf einmalig prüfen
+
+Verwende ein separates Supabase Testprojekt mit den HELMUT Migrationen einschließlich der DLQ, einem zulässigen Testprofil und einem kleinen Quellenkatalog. Für die Probe genügen 1 oder 2 freigegebene Testquellen, darunter eine frisch veröffentlichte Meldung und bei Bedarf ein PDF. Der Geldvertrag muss zum Testprofil und zur Azure Verbindung passen. Auf einem frischen Testprojekt kann die erste regulär erlaubte Modellreservierung das Kostenbuch anlegen. Produktionszugänge und produktive Profilbestände bleiben außerhalb der Testdatenbank.
+
+Im bereits geklonten Repo auf dem Server:
+
+```bash
+cd ~/helmut-quellenworker
+git pull --ff-only
+sudo env HELMUT_COMMIT_SHA="$(git rev-parse HEAD)" docker compose build worker
+sudo docker compose run --rm --no-deps worker node worker.js --check
+```
+
+Starte die Probe in den ersten 5 Minuten einer Viertelstunde, etwa zwischen 14:00 und 14:04 Uhr Berliner Zeit. Zwischen 06:45 und 07:30 Uhr Berliner Zeit pausiert der Quellenlauf.
+
+```bash
+sudo docker compose run --rm --no-deps worker node worker.js --once
+sudo docker compose ps
+```
+
+Der separate Container nimmt höchstens ein reguläres Arbeitsfenster an und wird beim Ende entfernt. Das laufende Standby bleibt stehen. Der Einmalmodus sperrt die bekannte Produktionsdatenbank und eine bereits aktivierte Worker Konfiguration. Bei `ausserhalb-quellenarbeitsfenster` war der Termin ungeeignet. Bei Status `partial`, fehlender Quittung, leerer Warteschlange oder 0 erledigten Aufträgen ist die Probe offen. Ein aktives Zeitfenster kann bis zu etwa 5 Minuten beanspruchen und bei einer leeren oder vertagten Warteschlange früher enden.
+
+Die Laufkennung aus `laufId` im Supabase SQL Editor des **Testprojekts** einsetzen. Diese Abfrage liest nur:
+
+```sql
+select status, location, processed_count, failed_count, deferred_count,
+       started_at at time zone 'Europe/Berlin' as start_berlin,
+       finished_at at time zone 'Europe/Berlin' as ende_berlin
+from public.process_runs
+where process = 'warteschlange-crawl' and run_id = 'LAUFKENNUNG';
+```
+
+Für den Fachbeleg müssen ein echter Abruf und eine Ablage zusammenpassen. Im gleichen Zeitfenster sollten in `source_crawl_telemetry` Abrufe mit `execution_location = 'hetzner-de'` sichtbar sein, für eine frische Quelle mit `new_documents > 0`. Prüfe das zugehörige Dokument in `raw_documents` und die erledigten Jobs in `helmut_jobs` für `source_fetch` und `document_understanding`. Wenn auch Azure belegt werden soll, prüfe in der Kostenübersicht die abgerechnete Modellbuchung und das Verstehensergebnis des Testdokuments in `knowledge_objects`. Eine leere Quelle oder ein Treffer, der bereits gespeichert war, belegt den Abruf, aber keine neue Ablage oder Analyse.
+
+## 6. Automatischen Start prüfen und Quellenbetrieb umstellen
 
 Docker ist durch Schritt 2 beim Systemstart aktiviert. Compose setzt `restart: unless-stopped`. Nach einem Serverneustart kommt ein laufender Container wieder hoch. Ein absichtlich gestoppter Container bleibt aus. Zum kontrollierten Beenden bekommt der Prozess bei Compose bis zu 5 Minuten, um das aktive Arbeitsfenster abzuschließen.
 
 **Test im Standby:** Starte den neuen Server mit `sudo reboot` neu. Verbinde dich wieder und prüfe `sudo docker compose ps` und `sudo docker compose logs --tail=30 worker` im Projektordner. Erwartet sind `Up` und `standby`. Lokal kannst du außerdem `node scripts/lokal.js -- node scripts/hetzner-quellenworker-test.js` ausführen.
 
+Nach bestätigter Probe den Standby auf die Production Einstellungen umstellen und `--check` erneut ausführen. Beide Änderungen aus PR #1324 und #1325 müssen abgenommen und im vorgesehenen Release enthalten sein. Die DLQ Migration muss in Supabase Production angewendet und lesbar sein. Der folgende Umschalter lässt den Vercel Cron als manuell aktivierbaren Rückweg hinterlegt.
+
 Die Umschaltung im laufenden Betrieb erfolgt in dieser Reihenfolge:
 
-1. Prüfe den freigegebenen Vercel Stand mit dem Umschaltcode und die Startbereitschaft unter Schritt 4. Vergewissere dich, dass gerade kein Quellenlauf aktiv ist.
+1. Prüfe den freigegebenen Vercel Stand mit dem Umschaltcode und die Startbereitschaft unter Schritt 4 mit den Production Werten. Vergewissere dich, dass gerade kein Quellenlauf aktiv ist.
 2. Setze in Vercel für **Production** `HELMUT_CRAWL_EXECUTOR=hetzner` und veröffentliche den abgenommenen Stand erneut. Der geschützte Aufruf von `/api/cron/crawl` antwortet jetzt nur mit `quellenlauf-auf-hetzner`. Vercel behält den Zeitplaneintrag als Rückweg. Manuelle Quellenstarts auf Vercel sind in diesem Modus für die Dauer der Umstellung deaktiviert.
 3. Ergänze `HELMUT_CRAWL_EXECUTOR=hetzner` in `/etc/helmut/worker.env`. Führe `sudo docker compose up -d --force-recreate` aus. Der Worker übernimmt den nächsten zulässigen Termin selbst.
 4. Prüfe im Log `bereit` und ein `quellenfenster` mit Laufkennung. In Supabase bestätigt eine abgeschlossene Zeile für `warteschlange-crawl` mit `location = 'hetzner-de'` die Ausführung. Prüfe zusätzlich, wie viele Quellen vor dem redaktionellen Stichtag ankamen. `Up` allein bestätigt kein fertiges Briefing.

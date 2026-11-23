@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
-const { betreibe, konfigurationsfehler } = require("../worker");
+const { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel } = require("../worker");
 
 async function pruefeSchleife() {
   const stunden = [6, 6, 6, 6, 7, 7, 7, 7], minuten = [29, 30, 31, 45, 0, 29, 30, 45];
@@ -26,6 +26,39 @@ async function pruefeSchleife() {
   assert.deepEqual(gestartet, [1, 6, 7]);
   assert.equal(logs[0].ereignis, "quellenfenster-fehler");
   assert.equal(logs[2].erledigt, 1);
+}
+
+async function pruefeEinmalmodus(env) {
+  assert.doesNotThrow(() => pruefeEinmalZiel(env));
+  assert.throws(() => pruefeEinmalZiel({ ...env, HELMUT_CRAWL_EXECUTOR: "hetzner" }),
+    /einmaltest-erfordert-standby/);
+  const prod = "ddckuvvpcytqbyfmbvie.supabase.co";
+  assert.throws(() => pruefeEinmalZiel({ ...env, HELMUT_WORKER_SUPABASE_HOST: prod }),
+    /einmaltest-erfordert-testdatenbank/);
+  const child = spawn(process.execPath, ["worker.js", "--once"],
+    { env: { ...process.env, HELMUT_CRAWL_EXECUTOR: "", SUPABASE_URL: "" } });
+  const fertig = once(child, "close");
+  const meldungen = [];
+  child.stderr.on("data", d => meldungen.push(d));
+  assert.deepEqual(await fertig, [1, null]);
+  assert.match(Buffer.concat(meldungen).toString(), /supabase-url-fehlt-oder-ungueltig/);
+
+  const signal = new AbortController().signal;
+  const jetzt = () => Date.UTC(2026, 10, 23, 5, 30);
+  let starts = 0;
+  const meldung = [];
+  const ergebnis = { arbeitsfenster: {}, ok: true, lauf: { laufId: "testlauf" },
+    lauftelemetrie: { ende: true, status: "success" }, verarbeitung: { erledigt: 1 } };
+  const lauf = async () => { starts++; return ergebnis; };
+  const log = wert => meldung.push(JSON.parse(wert));
+  assert.equal(await einmal({ signal, jetzt, lauf, log }), true);
+  assert.equal(starts, 1);
+  assert.equal(meldung[0].quittungGespeichert, true);
+  ergebnis.lauftelemetrie.ende = false;
+  assert.equal(await einmal({ signal, jetzt, lauf, log }), false);
+  await assert.rejects(einmal({ signal, jetzt: () => Date.UTC(2026, 10, 23, 5, 45), lauf, log }),
+    /ausserhalb-quellenarbeitsfenster/);
+  assert.equal(starts, 2);
 }
 
 function pruefeCronRoute() {
@@ -94,9 +127,10 @@ async function main() {
   assert.equal(konfigurationsfehler({ ...env, AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini-eu" }),
     "azure-route-weicht-vom-geldvertrag-ab");
   await pruefeSchleife();
+  await pruefeEinmalmodus(env);
   await pruefeCronRoute();
   await pruefeProzess();
-  console.log("PASS Konfiguration, Viertelstunden, Redaktionssperre, Fehlerisolierung, Cron und SIGTERM");
+  console.log("PASS Konfiguration, Viertelstunden, Redaktionssperre, Fehlerisolierung, Einmalmodus, Cron und SIGTERM");
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });
