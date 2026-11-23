@@ -14,7 +14,7 @@ const docs = ["arbeit", "soziales", "umwelt"].map(thema => D.toRawDocumentRow({
   title: `Synthetischer Ausschussbericht ${thema}`, url: `https://example.invalid/${thema}`,
   sourceName: "Synthetische amtliche Quelle", sourceType: "official", publishedAt: "2026-11-13T02:00:00Z"
 }));
-const hashes = Object.fromEntries(docs.map((d, i) => [d.id, String(i + 1).repeat(64)]));
+const hashes = Object.fromEntries(docs.map(d => [d.id, require("../lib/helmut/roh-quellenstaende").standHash(d)]));
 const klassenslots = () => ({ aktiv: true, belege: async () => ({ erlaubt: true, slot: "slot" }), gebeFrei: async () => {} });
 const job = (ids = docs.map(d => d.id), extra = {}) => ({ id: "elternjob", jobType: "document_understanding",
   freshnessWindow: "2026-11-12T00Z", maxAttempts: 3, createdAt: new Date(now).toISOString(),
