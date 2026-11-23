@@ -102,6 +102,26 @@ async function runRoute(cronName, selected, f, fails = false) {
     assert.equal(f.calls.filter((c) => c === "save").length, 1);
   });
   const opts = { runId: "fixture-budget", cronName: "crawl", deadlineAt: NOW + 10000 };
+  await test("Hetzner prüft nach der Queue bis zur bestehenden Frist mit Schreibreserve", async () => {
+    const { mock } = require("node:test"), { einmal } = require("../worker");
+    const arbeitsfenster = require("../lib/helmut/quellen-arbeitsfenster");
+    const run = audit.runQuellenCronMitAbdeckung, f = fixture();
+    const start = Date.UTC(2026, 10, 23, 5, 30);
+    let zeit = start, frist;
+    f.deps.now = () => zeit;
+    f.deps.leseFaelligkeiten = async ({ deadlineAt }) => { frist = deadlineAt; return null; };
+    mock.method(arbeitsfenster, "fuehreAus", ({ arbeit }) => arbeit({ startMs: start, freigabe: {} }));
+    mock.method(audit, "runQuellenCronMitAbdeckung", (_, optionen) => run(async () => {
+      zeit += 268000; // nach langem regulärem Quellenlauf verbleiben noch 22 s
+      return { ok: true, arbeitsfenster: {}, lauf: { laufId: optionen.runId },
+        lauftelemetrie: { ende: true, status: "success" }, verarbeitung: { erledigt: 1 } };
+    }, optionen, f.deps));
+    try {
+      assert.equal(await einmal({ signal: new AbortController().signal, jetzt: () => start, log: () => {} }), true);
+      assert.equal(frist, start + 290000 - 2500);
+      assert.equal([...f.rows.values()][0].status, "success");
+    } finally { mock.restoreAll(); }
+  });
   await test("Unlesbare Profile erzeugen unbekannt statt keinen Bedarf", async () => {
     const f = fixture(); f.store.listFullProfiles = async () => { throw new Error("synthetic-read-failure"); };
     const r = await audit.runQuellenCronMitAbdeckung(async () => ({ ok: true }), opts, f.deps);

@@ -438,6 +438,36 @@ async function main() {
     basis.belege.clear();
     A.equal(abgleich(ausgabe).faelligkeiten[0].grund, "ergebnisbeleg_fehlt");
   });
+  await test("Leser spart Analyseabfragen für Teilabrufe; fehlende Abschlüsse bleiben sichtbar", async () => {
+    const rohId = "rd-" + "a".repeat(64), stand = "b".repeat(64);
+    const kennung = n => "00000000-0000-4000-8000-" + String(n).padStart(12, "0");
+    const jobs = [1, 2].map(n => ({ id: kennung(n), idempotency_key: "quelle-" + n, tenant_id: null,
+      first_due_at: due, finished_at: new Date(jetzt).toISOString(), priority: 100, status: "erledigt",
+      payload: { art: "geteilt", quelle: { id: "fixture-rss", url: "https://quelle.example/feed" } } }));
+    const journal = Q.speicher({ storeId: "offline", request: async (_path, o) => [JSON.parse(o.body)] });
+    const belege = await Promise.all(jobs.map(async (job, i) => ({ id: journal.id(job.id),
+      data: await journal.sichern({ id: job.id, tenantId: null, firstDueAt: due, payload: job.payload },
+        { art: i === 0 ? "teilweise" : "rohfassungen", rohIds: [rohId], analyse: [{ rohId, stand, jobId: kennung(11 + i) }] },
+        jetzt) })));
+    let analyselesungen = 0;
+    const bericht = await C.lese({ catalog: { retrievalPaths: [{ id: "rp-fixture" }], packages: [], packagePaths: [] },
+      profiles: [], env: { ...env, HELMUT_SUPABASE_STORE_ID: "offline" }, jetztMs: jetzt, now: () => jetzt,
+      deadlineAt: jetzt + 1000, storage: { supabaseRequest: async path => {
+        const params = new URL(path, "http://localhost").searchParams;
+        if (params.get("job_type") === "eq.source_fetch") return jobs;
+        if (params.get("job_type") === "eq.document_understanding") {
+          analyselesungen++;
+          A.equal(params.get("id"), `in.(${kennung(12)})`);
+          A.equal(params.get("status"), "eq.erledigt");
+          A.equal(params.get("tenant_id"), "is.null");
+          return [];
+        }
+        if (path.includes("helmut_store?id=in.")) return belege;
+        A(path.includes("helmut_store?id=eq.offline-quellenplan-")); return [];
+      } } });
+    A.equal(analyselesungen, 1);
+    A.deepEqual(bericht.faelligkeiten.map(f => f.grund), ["abruf_inhalt_unvollstaendig", "analyse_nicht_belegt"]);
+  });
   await test("Eine Tagesquelle behält den Mandatsbeleg nach Tageswechsel und die verfehlte 24-Stunden-Frist", async () => {
     const dokument = "rd-" + "e".repeat(64), stand = "f".repeat(64);
     const jobId = "00000000-0000-4000-8000-000000000002";

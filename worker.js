@@ -10,8 +10,11 @@ const { runCronUeberWarteschlange, helmutRunId } = require("./lib/helmut/quellen
 const { baueResponsesUrl } = require("./lib/helmut/azure-endpunkt");
 const { readAuthStore, supabaseRequest } = require("./lib/helmut/storage");
 const betriebskosten = require("./lib/helmut/betriebskosten-budget");
+const { casAktiv } = require("./lib/helmut/verstehen-vertrag");
+const { sourceTelemetryEnabled } = require("./lib/helmut/source-telemetry");
 
 const INTERVALL_MS = 15 * 60 * 1000;
+const ABSCHLUSSFRIST_MS = 290000;
 const PRODUKTIONS_SUPABASE_HOST = "ddckuvvpcytqbyfmbvie.supabase.co";
 
 function pruefeEinmalZiel(env = process.env) {
@@ -19,6 +22,14 @@ function pruefeEinmalZiel(env = process.env) {
   if (env.HELMUT_WORKER_SUPABASE_HOST === PRODUKTIONS_SUPABASE_HOST) {
     throw Error("einmaltest-erfordert-testdatenbank");
   }
+}
+
+function pruefeProduktionsstand(env = process.env) {
+  if (env.HELMUT_WORKER_SUPABASE_HOST !== PRODUKTIONS_SUPABASE_HOST) return null;
+  if (!casAktiv(env)) return "verstehen-cas-erforderlich";
+  if (!sourceTelemetryEnabled(env)) return "quellentelemetrie-deaktiviert";
+  if (!/^[a-f0-9]{40}$/.test(env.HELMUT_COMMIT_SHA || "")) return "worker-commit-unbekannt";
+  return null;
 }
 
 function konfigurationsfehler(env = process.env) {
@@ -58,7 +69,9 @@ function quellenlauf() {
         deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe,
         buildV3Briefing: (...args) => require("./server").__buildV3Briefing(...args)
       }),
-      { runId, cronName: "crawl", deadlineAt: startMs + 290000 }
+      // Nach der Queue-Arbeit nutzt die Abdeckung nur die verbleibende Slotzeit;
+      // der gemeinsame Leser zieht seine Schreibreserve von dieser Restzeit ab.
+      { runId, cronName: "crawl", deadlineAt: startMs + ABSCHLUSSFRIST_MS, maxReadMs: ABSCHLUSSFRIST_MS }
     );
   } });
 }
@@ -118,6 +131,8 @@ async function main() {
       const fehler = konfigurationsfehler();
       if (fehler) throw Error(fehler);
       if (einmalig) pruefeEinmalZiel();
+      const abweichung = pruefeProduktionsstand();
+      if (pruefen && abweichung) throw Error(abweichung);
       const status = await workerBetrieb.readiness();
       if (!status.bereit || !status.abrufErlaubt) {
         console.error(JSON.stringify({ dienst: "quellenworker", ereignis: "nicht-bereit",
@@ -140,7 +155,10 @@ async function main() {
           betriebskosten.pruefeBuch(auth[betriebskosten.KEY], vertrag);
         }
       } catch { throw Error("bestehendes-kostenbuch-nicht-bestaetigt"); }
-      console.log(JSON.stringify({ dienst: "quellenworker", ereignis: "bereit",
+      // Eine unvollständige Betriebskonfiguration bleibt beim Start sichtbar.
+      // Bereits zulässige Quellenabrufe laufen auch bei fehlender Telemetrie weiter.
+      console.log(JSON.stringify({ dienst: "quellenworker", ereignis: abweichung ? "eingeschraenkt" : "bereit",
+        ...(abweichung ? { grund: abweichung } : {}),
         ort: process.env.HELMUT_EXEC_LOCATION || "lokal", commit: process.env.HELMUT_COMMIT_SHA }));
       if (einmalig) {
         if (!await einmal({ signal: kontrolliert.signal })) process.exitCode = 2;
@@ -168,4 +186,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel };
+module.exports = { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand };

@@ -120,11 +120,29 @@ sudo docker compose logs --tail=30 worker
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`, `AZURE_OPENAI_DEPLOYMENT` | Azure Basisadresse, Schlüssel und exakter Deploymentname. Endpoint und Deployment müssen zum Geldvertrag passen. |
 | `DIP_API_KEY` | Erforderlich für Bundestagsabrufe über DIP. Für einen Probelauf eines anderen Abrufwegs optional. |
 | `HELMUT_BETRIEBSKOSTENVERTRAG_JSON`, optional `HELMUT_BETRIEBSZULASSUNG_JSON` | Für Produktion unverändert übernehmen. Die Testumgebung verwendet einen eigenen Vertrag für das zugelassene Testprofil und ihren eigenen Azure Zugang. Optionale Zeile weglassen, wenn sie in der Zielumgebung fehlt. |
-| `HELMUT_LLM_BUDGET_FAIL_CLOSED`, `HELMUT_MAX_LLM_CALLS_PER_DAY`, `HELMUT_AUTH_PATCH_V1`, `HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE`, `HELMUT_UNDERSTANDING_GATE`, `HELMUT_SOURCE_TELEMETRY`, `HELMUT_PROCESS_RUNS_RELATIONAL` | Soweit gesetzt, die wirksamen Werte der Zielumgebung übernehmen. Für den Abrufbeleg in der Testdatenbank `HELMUT_SOURCE_TELEMETRY=on` setzen. Weitere aktuell wirksame Quellenfreigaben und Limits über das [Inventar](env-inventar.md) abgleichen. |
+| `HELMUT_VERSTEHEN_CAS`, `HELMUT_SOURCE_TELEMETRY` | In der produktiven Worker-Env beide auf `on` setzen. Die Artikelanalyse benötigt die atomare Reservierung mit Besitzprüfung. Der Telemetrieschalter aktiviert den Einzelbeleg für gemessene Abrufe. Für die entsprechende Probe im Testprojekt gelten dieselben Werte. |
+| `HELMUT_LLM_BUDGET_FAIL_CLOSED`, `HELMUT_MAX_LLM_CALLS_PER_DAY`, `HELMUT_AUTH_PATCH_V1`, `HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE`, `HELMUT_UNDERSTANDING_GATE`, `HELMUT_PROCESS_RUNS_RELATIONAL` | Soweit gesetzt, die wirksamen Werte der Zielumgebung übernehmen. Weitere aktuell wirksame Quellenfreigaben und Limits über das [Inventar](env-inventar.md) abgleichen. |
 | `HELMUT_EXEC_LOCATION` | `hetzner-de` |
 | `HELMUT_CRAWL_EXECUTOR` | Für Probe und Bereitschaftsprüfung weglassen. Erst bei der Umschaltung `hetzner` setzen. |
 
 **Test:** `sudo docker compose run --rm --no-deps worker node worker.js --check` liest Bereitschaft, DLQ und Kostenbuch. `bereit` bestätigt diese Prüfungen. Es prüft weder den Azure Schlüssel beim Anbieter noch einen Quellenabruf.
+
+Der Betreiber verwendet auf dem produktiven Host `~/helmut-pilot`. Wer den Klon aus Abschnitt 3 verwendet, setzt in der ersten Zeile `~/helmut-quellenworker` ein. Bei einem Update zuerst den freigegebenen Merge holen. Bei abweichender Kennung bricht die Befehlsfolge vor dem Austausch des laufenden Workers ab.
+
+```bash
+cd ~/helmut-pilot &&
+read -r -p "Freigegebene 40-stellige Merge-Kennung: " WORKER_SHA &&
+test "$(git branch --show-current)" = main &&
+test -z "$(git status --porcelain -- Dockerfile .dockerignore compose.yaml package.json package-lock.json worker.js server.js helmut-flags.json lib scripts/bb-nachweis-importpaket-generator.js)" &&
+git pull --ff-only origin main &&
+test "$(git rev-parse --verify HEAD)" = "$WORKER_SHA" &&
+sudo env HELMUT_COMMIT_SHA="$WORKER_SHA" docker compose build worker &&
+sudo docker compose run --rm --no-deps worker node worker.js --check &&
+sudo docker compose up -d --no-deps --no-build --force-recreate worker &&
+sudo docker compose exec -T worker printenv HELMUT_COMMIT_SHA
+```
+
+Vergleiche die ausgegebene Kennung mit dem freigegebenen Merge. Der Produktionscheck prüft beide Schalter und die vollständige Build-Kennung vor dem Austausch. Ein regulärer Lauf mit passendem `process_runs.commit_ref` belegt anschließend den tatsächlich ausführenden Stand.
 
 ## 5. Einen Quellenlauf einmalig prüfen
 
