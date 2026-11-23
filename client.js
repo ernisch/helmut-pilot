@@ -6681,10 +6681,16 @@ function renderHstandHeader(state) {
   const when = (state.primaryItem && state.primaryItem.zeitLabel)
     || hstandWhen(state.primaryItem && state.primaryItem.meldungAt);
   const created = hstandWhen(vertrag?.lauf?.erzeugtAm);
+  const { geplant, bestaetigt } = state.versorgung?.abrufabdeckung || {};
+  const luecken = Number.isSafeInteger(geplant) && Number.isSafeInteger(bestaetigt)
+    && bestaetigt >= 0 && geplant > bestaetigt
+    ? `${bestaetigt} von ${geplant} fälligen Quellen sind zum Redaktionsschluss bestätigt.` : "";
+  const teilpaket = briefing?.paketStatus?.zustand === "teilweise";
   const timeLabel = [
     state.primaryItem ? (when ? `Quellenstand: ${when}` : "Quellenstand nicht belegt") : "",
-    vorlaeufig ? `Tagespaket vorbereitet: ${hstandWhen(briefing.vorlaeufigerBriefingstand.paketErzeugtAm)}`
-      : created ? `Briefing erstellt: ${created}` : "Erstellungszeit des Briefings nicht belegt"
+    vorlaeufig ? `Teilfassung erstellt: ${hstandWhen(briefing.vorlaeufigerBriefingstand.paketErzeugtAm)}`
+      : created ? `${teilpaket ? "Teilfassung erstellt" : "Briefing erstellt"}: ${created}`
+        : "Erstellungszeit des Briefings nicht belegt"
   ].filter(Boolean).join(" · ");
   const partial = state.qualityStatus === "partial";
   return `
@@ -6694,7 +6700,8 @@ function renderHstandHeader(state) {
           <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
         </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(timeLabel)}</span></p>
-      ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
+      ${luecken ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>${escapeHtml(luecken)}</span></p>`
+        : partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
       ${renderHstandFrische(state)}
     </div>`;
 }
