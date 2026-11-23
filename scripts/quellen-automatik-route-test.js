@@ -8,12 +8,12 @@ Object.assign(process.env, { HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SCALABL
 const storage = require("../lib/helmut/storage"), pipeline = require("../lib/helmut/scalable-pipeline");
 const handler = require("../server");
 let now = Date.parse("2026-11-11T03:00:00Z"), leaseBis = 0, workers = 0, plans = 0, reservierungen = 0, fail = false, fertig = false, readsFail = false;
-let counts = new Map(), runs = new Map(), zeitrest = false, workerUnbekannt = false;
+let counts = new Map(), runs = new Map(), zeitrest = false, workerUnbekannt = false, stapelrest = null;
 const restore = [];
 function replace(obj, key, fn) { const old = obj[key]; restore.push(() => obj[key] = old); obj[key] = fn; }
 let passed = 0;
 async function check(name, fn) { await fn(); passed++; console.log("PASS " + name); }
-function reset() { now = Date.parse("2026-11-11T03:00:00Z"); leaseBis = workers = plans = reservierungen = 0; fail = fertig = readsFail = zeitrest = workerUnbekannt = false; counts = new Map(); runs = new Map(); }
+function reset() { now = Date.parse("2026-11-11T03:00:00Z"); leaseBis = workers = plans = reservierungen = 0; fail = fertig = readsFail = zeitrest = workerUnbekannt = false; stapelrest = null; counts = new Map(); runs = new Map(); }
 async function main() {
   replace(Date, "now", () => now);
   replace(globalThis, "fetch", async () => assert.fail("kein externer Fachaufruf"));
@@ -37,7 +37,11 @@ async function main() {
       return [...counts].filter(([k]) => k === "quellenarbeit|fenster" || k.startsWith("quellenarbeit|slot|"))
         .map(([schluessel, verbraucht]) => ({ schluessel, verbraucht }));
     }
-    if (url.startsWith("/rest/v1/helmut_jobs?")) return [];
+    if (url.startsWith("/rest/v1/helmut_jobs?")) {
+      const offeneAuftraege = url.includes("status=in.(wartend,laeuft)") || url.includes("select=id,attempts,max_attempts");
+      return stapelrest === "bestaetigt" && offeneAuftraege
+        ? [{ id: "synthetischer-abruf", attempts: 0, max_attempts: 5 }] : [];
+    }
     assert.ok(url.startsWith("/rest/v1/helmut_store?"), url);
     if (!fertig || url.includes("zustand=eq.offen") && !zeitrest) return [];
     const data = { version: 1, tag: "2026-11-11", cursor: 0,
@@ -51,9 +55,17 @@ async function main() {
   replace(pipeline, "wiedervorlage", async () => ({ wiedervorgelegt: 0 }));
   replace(pipeline, "arbeite", async o => {
     const content = o.types?.includes("document_understanding"); if (content) workers++;
-    return { verfuegbar: true, erledigt: 0, reserviert: 0, wiederholt: 0, zurueckgestellt: 0, stapelrestZurueckgegeben: 0,
-    endgueltigFehlgeschlagen: 0, leaseVerloren: 0,
-    nichtUebernommen: content && workerUnbekannt ? 1 : 0, zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 }; });
+    const bilanz = { verfuegbar: true, erledigt: 0, reserviert: 0, wiederholt: 0, zurueckgestellt: 0, stapelrestZurueckgegeben: 0,
+      endgueltigFehlgeschlagen: 0, leaseVerloren: 0,
+      nichtUebernommen: content && workerUnbekannt ? 1 : 0, zurueckstellungNichtVerfuegbar: 0, stapelrestNichtZurueckgegeben: 0 };
+    if (content && stapelrest && plans === 1) {
+      const bestaetigt = stapelrest === "bestaetigt";
+      Object.assign(bilanz, { reserviert: 277, erledigt: 15, wiederholt: 3, zurueckgestellt: 257,
+        endgueltigFehlgeschlagen: 1, stapelrestZurueckgegeben: bestaetigt ? 1 : 0,
+        stapelrestNichtZurueckgegeben: bestaetigt ? 0 : 1 });
+    }
+    return bilanz;
+  });
   replace(require("../lib/helmut/quellenarchitektur/cron-abdeckung"), "runQuellenCronMitAbdeckung", async fn => fn());
   const server = http.createServer(handler);
   await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -88,6 +100,26 @@ async function main() {
       reset(); zeitrest = workerUnbekannt = true; await request();
       assert.equal([...runs.values()][0].status, "failed");
       now += 15 * 60000; assert.equal((await request()).grund, "automatik-startfehler"); assert.equal(plans, 1);
+    });
+    await check("bestaetigter Stapelrest schliesst die Teilbilanz und laesst faellige Arbeit fortsetzen", async () => {
+      reset(); stapelrest = "bestaetigt"; await request();
+      const r = [...runs.values()][0];
+      assert.equal(r.status, "partial");
+      assert.equal(r.fehlerklasse, "auftraege-endgueltig-fehlgeschlagen");
+      assert.equal(r.zielmenge, 277);
+      assert.equal(r.deferred, 258);
+      assert.equal(r.processed + r.deferred + r.fehlgeschlagen + r.wiederholt, r.zielmenge);
+      now += 15 * 60000; await request();
+      assert.equal(plans, 2);
+      assert.equal(counts.get("quellenarbeit|fenster"), 2);
+    });
+    await check("unbestaetigter Stapelrest bleibt ausserhalb der Vertagungen und sperrt den Folgestart", async () => {
+      reset(); stapelrest = "unbestaetigt"; await request();
+      assert.equal([...runs.values()][0].deferred, 257);
+      now += 15 * 60000;
+      assert.equal((await request()).grund, "automatik-startfehler");
+      assert.equal(plans, 1);
+      assert.equal(counts.get("quellenarbeit|fenster"), 1);
     });
     console.log(`PASS ${passed}/${passed} echte Quellenautomatik-Route`);
   } finally { await new Promise(r => server.close(r)); for (const f of restore.reverse()) f(); }
