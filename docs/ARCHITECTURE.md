@@ -1,5 +1,9 @@
 # ARCHITECTURE — Systemkarte Helmut
 
+> **Aktuelle Quellenarchitektur seit 23.11.2026:** Vercel Pro stellt Frontend, API, Lage und Morgenbriefing bereit; der eigenständige Hetzner Node.js Worker führt die Quellenfenster alle 15 Minuten aus und verarbeitet Quellen, PDFs und zugehörige KI Schritte. Supabase führt die gemeinsame Warteschlange `helmut_jobs`, Laufquittungen `process_runs`, den Vertragsstore `helmut_store` und die Quarantäne `helmut_quellen_dlq`. Azure OpenAI bleibt der Modellanbieter. Der Vercel Quellencron ist ein geschützter **manueller** Rückweg. Keine parallelen Quellenverbraucher und kein normaler schwerer Quellenlauf auf Vercel.
+>
+> **Produktiv belegt:** `location=hetzner-de` bei Quellenfenstern 16:15 und 16:30 Uhr Berlin vom 23.11.; beide sind `partial`, nicht vollständig. [Aktueller Produktionsbeleg](betrieb/hetzner-live-20261123.md), [Worker und Rückweg](betrieb/hetzner-quellenworker.md), [CURRENT_STATE](CURRENT_STATE.md). Ältere Diagramme und historische Beschreibungen des Vercel Quellenpfads unten sind nicht mehr die Darstellung des Normalbetriebs. Die bestehende fachliche Laufzeit, Kosten und Sicherheitsbegrenzung gilt weiter.
+
 **Letzte Aktualisierung:** 2026-11-13 (gezielter Verarbeitungskern fuer 100, Entwicklungsstand; siehe Abschnitt unten).
 
 **Unveraenderter vorheriger Architekturstand:** 2026-08-15 (Korrekturlauf zum CAS-Vertrag: EIN atomarer Schreibweg `helmut_verstehen_speichere` prueft Besitzer, Reservierung, Fencing-Wert, Zustand und Lease gemeinsam und schreibt Ergebnis + Abschluss in einer Transaktion; nach dem Modellstart fuehrt kein automatischer Weg zurueck nach `offen`); davor 2026-08-14/6 (§7f: **atomarer Verstehensvertrag (CAS)** — eine Zeile je Vorgang mit Besitzer, Lease und monotonem, per Trigger ERZWUNGENEM Fencing-Wert; loest den Karten-Store der Update-Vormerkungen ab und macht Verstehensparallelitaet ueberhaupt erst sicher moeglich; Default AUS, Migration `20260814180000` NICHT angewendet, kanonisch [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)); davor 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
@@ -70,7 +74,7 @@ Setupquittung erteilt keine native Testfreigabe. Stand und Belege:
 **Wichtig:** `server.js`, `client.js` und `styles.css` sind sehr groß. Immer gezielt
 suchen (`Grep`) und **abschnittsweise** lesen — nie vollständig öffnen.
 
-## 2 · Datenfluss
+## 2 · Historischer Datenfluss vor der Hetzner Umschaltung
 
 ```
 Vercel Cron ──► /api/cron/crawl ──► scheduler.runSourceCrawl

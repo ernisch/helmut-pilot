@@ -3,7 +3,10 @@
 Stand: 11.11.2026. Arbeitsweise, Leseumfang, Agentenzusammenarbeit und Freigaben
 stehen ausschliesslich in [AGENTS.md](AGENTS.md); bei Ueberschneidung gilt `AGENTS.md`.
 Produktprinzipien: [START_HERE.md](docs/START_HERE.md). Aktueller Betrieb und Belege:
-[CURRENT_STATE.md](docs/CURRENT_STATE.md). Historie ist kein aktueller Auftrag.
+[CURRENT_STATE.md](docs/CURRENT_STATE.md). Quellen Normalbetrieb seit 23.11.2026:
+Hetzner Worker statt Vercel Functions, siehe [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+und [Produktionsbeleg](docs/betrieb/hetzner-live-20261123.md).
+Vercel Quellencron bleibt nur als manuell aktivierbarer Rueckweg. Historie ist kein aktueller Auftrag.
 
 ## 3 · Aufgabenabhängige Zusatzlektüre
 
