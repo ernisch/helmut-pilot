@@ -14,6 +14,7 @@ const { casAktiv } = require("./lib/helmut/verstehen-vertrag");
 const { sourceTelemetryEnabled } = require("./lib/helmut/source-telemetry");
 
 const INTERVALL_MS = 15 * 60 * 1000;
+const ABSCHLUSSFRIST_MS = 290000;
 const PRODUKTIONS_SUPABASE_HOST = "ddckuvvpcytqbyfmbvie.supabase.co";
 
 function pruefeEinmalZiel(env = process.env) {
@@ -68,7 +69,9 @@ function quellenlauf() {
         deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe,
         buildV3Briefing: (...args) => require("./server").__buildV3Briefing(...args)
       }),
-      { runId, cronName: "crawl", deadlineAt: startMs + 290000 }
+      // Nach der Queue-Arbeit nutzt die Abdeckung nur die verbleibende Slotzeit;
+      // der gemeinsame Leser zieht seine Schreibreserve von dieser Restzeit ab.
+      { runId, cronName: "crawl", deadlineAt: startMs + ABSCHLUSSFRIST_MS, maxReadMs: ABSCHLUSSFRIST_MS }
     );
   } });
 }
