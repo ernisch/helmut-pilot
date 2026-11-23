@@ -3,6 +3,10 @@
 Stand: 15.11.2026. Diese Datei fuehrt Arbeitsweise, Freigaben und Zusammenarbeit.
 Technische Sicherheitsregeln: [CLAUDE.md §4–6](CLAUDE.md).
 Aktueller Betrieb und Belege: [CURRENT_STATE.md](docs/CURRENT_STATE.md).
+Aktueller Quellen Normalbetrieb: [ARCHITECTURE.md](docs/ARCHITECTURE.md) und
+[Hetzner Produktionsbeleg](docs/betrieb/hetzner-live-20261123.md).
+Vercel ist fuer Quellen nur geschuetzter manueller Rueckweg; keine schwere
+Quellenarbeit auf Vercel und keine zwei parallelen Quellenverbraucher.
 
 ## Verbindliche Dauerfreigabe vom 11.11.2026: Push und Merge automatisch bei Gruen
 
