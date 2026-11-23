@@ -241,9 +241,7 @@ async function main() {
     check("1.5 worker-betrieb kennt genau EINEN Spiegel-Write (Slotende), nicht mehr",
       (wbQuelle.match(/saveRawItems/g) || []).length >= 1
       && (wbQuelle.match(/speichereBlob\(/g) || []).length === 1);
-    const serverQuelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
-    const cronQuelle = serverQuelle.slice(serverQuelle.indexOf("async function runCronUeberWarteschlange("),
-      serverQuelle.indexOf("\nasync function ", serverQuelle.indexOf("async function runCronUeberWarteschlange(") + 1));
+    const cronQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/quellen-warteschlangenlauf.js"), "utf8");
     check("1.6 runCronUeberWarteschlange schreibt Start- UND Abschlussquittung",
       /const startQuittung = await storageModul\.schreibeWarteschlangenLaufquittung\([\s\S]{0,250}status: "running"/.test(cronQuelle)
       && /const endQuittung = await storageModul\.schreibeWarteschlangenLaufquittung\([\s\S]{0,350}finishedAt:/.test(cronQuelle));

@@ -98,9 +98,9 @@ async function echterQuittungsvertrag(h) {
   // Antwort und Datenbankzeile entstehen durch den echten Server und Speicherpfad,
   // nicht durch eine im Test nachgebaute Zaehlerformel. Nur Arbeit und Transport
   // sind lokal ersetzt. Die Testuhr gilt allein in diesem isolierten VM Kontext.
-  const src = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+  const src = fs.readFileSync(path.join(__dirname, "../lib/helmut/quellen-warteschlangenlauf.js"), "utf8");
   const begin = src.indexOf("async function runCronUeberWarteschlange(");
-  const end = src.indexOf("async function runCronMitGlobalerPhase(", begin);
+  const end = src.indexOf("module.exports", begin);
   assert(begin >= 0 && end > begin);
   class TestDate extends Date {
     constructor(...args) { super(...(args.length ? args : [JETZT])); }

@@ -1,0 +1,24 @@
+name: helmut-quellenworker
+
+services:
+  worker:
+    build:
+      context: .
+      args:
+        HELMUT_COMMIT_SHA: ${HELMUT_COMMIT_SHA:-}
+    env_file:
+      - path: /etc/helmut/worker.env
+        format: raw
+    init: true
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 5m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

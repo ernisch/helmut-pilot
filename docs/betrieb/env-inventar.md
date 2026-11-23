@@ -71,6 +71,12 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 
 | Variable | P/O | Zweck / Default | Merkmale |
 |---|---|---|---|
+| `HELMUT_CRAWL_EXECUTOR` | O | `hetzner` aktiviert selbst getaktete Quellenarbeit auf dem Worker und deaktiviert schwere Quellenstarts auf Vercel. Ohne den Wert bedienen die bestehenden Vercel Routen die Quellenarbeit. | [Hetzner Anleitung](hetzner-quellenworker.md) |
+| `HELMUT_WORKER_SUPABASE_HOST` | P für Worker | Exakt erwarteter Supabase Hostname ohne Protokoll. Ein anderes Ziel stoppt den Worker vor dem Netzwerkzugriff. | [Hetzner Anleitung](hetzner-quellenworker.md) |
+
+
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
 | `HELMUT_AUTH_MODE` | O | `accounts` = Konten-Login; sonst Legacy-Pilotgate. | server.js/auth.js · Prod · Default Legacy-Gate · — |
 | `HELMUT_PROTECTED_TENANT_IDS` | O | Optionale zusätzliche Schutzliste (Komma-Liste von Mandats-IDs) für die Provisionierung; bestehende, nicht vom Werkzeug angelegte Mandanten sind auch ohne Wert datengetrieben geschützt. | provisioning.js · alle · Default leer (Marker-Schutz greift) · — |
 | `HELMUT_TENANT_MODE` | O | Default `pilot`. | server.js · alle · Default greift · — |
