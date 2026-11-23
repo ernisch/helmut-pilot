@@ -105,9 +105,10 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
         return { verfuegbar: true, offen: 0, fehlgeschlagen: 0 };
       }
     };
-    const pruefe = async (zustand, quellenBis = schnitt) => A.deepEqual(await V.lese({ mandat: profile.id,
-      jetztMs: morgen.getTime(), env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis }), signal(zustand));
-    await pruefe("kein-bekannter-rueckstand");
+    const pruefe = async (zustand, quellenBis = schnitt, bestaetigt = 0) => A.deepEqual(await V.lese({ mandat: profile.id,
+      jetztMs: morgen.getTime(), env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis }),
+    zustand === "unbekannt" ? signal(zustand) : { ...signal(zustand), abrufabdeckung: { geplant: 1, bestaetigt } });
+    await pruefe("kein-bekannter-rueckstand", schnitt, 1);
     queue = []; await pruefe("offen");
     for (const status of ["wartend", "laeuft", "fehlgeschlagen"]) {
       queue = [{ ...row, status }]; await pruefe("offen");
@@ -119,7 +120,27 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     belege = quittieren(); belege[0].data.belegHash = "falsch"; await pruefe("unbekannt");
     belege = quittieren(); await pruefe("unbekannt", schnitt + 1);
     deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 1, fehlgeschlagen: 0 });
-    await pruefe("offen");
+    await pruefe("offen", schnitt, 1);
+
+    const neuerStand = Array.from({ length: 162 }, (_, i) => erstelle("quelle-" + i, 0));
+    plan.auftraege = [...neuerStand, ...unbelangte];
+    queue = neuerStand.map((job, i) => ({ ...row, id: "00000000-0000-0000-0000-" + String(i).padStart(12, "0"),
+      idempotency_key: job.idempotencyKey, payload: job.payload, status: i < 152 ? "erledigt" : "fehlgeschlagen" }));
+    belege = queue.slice(0, 152).map(r => {
+      const data = { version: 1, bindung: F.quellbindung({ id: r.id, tenantId: r.tenant_id,
+        firstDueAt: r.first_due_at, payload: r.payload }), bestaetigtAm: iso(schnitt),
+        ergebnis: { art: "keine-funde", rohIds: [], analyse: [] } };
+      return { id: "main-quellenfaelligkeit-" + r.id, data: { ...data, belegHash: hash(data) } };
+    });
+    deps.request = async path => {
+      const url = new URL(path, "http://localhost");
+      const jobs = url.pathname.endsWith("/helmut_jobs");
+      const batch = url.searchParams.get(jobs ? "idempotency_key" : "id");
+      return (jobs ? queue : belege).filter(r => batch.includes(JSON.stringify(jobs ? r.idempotency_key : r.id)));
+    };
+    const v = await V.lese({ mandat: profile.id, jetztMs: morgen.getTime(),
+      env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis: schnitt });
+    A.deepEqual(v, { ...signal("offen"), abrufabdeckung: { geplant: 162, bestaetigt: 152 } });
   });
   const rows = new Map(); let updates = 0;
   const storage = { assertTenant: require("../lib/helmut/storage").assertTenant,
