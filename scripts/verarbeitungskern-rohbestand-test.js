@@ -11,7 +11,7 @@ const items=["fehlerhaft","brauchbar"].map((name,i)=>({id:"input-"+i,title:"Synt
   publishedAt:"2026-11-13T04:00:00Z",retrievedAt:"2026-11-13T04:10:00Z",
   summary:"Ein synthetischer politischer Bericht beschreibt einen konkreten Entwurf mit geplanter Beratung im Parlament und benennt die zustaendige Institution."}));
 const normalized=items.map(req("./dedup").toRawDocumentRow),badId=normalized[0].id,goodId=normalized[1].id;
-async function scenario(mode){
+function attrappe(mode){
   const rows=new Map(),archive=new Map(),calls=[],findings=[];
   const request=async(url,opts={})=>{
     calls.push([url,opts.method||"GET"]);const method=opts.method||"GET";
@@ -19,7 +19,8 @@ async function scenario(mode){
       if(method==="POST"){
         const batch=JSON.parse(opts.body);
         if(["batch","findings-fk","findings-write"].includes(mode)&&batch.some(r=>r.id===badId))throw Error("eine ungueltige Zeile");
-        for(const row of batch)rows.set(row.id,row);return batch.map(r=>({id:r.id}));
+        const neu=batch.filter(row=>!rows.has(row.id));
+        for(const row of neu)rows.set(row.id,row);return neu.map(r=>({id:r.id}));
       }
       const filter=new URL(url,"http://local").searchParams.get("id");
       if(filter?.startsWith("eq.")){const row=rows.get(filter.slice(3));return row?[row]:[];}
@@ -47,6 +48,11 @@ async function scenario(mode){
     RAW_DOCUMENT_BULK_CHUNK:100,RAW_DOC_ID_CHUNK:100,
     V3_RAW_DOCUMENT_COLUMNS:Object.keys(normalized[0]),pickColumns:(row,cols)=>Object.fromEntries(cols.filter(k=>Object.hasOwn(row,k)).map(k=>[k,row[k]]))};
   const persist=vm.runInNewContext(code+"\npersistiereRohdokumenteWarteschlange",context);
+  return {persist,rows,archive,calls,findings,request};
+}
+async function scenario(mode){
+  if (mode === "hib") return pruefeHibFund();
+  const {persist,rows,archive,calls,findings}=attrappe(mode);
   const result=await persist(items);
   A.equal(result.ok,false);A.deepEqual(Array.from(result.bestaetigteIds),[goodId]);
   A.equal(result.artikelFehler.length,1);A.equal(result.artikelFehler[0].id,badId);
@@ -76,13 +82,50 @@ async function scenario(mode){
     const next=calls[write+1];A.equal(next[1],"GET");A.match(next[0],/id=eq./);
   }
 }
+async function pruefeHibFund() {
+  const { persist, rows, archive, request } = attrappe("hib");
+  const D = req("./dedup"), R = req("./roh-quellenstaende"), P = req("./scalable-pipeline");
+  const amtlich = { ...items[1], url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
+    sourceId: "bundestag", sourceName: "Bundestag", sourceType: "bundestag", linkType: "direct", retrievalPathId: "rp-bundestag" };
+  const suche = { ...amtlich, title: amtlich.title + " - Deutscher Bundestag", summary: null,
+    sourceId: "general-hib", sourceName: "Deutscher Bundestag", retrievalPathId: "rp-general-hib", publishedAt: "2026-11-13T04:04:00Z" };
+  const row = D.toRawDocumentRow(amtlich), originalHash = R.standHash(row), suchHash = R.standHash(D.toRawDocumentRow(suche));
+  const enqueue = async job => ({ verfuegbar: true, neu: false, id: job.idempotencyKey });
+  const now = () => Date.parse("2026-11-13T05:00:00Z");
+  const aktuelleZeile = () => [rows.get(row.id)];
+  const run = (item, lesen = request, ladeAktuell = aktuelleZeile) => P.HANDLER.source_fetch({ id: "synthetische-quelle", freshnessWindow: "2026-11-13T00Z",
+    payload: { art: "geteilt", quelle: { id: item.sourceId } } }, {
+    env: { HELMUT_SCALABLE_PIPELINE: "on" }, now, hardeningConfig: () => ({ enabled: false }),
+    crawlAllSources: async () => ({ rawItems: [item], results: [{ ok: true, items: [item] }] }),
+    persistRohdokumente: persist, ladeRohdokumentStaende: (ids, hashes) => req("./storage").ladeRohdokumentStaende(ids, hashes, {
+      ladeAktuell, request: lesen
+    }), enqueue, klassen: { belege: async () => ({ erlaubt: true, slot: "synthetisch" }), gebeFrei: async () => {} }
+  });
+  const erster = await run(amtlich), wieder = await run(suche);
+  A.notEqual(originalHash, suchHash);
+  A.equal(erster.abrufErgebnis.analyse.length, 1);
+  A.equal(erster.abrufErgebnis.analyse[0].stand, originalHash);
+  A.deepEqual(wieder.abrufErgebnis.analyse, erster.abrufErgebnis.analyse);
+  A.equal(wieder.teilfehler, undefined);
+  A.equal(archive.size, 2);
+  A.deepEqual(rows.get(row.id), row);
+  for (const item of [{ ...suche, summary: items[1].summary }, { ...suche, retrievalPathId: null },
+    { ...suche, title: "Abweichende Meldung" }, { ...suche, publishedAt: "2026-11-13T04:16:00Z" }]) {
+    const result = await run(item);
+    A.equal(result.teilfehler, 1);
+    A.deepEqual(result.abrufErgebnis?.analyse || [], []);
+  }
+  await A.rejects(run(suche, url => url.includes(originalHash) ? [] : request(url)), /verstehen-nicht-eingereiht/);
+  await A.rejects(run(suche, request, () => [row, { ...row, title: "Anderer Artikel" }]), /verstehen-nicht-eingereiht/);
+}
 (async()=>{
   const only=process.argv.find(arg=>arg.startsWith("--only="))?.slice(7);let n=0;
   for(const [mode,name] of [["archive","einzelner Archivfehler erhaelt folgenden brauchbaren Artikel"],
     ["batch","ungueltige Batchzeile wird nach Lesebestaetigung isoliert"],
     ["missing","ein fehlender Rohdatensatz blockiert bestaetigte Nachbarn nicht"],
     ["findings-fk","abgewiesene Rohzeile verwirft Fundstellen guter Nachbarn nicht"],
-    ["findings-write","echter Fundstellenfehler behaelt Kinder, beendet Quelle aber nicht erfolgreich"]]){
+    ["findings-write","echter Fundstellenfehler behaelt Kinder, beendet Quelle aber nicht erfolgreich"],
+    ["hib","textloser hib-Indexfund belegt denselben amtlichen Job mit seinem eigenen Archivhash"]]){
     if(only&&only!==mode)continue;await scenario(mode);console.log("PASS "+name);n++;
   }
   console.log(`${n}/${n} gezielte Rohartikelpruefungen bestanden.`);
