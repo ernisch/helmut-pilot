@@ -1,5 +1,7 @@
 # HELMUT Quellenworker auf Hetzner
 
+**Betriebsstand 23.11.2026:** Zwei produktive Quellenfenster auf Hetzner nachgewiesen, beide `partial`. [Laufbeleg](hetzner-live-20261123.md). Die nachstehenden Schritte beschreiben Setup, Diagnose und kontrollierten manuellen Rückweg, nicht eine noch ausstehende Erstumschaltung.
+
 Der Worker verarbeitet die vorhandene Supabase Warteschlange `helmut_jobs` direkt auf dem Server. Alle 15 Minuten prüft er, ob ein Quellenfenster ansteht. Die gemeinsame Reservierung in Supabase verhindert eine doppelte Verarbeitung desselben Zeitfensters. Abrufe, PDF Verarbeitung und die zugehörigen Modellaufrufe laufen im Worker. Die App sowie die getrennten Jobs für Lage und Morgenbriefing laufen weiterhin auf Vercel.
 
 Die Basis ist [PR #1324](https://github.com/ernisch/helmut-pilot/pull/1324). Die genehmigte DLQ Migration muss in der gewählten Datenbank vorhanden sein. Das Umziehen entfernt das Laufzeitlimit der Vercel Function für die Quellenarbeit. Bestehende Arbeitsfenster, Fristen für einzelne Aufträge, Quellenkontingente und Modellkostenregeln gelten weiter.
@@ -66,14 +68,14 @@ sudo systemctl enable --now docker
 
 ## 3. Den Worker übertragen und im Standby starten
 
-Der folgende Befehl holt den vorbereiteten Branch. Bei einem privaten Repository verwende einen lesenden GitHub Deploy Key oder den unten gezeigten Transfer von deinem Rechner. Für die spätere Produktion verwenden Worker und Vercel denselben abgenommenen Code.
+Der folgende Befehl holt den freigegebenen aktuellen main Stand. Bei einem privaten Repository verwende einen lesenden GitHub Deploy Key oder den unten gezeigten Transfer von deinem Rechner. Für die spätere Produktion verwenden Worker und Vercel denselben abgenommenen Code.
 
 ```bash
-git clone --branch codex/hetzner-quellenworker-20261123 https://github.com/ernisch/helmut-pilot.git ~/helmut-quellenworker
+git clone --branch main https://github.com/ernisch/helmut-pilot.git ~/helmut-quellenworker
 cd ~/helmut-quellenworker
 ```
 
-Wenn dein Rechner bereits Zugriff auf GitHub hat, kannst du alternativ von dort übertragen. Im **lokalen HELMUT Repo** auf dem vorbereiteten Branch ausführen:
+Wenn dein Rechner bereits Zugriff auf GitHub hat, kannst du alternativ von dort übertragen. Im **lokalen HELMUT Repo** auf dem freigegebenen main Stand ausführen:
 
 ```bash
 git archive --format=tar.gz --output=helmut-worker.tar.gz HEAD
