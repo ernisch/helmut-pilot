@@ -374,7 +374,7 @@ async function main() {
         gebeFrei: async slot => { frei.push(slot); } },
       finish: async args => { finish.push(args); return { verfuegbar: true,
         uebernommen: true, neuerStatus: "fehlgeschlagen" }; },
-      zurueckstellen: async args => { defer.push(args); return { verfuegbar: deferVerfuegbar }; }
+      zurueckstellen: async args => { defer.push(args); return { verfuegbar: deferVerfuegbar, uebernommen: deferVerfuegbar }; }
     };
     const result = await SP.fuehreAuftragAus({ auftrag, deps, besitzer: "worker-synthetisch" });
     return { result, finish, defer, frei, persist };
@@ -399,7 +399,7 @@ async function main() {
     && normal.finish.length === 1 && normal.finish[0].ok === false);
   const ohneDefer = await quellenFall({ grund: "anbietergrenze-minutengrenze", wartenMs: 30000 }, false);
   check("8.9 Unverfuegbare Vertagung meldet die Luecke und schliesst nichts erfolgreich ab",
-    ohneDefer.result.ausgang === "zurueckgestellt"
+    ohneDefer.result.ausgang === "vertagung-unbestaetigt"
     && ohneDefer.result.bilanz.zurueckstellungNichtVerfuegbar === 1 && ohneDefer.finish.length === 0);
   const ungueltig = await quellenFall("kein-strukturierter-Beleg");
   check("8.10 Ungueltige Metadaten werden nicht zu einer Anbieterpause umgedeutet",

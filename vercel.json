@@ -176,10 +176,6 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/crawl?arbeitsfenster=1&betrieb=24h",
-      "schedule": "*/15 * * * *"
-    },
-    {
       "path": "/api/cron/lage-briefing?betrieb=24h",
       "schedule": "45,55 4,5 * * *"
     },

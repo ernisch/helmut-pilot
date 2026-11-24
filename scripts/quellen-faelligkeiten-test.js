@@ -166,7 +166,7 @@ async function main() {
         gespeichert.push(...items.map(item => item.url)); return { ok: true, bestaetigteIds: ["rd-" + "a".repeat(64)] };
       },
       finish: async r => { A.equal(r.ok, true, r.error); return { verfuegbar: true, uebernommen: true }; },
-      zurueckstellen: async r => { A.equal(r.delayMs, 86400000); return { verfuegbar: true }; } };
+      zurueckstellen: async r => { A.equal(r.delayMs, 86400000); return { verfuegbar: true, uebernommen: true }; } };
     A.equal((await P.fuehreAuftragAus({ auftrag: job, deps })).ausgang, "erledigt");
     A.deepEqual(gespeichert, [url]);
     A.deepEqual(abrufe, [feed, url]);

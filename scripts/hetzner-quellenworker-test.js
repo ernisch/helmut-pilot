@@ -17,14 +17,16 @@ async function pruefeSchleife() {
   await betreibe({ signal: controller.signal, jetzt: () => minutenBerlin[index],
     lauf: async () => {
       gestartet.push(index);
-      if (index === 1) throw Error("isolierter Testfehler");
+      if (index === 1) throw Object.assign(Error("https://test.invalid/?token=synthetisch"), { code: "ETIMEDOUT" });
+      if (index === 6) throw { code: "synthetischer-token", name: "unbekannter-typ" };
       if (index === 7) controller.abort();
       return { ok: true, arbeitsfenster: {}, verarbeitung: { erledigt: 1 } };
     },
     pause: async ms => { assert(ms > 0 && ms <= 30000); assert(++index < stunden.length); },
     log: eintrag => logs.push(JSON.parse(eintrag)) });
   assert.deepEqual(gestartet, [1, 6, 7]);
-  assert.equal(logs[0].ereignis, "quellenfenster-fehler");
+  assert.deepEqual(logs[0], { dienst: "quellenworker", ereignis: "quellenfenster-fehler", fehlerklasse: "ETIMEDOUT" });
+  assert.deepEqual(logs[1], { dienst: "quellenworker", ereignis: "quellenfenster-fehler", fehlerklasse: "unbekannt" });
   assert.equal(logs[2].erledigt, 1);
 }
 

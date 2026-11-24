@@ -409,6 +409,7 @@ const STANDARD = new Set([
   "abdeckungspruefung-test.js",             // Quellenrollen, Inhalte und Aktualität
   "betriebsabdeckung-test.js",              // Tatsächlicher Katalog statt Seed als Betriebsbeleg
   "hetzner-quellenworker-test.js",           // Standalone Prozess und geschützte Umschaltung
+  "worker-queue-quittung-test.js",           // Bestätigte Vertagung, Wiederzustellung und Laufstatus
   "cron-abdeckung-test.js",                 // Gemeinsamer Abschluss aller Quellencron-Pfade
   "fach-parteiquellen-test.js",             // Gleiche Zuordnung für Fachgebiete und Parteien
   "landesmodule-deutschland-test.js",        // Gleiches Landesmodell und echte Parserbelege

@@ -185,15 +185,23 @@ Docker ist durch Schritt 2 beim Systemstart aktiviert. Compose setzt `restart: u
 
 **Test im Standby:** Starte den neuen Server mit `sudo reboot` neu. Verbinde dich wieder und prüfe `sudo docker compose ps` und `sudo docker compose logs --tail=30 worker` im Projektordner. Erwartet sind `Up` und `standby`. Lokal kannst du außerdem `node scripts/lokal.js -- node scripts/hetzner-quellenworker-test.js` ausführen.
 
-Nach bestätigter Probe den Standby auf die Production Einstellungen umstellen und `--check` erneut ausführen. Beide Änderungen aus PR #1324 und #1325 müssen abgenommen und im vorgesehenen Release enthalten sein. Die DLQ Migration muss in Supabase Production angewendet und lesbar sein. Der folgende Umschalter lässt den Vercel Cron als manuell aktivierbaren Rückweg hinterlegt.
+Nach bestätigter Probe den Standby auf die Production Einstellungen umstellen und `--check` erneut ausführen. Beide Änderungen aus PR #1324 und #1325 müssen abgenommen und im vorgesehenen Release enthalten sein. Die DLQ Migration muss in Supabase Production angewendet und lesbar sein. Vercel stellt die geschützte Crawl-Route für den manuellen Rückweg bereit.
 
 Die Umschaltung im laufenden Betrieb erfolgt in dieser Reihenfolge:
 
 1. Prüfe den freigegebenen Vercel Stand mit dem Umschaltcode und die Startbereitschaft unter Schritt 4 mit den Production Werten. Vergewissere dich, dass gerade kein Quellenlauf aktiv ist.
-2. Setze in Vercel für **Production** `HELMUT_CRAWL_EXECUTOR=hetzner` und veröffentliche den abgenommenen Stand erneut. Der geschützte Aufruf von `/api/cron/crawl` antwortet jetzt nur mit `quellenlauf-auf-hetzner`. Vercel behält den Zeitplaneintrag als Rückweg. Manuelle Quellenstarts auf Vercel sind in diesem Modus für die Dauer der Umstellung deaktiviert.
+2. Setze in Vercel für **Production** `HELMUT_CRAWL_EXECUTOR=hetzner` und veröffentliche den abgenommenen Stand erneut. Der geschützte Aufruf von `/api/cron/crawl` antwortet jetzt nur mit `quellenlauf-auf-hetzner`. Auf Vercel sind nur Lage und Morgenbriefing automatisch geplant.
 3. Ergänze `HELMUT_CRAWL_EXECUTOR=hetzner` in `/etc/helmut/worker.env`. Führe `sudo docker compose up -d --force-recreate` aus. Der Worker übernimmt den nächsten zulässigen Termin selbst.
 4. Prüfe im Log `bereit` und ein `quellenfenster` mit Laufkennung. In Supabase bestätigt eine abgeschlossene Zeile für `warteschlange-crawl` mit `location = 'hetzner-de'` die Ausführung. Prüfe zusätzlich, wie viele Quellen vor dem redaktionellen Stichtag ankamen. `Up` allein bestätigt kein fertiges Briefing.
 
-Für den Rückweg zuerst `sudo docker compose stop worker` ausführen und den Abschluss oder Ablauf der letzten Besitzsperre prüfen. Danach den Schalter bei Vercel entfernen und neu bereitstellen. Der hinterlegte Cron übernimmt den nächsten Termin.
+Für den Rückweg zuerst `sudo docker compose stop worker` ausführen und den Abschluss oder Ablauf der letzten Besitzsperre prüfen. Danach `HELMUT_CRAWL_EXECUTOR` in Vercel Production entfernen und den freigegebenen Stand neu bereitstellen. Den Quellenlauf in den ersten fünf Minuten einer zulässigen Viertelstunde außerhalb der Redaktionspause von 06:45 bis 07:30 Uhr Berliner Zeit manuell starten. `CRON_SECRET` muss dafür in der lokalen Umgebung gesetzt sein.
+
+```bash
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${CRON_SECRET:?CRON_SECRET fehlt}" \
+  'https://helmut-pilot.vercel.app/api/cron/crawl?arbeitsfenster=1&betrieb=24h'
+```
+
+Prüfe im Ergebnis die Laufkennung und den Abschluss in `process_runs`. Bei einem unklaren Ausgang zuerst die Quittung lesen.
 
 Der Hetzner Standort deckt den Worker ab. Supabase und Azure bleiben eigene Verarbeitungsschritte mit ihren bestehenden Verträgen und Regionen.

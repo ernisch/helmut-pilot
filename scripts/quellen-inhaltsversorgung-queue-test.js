@@ -626,7 +626,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       Object.assign(new Error("dip-lease-verloren"), { anbieterVertagung: { grund: "klassen-lease-verloren", wartenMs: 5000 } })]) {
       const r = await P.fuehreAuftragAus({ auftrag: { ...dipJob, job_type: "source_fetch", tenant_id: profile.id }, besitzer: "dip-offline", leaseMs: 300000,
         deps: { ...d, handler: P.HANDLER, dipQueueDocuments: async () => { throw error; },
-          zurueckstellen: async () => { deferred++; return { verfuegbar: true }; }, finish: async () => { finished++; } } });
+          zurueckstellen: async () => { deferred++; return { verfuegbar: true, uebernommen: true }; }, finish: async () => { finished++; } } });
       assert.equal(r.ausgang, "zurueckgestellt"); assert.equal(r.bilanz.nachTyp.source_fetch.fehler, 0);
     }
     assert.equal(deferred, 2); assert.equal(finished, 0);
