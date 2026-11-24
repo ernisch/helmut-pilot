@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**24.11. Quellen pausiert, Wiederaufnahme 01:00 Berlin ohne Eingriff.** `main` = `2f396992` (PR #1335 Regel A), Hetzner darauf ausgerollt. 501 Profile, 1 aktiv (`cem-ince`); Kostenvertrag und Betriebszulassung stimmen überein, Profilbindung nachweislich in Ordnung. Wiedervorlage Stufe A ausgeführt: 5 Aufträge wieder `wartend`. Ein einziger Lauf (15:00) endete mit nicht bestätigter Zurückstellung und hält die Automatik an — einmalig unter 40 Läufen, Freigabe ab 01:00 Berlin, kein Code- oder Datenbankeingriff. Heute 0,672405 USD von 1 USD, 0 offen, 54 von 96 Fenstern, 0 Originale. Keine Profillöschung, kein Zusatzfenster. [Beleg, Ursache und nächster Schritt](betrieb/quellen-status-20261124.md).
+**24.11. Quellen pausiert, Wiederaufnahme 01:00 Berlin ohne Eingriff.** Acht PRs heute gemergt: #1329–#1335 (Quittungen, Vercel-Crawl-Cron entfernt, Kosten, Regel A) und #1336 (dieser Beleg); `main` = `2f396992`, Hetzner darauf ausgerollt. 501 Profile, 1 aktiv (`cem-ince`); Vertrag und Betriebszulassung stimmen überein. Wiedervorlage Stufe A ausgeführt: 5 Aufträge wieder `wartend`. Ein einziger Lauf (15:00) endete mit nicht bestätigter Zurückstellung und hält die Automatik an — einmalig unter 40 Läufen, Freigabe ab 01:00 Berlin, kein Code- oder Datenbankeingriff. Heute 0,672405 USD von 1 USD, 0 offen, 0 Originale. Keine Profillöschung, kein Zusatzfenster. [Beleg, Ursache und nächster Schritt](betrieb/quellen-status-20261124.md).
 
 **23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
 
@@ -20,7 +20,7 @@
 
 Folgefenster 01:00–01:04 UTC erfolgreich. Fällig 683, Altbestand 754 → 753, 0,138698 USD heute. Dauerhafter Abbau und kompletter Pilotmorgen offen.
 
-**Isolierter Vergleich.** Rückstand 754 → 377 → 3. Beide Pakete um 07:30 Berlin abrufbar, am ersten Tag mit belegter DIP-Priorität. 0/2 vollständige Morgen. Je Tag 16 verschiedene Originale. Mindestens ein Pflichtweg pro Tag an der Quote vertagt. 100er-Kapazität offen. [Zweitagesbericht](https://github.com/ernisch/helmut-pilot/actions/runs/44630786421) · [Erstlauf mit Runnerlimit](https://github.com/ernisch/helmut-pilot/actions/runs/44629355853)
+**Isolierter Vergleich.** Rückstand 754 → 377 → 3. Beide Pakete um 07:30 Berlin abrufbar, erster Tag mit belegter DIP-Priorität. 0/2 vollständige Morgen, je Tag 16 Originale, mindestens ein Pflichtweg an der Quote vertagt. 100er-Kapazität offen. [Zweitagesbericht](https://github.com/ernisch/helmut-pilot/actions/runs/44630786421) · [Erstlauf](https://github.com/ernisch/helmut-pilot/actions/runs/44629355853)
 
 **Originalprobe 20.11.** Elf Adressen für fünf Pflichtwege. Der mit #1284 eingeführte Konfliktbeleg kennzeichnet den widersprüchlichen Stand bei Arbeit/Soziales. [Einzelbilanz](betrieb/quellen-originalbedarf-20261120.md)
 

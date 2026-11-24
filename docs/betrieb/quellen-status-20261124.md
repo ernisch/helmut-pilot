@@ -15,10 +15,22 @@ Zwei Dinge gleichzeitig:
 
 ## 2 · Gemergt und ausgerollt
 
-| Was | Beleg |
+Am 24.11. wurden acht PRs auf `main` gemergt:
+
+| PR | Inhalt |
 | --- | --- |
-| PR #1335 „Regel A verfeinern" gemergt, `main` = `2f396992` | Merge-Commit `2f396992` |
-| Hetzner-Worker auf `2f396992` ausgerollt | Worker meldet `bereit`, `ort: hetzner-de` |
+| #1329 | Worker- und Queue-Quittungen abgesichert; **Vercel-Crawl-Cron entfernt** — Quellen laufen nur noch auf Hetzner bzw. über den geschützten manuellen Weg. Fehlerprotokoll des Workers nennt jetzt eine Fehlerklasse. |
+| #1330 | `gpt-5-mini-eu` in der Preistabelle ergänzt |
+| #1331 | Abgleich für abgestorbene Reservierungen (neu) |
+| #1332 | Kostenabgleich optional beim Worker-Start |
+| #1333 | Regel A — archivierte Fassung statt Versionskonflikt-Diagnose |
+| #1334 | toten Versionskonflikt-Diagnosepfad entfernt |
+| #1335 | Regel A verfeinert — inhaltliche Titel-/Herausgeber-Abweichung bleibt terminal |
+| #1336 | dieser Beleg (reine Dokumentation, Vercel-Build bewusst übersprungen) |
+
+Die Hetzner-Läufe des Tages tragen nacheinander `1491c4d6`, `7d94e92c`, `5613a436`,
+`0e39c4c6`, `2de88969` und `2f396992` — jeder Stand war also kurz nach dem Merge dort
+aktiv. Der Worker meldete zuletzt `bereit`, `ort: hetzner-de`.
 
 Mit #1335 bleibt eine inhaltliche Titel-/Herausgeber-Abweichung terminal
 (`quellenstand-nicht-bestaetigt`); nur reiner Zeitstempel-Drift nutzt die Archivfassung.
@@ -43,6 +55,36 @@ Testprofile (`test-kohorte-synthetik-*`). Kostenvertrag und Betriebszulassung
 
 **Folge:** Die 635 fehlgeschlagenen Analysen mit `betriebskosten-profilbindung-abweichend`
 sind historisch und können erneut laufen — der Grund existiert nicht mehr.
+
+### 3.1 Fehlerverteilung der 896 Analysen ohne Artikel-Fehler
+
+| Anzahl | Fehler | Aussicht bei Wiedervorlage |
+| ---: | --- | --- |
+| 635 | `betriebskosten-profilbindung-abweichend` | **Ursache aufgehoben** |
+| 186 | `artikel-abseits: kein-bestaetigtes-artikelziel` | bleibt voraussichtlich |
+| 21 | `quellenstand-metadatenabweichung` | bleibt |
+| 8 | `artikel-abseits: artikeltitel-abweichend` | bleibt |
+| 7 | `verstehen-uebersprungen-dauerhaft: artikelkontext-offen` | bleibt |
+| 6 | `artikel-abseits: strukturierter-artikel-mehrdeutig-oder-fehlend` | bleibt |
+| 6 | `artikel-pruefung-fehlgeschlagen: skipped-failed` | bleibt |
+| ~12 | `verstehen-uebersprungen-dauerhaft` (Zeitbudget, Fortsetzung, Budget) | bleibt |
+| 2 | `modellausgang-unbekannt: quellenbeleg-parteien` (1/1) | bleibt |
+
+Nur der erste Posten hat eine aufgehobene Ursache. Die übrigen 261 sind fachliche
+Befunde am Artikel oder endgültige Obergrenzen: eine Wiedervorlage lässt sie
+erwartungsgemäß erneut scheitern. Das ist keine Schwäche der Wiedervorlage, sondern
+ihre Zusage — höchstens zwei Vorlagen, danach bleibt der Befund sichtbar.
+
+### 3.2 Warteschlange am Abend (Stichprobe, Abfragelimit 2000 Zeilen)
+
+| Status | Typen |
+| --- | --- |
+| offen (`wartend`/`läuft`) | `source_fetch` 515, `document_understanding` 52, `mandate_projection` 1, `briefing_materialization` 1 |
+| fehlgeschlagen | `document_understanding` ≥ 1000 (Limit der Abfrage erreicht) |
+| erledigt | `briefing_materialization` ≥ 1000 (Limit der Abfrage erreicht) |
+
+Die Briefing-Stufe arbeitet also; der Engpass ist verstandener Inhalt. Die Zahlen sind
+eine Stichprobe und keine Gesamtmenge.
 
 ## 4 · Wiedervorlage Stufe A (echt ausgeführt)
 
@@ -156,3 +198,20 @@ docker exec helmut-quellenworker-worker-1 node -e \
 
 Die Zeitpunkte aus §7 lassen sich wiederholen, indem `pruefe({ now: () => <ms> })`
 übergeben wird; die Prüffunktion liest ausschließlich.
+
+## 13 · Serverzugang und Diagnosewerkzeuge
+
+Die Anmeldung am Hetzner-Server (`root@helmut-worker`) erfolgt mit dem vorhandenen
+Schlüssel `helmut_auto`. Die Firewall erlaubte Port 22 zuvor nur von einer einzelnen,
+alten Quelladresse; der Betreiber hat die Freigabe erweitert. Danach lief die erste
+Diagnose ohne Unterbrechung.
+
+Auf dem Server liegen zwei Hilfsskripte:
+
+| Datei | Zweck |
+| --- | --- |
+| `~/update-helmut.sh` | Rollout des gewünschten Commits |
+| `~/diag.sh` | fünf rein lesende Diagnoseabschnitte: Worker-Version und letzte Logzeilen, Warteschlangen-Pipeline, Fenster- und Kostenstand |
+
+Hinweis für die Bedienung: `diag.sh` gibt viel aus; die letzten Zeilen sind nicht der
+Anfang. Bei Fragen gezielt einen Abschnitt oder einen Einzelbefehl ausführen.
