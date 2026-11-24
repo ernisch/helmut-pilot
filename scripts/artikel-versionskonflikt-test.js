@@ -14,13 +14,15 @@ const item = n => ({ title: `Synthetischer Ausschussbericht ${n}`,
   url: `https://example.invalid/bericht/${n}`, sourceName: "Synthetische amtliche Quelle", sourceType: "official",
   publishedAt: "2026-11-13T10:00:00Z", retrievedAt: new Date(now).toISOString(),
   content: "Der synthetische Ausschuss beriet einen Entwurf und hoerte mehrere sachkundige Fachleute zur Umsetzung der vorgeschlagenen Regeln an." });
-function welt({ konflikte = 1, gute = 1 } = {}) {
+function welt({ konflikte = 1, gute = 1, zeitlich = 0 } = {}) {
   const w = { items: [], kanonisch: new Map(), archiv: new Map(), forbidden: [], calls: [] };
   const fail = name => () => { w.forbidden.push(name); throw Error("Verboten: " + name); };
-  for (let i = 0; i < konflikte + gute; i++) {
+  for (let i = 0; i < konflikte + gute + zeitlich; i++) {
     const input = item(i), row = D.toRawDocumentRow(input);
     const canonical = i < konflikte ? { ...row, title: "Aelterer synthetischer Bericht " + i,
-      source_name: "Synthetische alte Quelle", published_at: "2026-09-12T10:00:00Z", summary: null } : row;
+      source_name: "Synthetische alte Quelle", published_at: "2026-09-12T10:00:00Z", summary: null }
+      : i < konflikte + zeitlich ? { ...row, published_at: "2026-09-12T10:00:00Z", summary: null }
+      : row;
     w.items.push(input); w.kanonisch.set(row.id, structuredClone(canonical));
     w.archiv.set(key(canonical), structuredClone(canonical)); w.archiv.set(key(row), structuredClone(row));
   }
@@ -83,11 +85,20 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(S.leseRohdokumentKonfliktBeleg(error).stand, R.standHash(row));
     A.deepEqual(S.leseRohdokumentKonfliktBeleg(error).dokument, row);
   });
-  await test("Regel A: bestaetigte inkompatible Artikelversionen werden ueber die archivierte Fassung verstanden", async () => {
-    const w = welt({ konflikte: 4 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
+  await test("Regel A: reiner Zeitstempel-Drift wird ueber die archivierte Fassung verstanden", async () => {
+    const w = welt({ konflikte: 0, zeitlich: 4 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
     A.equal(r.ok, true); A.equal(r.abrufErgebnis.art, "rohfassungen");
     A.equal(r.teilfehler, undefined); A.equal(r.grund, undefined); A.equal(r.vollstaendig, undefined);
     A.equal(w.diagnosen().length, 0); A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 5);
+    A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
+  });
+  await test("Regel A-Verfeinerung: Titel-/Herausgeber-Abweichung bleibt ehrlich terminal unversorgt", async () => {
+    const w = welt({ konflikte: 4, gute: 0 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
+    A.equal(r.ok, true); A.equal(r.abrufErgebnis.art, "teilweise");
+    A.equal(r.teilfehler, 4); A.equal(r.vollstaendig, false); A.equal(r.grund, "artikel-eingangsfehler");
+    A.equal(w.diagnosen().length, 0);
+    A.equal(w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt").length, 4);
+    A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 0);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
   await test("Amtlicher hib Feedstand wird trotz zuerst gespeicherter Suchfundstelle verarbeitet", async () => {
@@ -118,7 +129,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }
   });
   await test("Regel A: archivierte Fassung wird als normaler Verstehensauftrag eingereiht statt als Diagnose", async () => {
-    const w = welt({ gute: 0 }); const r = await w.run();
+    const w = welt({ konflikte: 0, zeitlich: 1, gute: 0 }); const r = await w.run();
     A.equal(r.ok, true); A.equal(r.verstehenNeu, 1);
     A.equal(w.diagnosen().length, 0); A.equal(w.q.alle().length, 1);
     A.equal(w.q.alle()[0].payload.artikelFehler, undefined);
@@ -126,7 +137,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.deepEqual(w.forbidden, []);
   });
   await test("Fehlende Canonical Lesung Archivbindung oder gefaelschter Konflikt bleiben UNKNOWN", async () => {
-    for (const art of ["missing", "read", "archive", "hash", "duplicate", "columns", "title-null", "title-empty", "date", "fake", "text", "fake-persist"]) {
+    for (const art of ["missing", "read", "archive", "hash", "duplicate", "columns", "title-null", "title-empty", "date", "fake", "fake-persist"]) {
       const w = welt(), row = D.toRawDocumentRow(w.items[0]), native = w.native, lesen = w.readerDeps.ladeAktuell;
       if (art === "missing") w.kanonisch.delete(row.id);
       if (art === "read") w.readerDeps.ladeAktuell = ids => ids.includes(row.id) ? Promise.reject(Error("Unbekannte Lesung")) : lesen(ids);
@@ -154,16 +165,9 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         Object.defineProperty(error, "quellenstandKonflikt", { value: { id: row.id, stand: R.standHash(row), dokument: row } });
         throw error;
       };
-      if (art === "text") {
-        const persist = w.deps.persistRohdokumente;
-        w.deps.persistRohdokumente = async inputs => {
-          const p = await persist(inputs), fremd = { ...row,
-            summary: "Ein anderer vollstaendiger Originalbericht beschreibt eine abweichende Beratung und ganz andere vorgeschlagene Regeln fuer Einrichtungen." };
-          const hash = R.standHash(fremd); w.archiv.set(key(fremd), fremd);
-          p.quellenversionen = p.quellenversionen.map(v => v.id === row.id && v.stand === R.standHash(row) ? { id: row.id, stand: hash } : v);
-          p.quellenstaende[row.id] = hash; return p;
-        };
-      }
+      // Der fruehere "text"-Fall (anderer persistierter Volltext fuer dieselbe ID) ist
+      // unter der Verfeinerung keine UNKNOWN-Sperre mehr: eine inhaltliche Abweichung
+      // wird ehrlich terminal quellenstand-nicht-bestaetigt (siehe eigener Test oben).
       if (art === "fake-persist") {
         const persist = w.deps.persistRohdokumente;
         w.deps.persistRohdokumente = async inputs => {
@@ -181,22 +185,25 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }
   });
   await test("Bestaetigter Konflikt verdeckt keinen zusaetzlichen unbekannten Speicherzustand", async () => {
-    const w = welt({ konflikte: 2 }), fehlend = D.toRawDocumentRow(w.items[1]); w.kanonisch.delete(fehlend.id);
+    const w = welt({ konflikte: 0, zeitlich: 2 }), fehlend = D.toRawDocumentRow(w.items[1]); w.kanonisch.delete(fehlend.id);
     await A.rejects(w.run(), /verstehen-nicht-eingereiht/);
     A.equal(w.diagnosen().length, 0);
     A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 2);
   });
-  await test("Brauchbare Version derselben ID hat Vorrang vor bekannter inkompatibler Nebenvariante", async () => {
+  await test("Brauchbare Version derselben ID wird verstanden, inkompatible Nebenvariante bleibt terminal", async () => {
     const w = welt({ konflikte: 0, gute: 1 }), row = D.toRawDocumentRow(w.items[0]);
     w.items.push({ ...w.items[0], title: "Aeltere synthetische Nebenvariante", publishedAt: "2026-11-12T10:00:00Z" });
     const r = await w.run();
-    A.equal(r.teilfehler, undefined); A.equal(w.diagnosen().length, 0); A.equal(w.q.groesse(), 1);
-    A.equal(w.q.alle()[0].payload.quellenstaende[row.id], R.standHash(row));
+    A.equal(r.teilfehler, 1); A.equal(w.diagnosen().length, 0);
+    const gute = w.q.alle().filter(j => !j.payload.artikelFehler);
+    A.equal(gute.length, 1);
+    A.equal(gute[0].payload.quellenstaende[row.id], R.standHash(row));
+    A.equal(w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt").length, 1);
   });
   // Regel A (24.11.2026) hat den Diagnose-Auftrag `quellenstand-versionskonflikt`
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-  A.equal(count, 7);
+  A.equal(count, 8);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
