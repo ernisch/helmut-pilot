@@ -207,11 +207,11 @@ function speicherWarteschlange() {
     },
     async finish({ id, owner, ok, error = null }) {
       const z = zeilen.find((x) => x.id === id);
-      if (!z || z.lease_owner !== owner) return { uebernommen: false };
+      if (!z || z.lease_owner !== owner) return { verfuegbar: true, uebernommen: false };
       z.status = ok ? "erledigt" : (z.attempts >= z.max_attempts ? "fehlgeschlagen" : "wartend");
       z.lease_owner = null;
       z.last_error = error;
-      return { uebernommen: true, neuer_status: z.status };
+      return { verfuegbar: true, uebernommen: true, neuerStatus: z.status };
     },
     async extendLease() { return { verlaengert: true }; }
   };

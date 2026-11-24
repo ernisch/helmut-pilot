@@ -242,15 +242,16 @@ async function main() {
       assert.equal(calls, 1); assert.equal(fenster.freigabeGueltig(receipt, w.zeit()), false);
     } finally { pipeline.arbeite = alt; }
   });
-  await check("104 Aufrufe mit Berliner Vorabend-, Nacht-, Pflicht- und Ausgabefenstern", () => {
-    assert.equal(config.crons[0].schedule, "*/15 * * * *");
+  await check("Vercel plant nur die Ausgaben, Hetzner prüft die Berliner Quellenfenster", () => {
+    assert.equal(config.crons.length, 2);
+    assert(!config.crons.some(cron => cron.path.startsWith("/api/cron/crawl")));
     assert.equal(config.functions["api/index.js"].maxDuration, fenster.FENSTER_SEKUNDEN);
-    const termine = config.crons.slice(1).map(cron => {
+    const termine = config.crons.map(cron => {
       const [minute, stunde, ...rest] = cron.schedule.split(" ");
       assert.deepEqual(rest, ["*", "*", "*"]);
       return stunde.split(",").flatMap(h => minute.split(",").map(m => (Number(h) * 60 + Number(m)) * 60000));
     });
-    assert.equal(96 + termine.flat().length, 104);
+    assert.equal(termine.flat().length, 8);
     for (const [tag, offset] of [["2026-03-28", 1], ["2026-03-29", 2], ["2026-10-24", 2], ["2026-10-25", 1]]) {
       const start = Date.parse(`${tag}T00:00:00Z`);
       const z = tagbetrieb.zeiten(start);
