@@ -112,8 +112,12 @@ async function betreibe({ signal, jetzt = Date.now, lauf = quellenlauf, log = co
       letzterTermin = termin;
       try {
         await fuehreQuellenfensterAus(lauf, log);
-      } catch {
-        log(JSON.stringify({ dienst: "quellenworker", ereignis: "quellenfenster-fehler" }));
+      } catch (error) {
+        const fehlerklasse = ["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT"]
+          .includes(error?.code) ? error.code
+          : ["Error", "AbortError", "TimeoutError", "TypeError", "RangeError"].includes(error?.name)
+            ? error.name : "unbekannt";
+        log(JSON.stringify({ dienst: "quellenworker", ereignis: "quellenfenster-fehler", fehlerklasse }));
       }
     }
     if (signal.aborted) break;

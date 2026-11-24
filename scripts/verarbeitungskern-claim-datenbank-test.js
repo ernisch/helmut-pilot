@@ -199,6 +199,43 @@ async function main() {
     const index = sql("select indexdef from pg_indexes where indexname='helmut_jobs_tagesarbeit_idx';");
     assert.match(index,/COALESCE\(last_seen_window, freshness_window\)/); assert.match(index,/priority, due_at, created_at, id/); assert.match(index,/WHERE.*wartend/); assert.doesNotMatch(index,/payload/);
   });
+  sql(file("20260808_jobqueue_abhaengigkeiten.sql"));
+  sql(file("20260809_jobqueue_wiedervorlage.sql"));
+  sql(file("20261119091317_quellenfaelligkeit_claim.sql"));
+  sql(file("20261123110000_quellen_dlq.sql"));
+  const aktuelleId = "(select id from public.helmut_jobs)";
+  check("Abgelehnte Vertagung erhält Claim-Versuche bis zum terminalen DLQ-Beleg", () => {
+    reset();
+    sql(job("vertagung-abgelehnt"));
+    for (let versuch = 1; versuch <= 3; versuch++) {
+      const claim = versuch === 1
+        ? "public.helmut_claim_quellenfaelligkeit('halter',60000,false)"
+        : "public.helmut_claim_tagesarbeit('halter',1,60000,array['source_fetch'])";
+      assert.equal(sql(`select attempts from ${claim};`), String(versuch));
+      assert.equal(sql(`select uebernommen from public.helmut_defer_job(${aktuelleId},'fremd',60000);`), "f");
+      assert.equal(sql("select status||':'||attempts||':'||max_attempts from public.helmut_jobs;"), `laeuft:${versuch}:3`);
+      sql("update public.helmut_jobs set lease_expires_at=now()-interval '1 second';");
+    }
+    assert.equal(sql("select count(*) from public.helmut_claim_tagesarbeit('nachlauf',1,60000,array['source_fetch']);"), "0");
+    assert.equal(sql(`select grund from public.helmut_claim_tagesauftrag(${aktuelleId},'signal',60000);`), "bereits-fehlgeschlagen");
+    assert.equal(sql("select status||':'||attempts from public.helmut_jobs;"), "fehlgeschlagen:3");
+    assert.equal(sql(`select attempts||':'||failure_kind from public.helmut_quellen_dlq where job_id=${aktuelleId};`),
+      "3:lease-ausgang-offen");
+  });
+  check("Gespeicherte Vertagung sperrt erneuten Claim bis zur Fälligkeit", () => {
+    reset();
+    sql(job("vertagung-antwort-verloren"));
+    assert.equal(sql(`select attempts from public.helmut_claim_tagesauftrag(${aktuelleId},'halter',60000);`), "1");
+    // Die erste Antwort wird nicht ausgewertet. Der folgende Leser kennt nur den DB-Stand.
+    sql(`select * from public.helmut_defer_job(${aktuelleId},'halter',60000);`);
+    assert.equal(sql(`select grund from public.helmut_claim_tagesauftrag(${aktuelleId},'erneut',60000);`), "nicht-faellig");
+    assert.equal(sql(`select uebernommen from public.helmut_defer_job(${aktuelleId},'halter',60000);`), "f");
+    assert.equal(sql("select status||':'||attempts from public.helmut_jobs;"), "wartend:0");
+    sql("update public.helmut_jobs set due_at=now()-interval '1 second';");
+    assert.equal(sql(`select attempts from public.helmut_claim_tagesauftrag(${aktuelleId},'faellig',60000);`), "1");
+    assert.equal(sql(`select grund from public.helmut_claim_tagesauftrag(${aktuelleId},'konkurrierend',60000);`), "lease-fremd");
+  });
+  sql(file("rollback_20261123110000_quellen_dlq.sql"));
   const jobbestand = "select md5(string_agg((to_jsonb(j) - 'last_seen_window')::text,',' order by id)) from public.helmut_jobs j;";
   const state = sql(jobbestand);
   sql(file(rollback));

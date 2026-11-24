@@ -6,10 +6,9 @@ const root = path.join(__dirname, "..");
 const hash = x => crypto.createHash("sha256").update(x).digest("hex");
 const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
 assert.deepEqual(config.crons, [
-  { path: "/api/cron/crawl?arbeitsfenster=1&betrieb=24h", schedule: "*/15 * * * *" },
   { path: "/api/cron/lage-briefing?betrieb=24h", schedule: "45,55 4,5 * * *" },
   { path: "/api/cron/morning-briefing?betrieb=24h", schedule: "10,20 5,6 * * *" }
-], "Tagesversorgung und Berliner Morgenausgabe verwenden drei wiederkehrende Pläne");
+], "Vercel plant Lage und Morgenbriefing, der Quellen-Crawl ist manuell");
 const others = structuredClone(config); delete others.crons;
 assert.equal(config.git.deploymentEnabled["fix/cem-single-profile-20261106"], false);
 const historicalPath = path.join(__dirname, "fixtures/scheduled-crons-before-pre500-pause.json");
