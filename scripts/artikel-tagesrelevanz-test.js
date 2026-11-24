@@ -152,8 +152,11 @@ async function test(name, fn) {
     });
     await w.run();
     A.equal(D.toRawDocumentRow(historisch).id, D.toRawDocumentRow(aktuell).id);
-    A.equal(w.calls.length, 1);
-    A.equal(w.calls[0].payload.quellenstaende[D.toRawDocumentRow(aktuell).id], R.standHash(D.toRawDocumentRow(aktuell)));
+    const verstanden = w.calls.filter(c => !c.payload.artikelFehler);
+    A.equal(verstanden.length, 1);
+    A.equal(verstanden[0].payload.quellenstaende[D.toRawDocumentRow(aktuell).id], R.standHash(D.toRawDocumentRow(aktuell)));
+    // Regel-A-Verfeinerung: abweichende Titel (historisch/fremd) bleiben ehrlich terminal.
+    A.equal(w.calls.filter(c => c.payload.artikelFehler === "quellenstand-nicht-bestaetigt").length, 2);
     const text = "Der synthetische Ausschuss beriet den Entwurf und hoerte dazu mehrere sachkundige Fachleute an. ".repeat(8);
     const lang = { ...aktuell, content: text }, long = welt({ roh: [lang], geladen: [lang] });
     const persist = long.deps.persistRohdokumente;

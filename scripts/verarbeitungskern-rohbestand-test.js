@@ -154,11 +154,18 @@ async function pruefeHibFund() {
     await A.rejects(run(suche, request, aktuelleZeile, () => [{ ...erledigt, ...abweichung }]), /verstehen-nicht-eingereiht/);
   }
   await A.rejects(run(suche, request, aktuelleZeile, () => [erledigt, erledigt]), /verstehen-nicht-eingereiht/);
-  for (const item of [{ ...suche, summary: items[1].summary }, { ...suche, retrievalPathId: null },
+  // Regel-A-Verfeinerung: nur die exakte hib-Metadaten-Normalisierung (Titel-/Herausgeber-Suffix,
+  // unabhaengig vom gelieferten Text) bleibt durchgereicht. Ein fehlender Abrufpfad, ein
+  // anderer Titel oder ein Zeitstempel ausserhalb des hib-Fensters sind echte Abweichungen
+  // und bleiben ehrlich terminal unversorgt (quellenstand-nicht-bestaetigt).
+  const mitText = await run({ ...suche, summary: items[1].summary });
+  A.equal(mitText.teilfehler, undefined);
+  A.equal((mitText.abrufErgebnis?.analyse || []).length, 1);
+  for (const item of [{ ...suche, retrievalPathId: null },
     { ...suche, title: "Abweichende Meldung" }, { ...suche, publishedAt: "2026-11-13T04:16:00Z" }]) {
     const result = await run(item);
-    A.equal(result.teilfehler, undefined);
-    A.equal((result.abrufErgebnis?.analyse || []).length, 1);
+    A.equal(result.teilfehler, 1);
+    A.deepEqual(result.abrufErgebnis?.analyse || [], []);
   }
   await A.rejects(run(suche, url => url.includes(originalHash) ? [] : request(url)), /verstehen-nicht-eingereiht/);
   await A.rejects(run(suche, request, () => [row, { ...row, title: "Anderer Artikel" }]), /verstehen-nicht-eingereiht/);
