@@ -83,13 +83,11 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(S.leseRohdokumentKonfliktBeleg(error).stand, R.standHash(row));
     A.deepEqual(S.leseRohdokumentKonfliktBeleg(error).dokument, row);
   });
-  await test("Vier bestaetigte inkompatible Artikelversionen blockieren brauchbaren Nachbarn und Quellenabschluss nicht", async () => {
+  await test("Regel A: bestaetigte inkompatible Artikelversionen werden ueber die archivierte Fassung verstanden", async () => {
     const w = welt({ konflikte: 4 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
-    A.equal(r.ok, true); A.equal(r.vollstaendig, false); A.equal(r.teilfehler, 4); A.equal(r.grund, "artikel-eingangsfehler");
-    A.equal(w.diagnosen().length, 4); A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 1);
-    A(w.diagnosen().every(j => j.max_attempts === 1 && j.tenant_id === null && j.freshness_window === heute));
-    A(w.diagnosen().every(j => j.idempotency_key.endsWith("|eingangsfehler|versionskonflikt")));
-    A(!JSON.stringify(w.diagnosen()).includes(w.items[0].content));
+    A.equal(r.ok, true); A.equal(r.abrufErgebnis.art, "rohfassungen");
+    A.equal(r.teilfehler, undefined); A.equal(r.grund, undefined); A.equal(r.vollstaendig, undefined);
+    A.equal(w.diagnosen().length, 0); A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 5);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
   await test("Amtlicher hib Feedstand wird trotz zuerst gespeicherter Suchfundstelle verarbeitet", async () => {
@@ -119,15 +117,13 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       await A.rejects(w.native([amtlich.id], { [amtlich.id]: analyse.stand }), /quellenstand-metadatenabweichung/);
     }
   });
-  await test("Diagnose endet einmalig vor Modell und Rohlesung und bewahrt offenen Versorgungsstatus", async () => {
-    const w = welt({ gute: 0 }); await w.run();
-    A.equal((await abschliessen(w)).ausgang, "endgueltig-fehlgeschlagen");
-    A.equal(w.diagnosen()[0].status, "fehlgeschlagen"); A.equal(w.diagnosen()[0].attempts, 1);
-    A.match(w.diagnosen()[0].last_error, /artikel-eingangsfehler: quellenstand-versionskonflikt/);
-    const stand = await V.lese({ mandat: "synthetisches-mandat", jetztMs: now, env,
-      deps: { planungsrest: { lesen: async () => ({ zustand: "fertig" }),
-        offene: async () => ({ plaene: [], weitereVorhanden: false }) }, offeneVorbedingungen: w.q.offeneVorbedingungen } });
-    A.deepEqual(stand, { version: 1, zustand: "offen", verarbeitungBeendet: true }); A.deepEqual(w.forbidden, []);
+  await test("Regel A: archivierte Fassung wird als normaler Verstehensauftrag eingereiht statt als Diagnose", async () => {
+    const w = welt({ gute: 0 }); const r = await w.run();
+    A.equal(r.ok, true); A.equal(r.verstehenNeu, 1);
+    A.equal(w.diagnosen().length, 0); A.equal(w.q.alle().length, 1);
+    A.equal(w.q.alle()[0].payload.artikelFehler, undefined);
+    A.equal(w.q.alle()[0].payload.dokumentIds[0], D.toRawDocumentRow(w.items[0]).id);
+    A.deepEqual(w.forbidden, []);
   });
   await test("Fehlende Canonical Lesung Archivbindung oder gefaelschter Konflikt bleiben UNKNOWN", async () => {
     for (const art of ["missing", "read", "archive", "hash", "duplicate", "columns", "title-null", "title-empty", "date", "fake", "text", "fake-persist"]) {
@@ -187,8 +183,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   await test("Bestaetigter Konflikt verdeckt keinen zusaetzlichen unbekannten Speicherzustand", async () => {
     const w = welt({ konflikte: 2 }), fehlend = D.toRawDocumentRow(w.items[1]); w.kanonisch.delete(fehlend.id);
     await A.rejects(w.run(), /verstehen-nicht-eingereiht/);
-    A.equal(w.diagnosen().length, 1); A.notEqual(w.diagnosen()[0].payload.dokumentIds[0], fehlend.id);
-    A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 1);
+    A.equal(w.diagnosen().length, 0);
+    A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 2);
   });
   await test("Brauchbare Version derselben ID hat Vorrang vor bekannter inkompatibler Nebenvariante", async () => {
     const w = welt({ konflikte: 0, gute: 1 }), row = D.toRawDocumentRow(w.items[0]);
@@ -197,44 +193,10 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(r.teilfehler, undefined); A.equal(w.diagnosen().length, 0); A.equal(w.q.groesse(), 1);
     A.equal(w.q.alle()[0].payload.quellenstaende[row.id], R.standHash(row));
   });
-  await test("Unklarer Diagnose-ACK laesst Sourcefehler und bestaetigte gute Enqueues stehen", async () => {
-    for (const antwort of [null, { verfuegbar: false }, { verfuegbar: true, id: "ungueltiger-ack" }, Error("Unbekannter Schreibausgang")]) {
-      const w = welt(), enqueue = w.deps.enqueue;
-      w.deps.enqueue = job => {
-        if (!job.payload.artikelFehler) return enqueue(job);
-        if (antwort instanceof Error) throw antwort; return antwort;
-      };
-      await A.rejects(w.run(), /verstehen-nicht-eingereiht/);
-      A.equal(w.q.groesse(), 1); A.equal(w.q.alle()[0].payload.artikelFehler, undefined);
-    }
-  });
-  await test("Mehrere Konfliktstaende bleiben getrennt idempotent und blockieren spaeter gesunde Einzelarbeit nicht", async () => {
-    const w = welt({ gute: 0 }), frisch = w.items[0], row = D.toRawDocumentRow(frisch);
-    w.items.push({ ...frisch, title: "Zweiter aktueller synthetischer Stand", publishedAt: "2026-11-12T10:00:00Z" });
-    await w.run(); const keys = w.q.alle().map(j => j.idempotency_key).sort();
-    A.equal(keys.length, 2); A.equal(new Set(w.diagnosen().map(j => j.payload.quellenstaende[row.id])).size, 2);
-    await w.run(); A.deepEqual(w.q.alle().map(j => j.idempotency_key).sort(), keys);
-    // Nur eine bereits auf anderem Weg bestaetigte lokale Speicherwirklichkeit
-    // simulieren. Produktcode veraendert keinerlei Canonical-/Archivversion.
-    w.kanonisch.set(row.id, structuredClone(row)); w.items = [frisch];
-    await w.run(); A.equal(w.q.groesse(), 3); A.equal(w.diagnosen().length, 2);
-    A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 1);
-  });
-  await test("Diagnose bindet originales Wiederbeobachtungsfenster und ungueltige Metadaten bleiben UNKNOWN", async () => {
-    const w = welt({ gute: 0 }); w.source.freshnessWindow = "2026-11-12T00Z";
-    const source = await w.q.enqueue({ jobType: "source_fetch", idempotencyKey: "synthetisch-source",
-      freshnessWindow: w.source.freshnessWindow, payload: w.source.payload });
-    const raw = (await w.q.claim({ owner: "synthetisch", limit: 1, types: ["source_fetch"] })).auftraege[0];
-    raw.last_seen_window = heute;
-    const result = await P.fuehreAuftragAus({ auftrag: raw, besitzer: "synthetisch", deps: { ...w.deps,
-      handler: P.HANDLER, finish: w.q.finish, extendLease: w.q.extendLease } });
-    A.equal(result.ausgang, "erledigt"); A.equal(w.q.hole(source.id).freshness_window, "2026-11-12T00Z");
-    A.equal(w.diagnosen()[0].freshness_window, heute);
-    for (const [window, basis] of [[null, null], ["", heute], ["ungueltig", heute], ["2026-02-30T00Z", heute], ["2026-11-14T24Z", heute]]) {
-      const bad = welt({ gute: 0 }); bad.source.freshnessWindow = basis; bad.source.lastSeenWindow = window;
-      await A.rejects(bad.run(), /verstehen-nicht-eingereiht/); A.equal(bad.q.groesse(), 0);
-    }
-  });
-  A.equal(count, 10);
+  // Regel A (24.11.2026) hat den Diagnose-Auftrag `quellenstand-versionskonflikt`
+  // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
+  // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
+  // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
+  A.equal(count, 7);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });

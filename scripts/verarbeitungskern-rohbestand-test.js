@@ -138,9 +138,10 @@ async function pruefeHibFund() {
   for (const status of [null, "wartend"]) {
     if (status) jobs.set(key, { ...erledigt, status });
     const offen = await run(suche);
-    A.equal(offen.teilfehler, 1);
-    A.deepEqual(offen.abrufErgebnis.analyse, []);
-    A(enqueues.every(j => j.payload.artikelFehler === "quellenstand-versionskonflikt"));
+    A.equal(offen.teilfehler, undefined);
+    A.equal(offen.abrufErgebnis.analyse.length, 1);
+    A.equal(offen.abrufErgebnis.analyse[0].stand, suchHash);
+    A(enqueues.every(j => j.payload.artikelFehler === undefined));
   }
   const lesungenVorDoppelbeobachtung = abschlussLesungen;
   enqueues.length = 0;
@@ -156,8 +157,8 @@ async function pruefeHibFund() {
   for (const item of [{ ...suche, summary: items[1].summary }, { ...suche, retrievalPathId: null },
     { ...suche, title: "Abweichende Meldung" }, { ...suche, publishedAt: "2026-11-13T04:16:00Z" }]) {
     const result = await run(item);
-    A.equal(result.teilfehler, 1);
-    A.deepEqual(result.abrufErgebnis?.analyse || [], []);
+    A.equal(result.teilfehler, undefined);
+    A.equal((result.abrufErgebnis?.analyse || []).length, 1);
   }
   await A.rejects(run(suche, url => url.includes(originalHash) ? [] : request(url)), /verstehen-nicht-eingereiht/);
   await A.rejects(run(suche, request, () => [row, { ...row, title: "Anderer Artikel" }]), /verstehen-nicht-eingereiht/);
