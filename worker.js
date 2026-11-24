@@ -8,8 +8,9 @@ const workerBetrieb = require("./lib/helmut/worker-betrieb");
 const abdeckung = require("./lib/helmut/quellenarchitektur/cron-abdeckung");
 const { runCronUeberWarteschlange, helmutRunId } = require("./lib/helmut/quellen-warteschlangenlauf");
 const { baueResponsesUrl } = require("./lib/helmut/azure-endpunkt");
-const { listFullProfiles, readAuthStore, supabaseRequest } = require("./lib/helmut/storage");
+const { listFullProfiles, readAuthStore, supabaseRequest, mutateAuthStore } = require("./lib/helmut/storage");
 const betriebskosten = require("./lib/helmut/betriebskosten-budget");
+const betriebskostenAbgleich = require("./lib/helmut/betriebskosten-abgleich");
 const { casAktiv } = require("./lib/helmut/verstehen-vertrag");
 const { sourceTelemetryEnabled } = require("./lib/helmut/source-telemetry");
 
@@ -127,6 +128,36 @@ async function betreibe({ signal, jetzt = Date.now, lauf = quellenlauf, log = co
   }
 }
 
+async function betreibeKostenabgleich(env = process.env) {
+  const modus = betriebskostenAbgleich.modus(env);
+  if (modus === "aus") return null;
+  try {
+    const auth = await readAuthStore({ strict: true, fields: [betriebskosten.KEY, "llmUsage"] });
+    const book = auth[betriebskosten.KEY];
+    if (!book) return null;
+    const { aktionen, fehler } = betriebskostenAbgleich.bewerteOffene(book, auth.llmUsage || []);
+    if (fehler) {
+      console.log(JSON.stringify({ dienst: "quellenworker", ereignis: "kostenabgleich-fehler", grund: "buch-unlesbar" }));
+      return null;
+    }
+    if (modus === "trocken") {
+      console.log(JSON.stringify({ dienst: "quellenworker", ereignis: "kostenabgleich-trocken",
+        aktionen: aktionen.length, abrechnen: aktionen.filter(a => a.art === "abrechnen").length,
+        ungeklaert: aktionen.filter(a => a.art === "ungeklaert").length }));
+      return null;
+    }
+    if (aktionen.length === 0) return null;
+    const ergebnis = await betriebskostenAbgleich.wendeAn({ mutateAuthStore }, aktionen);
+    console.log(JSON.stringify({ dienst: "quellenworker", ereignis: "kostenabgleich",
+      abrechnen: ergebnis.abgerechnet, ungeklaert: ergebnis.ungeklaert }));
+    return ergebnis;
+  } catch (error) {
+    console.log(JSON.stringify({ dienst: "quellenworker", ereignis: "kostenabgleich-fehler",
+      fehlerklasse: ["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EAI_AGAIN"].includes(error?.code) ? error.code : "unbekannt" }));
+    return null;
+  }
+}
+
 async function main() {
   const [argument, ...weitere] = process.argv.slice(2);
   if (weitere.length || (argument && !["--check", "--once"].includes(argument))) throw Error("aufruf-ungueltig");
@@ -165,6 +196,7 @@ async function main() {
           betriebskosten.pruefeBuch(auth[betriebskosten.KEY], vertrag);
         }
       } catch { throw Error("bestehendes-kostenbuch-nicht-bestaetigt"); }
+      if (!pruefen) await betreibeKostenabgleich();
       // Eine unvollständige Betriebskonfiguration bleibt beim Start sichtbar.
       // Bereits zulässige Quellenabrufe laufen auch bei fehlender Telemetrie weiter.
       console.log(JSON.stringify({ dienst: "quellenworker", ereignis: abweichung ? "eingeschraenkt" : "bereit",
@@ -196,4 +228,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand };
+module.exports = { betreibe, einmal, betreibeKostenabgleich, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand };
