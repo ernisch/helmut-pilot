@@ -109,5 +109,13 @@ async function test(name, fn) { await fn(); count += 1; console.log(`PASS ${name
     assert.equal(aktionen.length, 0);
   });
 
+  await test("Modusschalter ist fail-safe: unbekannt bedeutet aus", () => {
+    assert.equal(A.modus({}), "aus");
+    assert.equal(A.modus({ HELMUT_BETRIEBSKOSTEN_ABGLEICH: "" }), "aus");
+    assert.equal(A.modus({ HELMUT_BETRIEBSKOSTEN_ABGLEICH: "trocken" }), "trocken");
+    assert.equal(A.modus({ HELMUT_BETRIEBSKOSTEN_ABGLEICH: "AN" }), "an");
+    assert.equal(A.modus({ HELMUT_BETRIEBSKOSTEN_ABGLEICH: "quatsch" }), "aus");
+  });
+
   console.log(`\n${count} Abgleich-Gruppen bestanden. Ausschliesslich offline.`);
 })();
