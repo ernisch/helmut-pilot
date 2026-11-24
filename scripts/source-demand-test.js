@@ -321,6 +321,29 @@ async function main() {
     check("10.6 Auch ausdruecklich aktiviertes Narrativ passt ins letzte Morgenfenster", narrativ.length === profile.length && narrativ.every(j => Date.parse(j.dueAt) >= T0 + 4.5 * 3600000 && Date.parse(j.dueAt) < T0 + 4.5 * 3600000 + 1000));
   }
 
+  abschnitt("11 · 24h-Plan lässt Morgenabrufe im letzten offenen Quellenfenster zu");
+  {
+    const { v1Sources } = require("../lib/helmut/sources");
+    const ids = ["radar-arbeitszeit", "radar-pflege", "radar-tariftreue"];
+    const quellen = v1Sources.filter(quelle => ids.includes(quelle.id));
+    const plane = async tag => {
+      const plan = await SD.kompiliereQuellenbedarf({
+        profile: [profil()], jetztMs: Date.parse(tag), ganztags: true,
+        env: { HELMUT_QUELLEN_ARBEITSFENSTER: "on" }, quellenFuerProfil: () => quellen
+      });
+      return new Map(plan.auftraege.map(job => [job.payload.quelle.id, job.dueAt]));
+    };
+    const winter = await plane("2026-11-24");
+    check("11.1 Arbeitszeit-Radar wird im Winter um 06:30 Berlin faellig",
+      winter.get("radar-arbeitszeit") === "2026-11-24T05:30:00.000Z", winter.get("radar-arbeitszeit"));
+    const sommer = await plane("2026-08-15");
+    check("11.2 Arbeitszeit-Radar wird im Sommer um 06:30 Berlin faellig",
+      sommer.get("radar-arbeitszeit") === "2026-08-15T04:30:00.000Z", sommer.get("radar-arbeitszeit"));
+    check("11.3 Fruehere Abrufe und Abrufe nach dem Redaktionsschluss behalten ihre Faelligkeit",
+      winter.get("radar-pflege") === "2026-11-24T04:30:17.094Z"
+      && winter.get("radar-tariftreue") === "2026-11-24T06:12:25.690Z");
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }
