@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**24.11. Quellen pausiert, Wiederaufnahme 01:00 Berlin ohne Eingriff.** Acht PRs heute gemergt: #1329–#1335 (Quittungen, Vercel-Crawl-Cron entfernt, Kosten, Regel A) und #1336 (dieser Beleg); `main` = `2f396992`, Hetzner darauf ausgerollt. 501 Profile, 1 aktiv (`cem-ince`); Vertrag und Betriebszulassung stimmen überein. Wiedervorlage Stufe A ausgeführt: 5 Aufträge wieder `wartend`. Ein einziger Lauf (15:00) endete mit nicht bestätigter Zurückstellung und hält die Automatik an — einmalig unter 40 Läufen, Freigabe ab 01:00 Berlin, kein Code- oder Datenbankeingriff. Heute 0,672405 USD von 1 USD, 0 offen, 0 Originale. Keine Profillöschung, kein Zusatzfenster. [Beleg, Ursache und nächster Schritt](betrieb/quellen-status-20261124.md).
+**25.11. Quellenbetrieb.** Hetzner meldet `d5cb58b5` bereit. Bis 06:45 Berlin waren 50 von 61 Abrufen bestätigt. Das 07:20-Briefing blieb ohne belegten Tagesanlass. HTTP 521 bei der Auftragsvertagung um 08:47 hielt die Automatik an. Die Korrektur `2fb06452` liest bei kurzer Störung den Auftragsstand nach. Lokale Fehlerprobe und Pflicht-CI sind grün. Hetzner-Rollout und regulärer Quellen- und Briefingnachweis stehen aus. [Korrektur](https://github.com/ernisch/helmut-pilot/pull/1343) · [Betriebsbeleg vom 24.11.](betrieb/quellen-status-20261124.md)
 
 **23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
 
