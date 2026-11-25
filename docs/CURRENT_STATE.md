@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**25.11. Isolierter Hetzner-Prüfstand.** 320 von 323 Abrufen technisch abgeschlossen. Beide Morgenpakete waren abrufbar, 0/2 vollständig. Die nächste reguläre Produktprüfung bleibt offen. [Zweitageslauf](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897)
+**25.11. Isolierter Prüfstand.** Störungstest 320/323 Abrufe technisch erledigt, 0/2 vollständige Pakete. Gesunder Morgen 51/51 Abrufe, Lage und Briefing vollständig, DIP-Beleg vorhanden. [Störungstest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Morgentest](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955)
 
-**25.11. Quellenbetrieb.** Hetzner meldet `d5cb58b5` bereit. Bis 06:45 Berlin waren 50 von 61 Abrufen bestätigt. Das 07:20-Briefing blieb ohne belegten Tagesanlass. HTTP 521 bei der Auftragsvertagung um 08:47 hielt die Automatik an. Die Korrektur `2fb06452` liest bei kurzer Störung den Auftragsstand nach. Lokale Fehlerprobe und Pflicht-CI sind grün. Hetzner-Rollout und regulärer Quellen- und Briefingnachweis stehen aus. [Korrektur](https://github.com/ernisch/helmut-pilot/pull/1343) · [Betriebsbeleg vom 24.11.](betrieb/quellen-status-20261124.md)
+**25.11. Quellenbetrieb.** 50/61 Abrufe bis 06:45 Berlin, 07:20 ohne belegten Tagesanlass. HTTP 521 hielt die Automatik um 08:47 an. Hetzner meldet `cf4bca31` mit der Rücklesekorrektur bereit. Morgenlage und Paket verwenden 06:45 als Stichtag. Auf Hetzner steht `HELMUT_V3_MATCHING=on` aus (`matching-disabled`), ebenso der nächste Live-Nachweis. [Rücklesen](https://github.com/ernisch/helmut-pilot/pull/1343) · [Lage](https://github.com/ernisch/helmut-pilot/pull/1348) · [Betriebsbeleg 24.11.](betrieb/quellen-status-20261124.md)
 
 **23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
 
