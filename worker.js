@@ -228,4 +228,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { betreibe, einmal, betreibeKostenabgleich, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand };
+module.exports = { betreibe, einmal, quellenlauf, betreibeKostenabgleich, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand };
