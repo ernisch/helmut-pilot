@@ -438,6 +438,33 @@ async function main() {
     basis.belege.clear();
     A.equal(abgleich(ausgabe).faelligkeiten[0].grund, "ergebnisbeleg_fehlt");
   });
+  await test("Abgleich prüft verdrängte Katalog-Personensuche anhand der zwei Profilfeeds", () => {
+    const profil = { ...profile, fullName: "Testmandat Bund" };
+    const person = require("../lib/helmut/scheduler").personNewsSource(profil);
+    const legacyUrl = person.rssUrl.replace("%20when%3A7d", "");
+    const catalog = { retrievalPaths: [
+      { id: "rp-person", legacy_source_id: person.id, method: "googlenews_search", url: legacyUrl,
+        represents_type: "person", activation_mode: "always_on", status: "healthy" },
+      { id: "rp-fehlt", method: "rss", url: "https://amt.example/feed", activation_mode: "always_on", status: "healthy" }
+    ], packages: [], packagePaths: [] };
+    const auftraege = person.rssUrls.map((url, index) => ({
+      jobType: "source_fetch", idempotencyKey: "personenfeed-" + index, tenantId: profil.id,
+      payload: { art: index === 0 ? "person-aktuell" : "person-archiv", quelle: { ...person, rssUrl: url, rssUrls: [url] } }
+    }));
+    const bericht = (jobs, profiles = [profil]) => C.abgleichen({
+      catalog, profiles, env, jetztMs: jetzt, manifest: { cursor: jobs.length, auftraege: jobs },
+      jobs: [], belege: new Map(), analyseJobs: [], ausgaben: new Map()
+    }).luecken;
+    const luecken = bericht(auftraege);
+    A(!luecken.some(l => l.wegId === "rp-person" || l.grund === "personensuche_nicht_geplant"));
+    A(luecken.some(l => l.wegId === "rp-fehlt" && l.grund === "abrufweg_nicht_eingeplant"));
+    A(bericht(auftraege.map(j => ({ ...j, tenantId: "fremd" })))
+      .some(l => l.wegId === "person-aktuell" && l.grund === "personensuche_nicht_geplant"));
+    A(bericht(auftraege, [{ ...profil, fullName: "" }])
+      .some(l => l.wegId === "rp-person" && l.grund === "abrufdefinition_abweichend"));
+    A(bericht(auftraege, [profil, { ...profil, id: "weiteres-mandat" }])
+      .some(l => l.wegId === "rp-person" && l.grund === "abrufdefinition_abweichend"));
+  });
   await test("Leser spart Analyseabfragen für Teilabrufe; fehlende Abschlüsse bleiben sichtbar", async () => {
     const rohId = "rd-" + "a".repeat(64), stand = "b".repeat(64);
     const kennung = n => "00000000-0000-4000-8000-" + String(n).padStart(12, "0");
