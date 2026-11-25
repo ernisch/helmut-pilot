@@ -346,7 +346,7 @@ async function main(schreibeZwischenstand) {
             mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)),
             ...(!kapazitaetsprobe ? { versorgung: kopf?.versorgung, paketFehler: stand.paketStatus?.fehler } : {}),
             ...(wiederanlauf ? { dipDokumente: [...new Set(prioritaeten.flatMap(p =>
-              p.dipDokumentbeleg?.documentId ? [String(p.dipDokumentbeleg.documentId)] : []))] } : {}) };
+              p.dipDokumentbeleg?.url ? [p.dipDokumentbeleg.url] : []))] } : {}) };
           assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
           note(`Produktleser um 07:30 Uhr Berlin am ${tag}`, "geprueft",
             `Abrufbar: ${morgenstand.abrufbar}. Vollständig: ${morgenstand.vollstaendig}. Lageabsätze: ${morgenstand.lageAbsaetze}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
@@ -388,7 +388,7 @@ async function main(schreibeZwischenstand) {
         assert.deepEqual(transport.unbekannt, [], "Unbekannte Fixture-Ziele");
         assert(tagesbericht.originalReservierungen <= konfiguration.originalReservierungen, "Originalquote überschritten");
         const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
-        if (wiederanlauf) assert(morgenstand?.dipDokumente.includes(fixture.dipProbe(tag, true).dokumentId),
+        if (wiederanlauf) assert(morgenstand?.dipDokumente.includes(fixture.dipProbe(tag, true).original),
           "Kein tagesaktueller DIP-Beleg: " + JSON.stringify(morgenstand));
         if (tag === stoertag) {
           assert(transport.anzahlStoerungen() > 0, "503 am Bundestag wurde nicht ausgelöst");

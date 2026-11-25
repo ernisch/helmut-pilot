@@ -91,7 +91,7 @@ function pdf(zeilen) {
   return Buffer.from(text + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, "latin1");
 }
 
-function termine(saubererMorgen) {
+function termine(saubererMorgen, wiederanlauf) {
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const seiten = new Map();
   for (const [nummer, q] of QUELLEN.entries()) {
@@ -111,20 +111,23 @@ function termine(saubererMorgen) {
     const pfad = new URL(q.url).pathname;
     const liste = Array.from({ length: saubererMorgen ? 1 : 5 }, (_, i) => {
       const url = link(i + 1, q.art === "plenum" ? "Tagesordnung-komplett.pdf" : `tagesordnung-${i + 1}.pdf`);
-      const plenumTermin = saubererMorgen ? "Dienstag, dem 24. November 2026" : "24.11.2026";
+      const termin = wiederanlauf ? "Donnerstag, dem 26. November 2026" : "Dienstag, dem 24. November 2026";
+      const plenumTermin = saubererMorgen ? termin : "24.11.2026";
       const sitzung = q.art === "plenum" ? `7. Sitzung des Deutschen Bundestages am ${plenumTermin}, 09 Uhr`
-        : "der 7. Sitzung am Dienstag, dem 24.11.2026, 09 Uhr";
+        : `der 7. Sitzung am ${wiederanlauf ? termin : "Dienstag, dem 24.11.2026"}, 09 Uhr`;
       const pilotAusschuss = q.key === "arbeit-soziales";
       const revision = pilotAusschuss && i ? `${i}. Ergänzungsmitteilung` : null;
+      const drucksachen = wiederanlauf && pilotAusschuss ? [9923, 9924, 9925] : [pilotAusschuss && i === 0 ? 9900 : 9001 + i];
       seiten.set(url, tag => ({ type: "application/pdf", body:
         nummer === 1 && i === 1 && tag === "2026-11-19" ? "%PDF-fehlerhaft" :
           pdf(["Berlin, den 19.11.2026", "Tagesordnung " + sitzung,
             ...(revision ? [revision, "Die Tagesordnung wird um folgende Tagesordnungspunkte ergänzt."] : []),
-            `Tagesordnungspunkt ${pilotAusschuss ? i + 1 : 1}`, "Beratung zum Arbeitsmarkt",
-            `BT-Drucksache ${pilotAusschuss && i === 0 ? "21/9900" : `21/${9001 + i}`}`,
+            ...drucksachen.flatMap((nr, index) => [`Tagesordnungspunkt ${pilotAusschuss ? i + index + 1 : 1}`,
+              "Beratung zum Arbeitsmarkt", `BT-Drucksache 21/${nr}`]),
             ...(tag === "2026-11-20" && i === 0 ? ["Geaenderte Fassung"] : [])])
       }));
-      return `<tr><td>19.11.2026</td><td><a href="${url}">7. Sitzung am Dienstag, dem 24.11.2026${revision ? `, ${revision}` : ""}</a></td></tr>`;
+      const sitzungstag = wiederanlauf ? termin : "Dienstag, dem 24.11.2026";
+      return `<tr><td>19.11.2026</td><td><a href="${url}">7. Sitzung am ${sitzungstag}${revision ? `, ${revision}` : ""}</a></td></tr>`;
     }).join("");
     if (q.art === "ausschuss") {
       const endpoint = `/ajax/filterlist/de${pfad}/1-1`;
@@ -193,7 +196,8 @@ function dipProbe(tag, wiederanlauf) {
 }
 
 function antworten(uhr, saubererMorgen, stoertag) {
-  const bt = termine(saubererMorgen), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
+  const wiederanlauf = Boolean(stoertag);
+  const bt = termine(saubererMorgen, wiederanlauf), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   const plenum = require("../../lib/helmut/quellen-bundestag-termine").QUELLEN.find(q => q.art === "plenum").url;
   let stoerungen = 0;
   function antwort(url, methode, modellAnfrage) {
@@ -224,7 +228,7 @@ function antworten(uhr, saubererMorgen, stoertag) {
       return { status: 503, body: "Vorübergehend ausgefallener Bundestag-Abruf im Prüfstand" };
     }
     if (url.origin === BT && bt.has(url.pathname)) return bt.get(url.pathname)(tag);
-    const dip = dipProbe(tag, Boolean(stoertag));
+    const dip = dipProbe(tag, wiederanlauf);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
       return { type: "application/json", body: JSON.stringify({ documents: [{
         id: Number(dip.dokumentId), titel: DIP_TITEL, drucksachetyp: "Antrag",
