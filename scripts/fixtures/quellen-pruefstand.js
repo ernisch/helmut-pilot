@@ -185,8 +185,17 @@ function modellAntwort(schema, eingabe) {
   };
 }
 
-function antworten(uhr, saubererMorgen) {
+function dipProbe(tag, wiederanlauf) {
+  if (!wiederanlauf) return { datum: DIP_DATUM, dokumentId: "990001", vorgangId: DIP_VORGANG, original: DIP_ORIGINAL };
+  const tagNummer = tag.slice(-2);
+  return { datum: tag, dokumentId: "9901" + tagNummer, vorgangId: "9902" + tagNummer,
+    original: `https://dserver.bundestag.de/btd/21/099/21099${tagNummer}.pdf` };
+}
+
+function antworten(uhr, saubererMorgen, stoertag) {
   const bt = termine(saubererMorgen), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
+  const plenum = require("../../lib/helmut/quellen-bundestag-termine").QUELLEN.find(q => q.art === "plenum").url;
+  let stoerungen = 0;
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -209,22 +218,28 @@ function antworten(uhr, saubererMorgen) {
       }) };
     }
     if (url.origin === BT && url.pathname === "/robots.txt") return { body: "User-agent: *\nDisallow: /xml/\n" };
+    if (tag === stoertag && url.href === plenum
+      && jetzt.getTime() < require("../../lib/helmut/quellen-tagesbetrieb").zeiten(jetzt.getTime()).frist) {
+      stoerungen++;
+      return { status: 503, body: "Vorübergehend ausgefallener Bundestag-Abruf im Prüfstand" };
+    }
     if (url.origin === BT && bt.has(url.pathname)) return bt.get(url.pathname)(tag);
+    const dip = dipProbe(tag, Boolean(stoertag));
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
       return { type: "application/json", body: JSON.stringify({ documents: [{
-        id: 990001, titel: DIP_TITEL, drucksachetyp: "Antrag",
-        dokumentart: "Drucksache", datum: DIP_DATUM, wahlperiode: 21,
+        id: Number(dip.dokumentId), titel: DIP_TITEL, drucksachetyp: "Antrag",
+        dokumentart: "Drucksache", datum: dip.datum, wahlperiode: 21,
         urheber: [{ titel: "Bundesregierung" }],
         ressort: [{ titel: DIP_RESSORT }],
-        vorgangsbezug: [{ id: DIP_VORGANG, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
-        fundstelle: { pdf_url: DIP_ORIGINAL }
+        vorgangsbezug: [{ id: dip.vorgangId, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
+        fundstelle: { pdf_url: dip.original }
       }] }) };
-    if (url.origin === new URL(DIP).origin && url.pathname === `/api/v1/vorgang/${DIP_VORGANG}`)
-      return { type: "application/json", body: JSON.stringify({ id: DIP_VORGANG, typ: "Vorgang",
-        titel: DIP_TITEL, vorgangstyp: "Antrag", wahlperiode: 21, datum: DIP_DATUM,
-        aktualisiert: `${DIP_DATUM}T01:00:00Z` }) };
+    if (url.origin === new URL(DIP).origin && url.pathname === `/api/v1/vorgang/${dip.vorgangId}`)
+      return { type: "application/json", body: JSON.stringify({ id: dip.vorgangId, typ: "Vorgang",
+        titel: DIP_TITEL, vorgangstyp: "Antrag", wahlperiode: 21, datum: dip.datum,
+        aktualisiert: `${dip.datum}T01:00:00Z` }) };
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/vorgangsposition"
-      && url.searchParams.get("f.vorgang") === DIP_VORGANG)
+      && url.searchParams.get("f.vorgang") === dip.vorgangId)
       return { type: "application/json", body: JSON.stringify({ numFound: 0, documents: [], cursor: "" }) };
     if (url.origin === GOOGLE && url.pathname === "/rss/search") {
       if (saubererMorgen) return { type: "application/rss+xml", body: leer };
@@ -260,13 +275,13 @@ function antworten(uhr, saubererMorgen) {
     unbekannt.push(url.origin + url.pathname);
     return { status: 503, body: "Fixture-Ziel fehlt" };
   }
-  return { antwort, zaehler, unbekannt, proOriginal };
+  return { antwort, zaehler, unbekannt, proOriginal, anzahlStoerungen: () => stoerungen };
 }
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben
 // für die Produktionsleser sichtbar. DNS und TLS liegen außerhalb dieses Nachweises.
-async function transport(uhr, { saubererMorgen = false } = {}) {
-  const fixtures = antworten(uhr, saubererMorgen);
+async function transport(uhr, { saubererMorgen = false, stoertag = null } = {}) {
+  const fixtures = antworten(uhr, saubererMorgen, stoertag);
   const server = http.createServer((req, res) => {
     let daten = "";
     req.on("data", chunk => {
@@ -330,4 +345,4 @@ async function transport(uhr, { saubererMorgen = false } = {}) {
   return { ...fixtures, stoppe };
 }
 
-module.exports = { mandat, katalog, transport, AZURE };
+module.exports = { mandat, katalog, transport, dipProbe, AZURE };
