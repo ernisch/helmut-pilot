@@ -261,6 +261,7 @@ async function main(schreibeZwischenstand) {
   assert.equal(konfiguration.maxDurationS, 300, "Maximale Funktionsdauer weicht vom geprüften Quellenfenster ab");
   const ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)(\?|$)/);
   assert.equal(ausgaben.length, 8);
+  konfiguration.quellenfenster = workerTermine(pruefzeiten[0]).length;
   const uhr = uhrStart(process.env.HELMUT_QUELLEN_DB_UHR);
   let db, transport, app;
   try {
