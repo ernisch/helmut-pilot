@@ -256,6 +256,8 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
   assert.deepEqual(row.payload.pruefung.fehler, expectedErrors);
   let quittiertesPaket = row, morgenAt = now;
   if (teilbriefing) {
+    // Eine neuere Fassung in der Speicherkette braucht eine eigene Quittung.
+    // Der Leser liefert bis dahin die vorherige, eindeutig quittierte Fassung.
     quittiertesPaket = structuredClone(row);
     quittiertesPaket.generated_at = new Date(now.getTime() - 120000).toISOString();
     quittiertesPaket.payload.erzeugtAm = quittiertesPaket.generated_at;
@@ -389,11 +391,11 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
         if (teilbriefing) {
           assert.equal(response.status(), 200); assert.equal(start.profile?.id, profile.id);
           const b = start.briefing;
-          assert.equal(b.gespeicherterNachweis.inhaltHash, row.payload.inhaltHash);
-          assert.equal(b.vorlaeufigerBriefingstand.tag, day); assert.equal(b.paketStatus.quittungGebunden, false);
-          assert.equal(b.vorlaeufigerBriefingstand.abschluss, "offen");
-          assert.equal(b.currentHelmutState.frischeVertrag.aktuell, false);
-          assert.equal(b.currentHelmutState.frischeVertrag.grund, "ausgabe-nicht-gebunden");
+          assert.equal(b.gespeicherterNachweis.inhaltHash, quittiertesPaket.payload.inhaltHash);
+          assert.notEqual(b.gespeicherterNachweis.inhaltHash, row.payload.inhaltHash);
+          assert.equal(b.vorlaeufigerBriefingstand.tag, day);
+          assert.equal(b.vorlaeufigerBriefingstand.paketErzeugtAm, quittiertesPaket.generated_at);
+          assert.equal(b.paketStatus.quittungGebunden, true);
           assert.equal(b.paketStatus.vollstaendig, false); assert.deepEqual(b.paketStatus.fehler, expectedErrors);
           await page.waitForFunction(() => window.__helmutClientLoaded === true && !document.body.classList.contains("is-loading"));
           await page.locator(`${isMobile ? ".mobile-dock" : ".nav-list"} [data-view="helmut"]`).click();
@@ -410,10 +412,9 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
           }
           check(`${label}: Teilstatus steht sofort fest, geprüfte Lageabsätze mit Quelldaten öffnen auf Wunsch`,
             (await card.innerText()).includes("Eine Tagespriorität und Handlungsempfehlung sind noch nicht belegt.")
-            && (await card.innerText()).includes("Der Abschluss des neueren Tagespakets ist noch offen.")
-            && !(await page.locator(".hstand-frische").innerText()).includes("kein erzeugtes Morgenbriefing")
+            && await card.getByText("Der Abschluss des neueren Tagespakets ist noch offen.").count() === 0
             && await page.locator(".ui-briefing-status .hstand-status").innerText() === "Vorläufiger Stand"
-            && (await page.locator(".ui-briefing-status .hstand-meta-line").innerText()).includes("Tagespaket vorbereitet:")
+            && (await page.locator(".ui-briefing-status .hstand-meta-line").innerText()).includes("Teilfassung erstellt:")
             && await page.locator('.hstand-state-card[data-empty-kind="gap"]').count() === 1
             && await page.locator(".ui-briefing-hero").count() === 0);
           const limits = await page.evaluate(() => {
@@ -422,9 +423,9 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
             try {
               const results = [
                 absent(() => { briefing.vorlaeufigerBriefingstand = null; }),
-                absent(() => { briefing.paketStatus.quittungGebunden = true; }),
-                absent(() => { briefing.vorlaeufigerBriefingstand.abschluss = null; }),
-                absent(() => { briefing.vorlaeufigerBriefingstand.morgenlaufErzeugtAm = "ungueltig"; }),
+                absent(() => { briefing.paketStatus.quittungGebunden = false; }),
+                absent(() => { briefing.vorlaeufigerBriefingstand.abschluss = "offen"; }),
+                absent(() => { briefing.vorlaeufigerBriefingstand.paketErzeugtAm = "ungueltig"; }),
                 absent(() => { briefing.vorlaeufigerBriefingstand.tag = "2026-09-12"; }),
                 absent(() => { briefing.vorlaeufigerBriefingstand.tag = briefing.paketStatus.tag = "2026-09-12";
                   briefing.vorlaeufigerBriefingstand.paketErzeugtAm = briefing.gespeicherterNachweis.erzeugtAm = "2026-09-12T12:00:00Z"; }),

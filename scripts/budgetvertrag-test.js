@@ -198,7 +198,7 @@ function depsFuer(verhalten, { tagesplan = null, env = ENV_AN, profil = { user_i
 
 function auftrag(mandatsId = "m1", fenster = "w1", id = "job-1") {
   return {
-    id, type: "tenant_narrative", payload: { mandatsId },
+    id, type: "tenant_narrative", tenantId: mandatsId, payload: { mandatsId },
     freshnessWindow: fenster, createdAt: `${TAG}T05:40:00.000Z`
   };
 }
