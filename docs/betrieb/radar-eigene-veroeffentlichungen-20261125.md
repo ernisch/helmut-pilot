@@ -15,3 +15,9 @@ Die Anzeige erhält ihren Zeitstand vom belegten Publikationsdatum. Eine später
 - Im lokalen Replay mit den vier heutigen Originallink-Belegen waren vier zulässig und drei in der Anzeige sichtbar.
 - Der lokale Regressionstest prüft den App-Leseweg ohne Tagespaket, die Originalbindung, Ausschlüsse für fremde, alte, zukünftige und gesperrte Quellen, Wiederholungen und eine später hinzugekommene Vorgangsverknüpfung.
 - Am 21.11. lagen 11 Lagevorgänge, 0 Radarsignale und 0 Prioritäten vor. Bis zum Redaktionsschluss waren 25 von 52 Abrufen und 16 von 16 Originalbuchungen belegt. Die Namenssuchprobe lieferte 6 jüngere Treffer. [Quellengebundene Radarprüfung](https://github.com/ernisch/helmut-pilot/pull/1309) · [Siebentägige Namenssuche](https://github.com/ernisch/helmut-pilot/pull/1310)
+
+## Wahlkreis und Ausschüsse
+
+Bei Salzgitter-Wolfenbüttel erkennt die Zuordnung die bestätigten Einzelorte. Ein Rohartikel kann im Wahlkreis erscheinen, wenn sein Originaltitel den konkreten Ort nennt und der Direktlink an den passenden Fund aus dem bestehenden Regionalkatalog gebunden ist. Im lokalen Replay wurde die gespeicherte Wolfenbüttel-Meldung sichtbar.
+
+Stellvertretende Mitgliedschaften werden getrennt gekennzeichnet. Bei leerer Ausschussansicht kann eine Unterlage aus dem vorhandenen amtlichen Terminstand erscheinen. Die Zuordnung prüft Mandatsrolle, Katalogfreigabe, Beleg- und Projektionshash, Publikationsdatum und aktive Sperren. Im lokalen Replay war die amtliche Unterlage für Wirtschaft und Energie als Stellvertretung sichtbar.

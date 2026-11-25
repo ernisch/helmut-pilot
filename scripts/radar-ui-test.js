@@ -410,5 +410,24 @@ check("Belegte Fraktionsveröffentlichung erscheint trotz leerem Vorgangsbestand
   && veroeffentlichungHtml.includes(quelleAusDerFraktion)
   && !veroeffentlichungHtml.includes("data-radar-lage="));
 
+const umfeldMeldungen = [
+  { ...meldungOhneVorgang, id: "regional", documentId: "rd-regional", segment: "constituency",
+    title: "Synthetischer Bericht aus Wolfenbüttel", sourceUrl: "https://example.invalid/wolfenbuettel/bericht",
+    relationType: "constituency", relationLabel: "Meldung aus dem Wahlkreis" },
+  { ...meldungOhneVorgang, id: "ausschuss", documentId: "rd-ausschuss", segment: "committees",
+    title: "Amtliche Unterlage des Ausschusses für Wirtschaft und Energie",
+    sourceUrl: "https://www.bundestag.de/resource/blob/999999/fixture.pdf",
+    relationType: "committee", relationLabel: "Stellvertretung im Ausschuss" }
+];
+api.setBriefing(require("../lib/helmut/radar-veroeffentlichungen").ergaenze(
+  { currentRadarState: leererRadar }, umfeldMeldungen, new Date("2026-11-25T09:00:00Z")));
+for (const meldung of umfeldMeldungen) {
+  api.setSegment(meldung.segment);
+  const html = api.render();
+  check(`Originale öffnen im passenden Reiter ${meldung.segment}`,
+    html.includes(meldung.title) && html.includes(meldung.sourceUrl) && html.includes(meldung.relationLabel)
+    && umfeldMeldungen.filter(other => other.segment !== meldung.segment).every(other => !html.includes(other.title)));
+}
+
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }

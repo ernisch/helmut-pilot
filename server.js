@@ -3659,7 +3659,7 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   }
   const ausgabe = previewMode ? stand
     : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(stand, profile);
-  return prepareBriefingResponse(radarVeroeffentlichungen.ergaenze(ausgabe, veroeffentlichungen, jetzt),
+  return prepareBriefingResponse(radarVeroeffentlichungen.ergaenze(ausgabe, veroeffentlichungen, jetzt, previewMode ? null : profile),
     { previewMode, compact, frischeKontext: paket.frischeKontext });
 }
 

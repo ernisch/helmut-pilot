@@ -58,8 +58,9 @@ async function normaleAppAusgabe(briefing, { suche = "", storage = S, zeit = now
       }
       if(name==="./lib/helmut/publication-eligibility")return require("../lib/helmut/publication-eligibility");
       if(name==="./lib/helmut/parlamentsbelege-produkt")return T;
+      if(name==="./lib/helmut/radar-veroeffentlichungen")return require("../lib/helmut/radar-veroeffentlichungen");
       throw Error("Unerwarteter Apppfad: "+name);
-    },storageModul:storage,quellenTagesbetrieb:require("../lib/helmut/quellen-tagesbetrieb"),
+    },storageModul:storage,v3StoreReady:()=>false,quellenTagesbetrieb:require("../lib/helmut/quellen-tagesbetrieb"),
     Date:class extends Date { constructor(){ super(zeit); } },prepareBriefingResponse:value=>value});
   return fn({politicianId:profile.id,profile,url:new URL("https://offline.invalid/api/briefing"+suche)});
 }
@@ -120,6 +121,28 @@ async function main(){
       const ctx=await T.leseKontext(profile,deps());A.equal(ctx.belege[0].rolle,"Hauptausschuss");A.equal(ctx.coverage,"partial");
       A.equal(ctx.belege[0].sitzungen[0].tops[0].fristen[0].status,"abgelaufen");
       A.equal(ctx.belege[0].sitzungen[0].tops[0].fristen[0].zeitpunkt,null);
+    });
+    await test("Amtliche Unterlage der Stellvertretung erreicht den Radar mit Datum und Originallink", async () => {
+      const M = require("../lib/helmut/radar-veroeffentlichungen");
+      const zeit = new Date("2026-11-11T12:00:00Z");
+      const mandat = { ...profile, committees: [], deputyCommittees: profile.committees };
+      const dokument = pd(), s = E.baueStand(q, [dokument], zeit.toISOString(), "a".repeat(64));
+      stored = [row(s)];
+      const kontext = await T.leseKontext(mandat, { ...deps(), now: () => +zeit });
+      const ausgang = { currentRadarState: { status: "empty", environment: { committees: [] } },
+        lageBriefing: { parlamentsKontext: kontext } };
+      const vorher = copy(ausgang), stand = M.ergaenze(ausgang, [], zeit, mandat);
+      const [karte] = stand.currentRadarState.anzeige.environment.committees;
+      A.equal(karte.sourceUrl, dokument.url);
+      A.equal(karte.publishedAt, dokument.publishedDay);
+      A.equal(karte.relationLabel, "Stellvertretung im Ausschuss");
+      A.equal(karte.beobachtungsBeleg.standHash, s.standHash);
+      A.deepEqual(ausgang, vorher);
+      A.equal(M.ergaenze(ausgang, [], zeit, { ...mandat, parliamentType: "Landtag" }), ausgang);
+      const widerspruch = copy(ausgang);
+      widerspruch.lageBriefing.parlamentsKontext.belege[0].originale[0].url = "https://example.invalid/fremd";
+      A.equal(M.ergaenze(widerspruch, [], zeit, mandat), widerspruch);
+      A.equal(M.ergaenze(ausgang, [], new Date(+zeit + 25 * 3600000), mandat), ausgang);
     });
     await test("Falscher Namespace, geaenderter Hash, Zukunft und Zeitkonflikt werden unbekannt",async()=>{
       for(const change of [r=>r.id="fremd",r=>r.data.documents[0].meetings[0].day="2026-11-12",r=>{

@@ -295,7 +295,44 @@ async function main(){
     } } } };
     A.equal(M.ergaenze(vorhandenerRadar, [karte], zeit), vorhandenerRadar);
   });
-  A.equal(count,10);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
+  await test("Konkreter Wahlkreisort mit bestätigter Auflösung erreicht den Radar direkt", async () => {
+    const M = require("../lib/helmut/radar-veroeffentlichungen");
+    const ortProfil = { constituency: "Salzgitter-Wolfenbüttel", state: "Niedersachsen" };
+    const zeit = new Date("2026-11-25T14:00:00Z");
+    const original = "https://example.invalid/wolfenbuettel/kommunalrat";
+    const proxy = "https://news.google.com/rss/articles/synthetischer-fund";
+    const fund = { source_id: "region-wolfenbuttel-arbeit-soziales", original_url: proxy,
+      retrieval_path_id: "rp-region-wolfenbuttel-arbeit-soziales", link_type: "direct" };
+    const doc = { id: "rd-synthetisch-regional", title: "Wolfenbüttel berät den Haushalt",
+      source_id: "andere-gespeicherte-quellenkennung", url: original, canonical_url: original,
+      published_at: "2026-11-24T13:30:00Z", link_type: "direct", aufgeloester_fund: proxy,
+      ko_document_links: [], document_findings: [fund] };
+    const lese = (rows, p = ortProfil) => M.lese(p, { now: zeit, storage: { supabaseRequest: async path => {
+      const besuche = new URL(path, "https://offline.invalid").searchParams;
+      A.equal(besuche.get("document_findings.source_id"),
+        "in.(region-salzgitter-arbeit-soziales,region-wolfenbuttel-arbeit-soziales)");
+      A.ok(besuche.get("select").includes("aufgeloester_fund:raw->>originalUrl"));
+      A.equal(besuche.has("source_id"), false);
+      return rows;
+    } } });
+    const [karte] = await lese([doc]);
+    A.equal(karte.sourceUrl, original);
+    A.equal(karte.segment, "constituency");
+    A.equal(karte.evidence, "Der Originaltitel nennt Wolfenbüttel.");
+    const bestehend = { sourceUrl: "https://example.invalid/parteibeleg", documentId: "rd-synth-partei" };
+    const ausgang = { currentRadarState: { status: "stale", environment: { party: [bestehend] } } };
+    const out = M.ergaenze(ausgang, [karte], zeit);
+    A.deepEqual(out.currentRadarState.anzeige.environment.party, [bestehend]);
+    A.deepEqual(out.currentRadarState.anzeige.environment.constituency, [karte]);
+    A.equal(ausgang.currentRadarState.environment.constituency, undefined);
+    for (const fehler of [
+      { title: "Haushalt in Niedersachsen" }, { aufgeloester_fund: null },
+      { document_findings: [{ ...fund, retrieval_path_id: "rp-fremd" }] },
+      { url: proxy }, { published_at: null }
+    ]) A.deepEqual(await lese([{ ...doc, ...fehler }]), []);
+    A.deepEqual(await lese([doc], { constituency: "Anderer Ort" }), []);
+  });
+  A.equal(count,11);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of modules)Object.assign(m,old);if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
