@@ -631,6 +631,30 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }
     assert.equal(deferred, 2); assert.equal(finished, 0);
   });
+  await test("DIP ohne Anbietersteuerung wird ohne Abruf oder verbrauchten Versuch vertagt", async () => {
+    const vertagungen = [];
+    const verbotenerAufruf = async () => assert.fail("DIP-Aufruf oder Abschluss ohne Anbietersteuerung");
+    const r = await P.fuehreAuftragAus({
+      auftrag: { ...dipJob, tenantId: null, tenant_id: null, job_type: "source_fetch", attempts: 3, max_attempts: 3,
+        payload: { art: "dip-geteilt", quelle: dipJob.payload.quelle } },
+      besitzer: "dip-offline", leaseMs: 300000,
+      deps: dipDeps({
+        env: { ...dipEnv, HELMUT_ANBIETER_STEUERUNG: "off" },
+        handler: P.HANDLER,
+        dipQueueDocuments: (ziel, optionen) => DIP.getQueueDocuments(ziel, { ...optionen, fetch: verbotenerAufruf }),
+        zurueckstellen: async aufschub => {
+          vertagungen.push(aufschub);
+          return { verfuegbar: true, uebernommen: true };
+        },
+        finish: verbotenerAufruf
+      })
+    });
+    assert.equal(r.ausgang, "zurueckgestellt");
+    assert.equal(r.bilanz.nachTyp.source_fetch.fehler, 0);
+    assert.deepEqual(vertagungen, [{
+      id: dipJob.id, owner: "dip-offline", delayMs: 60 * 60000, grund: "dip-anbietersteuerung-nicht-aktiv"
+    }]);
+  });
   await test("DIP Metadaten gelangen nur mit konkretem echten Fund und aktuellem Profil in Inhaltsvorbereitung", async () => {
     const Anschluss = require("../lib/helmut/quellen-inhaltsversorgung-anschluss");
     const doc = D.toRawDocumentRow({ ...S.dipDocToRawItem(DIP.normalizeDrucksache(original), { primary: true }), retrievalPathId: "rp-dip" });
