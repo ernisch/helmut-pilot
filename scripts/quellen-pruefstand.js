@@ -379,9 +379,14 @@ async function main(schreibeZwischenstand) {
       if (saubererMorgen) {
         assert.deepEqual(transport.unbekannt, [], "Unbekannte Fixture-Ziele");
         assert(tagesbericht.originalReservierungen <= konfiguration.originalReservierungen, "Originalquote überschritten");
+        const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
+        assert(abdeckung?.geplant > 0 && abdeckung.bestaetigt === abdeckung.geplant,
+          "Morgenabrufe unvollständig: " + JSON.stringify(abdeckung));
+        assert(laeufe.some(lauf => lauf.lage?.vollstaendig), "Kein vollständiger Lage-Lauf vor 07:30 Uhr");
         assert(morgenstand?.abrufbar && morgenstand.vollstaendig && morgenstand.lageAbsaetze > 0 && morgenstand.mitDipBeleg,
           "Gesunder Morgen ohne vollständiges Briefing und DIP-Beleg: " + JSON.stringify(morgenstand));
-        note("Vollständiger Morgen vor 07:30 Uhr mit DIP-Beleg", "geprueft");
+        note("Vollständiger Morgen vor 07:30 Uhr mit DIP-Beleg", "geprueft",
+          `${abdeckung.bestaetigt} von ${abdeckung.geplant} fälligen Quellen bestätigt`);
         return;
       }
       assert.equal(tagesbericht.eingeplant, tagesbericht.bedarf, `Tagesplan oder Queue unvollständig für ${tag}`);

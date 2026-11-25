@@ -126,6 +126,20 @@ async function test(name, fn) {
   await fn(); passed++; console.log("PASS " + name);
 }
 (async () => {
+  await test("Ganztags-Lage beurteilt Quellen am Berliner Redaktionsschluss", async () => {
+    const { run: lageLauf } = require("./lage-cron-testhilfe");
+    const nowMs = Date.parse("2026-11-19T05:55:20Z");
+    const quellenBis = Date.parse("2026-11-19T05:45:00Z");
+    let abfrage;
+    const r = await lageLauf([profile], { nowMs, query: "betrieb=24h", leseVersorgung: async args => {
+      abfrage = args;
+      return { version: 1, zustand: args.quellenBis === quellenBis ? "kein-bekannter-rueckstand" : "offen" };
+    } });
+    assert.equal(abfrage?.mandat, profile.id);
+    assert.equal(abfrage?.jetztMs, nowMs);
+    assert.equal(abfrage?.quellenBis, quellenBis);
+    assert.equal(r.response.vollstaendig, true);
+  });
   await test("Morgenlauf speichert ein Paket und zaehlt fehlende Lage nicht als Vollversorgung", async () => {
     const r = await run();
     assert(r.saved.rows.has(`bf-${profile.id}-${B.SLOT}-${day}`));
