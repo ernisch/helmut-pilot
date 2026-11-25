@@ -150,7 +150,7 @@ Vergleiche die ausgegebene Kennung mit dem freigegebenen Merge. Der Produktionsc
 
 Der Timer prüft alle 15 Minuten das öffentliche GitHub-Repository. Er wechselt bei Worker-Änderungen auf einen gemergten Stand von `main`, dessen Push-Lauf in der regulären CI beide Pflichtchecks erfolgreich abgeschlossen hat. Er baut ein separates Image und führt `worker.js --check` vor dem Wechsel aus. Wechsel sind ab Minute 10 jeder Viertelstunde bis Ende Minute 12 vorgesehen und pausieren zwischen 06:30 und 07:35 Uhr Berlin. Eine geänderte `compose.yaml` benötigt einen manuellen Betriebswechsel.
 
-Der Dienst erwartet im neuen Container die Meldung `bereit` zur exakten Build-Kennung. Bei einem Startfehler oder einem abgebrochenen Wechsel stellt er das gesicherte Image wieder her und stellt diesen Commit zurück. Das Journal zeigt die aktive Kennung und später die gespeicherte Quittung des ersten regulären Quellenlaufs. Der Status `partial` oder `failed` bleibt im Laufbeleg sichtbar. Der Timer nutzt ein eigenes Git-Repository unter `/var/lib/helmut-worker-deploy`.
+Der Dienst erwartet im neuen Container die Meldung `bereit` zur exakten Build-Kennung. Bei einem Startfehler oder einem abgebrochenen Wechsel stellt er das gesicherte Image wieder her. Ein neuer Versuch setzt geänderten Worker-Inhalt voraus. Das Journal zeigt die aktive Kennung und später die gespeicherte Quittung des ersten regulären Quellenlaufs. Der Status `partial` oder `failed` bleibt im Laufbeleg sichtbar. Der Timer nutzt ein eigenes Git-Repository unter `/var/lib/helmut-worker-deploy`.
 
 Einmalig im Hetzner-Terminal aus dem geprüften Merge installieren. Die bestehende Checkout-Kennung bleibt beim Installieren erhalten.
 

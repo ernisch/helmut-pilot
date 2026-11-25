@@ -77,8 +77,8 @@ class DeploymentTest(unittest.TestCase):
         self.enterContext(patch.object(self.worker, "fetch", return_value=TARGET))
         self.main = self.enterContext(patch.object(self.worker, "main_commit", return_value=TARGET))
         self.enterContext(patch.object(self.worker, "prepare", return_value=COMPOSE))
-        self.diff = self.enterContext(patch.object(self.worker, "changed", side_effect=lambda _old, _new, *paths:
-                                                 paths != ("compose.yaml",)))
+        self.diff = self.enterContext(patch.object(self.worker, "changed", side_effect=lambda old, new, *paths:
+                                                 old != new and paths != ("compose.yaml",)))
         self.enterContext(patch.object(self.worker, "git", return_value=subprocess.CompletedProcess([], 0)))
         self.probe = READY
 
@@ -142,6 +142,16 @@ class DeploymentTest(unittest.TestCase):
         self.old.side_effect = None
         self.cmd.reset_mock()
         self.worker.run()
+        self.cmd.assert_not_called()
+
+    def test_documentation_after_rollback_does_not_restart_failed_worker(self):
+        failed = "e" * 40
+        self.worker.record("failed", {"commit": failed})
+        self.diff.side_effect = lambda old, new, *paths: (
+            old != failed and old != new and paths != ("compose.yaml",)
+        )
+        self.worker.run()
+        self.approval.assert_not_called()
         self.cmd.assert_not_called()
 
     def test_interruption_before_swap_keeps_incumbent(self):

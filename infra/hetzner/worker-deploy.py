@@ -281,8 +281,9 @@ class Deployment:
             return
         if self.changed(current["commit"], target, "compose.yaml"):
             raise DeployError("Geänderte Compose-Datei erfordert eine manuelle Freigabe auf Hetzner")
-        if self.read("failed") == {"commit": target}:
-            print(f"Update {target} nach Rückweg zurückgestellt", flush=True)
+        failed = self.read("failed")
+        if failed and not self.changed(failed["commit"], target, *INPUTS):
+            print(f"Worker-Inhalt für {target} nach Rückweg zurückgestellt", flush=True)
             return
         if not deployment_window(dt.datetime.now(BERLIN)):
             print("Nächstes geeignetes Updatefenster abwarten", flush=True)
