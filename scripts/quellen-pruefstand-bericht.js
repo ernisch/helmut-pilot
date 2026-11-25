@@ -136,7 +136,7 @@ function kapazitaet(tage, gruende) {
   };
 }
 
-function pruefeKapazitaet(tage) {
+function pruefeKapazitaet(tage, konfiguration) {
   if (tage.length < 2 || tage.some(tag => TAGESMESSWERTE.some(name => !zaehler(tag[name]))))
     return ["Für die Kapazitätsprüfung fehlen vollständige Tagesmessungen."];
   const gruende = [];
@@ -152,8 +152,13 @@ function pruefeKapazitaet(tage) {
     gruende.push("Der Google-Tagesbedarf ist in mindestens einem Prüftag offen geblieben.");
   if (tage.some(tag => tag.googleBedarf > 0 && !zaehler(tag.googleAbschluesseGesamt)))
     gruende.push("Für den Google-Mix fehlen Abschlüsse einschließlich der Altaufträge.");
-  if (tage.some(tag => tag.fenster > PRODUKTIONSBASIS.fenster
-    || tag.originalReservierungen > PRODUKTIONSBASIS.originalReservierungen || tag.googleReservierungen > MAX_GOOGLE_RESERVIERUNGEN))
+  const fenster = konfiguration.quellenfenster ?? konfiguration.fenster ?? PRODUKTIONSBASIS.fenster;
+  const sekunden = konfiguration.fensterSekunden ?? PRODUKTIONSBASIS.sekundenJeFenster;
+  const originale = konfiguration.originalReservierungen ?? PRODUKTIONSBASIS.originalReservierungen;
+  const googleMinute = konfiguration.googleReservierungenJeMinute ?? PRODUKTIONSBASIS.googleMinutengrenze;
+  const googleMaximum = fenster * (Math.ceil(sekunden / 60) + 1) * googleMinute;
+  if (tage.some(tag => tag.fenster > fenster
+    || tag.originalReservierungen > originale || tag.googleReservierungen > googleMaximum))
     gruende.push("Die Messung überschreitet mindestens eine belegte Betriebsgrenze.");
   return gruende;
 }
@@ -178,7 +183,7 @@ function erstelleBericht({ szenario, commit = null, lauf = null, versuch = null,
     abnahmegruende.push("Quellenfälligkeiten oder Ausgabefristen wurden verfehlt.");
   if (tage.some(tag => zaehler(tag.eingeplant) && tag.eingeplant !== tag.bedarf))
     abnahmegruende.push("Die geplanten Quellenaufträge entsprechen mindestens einmal nicht dem fälligen Soll.");
-  const kapazitaetsgruende = pruefeKapazitaet(tage);
+  const kapazitaetsgruende = pruefeKapazitaet(tage, konfiguration);
   abnahmegruende.push(...kapazitaetsgruende);
   if (vergleichsbericht.status !== "gemessen") abnahmegruende.push(vergleichsbericht.grund);
   if (abweichungen.some(abweichung => typeof abweichung === "string" || abweichung.abnahmehindernis !== false))
@@ -233,7 +238,7 @@ function formatiereBericht(bericht) {
     }
   }
   zeilen.push("", "### Rechnerischer Google-Mindestbedarf im 24-Stunden-Entwurf", "",
-    `Beim beobachteten Mix und ${k.reserveProzent} % Reserve auf ganze Abschlüsse aufgerundet. Selbst bei vollständig nutzbaren Anbieterminuten und Fünfminutenfenstern kann die Verteilung der bestehenden ${b.fenster} Fenster die ausgewiesenen Mengen nicht tragen. Reale Anbietergrenzen, Laufzeit weiterer Arbeit, Originale und Kosten brauchen eigene Nachweise.`, "",
+    `Beim beobachteten Mix und ${k.reserveProzent} % Reserve auf ganze Abschlüsse aufgerundet. Die Vergleichswerte beziehen sich auf die ${b.fenster} Fenster des historischen Ausgangslaufs. Reale Anbietergrenzen, Laufzeit weiterer Arbeit, Originale und Kosten brauchen eigene Nachweise.`, "",
     "| Mandate | Tag | Reservierungen | Anbieterminuten | Fünfminutenfenster | Reservierte Sekunden |",
     "| ---: | --- | ---: | ---: | ---: | ---: |");
   for (const mandat of k.mandate) {

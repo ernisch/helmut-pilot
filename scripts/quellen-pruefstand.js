@@ -65,6 +65,7 @@ function setzeVertrag(fixture) {
   const route = { provider: "azure", responsesUrl: fixture.AZURE + "/openai/v1/responses", model: "gpt-5-mini" };
   Object.assign(process.env, {
     HELMUT_SOURCE_MODE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on", HELMUT_SCALABLE_PIPELINE: "on",
+    HELMUT_CRAWL_EXECUTOR: "hetzner", HELMUT_EXEC_LOCATION: "hetzner-de", HELMUT_SOURCE_TELEMETRY: "on",
     HELMUT_QUELLEN_FENSTER_TAG: "8", HELMUT_QUELLEN_SEKUNDEN_TAG: "2400", HELMUT_ORIGINALABRUFE_TAG: "16",
     HELMUT_ANBIETER_STEUERUNG: "on", HELMUT_ANBIETER_GOOGLE_MINUTE: "30",
     HELMUT_KLASSEN_GRENZEN: "on", HELMUT_JOB_DISPATCH_MODE: "off", HELMUT_TESTKOHORTE_QUELLEN: "aktiv",
@@ -77,7 +78,7 @@ function setzeVertrag(fixture) {
     DIP_API_KEY: randomUUID(), CRON_SECRET: randomUUID()
   });
   konfiguration.flags = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
-    key.startsWith("HELMUT_") && /(ARBEITSFENSTER|SCALABLE_PIPELINE|QUELLEN_FENSTER_TAG|QUELLEN_SEKUNDEN_TAG|ORIGINALABRUFE_TAG|ANBIETER_STEUERUNG|ANBIETER_GOOGLE_MINUTE|KLASSEN_GRENZEN|JOB_DISPATCH_MODE|SOURCE_MODE|V3_STORE|BRIEFING_FRISCHE|VERSTEHEN_CAS|TESTKOHORTE_QUELLEN)$/.test(key)));
+    key.startsWith("HELMUT_") && /(ARBEITSFENSTER|SCALABLE_PIPELINE|CRAWL_EXECUTOR|EXEC_LOCATION|SOURCE_TELEMETRY|QUELLEN_FENSTER_TAG|QUELLEN_SEKUNDEN_TAG|ORIGINALABRUFE_TAG|ANBIETER_STEUERUNG|ANBIETER_GOOGLE_MINUTE|KLASSEN_GRENZEN|JOB_DISPATCH_MODE|SOURCE_MODE|V3_STORE|BRIEFING_FRISCHE|VERSTEHEN_CAS|TESTKOHORTE_QUELLEN)$/.test(key)));
 }
 
 function google(job) {
@@ -146,6 +147,14 @@ function termine(pfad) {
     const hs = stunden === "*" ? Array.from({ length: 24 }, (_, i) => i) : stunden.split(",").map(Number);
     return hs.flatMap(h => ms.map(m => ({ path, zeit: [h, m].map(n => String(n).padStart(2, "0")).join(":") })));
   }).sort((a, b) => a.zeit.localeCompare(b.zeit));
+}
+
+function workerTermine(tag) {
+  const tagStart = Date.parse(tag + "T00:00:00Z");
+  return Array.from({ length: tagesbetrieb.MAX_FENSTER }, (_, index) => {
+    const termin = tagStart + index * (TAG / tagesbetrieb.MAX_FENSTER);
+    return tagesbetrieb.quellenslot(termin);
+  }).filter(Boolean).map(({ slot }) => ({ zeit: slot, path: "worker.js", worker: true }));
 }
 
 async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, laufzeitMs) {
@@ -250,10 +259,9 @@ async function main(schreibeZwischenstand) {
   assert(![".env.local", ".env", "env.local", "env.local.html"].some(pfad => existsSync(pfad)),
     "Prüfstand braucht einen Checkout ohne lokale Zugangsdaten");
   assert.equal(konfiguration.maxDurationS, 300, "Maximale Funktionsdauer weicht vom geprüften Quellenfenster ab");
-  const slots = termine(/^\/api\/cron\/crawl(\?|$)/), ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)(\?|$)/);
-  assert.equal(slots.length, 96);
+  const ausgaben = termine(/^\/api\/cron\/(lage-briefing|morning-briefing)(\?|$)/);
   assert.equal(ausgaben.length, 8);
-  const ablauf = [...slots, ...ausgaben].sort((a, b) => a.zeit.localeCompare(b.zeit));
+  konfiguration.quellenfenster = workerTermine(pruefzeiten[0]).length;
   const uhr = uhrStart(process.env.HELMUT_QUELLEN_DB_UHR);
   let db, transport, app;
   try {
@@ -295,16 +303,20 @@ async function main(schreibeZwischenstand) {
     note("Relationaler Katalog, ein gespeichertes Mandat und 754 synthetische Altaufträge", "geprueft");
     const vorflug = await require("../lib/helmut/worker-betrieb").readiness();
     assert(vorflug.bereit, "Produktionsvorflug: " + JSON.stringify(vorflug.gruende));
+    const { quellenlauf } = require("../worker");
     app = await startApp();
-    assert.equal((await app.cron(slots[0].path, false)).status, 403);
+    assert.equal((await app.cron(ausgaben[0].path, false)).status, 403);
 
     for (const tag of pruefzeiten) {
       const beginn = performance.now(), start = await queue(db, tag), laeufe = [];
       const frist = tagesbetrieb.zeiten(Date.parse(`${tag}T00:00:00Z`)).frist;
+      const slots = workerTermine(tag);
+      assert.equal(slots.length, 93, "Produktive Quellenfenster je Testtag");
+      const ablauf = [...slots, ...ausgaben].sort((a, b) => a.zeit.localeCompare(b.zeit));
       let morgenstand = null;
       for (const slot of ablauf) {
-        if (tag === pruefzeiten[1] && slot.zeit === "00:15" && slots.includes(slot)) continue;
-        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "05:30" && slots.includes(slot) ? 240 : 0;
+        if (tag === pruefzeiten[1] && slot.zeit === "00:15" && slot.worker) continue;
+        const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "05:30" && slot.worker ? 240 : 0;
         const soll = sekunde(`${tag}T${slot.zeit}:00Z`) + verzoegerung;
         uhr.setze(soll * 1000);
         assert.equal(Number(await db.psql("select extract(epoch from now())::bigint")), soll, "Anwendungs- und SQL-Uhr weichen ab");
@@ -324,20 +336,29 @@ async function main(schreibeZwischenstand) {
           schreibeZwischenstand();
         }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
-        const resultate = await Promise.all(Array.from({ length: parallel ? 2 : 1 }, () => app.cron(slot.path)));
-        assert(resultate.every(r => r.status === 200), `Cron-Transportfehler ${slot.path}`);
-        const mitFenster = resultate.filter(r => r.data.arbeitsfenster);
+        let resultate;
+        if (slot.worker) {
+          resultate = await Promise.all(Array.from({ length: parallel ? 2 : 1 }, () => quellenlauf()));
+        } else {
+          const antwort = await app.cron(slot.path);
+          assert.equal(antwort.status, 200, `Cron-Transportfehler ${slot.path}`);
+          resultate = [antwort.data];
+        }
+        const mitFenster = resultate.filter(r => r.arbeitsfenster);
         if (parallel) assert.equal(mitFenster.length, 1, "Keine eindeutige Arbeitsfensterreservierung bei Parallelstart");
         const r = mitFenster[0] || resultate[0];
+        if (slot.worker && mitFenster.length) {
+          assert(r.lauf?.laufId && r.lauftelemetrie?.ende === true, "Worker-Lauf ohne bestätigten Abschluss");
+        }
         const istLage = slot.path.startsWith("/api/cron/lage-briefing?");
         const istMorgen = slot.path.startsWith("/api/cron/morning-briefing?");
-        laeufe.push({ slot: slot.zeit, startVerzoegerungS: verzoegerung, pfad: slot.path, ok: r.data.ok ?? null,
-          grund: r.data.grund || r.data.reason || null, arbeitsfenster: Boolean(r.data.arbeitsfenster),
+        laeufe.push({ slot: slot.zeit, startVerzoegerungS: verzoegerung, pfad: slot.path, ok: r.ok ?? null,
+          grund: r.grund || r.reason || r.lauftelemetrie?.fehlerklasse || null, arbeitsfenster: Boolean(r.arbeitsfenster),
           simulierteMs: uhr.now() - soll * 1000,
-          ...(istLage ? { lage: { gespeichert: r.data.prewarmed ?? 0, vollstaendig: r.data.vollstaendig === true,
-            ergebnisse: (r.data.results || []).map(({ available, reason, diagnose }) => ({ available, reason, diagnose })) } } : {}),
-          ...(istMorgen ? { morgenversorgung: r.data.versorgung ?? null,
-            morgenergebnisse: (r.data.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
+          ...(istLage ? { lage: { gespeichert: r.prewarmed ?? 0, vollstaendig: r.vollstaendig === true,
+            ergebnisse: (r.results || []).map(({ available, reason, diagnose }) => ({ available, reason, diagnose })) } } : {}),
+          ...(istMorgen ? { morgenversorgung: r.versorgung ?? null,
+            morgenergebnisse: (r.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
       uhr.setze(Date.parse(`${tag}T23:59:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);
@@ -368,7 +389,7 @@ async function main(schreibeZwischenstand) {
     assert.deepEqual(transport.unbekannt, [], "Unbekannte Fixture-Ziele");
     konfiguration.datenbankEndzustand = db.stand();
     konfiguration.spitzenRssBytes = process.resourceUsage().maxRSS * 1024;
-    note("Tatsächliche Cron-Routen, atomare Doppelstart-Sperre und PostgreSQL-Zeitwechsel", "geprueft", "Zwei UTC-Tage");
+    note("Hetzner-Worker, Ausgabe-Crons, atomare Doppelstart-Sperre und PostgreSQL-Zeitwechsel", "geprueft", "Zwei UTC-Tage");
     note("Atomarer Anbieter-/Originalverbrauch und technische Abschlüsse", "geprueft", "Aus PostgreSQL am Ende jedes Morgens");
     note("Ausgaben und einzelne Quellenbelege abgeglichen", "geprueft", "Echter Fälligkeitsabgleich liest gespeicherte Belege, Jobstatus und Ausgabe");
     if (!tage.some(t => t.googleErledigt < t.googleBedarf && t.googleReservierungen > 0)

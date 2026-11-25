@@ -45,7 +45,8 @@ const MIGRATIONEN = Object.freeze([
   "20261109173143_raw_document_cas.sql",
   "20261112130226_auth_store_cas_patch_v1.sql",
   "20261113165614_frische_tagesarbeit.sql",
-  "20261119091317_quellenfaelligkeit_claim.sql"
+  "20261119091317_quellenfaelligkeit_claim.sql",
+  "20261123110000_quellen_dlq.sql"
 ]);
 const PROFILE_FLAGS = {
   HELMUT_V3_STORE: "1",
