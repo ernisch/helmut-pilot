@@ -391,6 +391,35 @@ test("Quellenjob übernimmt externe Sperre und Retry-After in die bestehende War
   await job({ leseBundestagAbrufpause: async () => pause, bundestagTermineFetch: () => A.fail("kein erneuter Abruf") });
   A.equal(fetches, 2);
 });
+test("Bundestag-503 bleibt höchstens einen Tag ohne verlorenen Versuch wieder vorlegbar", async () => {
+  const stunde = 3600000;
+  let angegeben, abschluss, vertagung;
+  const deps = {
+    env: { HELMUT_QUELLEN_ARBEITSFENSTER: "on" }, now, handler: SP.HANDLER,
+    leseBundestagTermineKatalog: async () => catalog(), leseBundestagAbrufpause: async () => null,
+    bundestagTermineFetch: async () => { throw Object.assign(Error("HTTP 503"), { statusCode: 503, retryAfterMs: angegeben }); },
+    sichereBundestagTerminstand: () => A.fail("Störung erzeugt keinen Beleg"),
+    reserviereBundestagOriginal: () => A.fail("Kein Original nach ausgefallenem Listenabruf"),
+    zurueckstellen: async v => { vertagung = v; return { verfuegbar: true, uebernommen: true }; },
+    finish: async v => { abschluss = v; return { verfuegbar: true, uebernommen: true }; }
+  };
+  const lauf = alter => SP.fuehreAuftragAus({
+    auftrag: { id: "503-fixture", job_type: "source_fetch", payload: { quelle: q }, attempts: 1,
+      first_due_at: new Date(now() - alter).toISOString() }, besitzer: "fixture", deps, restzeitMs: 60000
+  });
+  A.equal((await lauf(6 * stunde)).ausgang, "zurueckgestellt");
+  A.equal(vertagung.delayMs, stunde);
+  A.equal(vertagung.grund, "bundestag-termine-http-503");
+  A.equal(abschluss, undefined);
+  angegeben = 2 * stunde;
+  A.equal((await lauf(7 * stunde)).ausgang, "zurueckgestellt");
+  A.equal(vertagung.delayMs, angegeben);
+  vertagung = undefined;
+  A.equal((await lauf(24 * stunde)).ausgang, "wiederholt");
+  A.equal(vertagung, undefined);
+  A.equal(abschluss.ok, false);
+  A.equal(abschluss.error, "HTTP 503");
+});
 test("Vorhandener HTTP-Transport bewahrt Binaerbytes und begrenzt Antwortgroesse", async () => {
   const https = require("node:https"), original = https.get, bytes = Buffer.from([37,80,68,70,45,255,0,200]);
   let status = 200, headers = {}, calls = 0;

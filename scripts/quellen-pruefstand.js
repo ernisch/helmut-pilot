@@ -397,8 +397,11 @@ async function main(schreibeZwischenstand) {
           assert(morgenstand.abrufbar && !morgenstand.vollstaendig && morgenstand.lageAbsaetze > 0
             && morgenstand.paketFehler?.includes("quellenversorgung-unvollstaendig"),
           "Die Störung muss in einer abrufbaren Teilfassung sichtbar sein: " + JSON.stringify(morgenstand));
+          const plenum = tagesbericht.quellen.find(quelle => quelle.quelle === "bt-termine-plenum");
+          assert(plenum?.belegHash && plenum.verspaetet && ["terminstand", "bestaetigt_unveraendert"].includes(plenum.abruf),
+            "Der ursprüngliche Plenarauftrag muss nach der Störung noch am selben Tag bestätigt werden: " + JSON.stringify(plenum));
           note(`Teilfassung nach Bundestag-503 am ${tag}`, "geprueft",
-            `${abdeckung.bestaetigt} von ${abdeckung.geplant} fälligen Quellen bestätigt`);
+            `${abdeckung.bestaetigt} von ${abdeckung.geplant} fälligen Quellen bestätigt, Plenarauftrag später am selben Tag nachgeholt`);
           continue;
         }
         assert(abdeckung?.geplant > 0 && abdeckung.bestaetigt === abdeckung.geplant,
