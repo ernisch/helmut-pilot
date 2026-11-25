@@ -16,11 +16,13 @@ const TAG = 86400000;
 const START = Date.parse("2026-11-19T00:00:00Z");
 const terminkonfig = require("../vercel.json");
 const pruefzeiten = ["2026-11-19", "2026-11-20"];
+const saubererMorgen = process.argv[2] === "sauberer-morgen";
+const szenarioTage = saubererMorgen ? pruefzeiten.slice(0, 1) : pruefzeiten;
 const konfiguration = {
   node: process.version, mandatsprofile: 1, maxDurationS: terminkonfig.functions["api/index.js"].maxDuration,
   region: terminkonfig.regions, fenster: tagesbetrieb.MAX_FENSTER, fensterSekunden: 300, originalReservierungen: 16,
   googleReservierungenJeMinute: 30, modellTageslimitUsd: 1, modellGesamtlimitUsd: 30,
-  arbeitstage: pruefzeiten, historischWartendZuBeginn: 754,
+  arbeitstage: szenarioTage, historischWartendZuBeginn: saubererMorgen ? 0 : 754,
   transportMillisekunden: { google: 2000, modell: 2000, sonstige: 1000 },
   externeAbrufe: 0, bezahlteModellaufrufe: 0
 };
@@ -70,6 +72,7 @@ function setzeVertrag(fixture) {
     HELMUT_ANBIETER_STEUERUNG: "on", HELMUT_ANBIETER_GOOGLE_MINUTE: "30",
     HELMUT_KLASSEN_GRENZEN: "on", HELMUT_JOB_DISPATCH_MODE: "off", HELMUT_TESTKOHORTE_QUELLEN: "aktiv",
     HELMUT_V3_STORE: "1", HELMUT_BRIEFING_FRISCHE: "on", HELMUT_VERSTEHEN_CAS: "on",
+    ...(saubererMorgen ? { HELMUT_V3_MATCHING: "on" } : {}),
     HELMUT_BETRIEBSKOSTENVERTRAG_JSON: JSON.stringify({
       version: 1, profileId: fixture.mandat.id, startsAt: "2026-11-01T00:00:00.000Z",
       dailyLimitUsd: 1, totalLimitUsd: 30, route
@@ -78,7 +81,7 @@ function setzeVertrag(fixture) {
     DIP_API_KEY: randomUUID(), CRON_SECRET: randomUUID()
   });
   konfiguration.flags = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
-    key.startsWith("HELMUT_") && /(ARBEITSFENSTER|SCALABLE_PIPELINE|CRAWL_EXECUTOR|EXEC_LOCATION|SOURCE_TELEMETRY|QUELLEN_FENSTER_TAG|QUELLEN_SEKUNDEN_TAG|ORIGINALABRUFE_TAG|ANBIETER_STEUERUNG|ANBIETER_GOOGLE_MINUTE|KLASSEN_GRENZEN|JOB_DISPATCH_MODE|SOURCE_MODE|V3_STORE|BRIEFING_FRISCHE|VERSTEHEN_CAS|TESTKOHORTE_QUELLEN)$/.test(key)));
+    key.startsWith("HELMUT_") && /(ARBEITSFENSTER|SCALABLE_PIPELINE|CRAWL_EXECUTOR|EXEC_LOCATION|SOURCE_TELEMETRY|QUELLEN_FENSTER_TAG|QUELLEN_SEKUNDEN_TAG|ORIGINALABRUFE_TAG|ANBIETER_STEUERUNG|ANBIETER_GOOGLE_MINUTE|KLASSEN_GRENZEN|JOB_DISPATCH_MODE|SOURCE_MODE|V3_STORE|V3_MATCHING|BRIEFING_FRISCHE|VERSTEHEN_CAS|TESTKOHORTE_QUELLEN)$/.test(key)));
 }
 
 function google(job) {
@@ -265,19 +268,21 @@ async function main(schreibeZwischenstand) {
   const uhr = uhrStart(process.env.HELMUT_QUELLEN_DB_UHR);
   let db, transport, app;
   try {
-    await pruefeSpeichergrenze();
-    note("Isolierte V8-Heapgrenze", "geprueft",
-      "Ein Test-Worker meldet bei 16 MiB ERR_WORKER_OUT_OF_MEMORY. Vercel-Speicherprofil und Plattformabbruch bleiben offen.", "simulation");
     const { starteQuellenDatenbank } = require("./quellen-pruefstand-datenbank");
-    db = await starteQuellenDatenbank({ begrenzterPool: true });
-    konfiguration.poolStoerprobe = await db.pruefeEngpass();
-    note("Langsame Datenbank und erschöpfte Poolverbindung", "geprueft",
-      "Eine isolierte Poolverbindung, Reservierung bei Timeout abgewiesen, nach Freigabe einzeln bestätigt", "simulation");
-    await db.stoppe();
+    if (!saubererMorgen) {
+      await pruefeSpeichergrenze();
+      note("Isolierte V8-Heapgrenze", "geprueft",
+        "Ein Test-Worker meldet bei 16 MiB ERR_WORKER_OUT_OF_MEMORY. Vercel-Speicherprofil und Plattformabbruch bleiben offen.", "simulation");
+      db = await starteQuellenDatenbank({ begrenzterPool: true });
+      konfiguration.poolStoerprobe = await db.pruefeEngpass();
+      note("Langsame Datenbank und erschöpfte Poolverbindung", "geprueft",
+        "Eine isolierte Poolverbindung, Reservierung bei Timeout abgewiesen, nach Freigabe einzeln bestätigt", "simulation");
+      await db.stoppe();
+    }
     db = await starteQuellenDatenbank();
     konfiguration.datenbank = db.konfiguration;
     const fixture = require("./fixtures/quellen-pruefstand");
-    transport = await fixture.transport(uhr);
+    transport = await fixture.transport(uhr, { saubererMorgen });
     setzeVertrag(fixture);
     const url = "https://nachrichten.fixture.invalid/feeds/9.xml";
     const transportVorher = transport.zaehler.get(pruefzeiten[0] + "|sonstige") || 0;
@@ -294,20 +299,23 @@ async function main(schreibeZwischenstand) {
       nachher: { arbeitsschluessel, bedarf: 1, httpAnfragen } };
     note("Identische leere RSS-Antwort", "geprueft", "7b1f55b0 → Arbeitsstand: 2 → 1 Abrufe, 1 → 0 falsche Fundstücke");
     const eingabe = fixture.katalog();
-    konfiguration.fixtureHash = createHash("sha256").update(JSON.stringify({ katalog: eingabe, mandat: fixture.mandat })).digest("hex");
+    konfiguration.fixtureHash = createHash("sha256").update(JSON.stringify({
+      katalog: eingabe, mandat: fixture.mandat, ...(saubererMorgen ? { saubererMorgen } : {})
+    })).digest("hex");
     const { catalog: katalog } = await db.seed({ profile: fixture.mandat, catalog: eingabe });
     assert.deepEqual((await db.storage.listFullProfiles()).map(p => p.id), [fixture.mandat.id]);
     const profil = await db.storage.getProfile(fixture.mandat.id);
-    await seedRueckstand(db.storage, profil);
-    assert.equal((await queue(db, pruefzeiten[0])).offen, 754);
-    note("Relationaler Katalog, ein gespeichertes Mandat und 754 synthetische Altaufträge", "geprueft");
+    if (!saubererMorgen) await seedRueckstand(db.storage, profil);
+    assert.equal((await queue(db, pruefzeiten[0])).offen, konfiguration.historischWartendZuBeginn);
+    note("Relationaler Katalog und ein gespeichertes Mandat", "geprueft",
+      `${konfiguration.historischWartendZuBeginn} synthetische Altaufträge`);
     const vorflug = await require("../lib/helmut/worker-betrieb").readiness();
     assert(vorflug.bereit, "Produktionsvorflug: " + JSON.stringify(vorflug.gruende));
     const { quellenlauf } = require("../worker");
     app = await startApp();
     assert.equal((await app.cron(ausgaben[0].path, false)).status, 403);
 
-    for (const tag of pruefzeiten) {
+    for (const tag of szenarioTage) {
       const beginn = performance.now(), start = await queue(db, tag), laeufe = [];
       const frist = tagesbetrieb.zeiten(Date.parse(`${tag}T00:00:00Z`)).frist;
       const slots = workerTermine(tag);
@@ -329,11 +337,13 @@ async function main(schreibeZwischenstand) {
           morgenstand = { abrufbar: stand.available === true, vollstaendig: stand.paketStatus?.vollstaendig === true,
             lageAbsaetze: stand.lageBriefing?.paragraphs?.length || 0,
             prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
-            mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)) };
+            mitDipBeleg: prioritaeten.some(p => Boolean(p.dipDokumentbeleg)),
+            ...(saubererMorgen ? { versorgung: kopf?.versorgung, paketFehler: stand.paketStatus?.fehler } : {}) };
           assert(morgenstand.prioritaeten <= 3, "Mehr als drei Tagesprioritäten");
           note(`Produktleser um 07:30 Uhr Berlin am ${tag}`, "geprueft",
             `Abrufbar: ${morgenstand.abrufbar}. Vollständig: ${morgenstand.vollstaendig}. Lageabsätze: ${morgenstand.lageAbsaetze}. Tagesprioritäten: ${morgenstand.prioritaeten}. DIP-Beleg: ${morgenstand.mitDipBeleg}.`);
           schreibeZwischenstand();
+          if (saubererMorgen) break;
         }
         const parallel = tag === pruefzeiten[0] && slot === slots[0];
         let resultate;
@@ -360,12 +370,25 @@ async function main(schreibeZwischenstand) {
           ...(istMorgen ? { morgenversorgung: r.versorgung ?? null,
             morgenergebnisse: (r.results || []).map(({ reason, paketBeleg }) => ({ reason, paketBeleg })) } : {}) });
       }
-      uhr.setze(Date.parse(`${tag}T23:59:00Z`));
+      if (!saubererMorgen) uhr.setze(Date.parse(`${tag}T23:59:00Z`));
       const tagesbericht = await messung(db, tag, start, laeufe, uhr, transport, profil, katalog, performance.now() - beginn);
       tagesbericht.morgenstand = morgenstand;
       tagesbericht.briefingFrist &&= morgenstand?.abrufbar === true;
       tage.push(tagesbericht);
       schreibeZwischenstand();
+      if (saubererMorgen) {
+        assert.deepEqual(transport.unbekannt, [], "Unbekannte Fixture-Ziele");
+        assert(tagesbericht.originalReservierungen <= konfiguration.originalReservierungen, "Originalquote überschritten");
+        const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
+        assert(abdeckung?.geplant > 0 && abdeckung.bestaetigt === abdeckung.geplant,
+          "Morgenabrufe unvollständig: " + JSON.stringify(abdeckung));
+        assert(laeufe.some(lauf => lauf.lage?.vollstaendig), "Kein vollständiger Lage-Lauf vor 07:30 Uhr");
+        assert(morgenstand?.abrufbar && morgenstand.vollstaendig && morgenstand.lageAbsaetze > 0 && morgenstand.mitDipBeleg,
+          "Gesunder Morgen ohne vollständiges Briefing und DIP-Beleg: " + JSON.stringify(morgenstand));
+        note("Vollständiger Morgen vor 07:30 Uhr mit DIP-Beleg", "geprueft",
+          `${abdeckung.bestaetigt} von ${abdeckung.geplant} fälligen Quellen bestätigt`);
+        return;
+      }
       assert.equal(tagesbericht.eingeplant, tagesbericht.bedarf, `Tagesplan oder Queue unvollständig für ${tag}`);
       assert.equal(tagesbericht.planluecken, 0, `Quellenplanabweichung für ${tag}`);
     }
@@ -421,21 +444,30 @@ if (require.main === module) {
     process.exitCode = 1;
   }
   function schreibeBericht() {
-    const bericht = erstelleBericht({ szenario: "produktionsnah-20261119", commit, lauf,
-      versuch: process.env.GITHUB_RUN_ATTEMPT || null, konfiguration, tage, pruefungen, abweichungen, vergleich });
+    const daten = { commit, lauf, versuch: process.env.GITHUB_RUN_ATTEMPT || null,
+      konfiguration, tage, pruefungen, abweichungen, vergleich };
+    const bericht = saubererMorgen
+      ? { ...daten, szenario: "sauberer-morgen", ergebnis: process.exitCode ? "fehlgeschlagen"
+        : pruefungen.some(p => p.name === "Vollständiger Morgen vor 07:30 Uhr mit DIP-Beleg") ? "bestanden" : "offen" }
+      : erstelleBericht({ ...daten, szenario: "produktionsnah-20261119" });
     const pfad = process.env.HELMUT_QUELLEN_PRUEFBERICHT;
     if (pfad) {
       writeFileSync(pfad + ".json", JSON.stringify(bericht, null, 2) + "\n");
-      writeFileSync(pfad + ".md", formatiereBericht(bericht));
+      writeFileSync(pfad + ".md", formatiere(bericht));
     }
     return bericht;
   }
+  const formatiere = bericht => !saubererMorgen ? formatiereBericht(bericht) : [
+    "## HELMUT Morgen ohne simulierte Störungen", "",
+    `Commit ${bericht.commit} · Lauf ${bericht.lauf}/${bericht.versuch} · Ergebnis **${bericht.ergebnis}**`, "",
+    ...bericht.pruefungen.map(p => `- ${p.name} · ${p.status}${p.beleg ? " · " + p.beleg : ""}`), ""
+  ].join("\n");
   const ausfuehrung = process.exitCode ? Promise.resolve() : main(schreibeBericht);
   ausfuehrung.catch(error => {
     note("Laufzeitvertrag", "fehlgeschlagen", error.message);
     console.error(error.stack);
     process.exitCode = 1;
   }).finally(() => {
-    console.log(formatiereBericht(schreibeBericht()));
+    console.log(formatiere(schreibeBericht()));
   });
 }

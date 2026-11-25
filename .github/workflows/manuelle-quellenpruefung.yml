@@ -24,6 +24,14 @@ on:
           - ohne
           - bundestag
           - landtag
+      pruefvariante:
+        description: Variante des produktionsnahen Prüfstands
+        required: true
+        type: choice
+        default: zwei-tage
+        options:
+          - zwei-tage
+          - sauberer-morgen
 
 permissions:
   contents: read
@@ -98,6 +106,7 @@ jobs:
         env:
           PRUEFQUELLE: ${{ inputs.quelle }}
           PRUEFMANDAT: ${{ inputs.mandat }}
+          PRUEFVARIANTE: ${{ inputs.pruefvariante }}
         run: |
           set -euo pipefail
           docker_local=(docker --host=unix:///var/run/docker.sock)
@@ -156,8 +165,8 @@ jobs:
               test -z "$(ip -6 route show default)"
               test ! -w /var/run/docker.sock
               echo "Isolation bestätigt: nur Loopback, keine externe Route, kein Dockerzugriff"
-              exec node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$1" "$2"
-            ' offline "$PRUEFQUELLE" "$PRUEFMANDAT"
+              exec node scripts/lokal.js -- node scripts/quellen-entwicklungspruefung.js "$1" "$2" "$3"
+            ' offline "$PRUEFQUELLE" "$PRUEFMANDAT" "$PRUEFVARIANTE"
       - name: Prüfbericht sichern
         if: ${{ always() && inputs.quelle == 'produktionsnah' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

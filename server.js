@@ -2060,7 +2060,9 @@ async function handleRequest(request, response) {
           const profile = await activeProfile(tenantId);
           if (validateProfile(profile).disabled)
             return { userId: tenantId, available: false, reason: "profil-deaktiviert", ok: false };
-          const versorgung = await require("./lib/helmut/quellen-versorgungsstand").lese({ mandat: tenantId });
+          const versorgung = await require("./lib/helmut/quellen-versorgungsstand").lese({
+            mandat: tenantId, jetztMs: lageBriefingStartMs, quellenBis
+          });
           const rueckstand = versorgung && versorgung.zustand !== "kein-bekannter-rueckstand";
           const res = await buildLageBriefing(profile, { politicianId: tenantId, quellenBis, ...(versorgung ? { versorgung } : {}) })
             .catch(e => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
