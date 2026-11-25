@@ -3635,9 +3635,14 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
       : gespeicherteAusgabe, { previewMode, compact, frischeKontext: null });
   }
   const tagespaket = require("./lib/helmut/tagespaket-auslieferung");
-  const paket = await tagespaket.lese({
-    userId: politicianId, profile, storage: storageModul });
+  const radarVeroeffentlichungen = require("./lib/helmut/radar-veroeffentlichungen");
   const jetzt = new Date();
+  const [paket, veroeffentlichungen] = await Promise.all([
+    tagespaket.lese({ userId: politicianId, profile, storage: storageModul, now: jetzt }),
+    !previewMode && v3StoreReady() ? withTimeout(radarVeroeffentlichungen.lese(profile, {
+      now: jetzt, storage: storageModul
+    }), 2000, "radar-veroeffentlichungen").catch(() => []) : []
+  ]);
   const term = quellenTagesbetrieb.zeiten(jetzt.getTime());
   let stand = paket.briefing;
   if (!previewMode && term && jetzt.getTime() > term.frist
@@ -3654,7 +3659,8 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   }
   const ausgabe = previewMode ? stand
     : await require("./lib/helmut/parlamentsbelege-produkt").ergaenzeAusgabe(stand, profile);
-  return prepareBriefingResponse(ausgabe, { previewMode, compact, frischeKontext: paket.frischeKontext });
+  return prepareBriefingResponse(radarVeroeffentlichungen.ergaenze(ausgabe, veroeffentlichungen, jetzt),
+    { previewMode, compact, frischeKontext: paket.frischeKontext });
 }
 
 // opts.slot (optional): expliziter Slot-Override (Tests/Admin/spaetere Cron-Nutzung).

@@ -181,7 +181,121 @@ async function main(){
       A.equal(JSON.stringify([...f.rows]),before);
     }
   });
-  A.equal(count,9);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
+  await test("App-Leser erreicht eigene Originalmeldungen ohne Wissensvorgang bei leerem Tagesradar",async()=>{
+    const M = require("../lib/helmut/radar-veroeffentlichungen");
+    const fs = require("node:fs"), vm = require("node:vm");
+    const source = fs.readFileSync(require.resolve("../server"), "utf8");
+    const start = source.indexOf("async function latestBriefingPayload(");
+    const end = source.indexOf("// opts.slot (optional)", start);
+    const zeit = new Date("2026-11-25T14:20:00Z");
+    const date = class extends Date { constructor(...args) { super(...(args.length ? args : [zeit])); } };
+    const original = "https://www.dielinkebt.de/presse/pressemitteilungen/detail/synthetischer-fachbericht/";
+    const doc = {
+      id: "rd-lokal-fraktion", source_id: "linksfraktion", title: "Synthetischer Bericht zur Beratung",
+      url: original, canonical_url: original.replace("www.", ""), link_type: "direct",
+      published_at: "2026-11-24T12:00:00+00:00", summary: "Darf nicht angezeigt werden",
+      document_findings: [{ source_id: "linksfraktion", original_url: original, link_type: "direct" }],
+      ko_document_links: []
+    };
+    const leer = { mentions: [], dynamics: [], articles: [], environment: { party: [], committees: [], constituency: [] } };
+    const stand = { reason: "tagespaket-fehlt", paketStatus: { vollstaendig: false },
+      currentRadarState: { ...leer, status: "stale", anzeige: clone(leer) } };
+    const before = clone(stand);
+    let reads = 0, leseFehler = false, rows = [doc], verknuepfteQuelle = doc;
+    const sandbox = {
+      Date: date, opts: { politicianId: profile.id, profile, compact: true },
+      require: path => {
+        if (path.endsWith("/tagespaket-auslieferung")) return { lese: async () => ({ briefing: stand }) };
+        if (path.endsWith("/radar-veroeffentlichungen")) return M;
+        if (path.endsWith("/parlamentsbelege-produkt")) return { ergaenzeAusgabe: async b => b };
+        throw new Error("Unerwartetes Modul");
+      },
+      quellenTagesbetrieb: { zeiten: () => ({ frist: 0, redaktionsschluss: 0 }) },
+      v3StoreReady: () => true, withTimeout: p => p, buildV3Briefing: fail("Vorgangsbau ohne Tagespaket"),
+      prepareBriefingResponse: (b, {compact}) => { A.equal(compact,true); return b; },
+      storageModul: { supabaseRequest: async (endpoint, options) => {
+        const q = new URL(endpoint, "https://local.invalid"), params = q.searchParams;
+        A.equal(q.pathname, "/rest/v1/raw_documents");
+        A.equal(params.get("source_id"), "in.(linksfraktion)");
+        A.equal(params.has("ko_document_links"), false);
+        A.ok(params.get("select").includes("ko_document_links(knowledge_object_id,knowledge_objects("));
+        A.equal(params.get("document_findings.link_type"), "eq.direct");
+        A.equal(params.get("limit"), "24");
+        A.equal(params.getAll("published_at").length, 2);
+        A.deepEqual(options, {timeoutMs:1800}); reads++;
+        if (leseFehler) throw new Error("synthetischer Leseausfall");
+        return rows;
+      }, getPublicationSourceIdentities: async kos => {
+        A.deepEqual(kos.map(ko => ko.id), ["ko-lokal"]);
+        return { "ko-lokal": [verknuepfteQuelle] };
+      } }
+    };
+    const appRead = () => vm.runInNewContext(`${source.slice(start,end)}; latestBriefingPayload(opts)`, sandbox);
+    const ausgabe = await appRead();
+    const [karte] = ausgabe.currentRadarState.anzeige.environment.party;
+    A.equal(karte.title, doc.title);
+    A.equal(karte.sourceUrl, original);
+    A.equal(karte.relationLabel, "Veröffentlichung der Fraktion");
+    A.equal(karte.beobachtungsBeleg.art, "eigene-veroeffentlichung");
+    A.equal(karte.vorgangId, undefined);
+    A.equal(ausgabe.currentRadarState.anzeige.mentions.length, 0);
+    A.equal(ausgabe.currentRadarState.anzeige.dynamics.length, 0);
+    A.equal(ausgabe.currentRadarState.anzeige.status, "stale");
+    A.equal(ausgabe.currentRadarState.anzeige.lastUpdated, "2026-11-24T12:00:00.000Z");
+    A.equal(ausgabe.paketStatus.vollstaendig, false);
+    A.ok(!JSON.stringify(ausgabe).includes(doc.summary));
+    A.deepEqual(stand, before);
+    A.equal(reads, 1);
+    sandbox.opts.previewMode = true;
+    A.equal(await appRead(), stand);
+    A.equal(reads, 1);
+    sandbox.opts.previewMode = false;
+    leseFehler = true;
+    A.equal(await appRead(), stand);
+    leseFehler = false;
+    for (const abweichung of [
+      { source_id: "fremde-quelle" },
+      { url: "https://www.spdfraktion.de/presse/synthetischer-bericht" },
+      { url: "https://www.dielinkebt.de/" },
+      { published_at: "2026-11-26T00:00:00Z" },
+      { published_at: "2026-11-17T00:00:00Z" },
+      { ko_document_links: [{ knowledge_object_id: "ko-lokal" }] },
+      { document_findings: [] }
+    ]) {
+      rows = [{ ...doc, ...abweichung }];
+      A.equal(await appRead(), stand);
+    }
+    rows = [doc, { ...doc, id: "rd-alias" }];
+    A.equal((await appRead()).currentRadarState.anzeige.environment.party.length, 1);
+    rows = [{ ...doc, ko_document_links: [{ knowledge_object_id: "ko-lokal",
+      knowledge_objects: { id: "ko-lokal", vorgang_id: "vg-lokal" } }] }];
+    A.equal((await appRead()).currentRadarState.anzeige.environment.party[0].id, karte.id);
+    verknuepfteQuelle = { url: "https://example.invalid/held" };
+    A.equal(await appRead(), stand);
+    verknuepfteQuelle = doc;
+    rows = [doc];
+    const policy = process.env[P.ENV];
+    try {
+      const hold = JSON.parse(policy);
+      hold.holds[0].publicationUrl = doc.canonical_url;
+      process.env[P.ENV] = JSON.stringify(hold);
+      A.equal(await appRead(), stand);
+    } finally { process.env[P.ENV] = policy; }
+    const block = process.env.HELMUT_SOURCE_BLOCKLIST;
+    try {
+      process.env.HELMUT_SOURCE_BLOCKLIST = "dielinkebt.de";
+      A.equal(await appRead(), stand);
+    } finally {
+      if (block === undefined) delete process.env.HELMUT_SOURCE_BLOCKLIST;
+      else process.env.HELMUT_SOURCE_BLOCKLIST = block;
+    }
+    A.equal((await M.lese({}, { now: zeit, storage: { supabaseRequest: fail("Quelle ohne Profilbezug") } })).length, 0);
+    const vorhandenerRadar = { currentRadarState: { anzeige: { ...leer, environment: {
+      ...leer.environment, party: [{sourceUrl:"https://local.invalid/bestaetigt",documentId:"vorhanden"}]
+    } } } };
+    A.equal(M.ergaenze(vorhandenerRadar, [karte], zeit), vorhandenerRadar);
+  });
+  A.equal(count,10);A.deepEqual(forbidden,[]);console.log(`${count}/${count} Radar-Artikelgruppen bestanden; keine Modelle oder Productionwrites.`);
 }
 main().catch(e=>{console.error(e.stack||e);process.exitCode=1;}).finally(()=>{
   for(const [m,old] of modules)Object.assign(m,old);if(oldPolicy===undefined)delete process.env[P.ENV];else process.env[P.ENV]=oldPolicy;
