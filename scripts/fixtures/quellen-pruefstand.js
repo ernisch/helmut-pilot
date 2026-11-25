@@ -91,7 +91,7 @@ function pdf(zeilen) {
   return Buffer.from(text + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, "latin1");
 }
 
-function termine() {
+function termine(saubererMorgen) {
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const seiten = new Map();
   for (const [nummer, q] of QUELLEN.entries()) {
@@ -109,7 +109,7 @@ function termine() {
       continue;
     }
     const pfad = new URL(q.url).pathname;
-    const liste = Array.from({ length: 5 }, (_, i) => {
+    const liste = Array.from({ length: saubererMorgen ? 1 : 5 }, (_, i) => {
       const url = link(i + 1, q.art === "plenum" ? "Tagesordnung-komplett.pdf" : `tagesordnung-${i + 1}.pdf`);
       const sitzung = q.art === "plenum" ? "7. Sitzung des Deutschen Bundestages am 24.11.2026, 09 Uhr"
         : "der 7. Sitzung am Dienstag, dem 24.11.2026, 09 Uhr";
@@ -184,8 +184,8 @@ function modellAntwort(schema, eingabe) {
   };
 }
 
-function antworten(uhr) {
-  const bt = termine(), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
+function antworten(uhr, saubererMorgen) {
+  const bt = termine(saubererMorgen), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -226,6 +226,7 @@ function antworten(uhr) {
       && url.searchParams.get("f.vorgang") === DIP_VORGANG)
       return { type: "application/json", body: JSON.stringify({ numFound: 0, documents: [], cursor: "" }) };
     if (url.origin === GOOGLE && url.pathname === "/rss/search") {
+      if (saubererMorgen) return { type: "application/rss+xml", body: leer };
       const query = url.searchParams.get("q") || "";
       if (query === "fixture-ressort-7" && !vorher && tag === "2026-11-20")
         return { status: 429, headers: { "retry-after": "8" }, body: "Synthetische Drosselung" };
@@ -247,6 +248,7 @@ function antworten(uhr) {
       return { body: "<html><head><meta property='og:image' content='https://nachrichten.fixture.invalid/bild.png'></head><body>Synthetischer Artikel.</body></html>" };
     }
     if (url.origin === VERLAG && /^\/feeds\/\d+\.xml$/.test(url.pathname)) {
+      if (saubererMorgen) return { type: "application/rss+xml", body: leer };
       if (url.pathname === "/feeds/2.xml" && !vorher && tag === "2026-11-20")
         return { unterbrechen: true, body: leer };
       const anderung = tag === "2026-11-20" ? " – aktualisierte Fassung" : "";
@@ -262,8 +264,8 @@ function antworten(uhr) {
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben
 // für die Produktionsleser sichtbar. DNS und TLS liegen außerhalb dieses Nachweises.
-async function transport(uhr) {
-  const fixtures = antworten(uhr);
+async function transport(uhr, { saubererMorgen = false } = {}) {
+  const fixtures = antworten(uhr, saubererMorgen);
   const server = http.createServer((req, res) => {
     let daten = "";
     req.on("data", chunk => {

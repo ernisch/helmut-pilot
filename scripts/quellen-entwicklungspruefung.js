@@ -86,9 +86,11 @@ async function kalender(mandat) {
 }
 
 function start(args) {
-  const [quelle, mandat = "ohne"] = args;
-  if (args.length > 2 || !Object.hasOwn(auswahl, quelle)
+  const [quelle, mandat = "ohne", pruefvariante = "zwei-tage"] = args;
+  if (args.length > 3 || !Object.hasOwn(auswahl, quelle)
     || !["ohne", "bundestag", "landtag"].includes(mandat)
+    || !["zwei-tage", "sauberer-morgen"].includes(pruefvariante)
+    || (pruefvariante !== "zwei-tage" && quelle !== "produktionsnah")
     || (quelle !== "bundestag-kalender" && mandat !== "ohne")) {
     console.error("quellen-entwicklungspruefung: auswahl-ungueltig");
     return 2;
@@ -99,7 +101,7 @@ function start(args) {
     return 3;
   }
   if (quelle === "produktionsnah") {
-    const result = spawnSync(process.execPath, [path.join(__dirname, auswahl[quelle])], {
+    const result = spawnSync(process.execPath, [path.join(__dirname, auswahl[quelle]), pruefvariante], {
       // Reale Runnerzeit für PostgreSQL und beide synthetischen Tage. Die
       // Uhr, Cron-Zeitfenster und Abnahmefristen im Szenario sind separat.
       stdio: "inherit", timeout: 24 * 60000, killSignal: "SIGKILL"
