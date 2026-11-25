@@ -200,3 +200,18 @@ test("Berliner Landtagsprofil (Abgeordnetenhaus) bindet den Ausschuss ebenfalls"
   A.equal(s.environment.committees[0].documentId, "d-berlin");
 });
 console.log(`${n}/${n} Fallgruppen bestanden; offline, keine Profil- oder Datenwrites.`);
+
+
+test("Eindeutiger Einzelort und belegte Stellvertretung gelten auch ohne vorgelagertes Rankingmerkmal", () => {
+  const ort = { ...ortDoc, title: "Investitionen in Wolfenbüttel", summary: "Der Rat Wolfenbüttel berät." };
+  const lokal = { ...wkKo, mentioned_locations: ["Wolfenbüttel"] };
+  A.equal(build(wkProfile, lokal, [], [ort]).environment.constituency[0]?.sourceUrl, ort.url);
+  A.equal(build({ ...wkProfile, constituency: "Berlin-Wolfenbüttel" }, lokal, [], [ort]).environment.constituency.length, 0);
+  const ausschuss = "Ausschuss für Wirtschaft und Energie";
+  const ko = { ...wkKo, mentioned_locations: [], ausschuesse: [ausschuss],
+    headline: ausschuss + " berät einen Antrag", display_title: ausschuss + " berät einen Antrag" };
+  const doc = { ...ortDoc, title: ausschuss + " berät einen Antrag" };
+  const ausgabe = build({ ...wkProfile, deputyCommittees: [ausschuss], parliamentType: "Bundestag" }, ko, [], [doc]);
+  A.equal(ausgabe.environment.committees[0]?.relationLabel, "Stellvertretung im Ausschuss");
+  A.equal(build(wkProfile, ko, [], [doc]).environment.committees.length, 0);
+});
