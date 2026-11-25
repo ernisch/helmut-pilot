@@ -17,8 +17,12 @@ async function ausliefern({ kind = "quiet", status = "empty", versorgung, lage =
   const briefing = structuredClone(fixture.briefing);
   briefing.currentHelmutState = { status, emptyState: { kind,
     headline: "Kein belegter Tagesanlass fuer ein Briefing" }, ...(versorgung ? { versorgung } : {}) };
+  const { vorgang_id: vorgangId, quellenbelege: [beleg] } = original.text.payload.quellen[0];
+  const artikel = { title: beleg.titel, url: beleg.url, publishedAt: beleg.veroeffentlichtAm };
+  briefing.items.find(item => item.vorgangId === vorgangId).sources = [artikel];
   briefing.currentRadarState = { status: "fresh", anzeige: { status: "fresh", dynamics: [{
-    title: "Gespeicherte synthetische Beobachtung", sourceUrl: "https://example.invalid/dokument/1" }] } };
+    vorgangId, title: artikel.title, sourceUrl: artikel.url, publishedAt: artikel.publishedAt }],
+    mentions: [], articles: [], environment: { party: [], constituency: [], committees: [] } } };
   const lageAnsicht = lage ? { ...B.lageAusgabe(original.text.payload), vorgaenge: [{
     vorgangId: "vg-synth-1", displayTitle: "Gespeicherte synthetische Lagekarte",
     sources: [{ url: "https://example.invalid/dokument/1" }] }] } : null;
