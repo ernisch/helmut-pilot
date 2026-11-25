@@ -15,8 +15,8 @@ const auftrag = { id, job_type: "source_fetch", attempts: 1, max_attempts: 3 };
 const payload = { jobId: id, schemaVersion: 1 };
 const vertagungsHandler = async () => ({ zurueckgestellt: true, grund: "synthetische-vorbedingung" });
 
-async function auftragsausgang(zurueckstellen) {
-  return pipeline.fuehreAuftragAus({ auftrag, besitzer: "worker",
+async function auftragsausgang(zurueckstellen, job = auftrag) {
+  return pipeline.fuehreAuftragAus({ auftrag: job, besitzer: "worker",
     deps: { env: {}, now: Date.now, handler: { source_fetch: vertagungsHandler },
       zurueckstellen, finish: async () => assert.fail("Vertagung darf kein Finish schreiben") } });
 }
@@ -53,6 +53,107 @@ test("Bestätigte Vertagung zählt und ergibt success", async t => {
   assert.equal(ergebnis.ok, true);
   assert.equal(abschluss.status, "success");
   assert.equal(abschluss.deferred, 1);
+});
+
+test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefangen", async t => {
+  const fakeUrl = "https://vertagung.test.invalid";
+  const env = { SUPABASE_URL: process.env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  process.env.SUPABASE_URL = fakeUrl;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "lokaler-testschluessel";
+  t.after(() => {
+    for (const [k, v] of Object.entries(env)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  });
+  for (const [fall, pfad, erwartet] of [
+    ["bereits-vertagt", ["POST", "GET"], true],
+    ["noch-eigene-lease", ["POST", "GET", "POST"], true],
+    ["erneute-antwort-verloren", ["POST", "GET", "POST", "GET"], true],
+    ["fremde-lease", ["POST", "GET"], false],
+    ["abgelaufene-lease", ["POST", "GET"], false],
+    ["fremdes-mandat", ["POST", "GET"], false],
+    ["alter-stand", ["POST", "GET"], false],
+    ["anderer-grund", ["POST", "GET"], false],
+    ["falsche-faelligkeit", ["POST", "GET"], false],
+    ["anderer-versuch", ["POST", "GET"], false],
+    ["lesefehler", ["POST", "GET"], false],
+    ["abgelehnt", ["POST"], false]
+  ]) {
+    const mandat = fall === "noch-eigene-lease" ? "synthetisches-mandat" : null;
+    const methoden = [];
+    let row = { id, tenant_id: mandat, status: "laeuft", lease_owner: "worker",
+      lease_expires_at: new Date(Date.now() + 60000).toISOString(), attempts: 1 };
+    const vertage = (body, zeit = Date.now()) => {
+      row = { ...row, status: "wartend", lease_owner: null, lease_expires_at: null, attempts: 0,
+        updated_at: new Date(zeit).toISOString(), due_at: new Date(zeit + body.p_delay_ms).toISOString(),
+        last_error: "zurueckgestellt: " + body.p_grund };
+    };
+    const fetch = t.mock.method(globalThis, "fetch", async (adresse, options) => {
+      const url = new URL(adresse);
+      assert.equal(url.origin, fakeUrl);
+      const methode = options.method || "GET";
+      methoden.push(methode);
+      if (methode === "GET") {
+        assert.equal(url.pathname, "/rest/v1/helmut_jobs");
+        assert.equal(url.searchParams.get("id"), "eq." + id);
+        assert.equal(url.searchParams.get("tenant_id"), mandat === null ? "is.null" : "eq." + mandat);
+        assert.equal(url.searchParams.get("limit"), "2");
+        if (fall === "lesefehler") return new Response("", { status: 521 });
+        return Response.json([row]);
+      }
+      assert.equal(url.pathname, "/rest/v1/rpc/helmut_defer_job");
+      const body = JSON.parse(options.body);
+      assert.equal(body.p_owner, "worker");
+      assert.equal(body.p_id, id);
+      if (fall === "abgelehnt") return Response.json([{ uebernommen: false, neue_faelligkeit: null }]);
+      if (methoden.length === 1) {
+        if (["bereits-vertagt", "alter-stand", "anderer-grund", "falsche-faelligkeit", "anderer-versuch"].includes(fall)) {
+          vertage(body, Date.now() - (fall === "alter-stand" ? 60000 : 0));
+          if (fall === "anderer-grund") row.last_error = "zurueckgestellt: fremder-grund";
+          if (fall === "falsche-faelligkeit") row.due_at = row.updated_at;
+          if (fall === "anderer-versuch") row.attempts = 1;
+        }
+        if (fall === "fremde-lease") row.lease_owner = "anderer-worker";
+        if (fall === "abgelaufene-lease") row.lease_expires_at = new Date(Date.now() - 1000).toISOString();
+        if (fall === "fremdes-mandat") row.tenant_id = "fremdes-mandat";
+        return new Response("", { status: 521 });
+      }
+      vertage(body);
+      if (fall === "erneute-antwort-verloren") return new Response("", { status: 521 });
+      return Response.json([{ uebernommen: true, neue_faelligkeit: row.due_at }]);
+    });
+    try {
+      const r = await auftragsausgang(pipeline.workerDeps().zurueckstellen, { ...auftrag, tenant_id: mandat });
+      assert.equal(r.ausgang, erwartet ? "zurueckgestellt" : "vertagung-unbestaetigt", fall);
+      assert.equal(r.bilanz.zurueckgestellt, Number(erwartet), fall);
+      assert.deepEqual(methoden, pfad, fall);
+      if (erwartet) assert.equal(row.attempts, 0, fall);
+      if (fall === "bereits-vertagt") {
+        const { abschluss } = await laufquittung(t, { ...r.bilanz, reserviert: 1 });
+        assert.equal(abschluss.status, "success");
+        assert.equal(abschluss.deferred, 1);
+      }
+    } finally { fetch.mock.restore(); }
+  }
+});
+
+test("Jeder neue Claim bindet Vertagungen an einen neuen Lease-Besitzer", async () => {
+  const claims = [], vertagungen = [];
+  const r = await pipeline.arbeite({ owner: "worker", env: { HELMUT_SCALABLE_PIPELINE: "on" },
+    deps: {
+      budget: null, klassen: {},
+      claim: async ({ owner }) => {
+        claims.push(owner);
+        return { verfuegbar: true, auftraege: claims.length <= 2 ? [auftrag] : [] };
+      },
+      handler: { source_fetch: vertagungsHandler },
+      zurueckstellen: async ({ owner }) => {
+        vertagungen.push(owner);
+        return { verfuegbar: true, uebernommen: true };
+      },
+      finish: async () => assert.fail("Vertagung darf kein Finish schreiben")
+    } });
+  assert.equal(new Set(claims).size, 3);
+  assert.deepEqual(vertagungen, claims.slice(0, 2));
+  assert.equal(r.zurueckgestellt, 2);
 });
 
 const unbestaetigt = [
