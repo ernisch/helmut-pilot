@@ -12,7 +12,7 @@
 
 **20.11.2026 · 24 Stunden Betrieb aktiv.** 1 aktives Pilotmandat. [Start, erste Abrufbilanz und Rückweg](https://github.com/ernisch/helmut-pilot/blob/fefd4d34/docs/CURRENT_STATE.md).
 
-**21.11.** 11 Lagevorgänge, 0 Radarsignale, 0 Prioritäten. 25/52 Abrufe rechtzeitig, 16/16 Originalbuchungen. Live: [#1309](https://github.com/ernisch/helmut-pilot/pull/1309) Radarprüfung mit Originalbelegen, [#1310](https://github.com/ernisch/helmut-pilot/pull/1310) Namenssuche auf 7 Tage. Suchprobe: 0 → 6 jüngere Treffer, nächster regulärer Lauf als Anzeigebeleg offen.
+**25.11. Radar.** Gespeicherte Anzeige leer, 4 eigene Direktmeldungen belegt. Lokaler Replay 4 gültig, 3 sichtbar. [Radar-Beleg](betrieb/radar-eigene-veroeffentlichungen-20261125.md)
 
 **Betrieb und Kosten.** Quellen alle 15 Minuten. Lage 06:45/06:55, Paket 07:10/07:20 Uhr Berlin. Grenzen 16 Originale und 1 USD Modellkosten pro UTC-Tag, 30 USD insgesamt. Einmalig 2 USD am 20.11. UTC live via [PR #1293](https://github.com/ernisch/helmut-pilot/pull/1293). Um 12:50 UTC 4 zusätzliche Analysen, 0,819931 USD Tageskosten, 0 offen. Vor Umstellung 4,282173 USD abgerechnet und 6,190173 USD gebunden.
 

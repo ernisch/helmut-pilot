@@ -391,5 +391,24 @@ api.setSignalsExpanded(true); api.render();
 check("Radar-Aufklappen aendert keine gelieferten Inhalte oder Quellen", JSON.stringify(state) === immutableRadar);
 api.setSignalsExpanded(false);
 
+const quelleAusDerFraktion = "https://www.dielinkebt.de/presse/pressemitteilungen/detail/synthetischer-fachbericht/";
+const meldungOhneVorgang = { id: "radar-veroeffentlichung-rd-lokal", documentId: "rd-lokal",
+  sourceUrl: quelleAusDerFraktion, sourceName: "Beispiel-Fraktion", title: "Synthetischer Fraktionsbericht",
+  publishedAt: "2026-11-24T13:00:00Z", relationType: "faction", relationLabel: "Veröffentlichung Ihrer Fraktion",
+  evidence: "Ihre Fraktion hat diese Meldung auf ihrer Website veröffentlicht.",
+  beobachtungsBeleg: { art: "eigene-veroeffentlichung", documentIds: ["rd-lokal"] } };
+const leererRadar = { ...state, mentions: [], dynamics: [], articles: [],
+  environment: { party: [], constituency: [], committees: [] } };
+const mitMeldung = require("../lib/helmut/radar-veroeffentlichungen").ergaenze(
+  { currentRadarState: leererRadar }, [meldungOhneVorgang], new Date("2026-11-25T09:00:00Z"));
+api.setSegment("party");
+api.setBriefing(mitMeldung);
+const veroeffentlichungHtml = api.render();
+check("Belegte Fraktionsveröffentlichung erscheint trotz leerem Vorgangsbestand mit Originaltitel und Link",
+  veroeffentlichungHtml.includes("Synthetischer Fraktionsbericht")
+  && veroeffentlichungHtml.includes("Veröffentlichung Ihrer Fraktion")
+  && veroeffentlichungHtml.includes(quelleAusDerFraktion)
+  && !veroeffentlichungHtml.includes("data-radar-lage="));
+
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exitCode = 1; }
