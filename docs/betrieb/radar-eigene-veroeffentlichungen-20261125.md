@@ -6,7 +6,7 @@ Das um 07:20 Uhr Berlin gespeicherte Mandatspaket enthielt 48 Rohartikel, zwei P
 
 ## Leseweg
 
-Die normale App-Ausgabe zeigt bei leerem Partei-/Fraktionsbereich bis zu drei eigene Originalveröffentlichungen aus den letzten sieben Tagen. Der bestehende Direktfeed, der im Herausgeberregister gebundene Ursprung und der passende Artikel-Fund belegen die Zuordnung. Die Karte übernimmt Originaltitel, Link, Datum und Herausgeber. Das Label bezeichnet die Veröffentlichung als solche. Bereits gezeigte Artikel werden dedupliziert.
+Die normale App-Ausgabe ergänzt je Reiter bis zu drei belegte Originalveröffentlichungen aus den letzten sieben Tagen, auch wenn der Reiter bereits Treffer hat. Die jüngsten davon können in die Vorschau rücken. Listen bleiben auf zwölf Karten begrenzt. Der bestehende Direktfeed, der im Herausgeberregister gebundene Ursprung und der passende Artikel-Fund belegen die Zuordnung zur Partei oder Fraktion. Die Karte übernimmt Originaltitel, Link, Datum und Herausgeber. Das Label bezeichnet die Veröffentlichung als solche. Bereits gezeigte Artikel werden dedupliziert.
 
 Die Anzeige erhält ihren Zeitstand vom belegten Publikationsdatum. Eine spätere Analyse ändert die Zulässigkeit des Originals nur, wenn eine Publikationssperre greift. Die Abrufabfrage ist auf 24 Datensätze und der Aufruf auf 2 Sekunden begrenzt. Die Verarbeitung findet in der gelesenen App-Kopie statt. Gespeicherte Paketstände bleiben verifizierbar.
 
@@ -20,4 +20,4 @@ Die Anzeige erhält ihren Zeitstand vom belegten Publikationsdatum. Eine später
 
 Bei Salzgitter-Wolfenbüttel erkennt die Zuordnung die bestätigten Einzelorte. Ein Rohartikel kann im Wahlkreis erscheinen, wenn sein Originaltitel den konkreten Ort nennt und der Direktlink an den passenden Fund aus dem bestehenden Regionalkatalog gebunden ist. Im lokalen Replay wurde die gespeicherte Wolfenbüttel-Meldung sichtbar.
 
-Stellvertretende Mitgliedschaften werden getrennt gekennzeichnet. Bei leerer Ausschussansicht kann eine Unterlage aus dem vorhandenen amtlichen Terminstand erscheinen. Die Zuordnung prüft Mandatsrolle, Katalogfreigabe, Beleg- und Projektionshash, Publikationsdatum und aktive Sperren. Im lokalen Replay war die amtliche Unterlage für Wirtschaft und Energie als Stellvertretung sichtbar.
+Stellvertretende Mitgliedschaften werden getrennt gekennzeichnet. Eine Unterlage aus dem vorhandenen amtlichen Terminstand kann einen bereits gefüllten Ausschussreiter ergänzen. Die Zuordnung prüft Mandatsrolle, Katalogfreigabe, Beleg- und Projektionshash, Publikationsdatum und aktive Sperren. Im lokalen Replay war die amtliche Unterlage für Wirtschaft und Energie als Stellvertretung sichtbar.

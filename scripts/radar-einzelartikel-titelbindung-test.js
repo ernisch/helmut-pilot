@@ -181,7 +181,7 @@ async function main(){
       A.equal(JSON.stringify([...f.rows]),before);
     }
   });
-  await test("App-Leser erreicht eigene Originalmeldungen ohne Wissensvorgang bei leerem Tagesradar",async()=>{
+  await test("App-Leser ergänzt Originalmeldungen in leeren und gefüllten Radar-Reitern",async()=>{
     const M = require("../lib/helmut/radar-veroeffentlichungen");
     const fs = require("node:fs"), vm = require("node:vm");
     const source = fs.readFileSync(require.resolve("../server"), "utf8");
@@ -290,10 +290,24 @@ async function main(){
       else process.env.HELMUT_SOURCE_BLOCKLIST = block;
     }
     A.equal((await M.lese({}, { now: zeit, storage: { supabaseRequest: fail("Quelle ohne Profilbezug") } })).length, 0);
-    const vorhandenerRadar = { currentRadarState: { anzeige: { ...leer, environment: {
-      ...leer.environment, party: [{sourceUrl:"https://local.invalid/bestaetigt",documentId:"vorhanden"}]
-    } } } };
-    A.equal(M.ergaenze(vorhandenerRadar, [karte], zeit), vorhandenerRadar);
+    const vorhanden = { sourceUrl: "https://local.invalid/bestaetigt", documentId: "vorhanden",
+      publishedAt: "2026-11-23T12:00:00Z" };
+    stand.currentRadarState.anzeige.environment.party = [vorhanden];
+    const ergaenzt = await appRead();
+    A.deepEqual(ergaenzt.currentRadarState.anzeige.environment.party, [karte, vorhanden]);
+    A.equal(M.ergaenze(ergaenzt, [karte], zeit), ergaenzt);
+    A.deepEqual(stand.currentRadarState.anzeige.environment.party, [vorhanden]);
+    stand.currentRadarState.anzeige.articles = [karte];
+    A.equal(await appRead(), stand);
+    stand.currentRadarState.anzeige.articles = [];
+    const volleListe = Array.from({ length: 12 }, (_, index) => ({
+      sourceUrl: `https://local.invalid/bestaetigt/${index}`,
+      publishedAt: new Date(Date.parse(vorhanden.publishedAt) - index * 60000).toISOString()
+    }));
+    stand.currentRadarState.anzeige.environment.party = volleListe;
+    A.deepEqual((await appRead()).currentRadarState.anzeige.environment.party, [karte, ...volleListe.slice(0, 11)]);
+    const alter = { ...karte, publishedAt: "2026-11-22T12:00:00Z" };
+    A.equal(M.ergaenze(stand, [alter], zeit), stand);
   });
   await test("Konkreter Wahlkreisort mit bestätigter Auflösung erreicht den Radar direkt", async () => {
     const M = require("../lib/helmut/radar-veroeffentlichungen");
@@ -320,11 +334,14 @@ async function main(){
     A.equal(karte.segment, "constituency");
     A.equal(karte.evidence, "Der Originaltitel nennt Wolfenbüttel.");
     const bestehend = { sourceUrl: "https://example.invalid/parteibeleg", documentId: "rd-synth-partei" };
-    const ausgang = { currentRadarState: { status: "stale", environment: { party: [bestehend] } } };
+    const wahlkreisMeldung = { sourceUrl: "https://example.invalid/wolfenbuettel/energie",
+      documentId: "rd-synth-wahlkreis", publishedAt: "2026-11-23T13:30:00Z" };
+    const ausgang = { currentRadarState: { status: "stale",
+      environment: { party: [bestehend], constituency: [wahlkreisMeldung] } } };
     const out = M.ergaenze(ausgang, [karte], zeit);
     A.deepEqual(out.currentRadarState.anzeige.environment.party, [bestehend]);
-    A.deepEqual(out.currentRadarState.anzeige.environment.constituency, [karte]);
-    A.equal(ausgang.currentRadarState.environment.constituency, undefined);
+    A.deepEqual(out.currentRadarState.anzeige.environment.constituency, [karte, wahlkreisMeldung]);
+    A.deepEqual(ausgang.currentRadarState.environment.constituency, [wahlkreisMeldung]);
     for (const fehler of [
       { title: "Haushalt in Niedersachsen" }, { aufgeloester_fund: null },
       { document_findings: [{ ...fund, retrieval_path_id: "rp-fremd" }] },

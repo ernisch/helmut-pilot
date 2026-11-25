@@ -129,7 +129,9 @@ async function main(){
       const dokument = pd(), s = E.baueStand(q, [dokument], zeit.toISOString(), "a".repeat(64));
       stored = [row(s)];
       const kontext = await T.leseKontext(mandat, { ...deps(), now: () => +zeit });
-      const ausgang = { currentRadarState: { status: "empty", environment: { committees: [] } },
+      const bestaetigt = { sourceUrl: "https://example.invalid/bestaetigter-ausschussbezug",
+        publishedAt: new Date(Date.parse(dokument.publishedDay) - 864e5).toISOString() };
+      const ausgang = { currentRadarState: { status: "stale", environment: { committees: [bestaetigt] } },
         lageBriefing: { parlamentsKontext: kontext } };
       const vorher = copy(ausgang), stand = M.ergaenze(ausgang, [], zeit, mandat);
       const [karte] = stand.currentRadarState.anzeige.environment.committees;
@@ -137,6 +139,8 @@ async function main(){
       A.equal(karte.publishedAt, dokument.publishedDay);
       A.equal(karte.relationLabel, "Stellvertretung im Ausschuss");
       A.equal(karte.beobachtungsBeleg.standHash, s.standHash);
+      A.deepEqual(stand.currentRadarState.anzeige.environment.committees, [karte, bestaetigt]);
+      A.equal(M.ergaenze(stand, [], zeit, mandat), stand);
       A.deepEqual(ausgang, vorher);
       A.equal(M.ergaenze(ausgang, [], zeit, { ...mandat, parliamentType: "Landtag" }), ausgang);
       const widerspruch = copy(ausgang);
