@@ -1,6 +1,8 @@
 # ARCHITECTURE — Systemkarte Helmut
 
 > **Aktuelle Quellenarchitektur seit 23.11.2026:** Vercel Pro stellt Frontend, API, Lage und Morgenbriefing bereit; der eigenständige Hetzner Node.js Worker führt die Quellenfenster alle 15 Minuten aus und verarbeitet Quellen, PDFs und zugehörige KI Schritte. Supabase führt die gemeinsame Warteschlange `helmut_jobs`, Laufquittungen `process_runs`, den Vertragsstore `helmut_store` und die Quarantäne `helmut_quellen_dlq`. Azure OpenAI bleibt der Modellanbieter. Der Vercel Quellencron ist ein geschützter **manueller** Rückweg. Keine parallelen Quellenverbraucher und kein normaler schwerer Quellenlauf auf Vercel.
+
+Die [Worker-Updateautomatik](betrieb/hetzner-quellenworker.md#automatische-worker-updates) läuft nach einmaliger Aktivierung als systemd-Timer auf dem Hetzner-Host. Sie prüft den Merge-Commit und seine GitHub-CI, wechselt das Worker-Image und hält das vorige Image für den Rückweg bereit.
 >
 > **Produktiv belegt:** `location=hetzner-de` bei Quellenfenstern 16:15 und 16:30 Uhr Berlin vom 23.11.; beide sind `partial`, nicht vollständig. [Aktueller Produktionsbeleg](betrieb/hetzner-live-20261123.md), [Worker und Rückweg](betrieb/hetzner-quellenworker.md), [CURRENT_STATE](CURRENT_STATE.md). Ältere Diagramme und historische Beschreibungen des Vercel Quellenpfads unten sind nicht mehr die Darstellung des Normalbetriebs. Die bestehende fachliche Laufzeit, Kosten und Sicherheitsbegrenzung gilt weiter.
 

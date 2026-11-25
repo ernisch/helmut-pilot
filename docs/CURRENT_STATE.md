@@ -2,7 +2,7 @@
 
 **25.11. Offline.** Lasttest 320/323, 0/2 vollständig. Einzelmorgen 51/51. Drei Tage 39/39, 51/52 nach 503, 44/44. Plenarauftrag am Störungstag nachgeholt. Teilfassung Desktop/Mobil 15/15, Budget PostgreSQL 59/59. [Lasttest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Einzelmorgen](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955) · [Drei Tage](https://github.com/ernisch/helmut-pilot/actions/runs/45596100664)
 
-**25.11. Live.** 50/61 bis 06:45 Berlin, 07:20 ohne Tagesanlass. HTTP 521 stoppte die Automatik um 08:47. Hetzner meldet nach Betreiberupdate `5c28a53c` bereit und gestartet, Mandatszuordnung an. Regulärer Morgen mit diesem Stand offen. [521](https://github.com/ernisch/helmut-pilot/pull/1343) · [Lage](https://github.com/ernisch/helmut-pilot/pull/1348) · [503](https://github.com/ernisch/helmut-pilot/pull/1350) · [Betriebsbeleg](betrieb/quellen-status-20261124.md)
+**25.11. Live.** 50/61 bis 06:45 Berlin, 07:20 ohne Tagesanlass. HTTP 521 stoppte um 08:47. Hetzner `5c28a53c` bereit, Mandatszuordnung an. Morgen offen. [521](https://github.com/ernisch/helmut-pilot/pull/1343) · [Lage](https://github.com/ernisch/helmut-pilot/pull/1348) · [503](https://github.com/ernisch/helmut-pilot/pull/1350) · [Beleg](betrieb/quellen-status-20261124.md) · [Updateautomatik, Aktivierung offen](betrieb/hetzner-quellenworker.md#automatische-worker-updates)
 
 **23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
 

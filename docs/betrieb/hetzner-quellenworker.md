@@ -146,6 +146,31 @@ sudo docker compose exec -T worker printenv HELMUT_COMMIT_SHA
 
 Vergleiche die ausgegebene Kennung mit dem freigegebenen Merge. Der Produktionscheck prüft beide Schalter und die vollständige Build-Kennung vor dem Austausch. Ein regulärer Lauf mit passendem `process_runs.commit_ref` belegt anschließend den tatsächlich ausführenden Stand.
 
+### Automatische Worker-Updates
+
+Der Timer prüft alle 15 Minuten das öffentliche GitHub-Repository. Er wechselt bei Worker-Änderungen auf einen gemergten Stand von `main`, dessen Push-Lauf in der regulären CI beide Pflichtchecks erfolgreich abgeschlossen hat. Er baut ein separates Image und führt `worker.js --check` vor dem Wechsel aus. Wechsel sind ab Minute 10 jeder Viertelstunde bis Ende Minute 12 vorgesehen und pausieren zwischen 06:30 und 07:35 Uhr Berlin. Eine geänderte `compose.yaml` benötigt einen manuellen Betriebswechsel.
+
+Der Dienst erwartet im neuen Container die Meldung `bereit` zur exakten Build-Kennung. Bei einem Startfehler oder einem abgebrochenen Wechsel stellt er das gesicherte Image wieder her. Ein neuer Versuch setzt geänderten Worker-Inhalt voraus. Das Journal zeigt die aktive Kennung und später die gespeicherte Quittung des ersten regulären Quellenlaufs. Der Status `partial` oder `failed` bleibt im Laufbeleg sichtbar. Der Timer nutzt ein eigenes Git-Repository unter `/var/lib/helmut-worker-deploy`.
+
+Einmalig im Hetzner-Terminal aus dem geprüften Merge installieren. Die bestehende Checkout-Kennung bleibt beim Installieren erhalten.
+
+```bash
+cd ~/helmut-pilot &&
+read -r -p "Geprüfte Merge-Kennung der Einrichtung: " HELMUT_SETUP_SHA &&
+git fetch origin main &&
+git merge-base --is-ancestor "$HELMUT_SETUP_SHA" origin/main &&
+helmut_setup_tmp=$(mktemp -d) &&
+git archive "$HELMUT_SETUP_SHA" infra/hetzner | tar -x -C "$helmut_setup_tmp" &&
+sudo bash "$helmut_setup_tmp/infra/hetzner/install-worker-deploy.sh"
+```
+
+```bash
+sudo systemctl list-timers helmut-worker-deploy.timer --no-pager
+sudo journalctl -u helmut-worker-deploy.service -n 20 --no-pager
+```
+
+Vor manuellen Docker-Updates `sudo systemctl stop helmut-worker-deploy.timer` ausführen und das Ende eines gegebenenfalls bereits laufenden Dienstes abwarten. Danach mit `sudo systemctl start helmut-worker-deploy.timer` wieder aktivieren. Dauerhaft abschalten lässt sich der Timer mit `sudo systemctl disable --now helmut-worker-deploy.timer`.
+
 ## 5. Einen Quellenlauf einmalig prüfen
 
 Verwende ein separates Supabase Testprojekt mit den HELMUT Migrationen einschließlich der DLQ, einem zulässigen Testprofil und einem kleinen Quellenkatalog. Für die Probe genügen 1 oder 2 freigegebene Testquellen, darunter eine frisch veröffentlichte Meldung und bei Bedarf ein PDF. Der Geldvertrag muss zum Testprofil und zur Azure Verbindung passen. Auf einem frischen Testprojekt kann die erste regulär erlaubte Modellreservierung das Kostenbuch anlegen. Produktionszugänge und produktive Profilbestände bleiben außerhalb der Testdatenbank.
