@@ -32,6 +32,24 @@ async function check(name, fn) {
   catch (error) { failed++; console.error("FAIL " + name + ": " + error.message); }
 }
 (async () => {
+  await check("Ganztags-Lage beurteilt Quellen am Berliner Redaktionsschluss", async () => {
+    const nowMs = Date.parse("2026-11-19T05:55:20Z");
+    const quellenBis = Date.parse("2026-11-19T05:45:00Z");
+    const id = "local-redaktionsschluss";
+    let abfrage;
+    const r = await run([{ id }], { nowMs, query: "betrieb=24h", leseVersorgung: async args => {
+      abfrage = args;
+      return { version: 1, zustand: args.quellenBis === quellenBis ? "kein-bekannter-rueckstand" : "offen" };
+    } });
+    assert.equal(abfrage?.mandat, id);
+    assert.equal(abfrage?.jetztMs, nowMs);
+    assert.equal(abfrage?.quellenBis, quellenBis);
+    assert.equal(r.response.vollstaendig, true);
+  });
+  if (process.argv.includes("--nur-redaktionsschluss")) {
+    process.exitCode = failed ? 1 : 0;
+    return;
+  }
   await check("Fuenf bearbeitete Profile: drei Fehler dauerhaft getrennt, keine Wiederholung", async () => {
     const active = Array.from({ length: 5 }, (_, i) => ({ id: "local-active-" + i }));
     const disabled = Array.from({ length: 499 }, (_, i) => ({ id: "local-disabled-" + i, profileActive: false }));

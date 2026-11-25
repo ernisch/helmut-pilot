@@ -646,7 +646,7 @@ async function main() {
     check("8.4 Der Direktpfad bindet die Facharbeit an die aufgeloeste aktive Kennung",
       /const profile = await activeProfile\(tenantId\)/.test(routenBlock)
       && /buildLageBriefing\(profile, \{ politicianId: tenantId, quellenBis, \.\.\.\(versorgung \? \{ versorgung \} : \{\}\) \}\)/.test(routenBlock)
-      && /quellen-versorgungsstand[\s\S]{0,100}\.lese\(\{ mandat: tenantId \}\)/.test(routenBlock));
+      && /quellen-versorgungsstand[\s\S]{0,100}\.lese\(\{\s*mandat: tenantId, jetztMs: lageBriefingStartMs, quellenBis\s*\}\)/.test(routenBlock));
 
     // Standardverdrahtung: die Narrativ-Abhaengigkeit loest sich wirklich auf (12.9-Lehre).
     const standard = SP.workerDeps();

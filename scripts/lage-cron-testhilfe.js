@@ -28,7 +28,7 @@ async function run(profiles, options = {}) {
   const serverRequire = createRequire(serverPath);
   const context = vm.createContext({
     require: id => id === "./lib/helmut/quellen-versorgungsstand"
-      ? { lese: async ({ mandat }) => options.versorgung?.[mandat] || null }
+      ? { lese: options.leseVersorgung || (async ({ mandat }) => options.versorgung?.[mandat] || null) }
       : serverRequire(id), crypto, Date: Clock,
     console: { log() {}, warn() {}, error() {} },
     accounts: { recordSystemError: async () => {} },
@@ -47,7 +47,8 @@ async function run(profiles, options = {}) {
       if (options.onSave) await options.onSave(saved, patch, opts, now);
       return { ok: true, state: clean(saved.state) };
     },
-    url: { pathname: "/api/cron/lage-briefing" }, request: {}, response: {},
+    url: { pathname: "/api/cron/lage-briefing", searchParams: new URLSearchParams(options.query) },
+    quellenTagesbetrieb: require("../lib/helmut/quellen-tagesbetrieb"), request: {}, response: {},
     authorizeCron: () => options.authorized !== false,
     handleAsync: (_res, fn) => fn(),
     helmutRunId: () => options.runId || "briefing-lage-local-diagnose", helmutExecLocation: () => "local",

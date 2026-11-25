@@ -111,7 +111,8 @@ function termine(saubererMorgen) {
     const pfad = new URL(q.url).pathname;
     const liste = Array.from({ length: saubererMorgen ? 1 : 5 }, (_, i) => {
       const url = link(i + 1, q.art === "plenum" ? "Tagesordnung-komplett.pdf" : `tagesordnung-${i + 1}.pdf`);
-      const sitzung = q.art === "plenum" ? "7. Sitzung des Deutschen Bundestages am 24.11.2026, 09 Uhr"
+      const plenumTermin = saubererMorgen ? "Dienstag, dem 24. November 2026" : "24.11.2026";
+      const sitzung = q.art === "plenum" ? `7. Sitzung des Deutschen Bundestages am ${plenumTermin}, 09 Uhr`
         : "der 7. Sitzung am Dienstag, dem 24.11.2026, 09 Uhr";
       const pilotAusschuss = q.key === "arbeit-soziales";
       const revision = pilotAusschuss && i ? `${i}. Ergänzungsmitteilung` : null;
