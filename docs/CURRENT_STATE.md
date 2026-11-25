@@ -1,5 +1,7 @@
 # CURRENT STATE — Helmut
 
+**25.11. Isolierter Hetzner-Prüfstand.** 320 von 323 Abrufen technisch abgeschlossen. Beide Morgenpakete waren abrufbar, 0/2 vollständig. Die nächste reguläre Produktprüfung bleibt offen. [Zweitageslauf](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897)
+
 **25.11. Quellenbetrieb.** Hetzner meldet `d5cb58b5` bereit. Bis 06:45 Berlin waren 50 von 61 Abrufen bestätigt. Das 07:20-Briefing blieb ohne belegten Tagesanlass. HTTP 521 bei der Auftragsvertagung um 08:47 hielt die Automatik an. Die Korrektur `2fb06452` liest bei kurzer Störung den Auftragsstand nach. Lokale Fehlerprobe und Pflicht-CI sind grün. Hetzner-Rollout und regulärer Quellen- und Briefingnachweis stehen aus. [Korrektur](https://github.com/ernisch/helmut-pilot/pull/1343) · [Betriebsbeleg vom 24.11.](betrieb/quellen-status-20261124.md)
 
 **23.11.** Appstart #1322 live (`54564ccf`). Androidabnahme offen.
