@@ -101,6 +101,38 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 0);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
+  await test("Bekannte Verlagsnamen binden auf der exakten Originaladresse dieselbe Artikelfassung", async () => {
+    for (const [host, quelle, name, alias, aliasImAbruf] of [
+      ["www.n-tv.de", "news-ntv", "ntv", "n-tv.de", false],
+      ["www.zeit.de", "news-zeit", "ZEIT Online", "DIE ZEIT", true]
+    ]) {
+      const w = welt({ gute: 0 });
+      const eingang = { ...w.items[0], url: "https://" + host + "/synthetischer-bericht",
+        sourceId: aliasImAbruf ? "thematische-suche" : quelle, sourceType: "media",
+        sourceName: aliasImAbruf ? alias : name, linkType: "direct" };
+      const row = D.toRawDocumentRow(eingang), stand = R.standHash(row);
+      const kanonisch = { ...row, source_id: aliasImAbruf ? quelle : "thematische-suche",
+        source_name: aliasImAbruf ? name : alias };
+      w.items = [eingang]; w.kanonisch.set(row.id, kanonisch);
+      const r = await w.run();
+      A.equal(r.abrufErgebnis.art, "rohfassungen");
+      A.equal(r.abrufErgebnis.analyse[0].stand, stand);
+      A.deepEqual(await w.native([row.id], { [row.id]: stand }), [row]);
+      A.deepEqual(w.kanonisch.get(row.id), kanonisch);
+
+      for (const abweichung of [{ source_name: "Fremder Verlag" }, { title: "Anderer Bericht" },
+        { url: "https://example.invalid/synthetischer-bericht" }, { canonical_url: "https://example.invalid/" },
+        { link_type: "indirect" }, { published_at: "2026-11-12T10:00:00Z" }]) {
+        w.kanonisch.set(row.id, { ...kanonisch, ...abweichung });
+        await A.rejects(w.native([row.id], { [row.id]: stand }), /quellenstand-metadatenabweichung/);
+      }
+      const { gleicherStandMitVerlagsalias } = require("../lib/helmut/quellenstand-bindung");
+      const website = { url: "https://example.invalid/bericht", canonical_url: "https://example.invalid/bericht" };
+      A.equal(gleicherStandMitVerlagsalias({ ...row, ...website }, { ...kanonisch, ...website }), false);
+      A.equal(gleicherStandMitVerlagsalias({ ...row, source_id: "suche-a" },
+        { ...kanonisch, source_id: "suche-b" }), false);
+    }
+  });
   await test("Amtlicher hib Feedstand wird trotz zuerst gespeicherter Suchfundstelle verarbeitet", async () => {
     const w = welt({ gute: 0 });
     const eingang = { ...w.items[0], url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
@@ -230,6 +262,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-  A.equal(count, 9);
+  A.equal(count, 10);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
