@@ -136,6 +136,32 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.q.alle()[0].payload.dokumentIds[0], D.toRawDocumentRow(w.items[0]).id);
     A.deepEqual(w.forbidden, []);
   });
+  await test("Der Verstehensworker übernimmt nur eine exakt belegte Archivfassung bei Metadaten-Drift", async () => {
+    const w = welt({ konflikte: 0, zeitlich: 1, gute: 0 });
+    await w.run();
+    const job = w.q.alle()[0], row = D.toRawDocumentRow(w.items[0]);
+    let klassenpruefungen = 0;
+    const verstehen = (deps = {}) => P.HANDLER.document_understanding(job, {
+      ...w.deps, env: { ...env, HELMUT_VERSTEHEN_CAS: "on" },
+      klassen: { belege: async klasse => {
+        A.equal(klasse, "verstehen");
+        klassenpruefungen++;
+        return { erlaubt: false };
+      } },
+      ...deps
+    }, { auftragsDeadlineMs: now + 120000 });
+    A.equal((await verstehen()).grund, "klassengrenze-belegt: verstehen");
+
+    const canonical = w.kanonisch.get(row.id);
+    w.kanonisch.set(row.id, { ...canonical, title: "Anderer Artikel" });
+    await A.rejects(verstehen(), /quellenstand-metadatenabweichung/);
+    w.kanonisch.set(row.id, canonical);
+
+    w.archiv.delete(key(row));
+    await A.rejects(verstehen(), /quellenstand-nicht-verfuegbar/);
+    A.equal(klassenpruefungen, 1);
+    A.deepEqual(w.forbidden, []);
+  });
   await test("Fehlende Canonical Lesung Archivbindung oder gefaelschter Konflikt bleiben UNKNOWN", async () => {
     for (const art of ["missing", "read", "archive", "hash", "duplicate", "columns", "title-null", "title-empty", "date", "fake", "fake-persist"]) {
       const w = welt(), row = D.toRawDocumentRow(w.items[0]), native = w.native, lesen = w.readerDeps.ladeAktuell;
@@ -204,6 +230,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-  A.equal(count, 8);
+  A.equal(count, 9);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
