@@ -154,7 +154,7 @@ function workerTermine(tag) {
   return Array.from({ length: tagesbetrieb.MAX_FENSTER }, (_, index) => {
     const termin = tagStart + index * (TAG / tagesbetrieb.MAX_FENSTER);
     return tagesbetrieb.quellenslot(termin);
-  }).filter(Boolean).map(({ slot }) => ({ zeit: slot, pfad: "worker.js", worker: true }));
+  }).filter(Boolean).map(({ slot }) => ({ zeit: slot, path: "worker.js", worker: true }));
 }
 
 async function messung(db, tag, start, laeufe, uhr, transport, mandat, katalog, laufzeitMs) {
