@@ -1,0 +1,9 @@
+[Unit]
+Description=HELMUT Quellenworker-Updates prüfen
+
+[Timer]
+OnCalendar=*-*-* *:10,25,40,55:00
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

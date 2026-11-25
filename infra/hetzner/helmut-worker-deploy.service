@@ -1,0 +1,12 @@
+[Unit]
+Description=HELMUT Quellenworker aus freigegebenem GitHub-Stand aktualisieren
+Wants=network-online.target
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I -B /usr/local/lib/helmut-worker-deploy/worker-deploy.py
+StateDirectory=helmut-worker-deploy
+StateDirectoryMode=0700
+UMask=0077
+TimeoutStartSec=25min
