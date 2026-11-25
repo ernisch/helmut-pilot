@@ -32,6 +32,7 @@ on:
         options:
           - zwei-tage
           - sauberer-morgen
+          - wiederanlauf
 
 permissions:
   contents: read

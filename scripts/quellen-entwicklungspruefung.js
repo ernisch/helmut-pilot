@@ -89,7 +89,7 @@ function start(args) {
   const [quelle, mandat = "ohne", pruefvariante = "zwei-tage"] = args;
   if (args.length > 3 || !Object.hasOwn(auswahl, quelle)
     || !["ohne", "bundestag", "landtag"].includes(mandat)
-    || !["zwei-tage", "sauberer-morgen"].includes(pruefvariante)
+    || !["zwei-tage", "sauberer-morgen", "wiederanlauf"].includes(pruefvariante)
     || (pruefvariante !== "zwei-tage" && quelle !== "produktionsnah")
     || (quelle !== "bundestag-kalender" && mandat !== "ohne")) {
     console.error("quellen-entwicklungspruefung: auswahl-ungueltig");
