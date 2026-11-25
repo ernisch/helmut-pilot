@@ -235,7 +235,7 @@ async function main(){
     const [karte] = ausgabe.currentRadarState.anzeige.environment.party;
     A.equal(karte.title, doc.title);
     A.equal(karte.sourceUrl, original);
-    A.equal(karte.relationLabel, "Veröffentlichung Ihrer Fraktion");
+    A.equal(karte.relationLabel, "Veröffentlichung der Fraktion");
     A.equal(karte.beobachtungsBeleg.art, "eigene-veroeffentlichung");
     A.equal(karte.vorgangId, undefined);
     A.equal(ausgabe.currentRadarState.anzeige.mentions.length, 0);

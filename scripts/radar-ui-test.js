@@ -394,8 +394,8 @@ api.setSignalsExpanded(false);
 const quelleAusDerFraktion = "https://www.dielinkebt.de/presse/pressemitteilungen/detail/synthetischer-fachbericht/";
 const meldungOhneVorgang = { id: "radar-veroeffentlichung-rd-lokal", documentId: "rd-lokal",
   sourceUrl: quelleAusDerFraktion, sourceName: "Beispiel-Fraktion", title: "Synthetischer Fraktionsbericht",
-  publishedAt: "2026-11-24T13:00:00Z", relationType: "faction", relationLabel: "Veröffentlichung Ihrer Fraktion",
-  evidence: "Ihre Fraktion hat diese Meldung auf ihrer Website veröffentlicht.",
+  publishedAt: "2026-11-24T13:00:00Z", relationType: "faction", relationLabel: "Veröffentlichung der Fraktion",
+  evidence: "Die Fraktion hat diese Meldung auf ihrer Website veröffentlicht.",
   beobachtungsBeleg: { art: "eigene-veroeffentlichung", documentIds: ["rd-lokal"] } };
 const leererRadar = { ...state, mentions: [], dynamics: [], articles: [],
   environment: { party: [], constituency: [], committees: [] } };
@@ -406,7 +406,7 @@ api.setBriefing(mitMeldung);
 const veroeffentlichungHtml = api.render();
 check("Belegte Fraktionsveröffentlichung erscheint trotz leerem Vorgangsbestand mit Originaltitel und Link",
   veroeffentlichungHtml.includes("Synthetischer Fraktionsbericht")
-  && veroeffentlichungHtml.includes("Veröffentlichung Ihrer Fraktion")
+  && veroeffentlichungHtml.includes("Veröffentlichung der Fraktion")
   && veroeffentlichungHtml.includes(quelleAusDerFraktion)
   && !veroeffentlichungHtml.includes("data-radar-lage="));
 
