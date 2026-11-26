@@ -10,6 +10,7 @@ const { hash } = require("../../lib/helmut/quellen-lektuerebeleg");
 const artikelStatus = require("../../lib/helmut/artikel-verarbeitungszustand");
 const { einzelArtikelAuftrag, setzePlanungFort } = require("../../lib/helmut/scalable-pipeline");
 const { fristen } = require("../../lib/helmut/quellen-faelligkeit");
+const budget = require("../../lib/helmut/betriebskosten-budget");
 const D = require("../../lib/helmut/source-demand");
 
 const TAG = 86400000;
@@ -253,8 +254,41 @@ async function parken(db) {
   return bericht;
 }
 
-function tagesbeleg(db,tag) {
-  const budget=require("../../lib/helmut/betriebskosten-budget");
+function alteBuchungen(db) {
+  return JSON.parse(db.psql(`select jsonb_build_object('hash', encode(sha256(convert_to(
+    coalesce(jsonb_object_agg(id,c),'{}'::jsonb)::text,'UTF8')),'hex'),
+    'offen',count(*) filter(where c->>'status' = 'ungeklaert'))
+    from public.helmut_store s cross join lateral jsonb_each(s.data->'${budget.KEY}'->'calls') as x(id,c)
+    where s.id='main-auth' and c->>'day' < '${tage[0]}';`));
+}
+
+function betriebskostenVorwert(db) {
+  const contract = budget.vertrag();
+  const gebunden = 9038227;
+  const maxOutputTokens = 3000;
+  const reserved = budget.kosten(400000, maxOutputTokens);
+  const calls = {};
+  let offen = 5;
+  let abgerechnetRest = gebunden - offen * reserved;
+  for (let index = 0; offen || abgerechnetRest; index++) {
+    const id = `synthetische-altbuchung-${index}`;
+    const day = iso(START - (1 + Math.floor(index / 4)) * TAG).slice(0, 10);
+    const cost = Math.min(reserved, abgerechnetRest);
+    calls[id] = { id, day, createdAt: day + "T12:00:00.000Z", model: contract.route.model, maxOutputTokens, reserved,
+      requestHash: hash(id), contractHash: contract.contractHash,
+      ...(offen > 0 ? { status: "ungeklaert" } : { status: "abgerechnet", cost, usageReceiptId: `beleg-${id}` }) };
+    if (offen > 0) offen--;
+    else abgerechnetRest -= cost;
+  }
+  const buch = { version: 1, contractHash: contract.contractHash, contract, bound: gebunden, calls, frozen: null };
+  assert.equal(budget.pruefeBuch(buch, contract).total, gebunden);
+  db.psql(`update public.helmut_store set data=jsonb_set(data,'{${budget.KEY}}',${json(buch)}) where id='main-auth';`);
+  const alt = alteBuchungen(db);
+  assert.equal(alt.offen, 5);
+  return { gebunden, ...alt };
+}
+
+function tagesbeleg(db, tag, vorwert) {
   const q=JSON.parse(db.psql(`select jsonb_build_object('aufrufe', (select coalesce(max(used),0) from public.llm_budget_counters where day='${tag}' and scope='global'),
     'gesamt', (data->'${budget.KEY}'->>'bound')::bigint,
     'heute', (select coalesce(sum(case when c->>'status' in ('abgerechnet','nicht-gesendet') then (c->>'cost')::bigint else (c->>'reserved')::bigint end),0)
@@ -264,6 +298,9 @@ function tagesbeleg(db,tag) {
     from public.helmut_store where id='main-auth'`));
   assert(Number.isSafeInteger(q.gesamt) && q.gesamt>=0 && q.gesamt<=30000000 && q.heute>=0 && q.heute<=1000000,"Betriebsbuchgrenze");
   assert(Number.isSafeInteger(q.aufrufe) && q.aufrufe <= 100, "Modellaufrufzahl");
+  const altbuch = alteBuchungen(db);
+  assert.deepEqual(altbuch, { hash: vorwert.hash, offen: vorwert.offen }, "Historische Kostenbelege oder Reserven verändert");
+  assert(q.gesamt >= vorwert.gebunden, "Historische Bindung fehlt im Gesamtkontingent");
   const bestand = bilanz(db);
   assert.equal(bestand.unerlaubteAltabschluesse, 0, "Historische RSS-Definition ohne aktuellen Weg abgeschlossen");
   assert.equal(bestand.casGeschuetzt, 2, "Historische CAS-Ausgänge verändert");
@@ -275,6 +312,6 @@ function tagesbeleg(db,tag) {
     from public.helmut_jobs j left join helmut_monat.startbestand s on s.id=j.id
     where j.status in ('wartend','laeuft') group by j.job_type order by j.job_type
   ) b`));
-  return { ...q, bestand, rueckstand };
+  return { ...q, altbuch, bestand, rueckstand };
 }
-module.exports = { tage,stoertage,startbestand,parken,tagesbeleg };
+module.exports = { tage, stoertage, startbestand, parken, betriebskostenVorwert, tagesbeleg };

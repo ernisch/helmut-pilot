@@ -288,7 +288,7 @@ async function main(schreibeZwischenstand) {
         "Eine isolierte Poolverbindung, Reservierung bei Timeout abgewiesen, nach Freigabe einzeln bestätigt", "simulation");
       await db.stoppe();
     }
-    db = await starteQuellenDatenbank();
+    db = await starteQuellenDatenbank({ monatslauf: monat });
     konfiguration.datenbank = db.konfiguration;
     const fixture = require("./fixtures/quellen-pruefstand");
     transport = await fixture.transport(uhr, { saubererMorgen: !kapazitaetsprobe, stoertag, monat });
@@ -317,6 +317,7 @@ async function main(schreibeZwischenstand) {
     if (kapazitaetsprobe) await seedRueckstand(db.storage, profil);
     if (monat) {
       konfiguration.synthetischerStartbestand = await monatsbestand.startbestand(db, profil, fixture);
+      konfiguration.betriebsbuchVorwert = monatsbestand.betriebskostenVorwert(db);
       konfiguration.modellaufrufeProUtcTag = 100;
       abweichungen[0] = "Synthetischer Bestand aus den Mengenklassen vom 26.11., auf den Vergleichszeitraum des Vortagstests abgebildet. Die stündlichen Zustellungen, Artikeltexte, Datensätze und einzelnen Quellzuordnungen sind simuliert.";
     }
@@ -393,7 +394,7 @@ async function main(schreibeZwischenstand) {
       tagesbericht.morgenstand = morgenstand;
       tagesbericht.briefingFrist &&= morgenstand?.abrufbar === true;
       if (monat) {
-        tagesbericht.betriebsbuch = monatsbestand.tagesbeleg(db,tag);
+        tagesbericht.betriebsbuch = monatsbestand.tagesbeleg(db, tag, konfiguration.betriebsbuchVorwert);
         const rechtzeitig = new Set(tagesbericht.ausgaben
           .filter(ausgabe => Date.parse(ausgabe.generated_at) <= frist).map(ausgabe => ausgabe.slot));
         const morgenGespeichert = ["lage", "mandatsbriefing", "morgenlage"].every(slot => rechtzeitig.has(slot));
