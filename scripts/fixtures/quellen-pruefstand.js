@@ -194,6 +194,17 @@ function modellAntwort(schema, eingabe) {
   // passende Fixture-Antwort. Die übrigen Modell- und Quellenfälle bleiben.
   if (!schema?.properties?.was_ist_passiert) return basis;
   const quellen = zeilen.filter(z => z.startsWith("{")).map(json).filter(q => q?.quelle_id && q.titel);
+  const regierungsfassung = quellen.find(q => /^https:\/\/www\.bundesregierung\.de\/synthetik-monatsprobe\/beleg-[12]$/.test(q.url)
+    && q.auszug?.includes("Synthetischer Bericht zu einer öffentlichen parlamentarischen Beratung."));
+  if (regierungsfassung) return {
+    ...Object.fromEntries(Object.entries(basis).map(([k, v]) => [k, Array.isArray(v) ? [] : v])),
+    headline: regierungsfassung.titel, display_title: regierungsfassung.titel,
+    confidence_score: 80, source_document_count: 1, status: "neu", zeitdruck: "keiner", decision_level: "bund",
+    event_type: "antrag", was_ist_passiert: regierungsfassung.titel + ".",
+    warum_wichtig: "Der Bericht betrifft eine öffentliche parlamentarische Beratung.",
+    wer_ist_betroffen: "Das Bundeskabinett ist in der Überschrift genannt.",
+    handlungsempfehlung: "Die parlamentarische Beratung beobachten."
+  };
   if (quellen.length !== 1 || quellen[0].titel !== DIP_TITEL
     || quellen[0].herausgeber !== "DIP Bundestag") return basis;
   return {
@@ -236,11 +247,11 @@ function monatsfeed(quelle, tag) {
     titel, "Mon, 23 Nov 2026 20:00:00 GMT", quelle.url)));
 }
 
-function antworten(uhr, saubererMorgen, stoertag, monat) {
+function antworten(uhr, saubererMorgen, stoertag, monat, optionalerStoertag) {
   const wiederanlauf = Boolean(stoertag);
   const bt = termine(saubererMorgen, wiederanlauf), tage = new Map(), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   const plenum = require("../../lib/helmut/quellen-bundestag-termine").QUELLEN.find(q => q.art === "plenum").url;
-  let stoerungen = 0;
+  let stoerungen = 0, optionaleStoerungen = 0;
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -316,6 +327,11 @@ function antworten(uhr, saubererMorgen, stoertag, monat) {
       return { body: "<html><head><meta property='og:image' content='https://nachrichten.fixture.invalid/bild.png'></head><body>Synthetischer Artikel.</body></html>" };
     }
     if (url.origin === VERLAG && /^\/feeds\/\d+\.xml$/.test(url.pathname)) {
+      if (tag === optionalerStoertag && url.pathname === "/feeds/10.xml"
+        && jetzt.getTime() < require("../../lib/helmut/quellen-tagesbetrieb").zeiten(jetzt.getTime()).redaktionsschluss + 300000) {
+        optionaleStoerungen++;
+        return { status: 503, body: "Vorübergehend ausgefallener Tagesabruf im Prüfstand" };
+      }
       if (saubererMorgen) return { type: "application/rss+xml", body: leer };
       if (url.pathname === "/feeds/2.xml" && !vorher && tag === "2026-11-20")
         return { unterbrechen: true, body: leer };
@@ -327,13 +343,14 @@ function antworten(uhr, saubererMorgen, stoertag, monat) {
     unbekannt.push(url.origin + url.pathname);
     return { status: 503, body: "Fixture-Ziel fehlt" };
   }
-  return { antwort, zaehler, unbekannt, proOriginal, anzahlStoerungen: () => stoerungen };
+  return { antwort, zaehler, unbekannt, proOriginal, anzahlStoerungen: () => stoerungen,
+    anzahlOptionaleStoerungen: () => optionaleStoerungen };
 }
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben
 // für die Produktionsleser sichtbar. DNS und TLS liegen außerhalb dieses Nachweises.
-async function transport(uhr, { saubererMorgen = false, stoertag = null, monat = false } = {}) {
-  const fixtures = antworten(uhr, saubererMorgen, stoertag, monat);
+async function transport(uhr, { saubererMorgen = false, stoertag = null, monat = false, optionalerStoertag = null } = {}) {
+  const fixtures = antworten(uhr, saubererMorgen, stoertag, monat, optionalerStoertag);
   const server = http.createServer((req, res) => {
     let daten = "";
     req.on("data", chunk => {

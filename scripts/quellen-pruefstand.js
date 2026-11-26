@@ -23,12 +23,13 @@ const kapazitaetsprobe = !saubererMorgen && !wiederanlauf;
 const szenarioTage = monat ? monatsbestand.tage : wiederanlauf ? ["2026-11-23", "2026-11-24", "2026-11-25"]
   : saubererMorgen ? pruefzeiten.slice(0, 1) : pruefzeiten;
 const stoertag = monat ? monatsbestand.stoertage : wiederanlauf ? szenarioTage[1] : null;
+const optionalerStoertag = monat ? "2026-11-26" : null;
 const START = Date.parse(`${szenarioTage[0]}T00:00:00Z`);
 const konfiguration = {
   node: process.version, mandatsprofile: 1, maxDurationS: terminkonfig.functions["api/index.js"].maxDuration,
   region: terminkonfig.regions, fenster: tagesbetrieb.MAX_FENSTER, fensterSekunden: 300, originalReservierungen: 16,
   googleReservierungenJeMinute: 30, modellTageslimitUsd: 1, modellGesamtlimitUsd: 30,
-  arbeitstage: szenarioTage, historischWartendZuBeginn: monat ? 737 : kapazitaetsprobe ? 754 : 0,
+  arbeitstage: szenarioTage, historischWartendZuBeginn: monat ? 685 : kapazitaetsprobe ? 754 : 0,
   transportMillisekunden: { google: 2000, modell: 2000, sonstige: 1000 },
   externeAbrufe: 0, bezahlteModellaufrufe: 0
 };
@@ -291,7 +292,7 @@ async function main(schreibeZwischenstand) {
     db = await starteQuellenDatenbank({ monatslauf: monat });
     konfiguration.datenbank = db.konfiguration;
     const fixture = require("./fixtures/quellen-pruefstand");
-    transport = await fixture.transport(uhr, { saubererMorgen: !kapazitaetsprobe, stoertag, monat });
+    transport = await fixture.transport(uhr, { saubererMorgen: !kapazitaetsprobe, stoertag, monat, optionalerStoertag });
     setzeVertrag(fixture);
     const url = "https://nachrichten.fixture.invalid/feeds/9.xml";
     const transportVorher = transport.zaehler.get(szenarioTage[0] + "|sonstige") || 0;
@@ -309,7 +310,8 @@ async function main(schreibeZwischenstand) {
     note("Identische leere RSS-Antwort", "geprueft", "7b1f55b0 → Arbeitsstand: 2 → 1 Abrufe, 1 → 0 falsche Fundstücke");
     const eingabe = fixture.katalog(monat);
     konfiguration.fixtureHash = createHash("sha256").update(JSON.stringify({
-      katalog: eingabe, mandat: fixture.mandat, ...(saubererMorgen ? { saubererMorgen } : {}), ...(stoertag ? { stoertag } : {})
+      katalog: eingabe, mandat: fixture.mandat, ...(saubererMorgen ? { saubererMorgen } : {}),
+      ...(stoertag ? { stoertag } : {}), ...(optionalerStoertag ? { optionalerStoertag } : {})
     })).digest("hex");
     const { catalog: katalog } = await db.seed({ profile: fixture.mandat, catalog: eingabe });
     assert.deepEqual((await db.storage.listFullProfiles()).map(p => p.id), [fixture.mandat.id]);
@@ -319,7 +321,7 @@ async function main(schreibeZwischenstand) {
       konfiguration.synthetischerStartbestand = await monatsbestand.startbestand(db, profil, fixture);
       konfiguration.betriebsbuchVorwert = monatsbestand.betriebskostenVorwert(db);
       konfiguration.modellaufrufeProUtcTag = 100;
-      abweichungen[0] = "Synthetischer Bestand aus den Mengenklassen vom 26.11., auf den Vergleichszeitraum des Vortagstests abgebildet. Die stündlichen Zustellungen, Artikeltexte, Datensätze und einzelnen Quellzuordnungen sind simuliert.";
+      abweichungen[0] = "Synthetischer Bestand aus der Produktionsbilanz vom 26.11. um 11:02 Uhr Berlin, auf den Vergleichszeitraum abgebildet. Alle offenen Beträge einschließlich der am 26.11. hinzugekommenen Buchung werden als unveränderte historische Bindungen geprüft. Zustellungen, Artikeltexte und einzelne Quellzuordnungen sind simuliert.";
     }
     // queue().offen enthält auch den historischen terminalen Quellenabruf.
     assert.equal((await queue(db, szenarioTage[0])).offen, konfiguration.historischWartendZuBeginn + (monat ? 1 : 0));
@@ -338,19 +340,23 @@ async function main(schreibeZwischenstand) {
       const slots = workerTermine(tag);
       assert.equal(slots.length, 93, "Produktive Quellenfenster je Testtag");
       const ablauf = [...slots, ...ausgaben].sort((a, b) => a.zeit.localeCompare(b.zeit));
-      let morgenstand = null;
+      let morgenstand = null, pflichtanalysenFreigegeben = false, geaenderteFassungBelegt = false;
       for (const slot of ablauf) {
         if (tag === pruefzeiten[1] && slot.zeit === "00:15" && slot.worker) continue;
         const verzoegerung = tag === pruefzeiten[1] && slot.zeit === "05:30" && slot.worker ? 240 : 0;
         const soll = sekunde(`${tag}T${slot.zeit}:00Z`) + verzoegerung;
         uhr.setze(soll * 1000);
         assert.equal(Number(await db.psql("select extract(epoch from now())::bigint")), soll, "Anwendungs- und SQL-Uhr weichen ab");
+        if (monat && tag === szenarioTage[0] && !pflichtanalysenFreigegeben && slot.worker && soll * 1000 < frist) {
+          pflichtanalysenFreigegeben = await monatsbestand.pflichtanalysenFreigeben(db, tag, soll * 1000);
+        }
         if (soll * 1000 === frist && morgenstand === null) {
           const r = await app.cron(`/api/cron/briefing-nachweis?mandat=${encodeURIComponent(profil.id)}`);
           assert.equal(r.status, 200, "Gespeicherte Kundenausgabe nicht rücklesbar");
           const stand = r.data;
           const kopf = stand.currentHelmutState;
           const prioritaeten = [kopf?.primaryItem, ...(kopf?.items || [])].filter(Boolean);
+          if (monat && tag === szenarioTage[0]) geaenderteFassungBelegt = monatsbestand.geaenderteFassungGelesen(db);
           morgenstand = { abrufbar: stand.available === true, vollstaendig: stand.paketStatus?.vollstaendig === true,
             lageAbsaetze: stand.lageBriefing?.paragraphs?.length || 0,
             prioritaeten: new Set(prioritaeten.map(p => p.id)).size,
@@ -405,9 +411,13 @@ async function main(schreibeZwischenstand) {
           join helmut_monat.startbestand b on b.id::text = a->>'jobId' and b.amtlich
           where left(s.data->>'bestaetigtAm',10)='${tag}';`);
         tagesbericht.wiederbeobachteteTerminalfassungen = Number(ids);
+        tagesbericht.repariertePflichtanalysenBisFrist = Number(db.psql(`select count(*) from helmut_monat.reaktivierung r
+          join public.helmut_jobs j using(id) where j.status='erledigt' and j.finished_at<=to_timestamp(${frist / 1000});`));
         const sollStoerung = stoertag.includes(tag);
+        const sollOptionaleStoerung = tag === optionalerStoertag;
         tagesbericht.teilfassungErwartet = sollStoerung || tag === szenarioTage[0];
         const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
+        const pflichtAbdeckung = morgenstand?.versorgung?.pflichtAbrufabdeckung;
         const tagechecks = {
           produktLesbar: morgenstand?.abrufbar === true,
           ausgabenVorFrist: morgenGespeichert && morgenstand?.lageAbsaetze > 0,
@@ -423,9 +433,17 @@ async function main(schreibeZwischenstand) {
           keinNeuerFaelligerAltbestand: tagesbericht.betriebsbuch.rueckstand.every(row => row.neuerAltbestand === 0),
           simulierteWegeBekannt: transport.unbekannt.length === 0,
           startfassungen: tagesbericht.wiederbeobachteteTerminalfassungen === (tag === szenarioTage[0] ? 3 : 0),
-          abdeckungWieErwartet: abdeckung?.geplant > 0 && abdeckung.geplant-abdeckung.bestaetigt === (sollStoerung ? 1 : 0),
+          alteRegierungsfassungenRepariert: (tag !== szenarioTage[0] || pflichtanalysenFreigegeben)
+            && tagesbericht.betriebsbuch.bestand.amtlichErledigt === 2 && tagesbericht.repariertePflichtanalysenBisFrist === 2,
+          neuerTextstandGelesen: tag !== szenarioTage[0] || geaenderteFassungBelegt,
+          pflichtAbdeckungWieErwartet: pflichtAbdeckung?.geplant > 0
+            && pflichtAbdeckung.geplant-pflichtAbdeckung.bestaetigt === (sollStoerung ? 1 : 0),
+          abdeckungWieErwartet: abdeckung?.geplant > 0
+            && abdeckung.geplant-abdeckung.bestaetigt === (sollStoerung || sollOptionaleStoerung ? 1 : 0),
           wiederaufnahme: !sollStoerung || tagesbericht.quellen.some(q => q.quelle === "bt-termine-plenum"
-            && q.belegHash && q.verspaetet && ["terminstand", "bestaetigt_unveraendert"].includes(q.abruf))
+            && q.belegHash && q.verspaetet && ["terminstand", "bestaetigt_unveraendert"].includes(q.abruf)),
+          tagesquelleBleibtNachholbar: !sollOptionaleStoerung || (transport.anzahlOptionaleStoerungen() > 0
+            && morgenstand.vollstaendig && tagesbericht.quellen.some(q => q.quelle === "rp-fixture-rss-10" && q.belegHash))
         };
         for (const [name,ok] of Object.entries(tagechecks)) note(tag + " " + name, ok ? "geprueft" : "fehlgeschlagen");
         tage.push(tagesbericht);
