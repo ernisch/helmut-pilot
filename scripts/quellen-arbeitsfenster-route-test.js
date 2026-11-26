@@ -84,16 +84,16 @@ async function main() {
     await check("verpasster03:00-Termin:03:15 startet gesicherten Planweg und Worker", async () => {
       const r = await request("/api/cron/crawl?arbeitsfenster=1");
       assert.equal(r.status, 200); assert.equal(r.json.ok, true); assert.equal(initial, 1); assert.equal(workers, 1);
-      assert.equal(r.json.arbeitsfenster.reservierteSekunden, 300); assert.equal(retry, 1);
+      assert.equal(r.json.arbeitsfenster.reservierteSekunden, 300); assert.equal(retry, 0);
     });
     await check("doppelte Zustellung startet weder Plan noch Worker", async () => {
       const r = await request("/api/cron/crawl?arbeitsfenster=1");
       assert.equal(r.json.ok, false); assert.equal(workers, 1); assert.equal(resume, 1);
     });
-    await check("Folgetermin nutzt Fortsetzung und keine erneute Tageswiedervorlage", async () => {
+    await check("Folgetermin setzt Planung ohne altersbasierte Wiedervorlage fort", async () => {
       zeit += 15 * 60000;
       const r = await request("/api/cron/crawl?arbeitsfenster=1");
-      assert.equal(r.json.ok, true); assert.equal(initial, 1); assert.equal(resume, 2); assert.equal(workers, 2); assert.equal(retry, 1);
+      assert.equal(r.json.ok, true); assert.equal(initial, 1); assert.equal(resume, 2); assert.equal(workers, 2); assert.equal(retry, 0);
     });
     await check("manueller Pipelinepfad kann dasselbe globale Fenster nicht umgehen", async () => {
       const r = await request("/api/cron/pipeline"); assert.equal(r.json.ok, false); assert.equal(workers, 2);

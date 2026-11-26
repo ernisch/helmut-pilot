@@ -102,7 +102,7 @@ async function main() {
     await check("Nachmittagsstart nutzt produktive Planung/Worker/Quittung und dieselben Limits", async () => {
       first = auftrag(); const r = await send(first);
       assert.equal(r.status, 200); assert.equal(r.body.zustand, "abgeschlossen"); assert.equal(r.body.verarbeitet, 3);
-      assert.equal(plans, 1); assert.equal(workers, 1); assert.equal(retries, 1);
+      assert.equal(plans, 1); assert.equal(workers, 1); assert.equal(retries, 0);
       assert.equal(counts.get("2026-11-11|" + windowGate.SCHLUESSEL.fenster), 1);
       assert.equal(counts.get("2026-11-11|" + windowGate.SCHLUESSEL.sekunden), 300);
       assert.equal((await status(first)).body.zustand, "abgeschlossen");

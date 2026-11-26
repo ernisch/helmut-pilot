@@ -66,7 +66,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     d.offeneVorbedingungen = async ({ fenster }) => fenster ? { verfuegbar: true, offen: 0, fehlgeschlagen: 0 } : { verfuegbar: false };
     A.deepEqual(await lese(d), signal("unbekannt"));
   });
-  await test("Morgenprüfung bindet nur aktuelle fällige Abrufe und ihre Quittungen", async () => {
+  await test("Morgenprüfung bindet fällige Abrufe und die konkret quittierten Pflichtanalysen", async () => {
     const F = require("../lib/helmut/quellen-faelligkeit");
     const { hash } = require("../lib/helmut/briefing-speicher");
     const morgen = new Date("2026-11-21T06:20:00Z");
@@ -75,6 +75,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     const erstelle = (name, ms, tenantId = null, art = "geteilt") => ({ jobType: "source_fetch",
       idempotencyKey: name, tenantId, dueAt: iso(schnitt + ms), payload: { art, quelle: { id: name } } });
     const faellig = erstelle("heute", 0);
+    faellig.priority = 35;
     const unbelangte = [erstelle("spaeter", 1), erstelle("fremd", -1, "anderes-mandat"),
       erstelle("archiv", -1, profile.id, "person-archiv")];
     const plan = { zustand: "offen", auftraege: [faellig, ...unbelangte] };
@@ -86,11 +87,22 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
         firstDueAt: row.first_due_at, payload: row.payload }), bestaetigtAm, ergebnis };
       return [{ id: `main-quellenfaelligkeit-${row.id}`, data: { ...data, belegHash: hash(data) } }];
     };
-    let queue = [row], belege = quittieren();
+    const rohId = "rd-" + "a".repeat(64), stand = "b".repeat(64);
+    const auftrag = require("../lib/helmut/scalable-pipeline").einzelArtikelAuftrag({ id: rohId, stand });
+    const analyse = { id: "00000000-0000-0000-0000-000000000002", job_type: "document_understanding",
+      tenant_id: null, status: "erledigt", finished_at: iso(schnitt - 86400000),
+      idempotency_key: auftrag.idempotencyKey, payload: auftrag.payload };
+    const pflichtbeleg = { art: "rohfassungen", rohIds: [rohId], analyse: [{ rohId, stand, jobId: analyse.id }] };
+    let queue = [row], belege = quittieren(), analysen = [];
     const deps = { planungsrest: { lesen: async () => plan, offene: async () => A.fail("Altplanung") },
       leseAbdeckung: async () => A.fail("Tagesgesamtstand"),
       request: async path => {
         const url = new URL(path, "http://localhost");
+        if (url.searchParams.get("job_type") === "eq.document_understanding") {
+          A.equal(url.searchParams.get("id"), `in.("${analyse.id}")`);
+          A.equal(url.searchParams.get("tenant_id"), "is.null");
+          return analysen;
+        }
         if (url.pathname.endsWith("/helmut_jobs")) {
           A.equal(url.searchParams.get("idempotency_key"), 'in.("heute")');
           return queue;
@@ -100,14 +112,19 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       },
       offeneVorbedingungen: async ({ fenster, typen, mandat }) => {
         A(fenster.length > 0);
-        A.deepEqual(typen, ["document_understanding", "mandate_projection"]);
+        // Ein heute wiederbeobachteter fremder oder historischer Analysejob
+        // darf auch als Endfehler nie in die Prüfung dieser Projektion fallen.
+        A.deepEqual(typen, ["mandate_projection"]);
         A.equal(mandat, profile.id);
         return { verfuegbar: true, offen: 0, fehlgeschlagen: 0 };
       }
     };
-    const pruefe = async (zustand, quellenBis = schnitt, bestaetigt = 0) => A.deepEqual(await V.lese({ mandat: profile.id,
+    const pruefe = async (zustand, quellenBis = schnitt, bestaetigt, beendet = false) => A.deepEqual(await V.lese({ mandat: profile.id,
       jetztMs: morgen.getTime(), env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis }),
-    zustand === "unbekannt" ? signal(zustand) : { ...signal(zustand), abrufabdeckung: { geplant: 1, bestaetigt } });
+    { ...signal(zustand), ...(zustand === "unbekannt" && bestaetigt === undefined ? {}
+      : { abrufabdeckung: { geplant: 1, bestaetigt: bestaetigt ?? 0 },
+        pflichtAbrufabdeckung: { geplant: faellig.priority === 35 ? 1 : 0, bestaetigt: faellig.priority === 35 ? bestaetigt ?? 0 : 0 } }),
+    ...(beendet ? { verarbeitungBeendet: true } : {}) });
     await pruefe("kein-bekannter-rueckstand", schnitt, 1);
     queue = []; await pruefe("offen");
     for (const status of ["wartend", "laeuft", "fehlgeschlagen"]) {
@@ -119,10 +136,37 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     belege = quittieren(iso(schnitt), { art: "teilweise", rohIds: [], analyse: [] }); await pruefe("offen");
     belege = quittieren(); belege[0].data.belegHash = "falsch"; await pruefe("unbekannt");
     belege = quittieren(); await pruefe("unbekannt", schnitt + 1);
+
+    belege = quittieren(iso(schnitt), pflichtbeleg);
+    await pruefe("unbekannt", schnitt, 1); // Kein Ersatz durch irgendeine alte Analyse.
+    analysen = [{ ...analyse, tenant_id: "anderes-mandat" }]; await pruefe("unbekannt", schnitt, 1);
+    analysen = [{ ...analyse, idempotency_key: auftrag.idempotencyKey + "|eingangsfehler" }];
+    await pruefe("unbekannt", schnitt, 1);
+    analysen = [{ ...analyse, payload: { ...analyse.payload, quellenstaende: { [rohId]: "c".repeat(64) } } }];
+    await pruefe("unbekannt", schnitt, 1);
+    analysen = [{ ...analyse, finished_at: iso(morgen.getTime() + 1) }]; await pruefe("unbekannt", schnitt, 1);
+    for (const fortschritt of [{ quellenRestDokumentIds: [rohId] }, { quellenAbschnitte: { [rohId]: 1 } }]) {
+      analysen = [{ ...analyse, payload: { ...analyse.payload, ...fortschritt } }];
+      await pruefe("unbekannt", schnitt, 1);
+    }
+    for (const status of ["wartend", "laeuft", "fehlgeschlagen"]) {
+      analysen = [{ ...analyse, status }]; await pruefe("offen", schnitt, 1, status === "fehlgeschlagen");
+    }
+    analysen = [analyse]; await pruefe("kein-bekannter-rueckstand", schnitt, 1);
+    analysen = [{ ...analyse, finished_at: iso(schnitt + 60000),
+      payload: { ...analyse.payload, quellenRestDokumentIds: [], quellenAbschnitte: {} } }];
+    await pruefe("kein-bekannter-rueckstand", schnitt, 1);
+    faellig.priority = 80;
+    analysen = [{ ...analyse, status: "wartend" }]; await pruefe("unbekannt", schnitt, 1);
+
+    faellig.priority = 35;
+    analysen = [analyse];
     deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 1, fehlgeschlagen: 0 });
     await pruefe("offen", schnitt, 1);
 
     const neuerStand = Array.from({ length: 162 }, (_, i) => erstelle("quelle-" + i, 0));
+    neuerStand[0].priority = 35;
+    neuerStand[161].priority = 35;
     plan.auftraege = [...neuerStand, ...unbelangte];
     queue = neuerStand.map((job, i) => ({ ...row, id: "00000000-0000-0000-0000-" + String(i).padStart(12, "0"),
       idempotency_key: job.idempotencyKey, payload: job.payload, status: i < 152 ? "erledigt" : "fehlgeschlagen" }));
@@ -138,9 +182,14 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       const batch = url.searchParams.get(jobs ? "idempotency_key" : "id");
       return (jobs ? queue : belege).filter(r => batch.includes(JSON.stringify(jobs ? r.idempotency_key : r.id)));
     };
-    const v = await V.lese({ mandat: profile.id, jetztMs: morgen.getTime(),
+    deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 });
+    const leseMorgen = () => V.lese({ mandat: profile.id, jetztMs: morgen.getTime(),
       env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis: schnitt });
-    A.deepEqual(v, { ...signal("offen"), abrufabdeckung: { geplant: 162, bestaetigt: 152 } });
+    A.deepEqual(await leseMorgen(), { ...signal("offen"), abrufabdeckung: { geplant: 162, bestaetigt: 152 },
+      pflichtAbrufabdeckung: { geplant: 2, bestaetigt: 1 } });
+    neuerStand[161].priority = 100;
+    A.deepEqual(await leseMorgen(), { ...signal("kein-bekannter-rueckstand"), abrufabdeckung: { geplant: 162, bestaetigt: 152 },
+      pflichtAbrufabdeckung: { geplant: 1, bestaetigt: 1 } });
   });
   const rows = new Map(); let updates = 0;
   const storage = { assertTenant: require("../lib/helmut/storage").assertTenant,

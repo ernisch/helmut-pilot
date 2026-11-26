@@ -23,7 +23,12 @@ const mandat = Object.freeze({
   focusTopics: ["Arbeit", "Wirtschaft", "Digitales"], profileActive: true
 });
 
-function katalog() {
+function monatsquellen() {
+  const ids = ["bundesregierung", "bmas"];
+  return ids.map(id => require("../../lib/helmut/sources").v1Sources.find(q => q.id === id));
+}
+
+function katalog(monat = false) {
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const { resolveProfilePackages } = require("../../lib/helmut/quellenarchitektur/profile-packages");
   const pakete = resolveProfilePackages(mandat);
@@ -34,6 +39,13 @@ function katalog() {
     ["publisher-fixture.invalid", "nachrichten.fixture.invalid", "media", "journalistic"]
   ].map(([id, canonical_domain, publisher_type, evidence_role]) =>
     ({ id, name: id, canonical_domain, publisher_type, evidence_role }));
+  if (monat) {
+    for (const q of monatsquellen()) {
+      const domain = new URL(q.rssUrl).hostname.replace(/^www\./,"");
+      publishers.push({ id:"publisher-" + domain, name:q.name, canonical_domain:domain,
+        publisher_type:"ministry", evidence_role:"official_primary" });
+    }
+  }
   const retrievalPaths = [], packagePaths = [];
   const links = new Set();
   function weg(row, packageId) {
@@ -41,6 +53,10 @@ function katalog() {
     links.add(packageId);
     packagePaths.push({ package_id: packageId, retrieval_path_id: row.id });
   }
+  if (monat) for (const q of monatsquellen()) weg({
+    id:"rp-" + q.id, legacy_source_id:q.id, publisher_id:"publisher-" + new URL(q.rssUrl).hostname.replace(/^www\./,""),
+    name:q.name, represents_type:q.type, method:"rss", url:q.rssUrl
+  }, "pkg-bund-basis");
   for (const q of QUELLEN) weg({
     id: q.retrievalPathId, legacy_source_id: q.id, publisher_id: "publisher-bundestag.de",
     method: q.crawlMethod, url: q.url
@@ -91,7 +107,9 @@ function pdf(zeilen) {
   return Buffer.from(text + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, "latin1");
 }
 
-function termine(saubererMorgen, wiederanlauf) {
+function termine(saubererMorgen, wiederanlauf, monatstag) {
+  const terminDatum = monatstag && new Date(Date.parse(monatstag) + 86400000).toLocaleDateString("de-DE", {weekday:"long", day:"2-digit", month:"2-digit", year:"numeric", timeZone:"UTC"}).replace(", ", ", dem ");
+  const kalenderDatum = datum => datum.replaceAll("-", "");
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const seiten = new Map();
   for (const [nummer, q] of QUELLEN.entries()) {
@@ -103,7 +121,8 @@ function termine(saubererMorgen, wiederanlauf) {
         type: "text/calendar",
         body: tag === "2026-11-20" ? "BEGIN:VCALENDAR\r\nungueltig" :
           ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "UID:fixture.invalid",
-            "DTSTART;VALUE=DATE:20261123", "DTEND;VALUE=DATE:20261128",
+            monatstag ? "DTSTART;VALUE=DATE:" + kalenderDatum(monatstag) : "DTSTART;VALUE=DATE:20261123",
+            monatstag ? "DTEND;VALUE=DATE:" + kalenderDatum(new Date(Date.parse(monatstag) + 5 * 86400000).toISOString().slice(0,10)) : "DTEND;VALUE=DATE:20261128",
             "SUMMARY:Sitzungswoche Deutscher Bundestag", "END:VEVENT", "END:VCALENDAR", ""].join("\r\n")
       }));
       continue;
@@ -111,13 +130,13 @@ function termine(saubererMorgen, wiederanlauf) {
     const pfad = new URL(q.url).pathname;
     const liste = Array.from({ length: saubererMorgen ? 1 : 5 }, (_, i) => {
       const url = link(i + 1, q.art === "plenum" ? "Tagesordnung-komplett.pdf" : `tagesordnung-${i + 1}.pdf`);
-      const termin = wiederanlauf ? "Donnerstag, dem 26.11.2026" : "Dienstag, dem 24. November 2026";
+      const termin = terminDatum || (wiederanlauf ? "Donnerstag, dem 26.11.2026" : "Dienstag, dem 24. November 2026");
       const plenumTermin = saubererMorgen ? termin : "24.11.2026";
       const sitzung = q.art === "plenum" ? `7. Sitzung des Deutschen Bundestages am ${plenumTermin}, 09 Uhr`
         : `der 7. Sitzung am ${wiederanlauf ? termin : "Dienstag, dem 24.11.2026"}, 09 Uhr`;
       const pilotAusschuss = q.key === "arbeit-soziales";
       const revision = pilotAusschuss && i ? `${i}. Ergänzungsmitteilung` : null;
-      const drucksachen = wiederanlauf && pilotAusschuss ? [9923, 9924, 9925] : [pilotAusschuss && i === 0 ? 9900 : 9001 + i];
+      const drucksachen = monatstag && pilotAusschuss ? [Number("99" + monatstag.slice(-2))] : wiederanlauf && pilotAusschuss ? [9923, 9924, 9925] : [pilotAusschuss && i === 0 ? 9900 : 9001 + i];
       seiten.set(url, tag => ({ type: "application/pdf", body:
         nummer === 1 && i === 1 && tag === "2026-11-19" ? "%PDF-fehlerhaft" :
           pdf(["Berlin, den 19.11.2026", "Tagesordnung " + sitzung,
@@ -175,6 +194,17 @@ function modellAntwort(schema, eingabe) {
   // passende Fixture-Antwort. Die übrigen Modell- und Quellenfälle bleiben.
   if (!schema?.properties?.was_ist_passiert) return basis;
   const quellen = zeilen.filter(z => z.startsWith("{")).map(json).filter(q => q?.quelle_id && q.titel);
+  const regierungsfassung = quellen.find(q => /^https:\/\/www\.bundesregierung\.de\/synthetik-monatsprobe\/beleg-[12]$/.test(q.url)
+    && q.auszug?.includes("Synthetischer Bericht zu einer öffentlichen parlamentarischen Beratung."));
+  if (regierungsfassung) return {
+    ...Object.fromEntries(Object.entries(basis).map(([k, v]) => [k, Array.isArray(v) ? [] : v])),
+    headline: regierungsfassung.titel, display_title: regierungsfassung.titel,
+    confidence_score: 80, source_document_count: 1, status: "neu", zeitdruck: "keiner", decision_level: "bund",
+    event_type: "antrag", was_ist_passiert: regierungsfassung.titel + ".",
+    warum_wichtig: "Der Bericht betrifft eine öffentliche parlamentarische Beratung.",
+    wer_ist_betroffen: "Das Bundeskabinett ist in der Überschrift genannt.",
+    handlungsempfehlung: "Die parlamentarische Beratung beobachten."
+  };
   if (quellen.length !== 1 || quellen[0].titel !== DIP_TITEL
     || quellen[0].herausgeber !== "DIP Bundestag") return basis;
   return {
@@ -195,11 +225,33 @@ function dipProbe(tag, wiederanlauf) {
     original: `https://dserver.bundestag.de/btd/21/099/21099${tagNummer}.pdf` };
 }
 
-function antworten(uhr, saubererMorgen, stoertag) {
+function dokumente(tag, wiederanlauf) {
+  const dip = dipProbe(tag, wiederanlauf);
+  const aktuell = {
+        id: Number(dip.dokumentId), titel: DIP_TITEL, drucksachetyp: "Antrag",
+        dokumentart: "Drucksache", datum: dip.datum, wahlperiode: 21,
+        urheber: [{ titel: "Bundesregierung" }],
+        ressort: [{ titel: DIP_RESSORT }],
+        vorgangsbezug: [{ id: dip.vorgangId, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
+        fundstelle: { pdf_url: dip.original }
+      };
+  return [aktuell];
+}
+
+function monatsfeed(quelle, tag) {
+  if (tag !== "2026-11-24") return leer;
+  const namen = quelle.id === "bundesregierung"
+    ? ["Bundeskabinett zum Klimabericht", "Kabinett zur Wohnraumförderung"]
+    : ["Arbeitsmarktbericht zur Qualifizierung"];
+  return rss(namen.map((titel,i) => item(new URL("/synthetik-monatsprobe/beleg-" + (i+1),quelle.url).href,
+    titel, "Mon, 23 Nov 2026 20:00:00 GMT", quelle.url)));
+}
+
+function antworten(uhr, saubererMorgen, stoertag, monat, optionalerStoertag) {
   const wiederanlauf = Boolean(stoertag);
-  const bt = termine(saubererMorgen, wiederanlauf), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
+  const bt = termine(saubererMorgen, wiederanlauf), tage = new Map(), zaehler = new Map(), unbekannt = [], proAdresse = new Map(), proOriginal = new Map();
   const plenum = require("../../lib/helmut/quellen-bundestag-termine").QUELLEN.find(q => q.art === "plenum").url;
-  let stoerungen = 0;
+  let stoerungen = 0, optionaleStoerungen = 0;
   function antwort(url, methode, modellAnfrage) {
     const jetzt = new Date(uhr.now()), tag = jetzt.toISOString().slice(0, 10);
     const art = url.origin === GOOGLE ? "google" : url.origin === AZURE ? "modell" :
@@ -222,22 +274,29 @@ function antworten(uhr, saubererMorgen, stoertag) {
       }) };
     }
     if (url.origin === BT && url.pathname === "/robots.txt") return { body: "User-agent: *\nDisallow: /xml/\n" };
-    if (tag === stoertag && url.href === plenum
+    if ((Array.isArray(stoertag) ? stoertag.includes(tag) : tag === stoertag) && url.href === plenum
       && jetzt.getTime() < require("../../lib/helmut/quellen-tagesbetrieb").zeiten(jetzt.getTime()).frist) {
       stoerungen++;
       return { status: 503, body: "Vorübergehend ausgefallener Bundestag-Abruf im Prüfstand" };
     }
-    if (url.origin === BT && bt.has(url.pathname)) return bt.get(url.pathname)(tag);
+    if (url.origin === BT) {
+      if (monat && !tage.has(tag)) tage.set(tag, termine(true, true, tag));
+      const seiten = monat ? tage.get(tag) : bt;
+      if (seiten.has(url.pathname)) return seiten.get(url.pathname)(tag);
+    }
+    if (monat) {
+      for (const quelle of monatsquellen()) {
+        if (url.href === quelle.rssUrl) return { type:"application/rss+xml", body:monatsfeed(quelle,tag) };
+        // Bei einem leeren bestätigten Feed liest der Produktionscrawler die separat
+        // konfigurierte Startseite. Sie enthält im Szenario keinen weiteren Artikel.
+        if (url.href === new URL(quelle.url).href) return { type:"text/html; charset=utf-8", body:
+          "<html><head><title>" + quelle.name + " – Startseite</title></head><body>Übersicht des Ministeriums.</body></html>" };
+      }
+    }
     const dip = dipProbe(tag, wiederanlauf);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
-      return { type: "application/json", body: JSON.stringify({ documents: [{
-        id: Number(dip.dokumentId), titel: DIP_TITEL, drucksachetyp: "Antrag",
-        dokumentart: "Drucksache", datum: dip.datum, wahlperiode: 21,
-        urheber: [{ titel: "Bundesregierung" }],
-        ressort: [{ titel: DIP_RESSORT }],
-        vorgangsbezug: [{ id: dip.vorgangId, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
-        fundstelle: { pdf_url: dip.original }
-      }] }) };
+      return { type: "application/json", body: JSON.stringify({ documents: dokumente(tag, wiederanlauf)
+      }) };
     if (url.origin === new URL(DIP).origin && url.pathname === `/api/v1/vorgang/${dip.vorgangId}`)
       return { type: "application/json", body: JSON.stringify({ id: dip.vorgangId, typ: "Vorgang",
         titel: DIP_TITEL, vorgangstyp: "Antrag", wahlperiode: 21, datum: dip.datum,
@@ -268,6 +327,11 @@ function antworten(uhr, saubererMorgen, stoertag) {
       return { body: "<html><head><meta property='og:image' content='https://nachrichten.fixture.invalid/bild.png'></head><body>Synthetischer Artikel.</body></html>" };
     }
     if (url.origin === VERLAG && /^\/feeds\/\d+\.xml$/.test(url.pathname)) {
+      if (tag === optionalerStoertag && url.pathname === "/feeds/10.xml"
+        && jetzt.getTime() < require("../../lib/helmut/quellen-tagesbetrieb").zeiten(jetzt.getTime()).redaktionsschluss + 300000) {
+        optionaleStoerungen++;
+        return { status: 503, body: "Vorübergehend ausgefallener Tagesabruf im Prüfstand" };
+      }
       if (saubererMorgen) return { type: "application/rss+xml", body: leer };
       if (url.pathname === "/feeds/2.xml" && !vorher && tag === "2026-11-20")
         return { unterbrechen: true, body: leer };
@@ -279,13 +343,14 @@ function antworten(uhr, saubererMorgen, stoertag) {
     unbekannt.push(url.origin + url.pathname);
     return { status: 503, body: "Fixture-Ziel fehlt" };
   }
-  return { antwort, zaehler, unbekannt, proOriginal, anzahlStoerungen: () => stoerungen };
+  return { antwort, zaehler, unbekannt, proOriginal, anzahlStoerungen: () => stoerungen,
+    anzahlOptionaleStoerungen: () => optionaleStoerungen };
 }
 
 // Nur der Transport wird umgebogen. URL, Status, Header und Byte-Streams bleiben
 // für die Produktionsleser sichtbar. DNS und TLS liegen außerhalb dieses Nachweises.
-async function transport(uhr, { saubererMorgen = false, stoertag = null } = {}) {
-  const fixtures = antworten(uhr, saubererMorgen, stoertag);
+async function transport(uhr, { saubererMorgen = false, stoertag = null, monat = false, optionalerStoertag = null } = {}) {
+  const fixtures = antworten(uhr, saubererMorgen, stoertag, monat, optionalerStoertag);
   const server = http.createServer((req, res) => {
     let daten = "";
     req.on("data", chunk => {
@@ -349,4 +414,4 @@ async function transport(uhr, { saubererMorgen = false, stoertag = null } = {}) 
   return { ...fixtures, stoppe };
 }
 
-module.exports = { mandat, katalog, transport, dipProbe, AZURE };
+module.exports = { mandat, katalog, transport, dipProbe, monatsquellen, monatsfeed, AZURE };

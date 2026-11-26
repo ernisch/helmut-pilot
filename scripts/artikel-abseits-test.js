@@ -89,13 +89,21 @@ async function test(name, fn) { if (nurOffene && bestanden.has(name)) return; aw
     for (const row of w.q.nachStatus("fehlgeschlagen")) {
       A.equal(row.attempts, 3); A.match(row.last_error, /^artikel-abseits: /);
       A.equal(row.payload.artikelVerarbeitungszustand.zustand, "abseits");
-      A.equal(w.archivs.filter(id => id === row.payload.dokumentIds[0]).length, 1);
+      const hatLayoutfehler = row.payload.dokumentIds[0] === negativDoc.id;
+      A.equal(w.archivs.filter(id => id === row.payload.dokumentIds[0]).length, hatLayoutfehler ? 2 : 1);
+      if (hatLayoutfehler) {
+        A.deepEqual(row.payload.artikelWiedergewinnung, { version: 1,
+          vorherigerZustandsHash: row.payload.artikelVerarbeitungszustand.zustandsHash,
+          extraktorRevision: require("../lib/helmut/artikelkontext-wiedergewinnung").standard.revision,
+          ergebnis: "kein-positiver-reparaturbeleg" });
+      } else A.equal(row.payload.artikelWiedergewinnung, undefined);
     }
-    A.equal(w.writes.filter(x => x.payload.artikelVerarbeitungszustand).length, 2);
+    A.equal(w.writes.filter(x => x.payload.artikelVerarbeitungszustand).length, 3);
     A(w.finishes.filter(x => !x.ok).every(x => x.retryDelayMs === 0));
     const status = await V.lese({ mandat: "synthetisches-mandat", jetztMs: start,
-      env: { ...ENV, HELMUT_QUELLEN_ARBEITSFENSTER: "on" }, deps: { planungsrest: { lesen: async () => ({ zustand: "fertig" }) },
-        offeneVorbedingungen: w.q.offeneVorbedingungen } });
+      env: { ...ENV, HELMUT_QUELLEN_ARBEITSFENSTER: "on" }, deps: {
+        planungsrest: { lesen: async () => ({ zustand: "fertig" }),
+          offene: async () => ({ plaene: [], weitereVorhanden: false }) }, offeneVorbedingungen: w.q.offeneVorbedingungen } });
     A.equal(status.zustand, "offen");
   });
   await test("Nativer Negativbeleg bindet Status an exakt einen Stand ohne Rohtext oder erfundene Fakten", async () => {

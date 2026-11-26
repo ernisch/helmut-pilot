@@ -43,6 +43,22 @@ test("Disjunkte amtliche Vorgaenge trennen auch identische Gesetzestitel", () =>
   assert.equal(V.clusterRawDocuments([a,b]).length, 2);
   assert.equal(V.sameVorgang({ documents: [a] }, { vorgangId: "bestand", documents: [b] }).gleich, false);
 });
+test("Ein gleichlautender Medienbeleg überbrückt keine disjunkten amtlichen Vorgänge", () => {
+  const artikel = (id, vorgang) => S.dipDocToRawItem(DIP.normalizeDrucksache({
+    ...original(id, [ref(vorgang)]), titel: "Antrag zur Beratung über Arbeitsmarktpolitik"
+  }), { primary: true });
+  const alt = artikel(990123, "770023"), neu = artikel(990124, "770024");
+  const bericht = { id: "synthetischer-bericht", title: alt.title, summary: alt.summary,
+    publishedAt: alt.publishedAt, sourceId: "synthetische-zeitung" };
+  assert.equal(V.docsShareEvent(alt, bericht).gleich, true);
+  assert.equal(V.docsShareEvent(neu, bericht).gleich, true);
+  assert.equal(V.sameVorgang({ documents: [neu] }, { documents: [alt, bericht] }).grund, "dip-vorgangsbezug-konflikt");
+  const gruppen = V.clusterRawDocuments([alt, bericht, neu]);
+  assert.equal(gruppen.length, 2);
+  assert.equal(gruppen.flatMap(c => c.documents).length, 3);
+  assert(gruppen.every(c => ![alt, neu].every(d => c.documents.includes(d))));
+  assert.deepEqual(V.clusterRawDocuments([neu, bericht, alt]), gruppen);
+});
 test("Gemeinsame Referenz ist kein positiver Identitaetskurzschluss", () => {
   const a = make(990105, [ref("770005")]), b = make(990106, [ref("770005")]);
   assert.equal(R.konflikt(a,b), null);

@@ -139,10 +139,79 @@ function resolverDeps({ kandidaten = [], exakt = null, links = {}, fehler = fals
     A.equal(r.length, 1);
     A.equal(r[0].id, "rd-eins");
   });
+  await pruefe("Bestandslink wird gezielt und ohne Artikelinhalt gelesen", async () => {
+    const id = "rd-" + "a".repeat(64);
+    const koId = "ko-vg-altbestand";
+    const stubLink = await startStub({ links: [{ raw_document_id: id }] });
+    try {
+      process.env.SUPABASE_URL = "http://127.0.0.1:" + stubLink.port;
+      A.equal(await storage.hatKoDokumentLink(koId, [id]), true);
+      const url = new URL(stubLink.anfragen[0].slice(4), process.env.SUPABASE_URL);
+      A.equal(url.searchParams.get("knowledge_object_id"), `eq.${koId}`);
+      A.equal(url.searchParams.get("raw_document_id"), `in.("${id}")`);
+      A.equal(url.searchParams.get("select"), "raw_document_id");
+      A.equal(url.searchParams.get("limit"), "1");
+      await A.rejects(storage.hatKoDokumentLink(koId, ["rd-" + "b".repeat(64)]), storage.StorageReadError);
+      process.env.SUPABASE_URL = "http://127.0.0.1:" + stubLeer.port;
+      A.equal(await storage.hatKoDokumentLink(koId, [id]), false);
+      process.env.SUPABASE_URL = "http://127.0.0.1:" + stub500.port;
+      await A.rejects(storage.hatKoDokumentLink(koId, [id]), storage.StorageReadError);
+    } finally { stubLink.server.close(); }
+  });
   stub500.server.close(); stubLeer.server.close(); stubVoll.server.close();
 
   // ── (B) Resolver fail closed ────────────────────────────────────────────────────────────
   abschnitt("Resolver: Bestandslesefehler ist kein leeres Bestandsverzeichnis");
+  await pruefe("Resolver liest genug verknüpfte Dokumente für den Größenriegel", async () => {
+    const doc = rohesDokument("vorgangsgroesse", "Zitterpappel");
+    const c = clusterAus([doc]);
+    const kandidat = ko("vg-vorgangsgroesse");
+    const { VORGANG_MAX_DOKUMENTE } = require("../lib/helmut/vorgang-identity");
+    const { deps } = resolverDeps({ kandidaten: [kandidat] });
+    let linkPruefungen = 0;
+    deps.hatVorgangDokumentLink = async (id, ids) => {
+      A.equal(id, kandidat.id);
+      A.deepEqual(ids, [doc.id]);
+      linkPruefungen++;
+      return false;
+    };
+    deps.listVorgangDocuments = async (_id, limit) => {
+      A.equal(limit, VORGANG_MAX_DOKUMENTE);
+      return Array.from({ length: limit }, (_, i) => ({ ...doc, id: "alt-" + i }));
+    };
+    const a = await resolveVorgang(c, deps, {});
+    A.equal(a.existing, null);
+    A.equal(a.spuren[0].grund, "vorgang-voll");
+    deps.listVorgangDocuments = async (_id, limit) =>
+      Array.from({ length: limit - 1 }, (_, i) => ({ ...doc, id: "alt-" + i }));
+    const gruppe = { ...c, documents: [doc, { ...doc, id: "weiterer-neuer-beleg" }] };
+    const b = await resolveVorgang(gruppe, deps, {});
+    A.equal(b.existing, null);
+    A.equal(b.spuren[0].grund, "vorgang-voll");
+    A.equal(linkPruefungen, 1);
+  });
+  await pruefe("Jenseits des Lesefensters gebundener Artikel startet kein neues CAS", async () => {
+    const doc = rohesDokument("bekanntes-original", "Zitterpappel");
+    const cluster = clusterAus([doc]);
+    const kandidat = ko(deriveVorgangId(cluster));
+    const { deps, z } = resolverDeps({ kandidaten: [kandidat] });
+    const bestand = Array.from({ length: 148 }, (_, i) => ({ ...doc, id: "alt-" + i })).concat(doc);
+    deps.listVorgangDocuments = async (_id, limit) => bestand.slice(0, limit);
+    deps.hatVorgangDokumentLink = async (id, ids) => {
+      A.equal(id, kandidat.id);
+      A.deepEqual(ids, [doc.id]);
+      return bestand.some(row => ids.includes(row.id));
+    };
+    const r = await understandOneCluster(cluster, deps, {});
+    A.equal(r.status, "skipped-bestandslesefehler");
+    A.equal(r.begruendung, "artikel-bestandszuordnung-konflikt");
+    for (const fehler of [undefined, async () => null, async () => { throw lesefehler(); }]) {
+      deps.hatVorgangDokumentLink = fehler;
+      const ungeklärt = await understandOneCluster(cluster, deps, {});
+      A.equal(ungeklärt.begruendung, "artikel-bestandszuordnung-nicht-pruefbar");
+    }
+    A.deepEqual(z, { modell: 0, writes: 0 });
+  });
   await pruefe("§3 ein Bestandslesefehler fuehrt zu resolution: bestand-lesefehler", async () => {
     const c = clusterAus([rohesDokument("lf-1", "Zitterpappel")]);
     const vorschlag = deriveVorgangId(c);

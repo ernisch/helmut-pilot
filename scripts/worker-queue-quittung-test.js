@@ -21,13 +21,13 @@ async function auftragsausgang(zurueckstellen, job = auftrag) {
       zurueckstellen, finish: async () => assert.fail("Vertagung darf kein Finish schreiben") } });
 }
 
-async function laufquittung(t, bilanz, verfuegbar = true) {
+async function laufquittung(t, bilanz, verfuegbar = true, neuGeplant = false) {
   const quittungen = [];
   t.mock.method(storage, "schreibeWarteschlangenLaufquittung", async eintrag => {
     quittungen.push(eintrag);
     return { ok: true };
   });
-  t.mock.method(pipeline, "setzePlanungFort", async () => ({ ok: true, ausstehend: 0, tagesplan: {} }));
+  t.mock.method(pipeline, "setzePlanungFort", async () => ({ ok: true, ausstehend: 0, tagesplan: {}, neuGeplant }));
   t.mock.method(pipeline, "betriebsstatus", async () => ({ zustand: "test" }));
   t.mock.method(dispatch, "abgleich", async () => ({}));
   t.mock.method(dispatch, "versendeAbsichten", async () => ({}));
@@ -55,6 +55,13 @@ test("Bestätigte Vertagung zählt und ergibt success", async t => {
   assert.equal(abschluss.deferred, 1);
 });
 
+test("Neuer Quellenplan löst keine altersbasierte Wiedervorlage aus", async t => {
+  const wiedervorlage = t.mock.method(pipeline, "wiedervorlage", async () => ({}));
+  const { ergebnis } = await laufquittung(t, { reserviert: 0, erledigt: 0 }, true, true);
+  assert.equal(wiedervorlage.mock.callCount(), 0);
+  assert.deepEqual(ergebnis.wiedervorlage, { uebersprungen: true, grund: "wiedervorlage-braucht-quellenbeleg" });
+});
+
 test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefangen", async t => {
   const fakeUrl = "https://vertagung.test.invalid";
   const env = { SUPABASE_URL: process.env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY };
@@ -67,6 +74,9 @@ test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefan
     ["bereits-vertagt", ["POST", "GET"], true],
     ["noch-eigene-lease", ["POST", "GET", "POST"], true],
     ["erneute-antwort-verloren", ["POST", "GET", "POST", "GET"], true],
+    ["kurzer-leseausfall-eigene-lease", ["POST", "GET", "GET", "POST"], true],
+    ["kurzer-leseausfall-bereits-vertagt", ["POST", "GET", "GET"], true],
+    ["kurzer-leseausfall-fremde-lease", ["POST", "GET", "GET"], false],
     ["fremde-lease", ["POST", "GET"], false],
     ["abgelaufene-lease", ["POST", "GET"], false],
     ["fremdes-mandat", ["POST", "GET"], false],
@@ -74,11 +84,16 @@ test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefan
     ["anderer-grund", ["POST", "GET"], false],
     ["falsche-faelligkeit", ["POST", "GET"], false],
     ["anderer-versuch", ["POST", "GET"], false],
-    ["lesefehler", ["POST", "GET"], false],
+    ["lesefehler", ["POST", "GET", "GET"], false],
+    ["leserecht-fehlt", ["POST", "GET"], false],
+    ["lesefrist-abgelaufen", ["POST", "GET"], false],
     ["abgelehnt", ["POST"], false]
   ]) {
     const mandat = fall === "noch-eigene-lease" ? "synthetisches-mandat" : null;
     const methoden = [];
+    const echtJetzt = Date.now;
+    let zeitversatz = 0;
+    const testUhr = fall === "lesefrist-abgelaufen" ? t.mock.method(Date, "now", () => echtJetzt() + zeitversatz) : null;
     let row = { id, tenant_id: mandat, status: "laeuft", lease_owner: "worker",
       lease_expires_at: new Date(Date.now() + 60000).toISOString(), attempts: 1 };
     const vertage = (body, zeit = Date.now()) => {
@@ -96,7 +111,10 @@ test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefan
         assert.equal(url.searchParams.get("id"), "eq." + id);
         assert.equal(url.searchParams.get("tenant_id"), mandat === null ? "is.null" : "eq." + mandat);
         assert.equal(url.searchParams.get("limit"), "2");
-        if (fall === "lesefehler") return new Response("", { status: 521 });
+        if (fall === "leserecht-fehlt") return new Response("", { status: 403 });
+        if (fall === "lesefrist-abgelaufen") zeitversatz = 3001;
+        if (fall === "lesefehler" || fall === "lesefrist-abgelaufen"
+            || (fall.startsWith("kurzer-leseausfall-") && methoden.length === 2)) return new Response("", { status: 521 });
         return Response.json([row]);
       }
       assert.equal(url.pathname, "/rest/v1/rpc/helmut_defer_job");
@@ -105,13 +123,13 @@ test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefan
       assert.equal(body.p_id, id);
       if (fall === "abgelehnt") return Response.json([{ uebernommen: false, neue_faelligkeit: null }]);
       if (methoden.length === 1) {
-        if (["bereits-vertagt", "alter-stand", "anderer-grund", "falsche-faelligkeit", "anderer-versuch"].includes(fall)) {
+        if (["bereits-vertagt", "kurzer-leseausfall-bereits-vertagt", "alter-stand", "anderer-grund", "falsche-faelligkeit", "anderer-versuch"].includes(fall)) {
           vertage(body, Date.now() - (fall === "alter-stand" ? 60000 : 0));
           if (fall === "anderer-grund") row.last_error = "zurueckgestellt: fremder-grund";
           if (fall === "falsche-faelligkeit") row.due_at = row.updated_at;
           if (fall === "anderer-versuch") row.attempts = 1;
         }
-        if (fall === "fremde-lease") row.lease_owner = "anderer-worker";
+        if (fall === "fremde-lease" || fall === "kurzer-leseausfall-fremde-lease") row.lease_owner = "anderer-worker";
         if (fall === "abgelaufene-lease") row.lease_expires_at = new Date(Date.now() - 1000).toISOString();
         if (fall === "fremdes-mandat") row.tenant_id = "fremdes-mandat";
         return new Response("", { status: 521 });
@@ -131,7 +149,10 @@ test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefan
         assert.equal(abschluss.status, "success");
         assert.equal(abschluss.deferred, 1);
       }
-    } finally { fetch.mock.restore(); }
+    } finally {
+      fetch.mock.restore();
+      testUhr?.mock.restore();
+    }
   }
 });
 

@@ -46,7 +46,8 @@ const MIGRATIONEN = Object.freeze([
   "20261112130226_auth_store_cas_patch_v1.sql",
   "20261113165614_frische_tagesarbeit.sql",
   "20261119091317_quellenfaelligkeit_claim.sql",
-  "20261123110000_quellen_dlq.sql"
+  "20261123110000_quellen_dlq.sql",
+  "20261126005158_morgenpflicht_artikelprioritaet.sql"
 ]);
 const PROFILE_FLAGS = {
   HELMUT_V3_STORE: "1",
@@ -72,8 +73,8 @@ async function freierPort(host) {
   return port;
 }
 
-function rolleToken(secret, role) {
-  const claims = { role, exp: Math.floor((performance.timeOrigin + performance.now()) / 1000) + 3600 };
+function rolleToken(secret, role, laufzeitS = 3600) {
+  const claims = { role, exp: Math.floor((performance.timeOrigin + performance.now()) / 1000) + laufzeitS };
   const text = [{ alg: "HS256", typ: "JWT" }, claims].map(objekt => Buffer.from(JSON.stringify(objekt)).toString("base64url")).join(".");
   return `${text}.${createHmac("sha256", secret).update(text).digest("base64url")}`;
 }
@@ -95,7 +96,7 @@ async function warteAufRest({ api, url, token }) {
   throw Error(`Isoliertes PostgREST nicht bereit (${startfehler || api.exitCode || "Zeitgrenze"})`);
 }
 
-async function starteQuellenDatenbank({ begrenzterPool = false } = {}) {
+async function starteQuellenDatenbank({ begrenzterPool = false, monatslauf = false } = {}) {
   pruefeIsolation();
   const env = process.env;
   const host = env.HELMUT_TEST_PG_HOST, port = env.HELMUT_TEST_PG_PORT, user = env.HELMUT_TEST_PG_USER;
@@ -166,16 +167,27 @@ async function starteQuellenDatenbank({ begrenzterPool = false } = {}) {
       $jwt$;`);
 
     psql(readFileSync(path.join(SUPABASE, "schema.sql"), "utf8"));
+    // Das lokale Grundschema enthält die späteren optionalen Ledger-Spalten.
+    // Der gemessene Pilotbestand verwendet noch die Legacy-Tabelle ohne diese Migration.
+    if (monatslauf) psql(`alter table public.llm_usage drop column tenant_id, drop column profile_id,
+      drop column run_id, drop column pipeline_step;`);
     for (const name of MIGRATIONEN) {
+      if (monatslauf && name === "20260902121500_llm_usage_relational.sql") continue;
       try { psql(readFileSync(path.join(SUPABASE, "migrations", name), "utf8")); }
       catch (error) { throw Error(`Migration im Prüfstand fehlgeschlagen (${name}): ${String(error.stderr || "").split("\n").find(zeile => zeile.startsWith("ERROR:")) || error.code}`); }
     }
     psql(`insert into public.helmut_store(id,data) values ('main-auth','{"users":[],"sessions":[]}');`);
+    if (monatslauf) assert.equal(psql(`select count(*) from information_schema.columns
+      where table_schema='public' and table_name='llm_usage'
+        and column_name in ('tenant_id','profile_id','run_id','pipeline_step');`), "0");
 
     const claimSignatur = "public.helmut_claim_quellenfaelligkeit(text,bigint,boolean)";
     const claimMd5 = psql(`select md5(prosrc) from pg_proc where oid = '${claimSignatur}'::regprocedure;`);
     assert.equal(claimMd5, "6a88011286ac4a1beae5ac5fc10f0e8d", "Quellenclaim weicht vom dokumentierten Stand des 19.11. ab");
-    const apiPort = await freierPort(host), secret = randomBytes(32).toString("hex"), token = rolleToken(secret, "service_role");
+    const apiPort = await freierPort(host), secret = randomBytes(32).toString("hex");
+    // Das lokal signierte Monats-Token muss die echte Laufzeit überstehen.
+    // Rollen, Signaturprüfung und der tägliche Produktionsvertrag ändern sich nicht.
+    const token = rolleToken(secret, "service_role", monatslauf ? 7200 : 3600);
     api = spawn(binary, [], { env: { ...werkzeugEnv, PGRST_DB_URI: `postgresql://${restRolle}:${restPasswort}@${host}:${port}/${db}`,
       PGRST_DB_SCHEMAS: "public", PGRST_DB_ANON_ROLE: "anon", PGRST_JWT_SECRET: secret,
       PGRST_SERVER_HOST: host, PGRST_SERVER_PORT: String(apiPort), PGRST_LOG_LEVEL: "crit",

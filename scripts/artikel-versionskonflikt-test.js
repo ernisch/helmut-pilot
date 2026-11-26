@@ -92,12 +92,35 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.diagnosen().length, 0); A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 5);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
+  await test("Archiv mit neuem belegtem Auszug braucht seine eigene Lektüre auch ohne Originalabruf", async () => {
+    const w = welt({ konflikte: 0, gute: 0, zeitlich: 1 });
+    const row = D.toRawDocumentRow(w.items[0]);
+    const alt = w.kanonisch.get(row.id);
+    alt.summary = "Ein anderer, älterer Auszug nennt ausschließlich den ursprünglichen Entwurf.";
+    const job = { ...P.einzelArtikelAuftrag({ id: row.id, stand: R.standHash(row) }), id: "synthetischer-archivauftrag" };
+    let ergebnis = { status: "duplicate" };
+    const deps = { ...w.deps, env: { ...env, HELMUT_VERSTEHEN_CAS: "on" }, budget: null, eagerUnderstanding: async (docs, options) => {
+      A.deepEqual(docs, [row]); A.deepEqual(options.quellenRestDokumentIds, [row.id]);
+      A.equal(options.artikelkontextVersorgung, undefined);
+      return { processed: 1, counts: { [ergebnis.status]: 1 }, results: [ergebnis] };
+    } };
+    const ausfuehren = () => P.HANDLER.document_understanding(job, deps, { auftragsDeadlineMs: now + 120000 });
+    A.equal((await ausfuehren()).zurueckgestellt, true, "Ein alter Link beweist keinen neuen Textstand");
+    ergebnis = { status: "duplicate", begruendung: "eingabe-bereits-verstanden",
+      promptBereitsGespeichert: true, promptDokumentIds: [row.id] };
+    const r = await ausfuehren();
+    A.equal(r.ok, true); A.deepEqual(r.fortschrittPayload.quellenRestDokumentIds, []);
+    A.equal(w.kanonisch.get(row.id).summary, alt.summary);
+    A.deepEqual(w.forbidden, []);
+  });
   await test("Regel A-Verfeinerung: Titel-/Herausgeber-Abweichung bleibt ehrlich terminal unversorgt", async () => {
     const w = welt({ konflikte: 4, gute: 0 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
     A.equal(r.ok, true); A.equal(r.abrufErgebnis.art, "teilweise");
     A.equal(r.teilfehler, 4); A.equal(r.vollstaendig, false); A.equal(r.grund, "artikel-eingangsfehler");
     A.equal(w.diagnosen().length, 0);
-    A.equal(w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt").length, 4);
+    const diagnosen = w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt");
+    A.equal(diagnosen.length, 4);
+    A(diagnosen.every(j => j.max_attempts === 1));
     A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 0);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });
@@ -262,6 +285,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-  A.equal(count, 10);
+  A.equal(count, 11);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
