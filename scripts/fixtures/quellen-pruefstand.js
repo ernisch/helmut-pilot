@@ -274,8 +274,13 @@ function antworten(uhr, saubererMorgen, stoertag, monat) {
       if (seiten.has(url.pathname)) return seiten.get(url.pathname)(tag);
     }
     if (monat) {
-      const quelle = monatsquellen().find(q => q.rssUrl === url.href);
-      if (quelle) return { type:"application/rss+xml", body:monatsfeed(quelle,tag) };
+      for (const quelle of monatsquellen()) {
+        if (url.href === quelle.rssUrl) return { type:"application/rss+xml", body:monatsfeed(quelle,tag) };
+        // Bei einem leeren bestätigten Feed liest der Produktionscrawler die separat
+        // konfigurierte Startseite. Sie enthält im Szenario keinen weiteren Artikel.
+        if (url.href === new URL(quelle.url).href) return { type:"text/html; charset=utf-8", body:
+          "<html><head><title>" + quelle.name + " – Startseite</title></head><body>Übersicht des Ministeriums.</body></html>" };
+      }
     }
     const dip = dipProbe(tag, wiederanlauf);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
