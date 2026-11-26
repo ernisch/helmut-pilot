@@ -352,6 +352,27 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     }), { auftragsDeadlineMs: start + 120000 });
     assert.equal(out.zurueckgestellt, true); assert.equal(out.langeWarten, true); assert.equal(released, true);
   });
+  await test("Nur bestätigte erschöpfte Tageszahl wartet bis zum UTC-Tageswechsel", async () => {
+    const doc = docs[0];
+    const row = { id: job.id, job_type: "document_understanding", created_at: job.createdAt,
+      payload: { dokumentIds: [doc.id], quellenstaende: { [doc.id]: "a".repeat(64) } } };
+    for (const reason of ["daily-llm-budget-reached", "betriebskosten-grenze-erreicht", "budget-grund-unbekannt"]) {
+      const d = deps({ env: { ...env, HELMUT_SCALABLE_PIPELINE: "on", HELMUT_VERSTEHEN_CAS: "on" },
+        handler: P.HANDLER, ladeRohdokumentStaende: async () => [doc],
+        vorbereiteGespeicherteInhalte: async () => ({ ...result([doc]), befund: [{ id: doc.id, status: "vorhanden" }] }),
+        eagerUnderstanding: async () => ({ processed: 1, counts: { "skipped-budget": 1 },
+          results: [{ status: "skipped-budget", reason }] }),
+        zurueckstellen: async args => {
+          assert.equal(args.grund, "verstehen-uebersprungen: budget-nicht-verfuegbar");
+          assert.equal(args.delayMs, reason === "daily-llm-budget-reached"
+            ? Date.parse("2026-11-10T00:00:00Z") - start : P.BUDGET_WARTE_MS);
+          return { verfuegbar: true, uebernommen: true };
+        },
+        finish: async () => assert.fail("Budgetgrenze bleibt eine Vertagung") });
+      const r = await P.fuehreAuftragAus({ auftrag: row, deps: d, besitzer: "queue-test", leaseMs: 300000 });
+      assert.equal(r.ausgang, "zurueckgestellt");
+    }
+  });
   await test("Echte Kontingentfortsetzung bleibt kurz; fremde Kontext-ID erweitert niemals Jobfortschritt", async () => {
     const out = await understanding(job, deps({ vorbereiteGespeicherteInhalte: async () => ({ ...result(docs),
       befund: docs.map(d => ({ id: d.id, status: "vertagt", reason: "laufgrenze" })) }),

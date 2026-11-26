@@ -216,5 +216,17 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       A.equal(w.q.hole(job.id).attempts, 0);
     }
   });
+  await test("Vor Redaktionsschluss laeuft nur eine heute belegte Pflichtanalyse", async () => {
+    const w = welt();
+    const alt = await enqueue(w, "document_understanding", 50, { freshnessWindow: "2026-11-12T00Z" });
+    const pflicht = await enqueue(w, "document_understanding", 35);
+    w.deps.handler = { document_understanding: async job => { w.trace.push(job.id); return { ok: true }; } };
+    const r = await w.run({ ganztags: true, typen: ["document_understanding"] });
+    A.deepEqual(w.trace, [pflicht.id]);
+    A.equal(w.q.hole(pflicht.id).status, "erledigt");
+    A.equal(w.q.hole(alt.id).status, "wartend");
+    A.equal(w.q.hole(alt.id).attempts, 0);
+    A.equal(r.bilanzen[0].zurueckstellGruende["analyse-wartet-auf-tagesbetrieb"], 1);
+  });
   console.log(`${count}/${count} neue Worker-Mandatsphasen-Gruppen bestanden; keine externen Aufrufe.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });

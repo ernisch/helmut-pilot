@@ -13,6 +13,7 @@ const sql = text => execFileSync("docker", args, { input: text, encoding: "utf8"
 const file = name => fs.readFileSync(path.join(migrations, name), "utf8");
 const migration = "20261113165614_frische_tagesarbeit.sql";
 const rollback = "rollback_" + migration;
+const artikelprioritaet = "20261126005158_morgenpflicht_artikelprioritaet.sql";
 const functionSql = (name, source) => {
   const start = source.indexOf("create or replace function public." + name + "(");
   assert.ok(start >= 0); return source.slice(start, source.indexOf("$$;", start) + 3);
@@ -234,6 +235,72 @@ async function main() {
     sql("update public.helmut_jobs set due_at=now()-interval '1 second';");
     assert.equal(sql(`select attempts from public.helmut_claim_tagesauftrag(${aktuelleId},'faellig',60000);`), "1");
     assert.equal(sql(`select grund from public.helmut_claim_tagesauftrag(${aktuelleId},'konkurrierend',60000);`), "lease-fremd");
+  });
+  reset();
+  const enqueueSignatur = "'public.helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)'::regprocedure";
+  const enqueueRechte = () => sql(`select json_build_array(oid,proacl,prosecdef,proconfig) from pg_proc where oid=${enqueueSignatur};`);
+  const rechteVorher = enqueueRechte();
+  sql(file(artikelprioritaet));
+  const heute = "to_char(now() at time zone 'UTC','YYYY-MM-DD')||'T00Z'";
+  const rohId = "rd-" + "a".repeat(64);
+  const payload = JSON.stringify({ dokumentIds: [rohId], quellenstaende: { [rohId]: "b".repeat(64) } });
+  const enqueueAnalyse = (key, window, priority, stand = payload) => sql(`select neu from public.helmut_enqueue_job(
+    'document_understanding', '${key}', ${window}, '${stand}', now()-interval '1 hour', ${priority}::smallint, 3, null);`);
+  const queueStand = key => sql(`select row(id, status, priority, attempts, due_at, first_due_at, freshness_window, payload)::text
+    from public.helmut_jobs where idempotency_key='${key}';`);
+  check("Heute benötigte identische Fassung erhält Vorrang vor Hintergrund und Altbestand", () => {
+    assert.equal(enqueueAnalyse("pflicht", oldDay, 80), "t");
+    enqueueAnalyse("hintergrund", heute, 80);
+    sql(job("altbestand", oldDay, 35, "document_understanding"));
+    const vorher = queueStand("pflicht");
+    assert.equal(enqueueAnalyse("pflicht", heute, 50), "f");
+    assert.equal(queueStand("pflicht"), vorher.replace(",wartend,80,", ",wartend,50,"));
+    assert.equal(sql("select idempotency_key from public.helmut_claim_tagesarbeit('morgen',1,60000,array['document_understanding']);"), "pflicht");
+  });
+  check("Veraltete Beobachtung, fremde Fassung, Diagnosen und terminale Jobs werden nicht hochgestuft", () => {
+    enqueueAnalyse("fremde-fassung", oldDay, 35);
+    enqueueAnalyse("fremde-fassung", heute, 80, payload.replace("b".repeat(64), "c".repeat(64)));
+    assert.equal(sql("select last_seen_window is null from public.helmut_jobs where idempotency_key='fremde-fassung';"), "t");
+    const hintergrund = queueStand("hintergrund");
+    enqueueAnalyse("hintergrund", oldDay, 35);
+    enqueueAnalyse("hintergrund", heute, 35, payload.replace("b".repeat(64), "c".repeat(64)));
+    assert.equal(queueStand("hintergrund"), hintergrund);
+    const diagnose = JSON.stringify({ ...JSON.parse(payload), artikelFehler: "quellenstand-nicht-bestaetigt" });
+    enqueueAnalyse("diagnose", oldDay, 80, diagnose);
+    const vorher = queueStand("diagnose");
+    enqueueAnalyse("diagnose", heute, 35);
+    assert.equal(queueStand("diagnose"), vorher);
+    sql("select * from public.helmut_finish_job((select id from public.helmut_jobs where idempotency_key='pflicht'),'morgen',true);");
+    const abgeschlossen = queueStand("pflicht");
+    enqueueAnalyse("pflicht", heute, 35);
+    assert.equal(queueStand("pflicht"), abgeschlossen);
+  });
+  check("Optionale Beobachtung erbt frühere Morgenpflicht nicht und überschreibt keine heutige Pflicht", () => {
+    const prioritaet = () => sql("select priority from public.helmut_jobs where idempotency_key='erneut';");
+    const spaeter = "to_char(now() at time zone 'UTC','YYYY-MM-DD')||'T01Z'";
+    enqueueAnalyse("erneut", oldDay, 35);
+    enqueueAnalyse("erneut", spaeter, 80);
+    assert.equal(prioritaet(), "80");
+    enqueueAnalyse("erneut", heute, 50);
+    enqueueAnalyse("erneut", spaeter, 80);
+    assert.equal(prioritaet(), "50");
+    assert.equal(sql("select right(last_seen_window,4) from public.helmut_jobs where idempotency_key='erneut';"), "T01Z");
+  });
+  check("Beobachtung am Folgetag korrigiert die Priorität auch unter unveränderter Lease", () => {
+    enqueueAnalyse("laufender-altauftrag", oldDay, 35);
+    sql("update public.helmut_jobs set status='laeuft', lease_owner='alter-halter', lease_expires_at=now()+interval '1 minute', attempts=1 where idempotency_key='laufender-altauftrag';");
+    const leaseStand = () => sql("select row(id,status,attempts,lease_owner,lease_expires_at,due_at,first_due_at,payload)::text from public.helmut_jobs where idempotency_key='laufender-altauftrag';");
+    const vorher = leaseStand();
+    enqueueAnalyse("laufender-altauftrag", heute, 80);
+    assert.equal(leaseStand(), vorher);
+    assert.equal(sql("select priority from public.helmut_jobs where idempotency_key='laufender-altauftrag';"), "80");
+  });
+  check("Prioritätsmigration und Rückweg erhalten RPC-Rechte und Auftragsstand", () => {
+    assert.equal(enqueueRechte(), rechteVorher);
+    const nachher = queueStand("pflicht");
+    sql(file("rollback_" + artikelprioritaet));
+    assert.equal(enqueueRechte(), rechteVorher);
+    assert.equal(queueStand("pflicht"), nachher);
   });
   sql(file("rollback_20261123110000_quellen_dlq.sql"));
   const jobbestand = "select md5(string_agg((to_jsonb(j) - 'last_seen_window')::text,',' order by id)) from public.helmut_jobs j;";

@@ -97,7 +97,9 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(r.ok, true); A.equal(r.abrufErgebnis.art, "teilweise");
     A.equal(r.teilfehler, 4); A.equal(r.vollstaendig, false); A.equal(r.grund, "artikel-eingangsfehler");
     A.equal(w.diagnosen().length, 0);
-    A.equal(w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt").length, 4);
+    const diagnosen = w.q.alle().filter(j => j.payload.artikelFehler === "quellenstand-nicht-bestaetigt");
+    A.equal(diagnosen.length, 4);
+    A(diagnosen.every(j => j.max_attempts === 1));
     A.equal(w.q.alle().filter(j => !j.payload.artikelFehler).length, 0);
     A.equal(JSON.stringify([...w.kanonisch]), before); A.deepEqual(w.forbidden, []);
   });

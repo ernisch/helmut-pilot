@@ -21,13 +21,13 @@ async function auftragsausgang(zurueckstellen, job = auftrag) {
       zurueckstellen, finish: async () => assert.fail("Vertagung darf kein Finish schreiben") } });
 }
 
-async function laufquittung(t, bilanz, verfuegbar = true) {
+async function laufquittung(t, bilanz, verfuegbar = true, neuGeplant = false) {
   const quittungen = [];
   t.mock.method(storage, "schreibeWarteschlangenLaufquittung", async eintrag => {
     quittungen.push(eintrag);
     return { ok: true };
   });
-  t.mock.method(pipeline, "setzePlanungFort", async () => ({ ok: true, ausstehend: 0, tagesplan: {} }));
+  t.mock.method(pipeline, "setzePlanungFort", async () => ({ ok: true, ausstehend: 0, tagesplan: {}, neuGeplant }));
   t.mock.method(pipeline, "betriebsstatus", async () => ({ zustand: "test" }));
   t.mock.method(dispatch, "abgleich", async () => ({}));
   t.mock.method(dispatch, "versendeAbsichten", async () => ({}));
@@ -53,6 +53,13 @@ test("Bestätigte Vertagung zählt und ergibt success", async t => {
   assert.equal(ergebnis.ok, true);
   assert.equal(abschluss.status, "success");
   assert.equal(abschluss.deferred, 1);
+});
+
+test("Neuer Quellenplan löst keine altersbasierte Wiedervorlage aus", async t => {
+  const wiedervorlage = t.mock.method(pipeline, "wiedervorlage", async () => ({}));
+  const { ergebnis } = await laufquittung(t, { reserviert: 0, erledigt: 0 }, true, true);
+  assert.equal(wiedervorlage.mock.callCount(), 0);
+  assert.deepEqual(ergebnis.wiedervorlage, { uebersprungen: true, grund: "wiedervorlage-braucht-quellenbeleg" });
 });
 
 test("HTTP 521 am echten Speicheradapter wird nur bei belegtem Jobstand aufgefangen", async t => {
