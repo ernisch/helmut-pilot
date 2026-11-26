@@ -45,6 +45,27 @@ select :'modus'::text modus, :'job_id'::uuid job_id, :'abruf_id'::uuid abruf_id,
   :'tag'::text tag, :'bindung'::jsonb bindung, :'cas_ids'::jsonb cas_ids, :'klasse'::text klasse;
 create temporary table helmut_pflichtquittung (ausgabe jsonb) on commit drop;
 
+-- Production hat das alte Zuordnungsschema ohne run_id. Das ist sichtbar
+-- unbekannte Laufzuordnung, niemals ein leerer Beweis fuer Kostenfreiheit.
+create function pg_temp.helmut_pflichtnutzung(p_job uuid,p_cas jsonb)
+returns jsonb language plpgsql stable as $usage$
+declare v_spalten jsonb; v_hat_lauf boolean; v_filter text; v_zeilen jsonb;
+begin
+  select jsonb_agg(attname order by attname),bool_or(attname='run_id') into v_spalten,v_hat_lauf
+    from pg_catalog.pg_attribute where attrelid='public.llm_usage'::regclass and attnum>0 and not attisdropped;
+  if not(v_spalten ?& array['id','created_at','vorgang_id','knowledge_object_id'])
+  then raise exception 'pflichtanalyse: ungeklaertes Nutzungsschema'; end if;
+  v_filter := 'u.vorgang_id in(select jsonb_array_elements_text($2)) or u.knowledge_object_id in('
+    ||'select knowledge_object_id from public.ko_document_links where raw_document_id=('
+    ||'select payload->''dokumentIds''->>0 from public.helmut_jobs where id=$1))';
+  if v_hat_lauf then v_filter := 'u.run_id::text=$1::text or ('||v_filter||')'; end if;
+  execute 'select coalesce(jsonb_agg(to_jsonb(u) order by u.id),''[]''::jsonb) from public.llm_usage u where '||v_filter
+    into v_zeilen using p_job,p_cas;
+  return jsonb_build_object('modus',case when v_hat_lauf then 'lauf-und-objektbezug' else 'legacy-objektbezug' end,
+    'spalten',v_spalten,'zeilen',v_zeilen);
+end;
+$usage$;
+
 -- Vollstaendige, private Vor-/Nachwerte; auch die CAS-Abwesenheit fuer eine
 -- nativ abgeleitete, noch nicht verknuepfte Vorgangskennung ist damit pruefbar.
 create function pg_temp.helmut_pflichtstand(p_job uuid, p_abruf uuid, p_tag text,p_cas jsonb)
@@ -67,8 +88,11 @@ returns jsonb language sql stable as $snapshot$
     'jobBuchungen', (select coalesce(jsonb_agg(c.value order by c.key),'[]'::jsonb)
       from public.helmut_store a cross join lateral jsonb_each(coalesce(a.data->'betriebskostenBudget'->'calls','{}'::jsonb)) c
       where a.id='main-auth' and c.value->>'runId'=p_job::text),
-    'jobNutzung', (select coalesce(jsonb_agg(to_jsonb(u) order by u.id),'[]'::jsonb)
-      from public.llm_usage u where u.run_id=p_job::text),
+    'jobNutzung',pg_temp.helmut_pflichtnutzung(p_job,p_cas),
+    'blobJobNutzung', (select coalesce(jsonb_agg(c.value order by c.value->>'id'),'[]'::jsonb)
+      from public.helmut_store a cross join lateral jsonb_array_elements(coalesce(a.data->'llmUsage','[]'::jsonb)) c
+      where a.id='main-auth' and c.value->>'runId'=p_job::text),
+    'kostenBuch',(select data->'betriebskostenBudget' from public.helmut_store where id='main-auth'),
     'fundstellen', (select coalesce(jsonb_agg(to_jsonb(f) order by f.original_url),'[]'::jsonb)
       from public.document_findings f where f.raw_document_id=(select payload->'dokumentIds'->>0 from public.helmut_jobs where id=p_job)
       and f.source_id=(select payload->'quelle'->>'id' from public.helmut_jobs where id=p_abruf)
@@ -141,7 +165,8 @@ begin
         or (v_job->>'finished_at')::timestamptz>='2026-11-26T07:04:13Z'::timestamptz
         or v_job->'attempts' is distinct from '3'::jsonb or v_job->'max_attempts' is distinct from '3'::jsonb
         or v_job->'wiedervorlagen' is distinct from '1'::jsonb
-        or v_vor->'jobBuchungen'<>'[]'::jsonb or v_vor->'jobNutzung'<>'[]'::jsonb
+        or v_vor->'jobBuchungen'<>'[]'::jsonb or v_vor->'jobNutzung'->'zeilen'<>'[]'::jsonb
+        or v_vor->'blobJobNutzung'<>'[]'::jsonb
         or v_vor->'cas'<>'[]'::jsonb
       then raise exception 'pflichtanalyse: kein belegter einzelner Slotrest des 26Nov-Vorfalls'; end if;
     end if;

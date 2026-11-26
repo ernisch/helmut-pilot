@@ -12,6 +12,7 @@ const F = require("../lib/helmut/quellen-faelligkeit");
 const L = require("../lib/helmut/quellen-lektuerebeleg");
 const I = require("../lib/helmut/vorgang-identity");
 const V = require("../lib/helmut/verstehen-vertrag");
+const B = require("../lib/helmut/betriebskosten-budget");
 const { einzelArtikelAuftrag } = require("../lib/helmut/scalable-pipeline");
 const { hash: belegHash } = require("../lib/helmut/briefing-speicher");
 const now = Date.now(), tag = new Date(now).toISOString().slice(0,10);
@@ -26,6 +27,9 @@ function vorschau(s,klasse="metadaten-pflicht") {
   return {version:1,modus:"vorschau",klasse,tag,jobId,abrufId,gelesenAm:new Date(now).toISOString(),inhalt,digest:digest(inhalt)};
 }
 function bestand() {
+  const contract=B.vertrag({[B.ENV]:JSON.stringify({version:1,profileId:"synthetischer-betrieb",
+    startsAt:new Date(Date.parse(tag)-30*86400000).toISOString(),dailyLimitUsd:1,totalLimitUsd:30,
+    route:{provider:"azure",responsesUrl:"https://offline.openai.azure.com/openai/v1/responses",model:"gpt-5-mini"}})});
   const original = require("../lib/helmut/dedup").toRawDocumentRow({
     title:"Synthetischer Kabinettsbeschluss zur Arbeitsmarktpolitik",
     summary:"Das Kabinett beriet im isolierten Test die Arbeitsmarktpolitik und vereinbarte eine parlamentarische Beratung.",
@@ -47,11 +51,13 @@ function bestand() {
     ergebnis:{art:"rohfassungen",rohIds:[original.id],analyse:[{jobId,rohId:original.id,stand}]}};
   const s={job:{id:jobId,job_type:job.jobType,idempotency_key:job.idempotencyKey,tenant_id:null,status:"fehlgeschlagen",
     payload:job.payload,last_error:"quellenstand-metadatenabweichung",finished_at:new Date(Date.parse(tag)-3600000).toISOString(),
-    attempts:3,max_attempts:3,wiedervorlagen:2,lease_owner:null,lease_expires_at:null},abruf:a,
+    attempts:3,max_attempts:3,wiedervorlagen:2,created_at:new Date(Date.parse(tag)-7*86400000).toISOString(),lease_owner:null,lease_expires_at:null},abruf:a,
     plan:{id:"main-quellenplan-"+tag,data},beleg:{id:"main-quellenfaelligkeit-"+abrufId,data:{...b,belegHash:belegHash(b)}},
     aktuell:{...original,published_at:new Date(Date.parse(tag)-2*86400000).toISOString()},
     archive:[{id:`main-rohstand-${original.id.slice(3)}-${stand}`,data:{version:1,quellenHash:stand,dokument:original}}],
-    links:[],kos:[],cas:[],casIds:[],kostenDigest:null};
+    links:[],kos:[],cas:[],casIds:[],kostenDigest:null,
+    kostenBuch:{version:1,contractHash:contract.contractHash,contract,calls:{},bound:0,frozen:null},
+    jobBuchungen:[],jobNutzung:{modus:"legacy-objektbezug",spalten:["id","created_at","vorgang_id","knowledge_object_id"],zeilen:[]},blobJobNutzung:[]};
   s.casIds=casKennungen(vorschau(s));
   return s;
 }
@@ -79,7 +85,7 @@ function mitSlotrest(s) {
   const vg=I.deriveVorgangId(I.clusterRawDocuments([s.aktuell])[0]);
   s.kos=[{id:"ko-"+vg,vorgang_id:vg,ko_version:1,source_document_count:1,understanding_status:"pending"}];
   s.links=[{raw_document_id:s.aktuell.id,knowledge_object_id:s.kos[0].id}];
-  s.jobBuchungen=[];s.jobNutzung=[];s.casIds=casKennungen(vorschau(s));return s;
+  s.casIds=casKennungen(vorschau(s));return s;
 }
 function mitGoogleSlotrest(s) {
   const doc=s.archive[0].data.dokument, proxy="https://news.google.com/rss/articles/CBMiSynthetischerPruefartikel";
@@ -133,10 +139,27 @@ function mitGoogleSlotrest(s) {
     for(const mutate of [s=>{s.job.finished_at="2026-11-26T07:04:13Z";},s=>{s.job.finished_at="2026-11-26T07:03:57Z";},
       s=>{s.job.wiedervorlagen=2;},s=>{s.job.last_error="verstehen-uebersprungen-dauerhaft: zeitbudget";},
       s=>{s.cas=[{vorgang_id:s.casIds[0],zustand:"unbekannt"}];},s=>{s.jobBuchungen=[{runId:jobId}];},
-      s=>{s.jobNutzung=[{run_id:jobId}];},s=>{s.aktuell.summary+=" anderer Text";},
+      s=>{s.jobNutzung.zeilen=[{vorgang_id:s.casIds[0]}];},s=>{s.aktuell.summary+=" anderer Text";},
       s=>{s.kos[0].understanding_status="complete";},s=>{s.job.quellen_prioritaet_tag=tag;},s=>{s.abruf.priority=50;}]){
       const s=mitSlotrest(bestand());mutate(s);await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen));
     }
+  });
+  await test("Legacy-Schema belegt Kostenfreiheit nur mit vollstaendigem nativ gueltigem aktivem Buch",async()=>{
+    for(const mutate of [s=>{delete s.kostenBuch;},s=>{s.kostenBuch.frozen="ungeklaert";},
+      s=>{s.job.created_at="2000-01-01T00:00:00Z";},s=>{s.blobJobNutzung=[{runId:jobId}];},
+      s=>{s.jobNutzung.modus="lauf-und-objektbezug";},s=>{s.jobNutzung.spalten=[];}]){
+      const s=mitSlotrest(bestand());mutate(s);
+      await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen));
+    }
+    const s=mitSlotrest(bestand()),call={id:"synthetische-unzuordenbare-buchung",day:tag,
+      reserved:B.kosten(400000,1000),maxOutputTokens:1000,model:"gpt-5-mini",requestHash:"a".repeat(64),
+      createdAt:tag+"T00:00:00.000Z",runId:null,callType:"understanding",status:"reserviert"};
+    s.kostenBuch.calls[call.id]=call;s.kostenBuch.bound=call.reserved;
+    await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen),/unzuordenbare Analysebuchung/);
+  });
+  await test("NULL-Originalauszug bleibt trotz exakter Fundstelle mit konkretem Grund gesperrt",async()=>{
+    const s=mitSlotrest(bestand());s.aktuell.summary=null;s.casIds=casKennungen(vorschau(s));
+    await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen),/positiv belegter Originaltext fehlt/);
   });
   const negativ=[
     ["Titelabweichung",s=>{s.aktuell.title+=" anderer Titel";}],
@@ -186,10 +209,13 @@ function mitGoogleSlotrest(s) {
       create table knowledge_objects(id text primary key,vorgang_id text,ko_version int,source_document_count int,verstehen_fencing bigint,understanding_status text,classification_confidence jsonb);
       create table ko_document_links(knowledge_object_id text,raw_document_id text);
       create table helmut_verstehen_reservierungen(vorgang_id text,zustand text,besitzer text,lease_bis timestamptz,fencing bigint,ergebnis_fencing bigint,ergebnis_hash text,ki_aufrufe int,versuche int);
-      create table llm_usage(id text,run_id text);
+      create table llm_usage(id text primary key,politician_id text,user_id text,model text,call_type text,
+        prompt_tokens integer,completion_tokens integer,total_tokens integer,estimated_cost numeric,duration_ms integer,
+        success boolean,error text,created_at timestamptz,source_id text,package_id text,vorgang_id text,knowledge_object_id text);
       create table document_findings(raw_document_id text,source_id text,retrieval_path_id text,original_url text,link_type text,found_at timestamptz);`);
     const s=bestand(), j=s.job,a=s.abruf;
-    psql(`insert into helmut_store values(${q(s.plan.id)}#>>'{}',${q(s.plan.data)}),(${q(s.beleg.id)}#>>'{}',${q(s.beleg.data)}),(${q(s.archive[0].id)}#>>'{}',${q(s.archive[0].data)});
+    psql(`insert into helmut_store values('main-auth',${q({betriebskostenBudget:s.kostenBuch,llmUsage:[]})}),
+      (${q(s.plan.id)}#>>'{}',${q(s.plan.data)}),(${q(s.beleg.id)}#>>'{}',${q(s.beleg.data)}),(${q(s.archive[0].id)}#>>'{}',${q(s.archive[0].data)});
       insert into raw_documents select x.* from jsonb_populate_record(null::raw_documents,${q(s.aktuell)}) x;
       insert into helmut_jobs(id,job_type,idempotency_key,freshness_window,first_due_at,due_at,status,payload,attempts,max_attempts,last_error,finished_at,wiedervorlagen)
       values('${jobId}','document_understanding',${q(j.idempotency_key)}#>>'{}','alt',now()-interval '2 day',now()-interval '2 day','fehlgeschlagen',${q(j.payload)},3,3,'${j.last_error}','${j.finished_at}',2),
@@ -201,6 +227,15 @@ function mitGoogleSlotrest(s) {
       return JSON.parse(psql(text).split("\n").at(-1));
     };
     let b=await pruefe(ausfuehren("vorschau"),{...optionen,jetztMs:Date.now()});
+    await test("echtes Production-Legacyschema ohne run_id zeigt vorhandene Vorgangsnutzung",async()=>{
+      const v=JSON.parse(ausfuehren("vorschau").inhalt);
+      A.equal(v.jobNutzung.modus,"legacy-objektbezug");A(!v.jobNutzung.spalten.includes("run_id"));
+      psql(`insert into llm_usage(id,vorgang_id,created_at,model,call_type)
+        values('legacy-beleg',${q(s.casIds[0])}#>>'{}',now(),'gpt-5-mini','understanding');`);
+      const belegt=JSON.parse(ausfuehren("vorschau").inhalt);
+      A.equal(belegt.jobNutzung.zeilen.length,1);A.equal(belegt.jobNutzung.zeilen[0].id,"legacy-beleg");
+      psql("delete from llm_usage where id='legacy-beleg';");
+    });
     const original=JSON.parse(psql(`select to_jsonb(j) from helmut_jobs j where id='${jobId}'`));
     let receipt;
     await test("SQL stoppt bei nativer Vorwertdrift und abgelaufener Bindung",async()=>{
@@ -252,6 +287,19 @@ function mitGoogleSlotrest(s) {
       A.equal(r.nach.job.quellen_prioritaet_tag,null);A.deepEqual(r.nach.cas,[]);
       const rollback=rufe("rueckweg",r);A.equal(rollback.nach.job.status,"fehlgeschlagen");
       A.equal(rollback.nach.job.max_attempts,3);A.equal(rollback.nach.job.quellen_prioritaet_tag,null);
+      const altbindung=await pruefe(rufe("vorschau"),{...optionen,jetztMs:Date.now()});
+      psql(`insert into llm_usage(id,knowledge_object_id,created_at) values('legacy-ko-beleg',${q(ko.id)}#>>'{}',now());`);
+      await A.rejects(()=>pruefe(rufe("vorschau"),{...optionen,jetztMs:Date.now()}),/ohne CAS-\/Modellbuchung/);
+      psql("delete from llm_usage where id='legacy-ko-beleg';");
+      psql(`alter table llm_usage add column run_id text;alter table llm_usage add column tenant_id text;
+        alter table llm_usage add column profile_id text;alter table llm_usage add column pipeline_step text;
+        alter table llm_usage add column kein_aufruf boolean not null default false;`);
+      A.throws(()=>rufe("freigeben",altbindung),"Schemawechsel zwischen Bindung und Anwendung muss stoppen");
+      const modern=await pruefe(rufe("vorschau"),{...optionen,jetztMs:Date.now()});
+      A.equal(modern.vor.jobNutzung.modus,"lauf-und-objektbezug");A(modern.vor.jobNutzung.spalten.includes("run_id"));
+      const modernQuittung=rufe("freigeben",modern);rufe("rueckweg",modernQuittung);
+      psql(`insert into llm_usage(id,run_id,created_at) values('aktueller-laufbeleg','${jobId}',now());`);
+      await A.rejects(()=>pruefe(rufe("vorschau"),{...optionen,jetztMs:Date.now()}),/ohne CAS-\/Modellbuchung/);
     });
   }finally{psql(`drop database ${db} with (force);`,"postgres");}
 })().then(()=>console.log(`${anzahl} gezielte Pflichtanalyse-Pruefungen bestanden`)).catch(e=>{console.error(e.stack);if(e.stderr)console.error(String(e.stderr));process.exitCode=1;});

@@ -12,6 +12,7 @@ const D = require("../../lib/helmut/source-demand");
 const L = require("../../lib/helmut/quellen-lektuerebeleg");
 const I = require("../../lib/helmut/vorgang-identity");
 const V = require("../../lib/helmut/verstehen-vertrag");
+const B = require("../../lib/helmut/betriebskosten-budget");
 const { einzelArtikelAuftrag } = require("../../lib/helmut/scalable-pipeline");
 const SHA = /^[a-f0-9]{64}$/;
 const UUID = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
@@ -65,6 +66,22 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   verlange(j.idempotency_key === soll.idempotencyKey && gleich(j.payload, soll.payload), "exakte Einzelversion ohne Altfreigaben");
   verlange(gleich(s.casIds, casKennungen(v)) && new Set(s.cas.map(c => c.vorgang_id)).size === s.cas.length
     && s.cas.every(c => s.casIds.includes(c.vorgang_id)), "CAS-Kandidaten nachlesen");
+  const nutzung = s.jobNutzung;
+  verlange(nutzung && Array.isArray(nutzung.spalten) && Array.isArray(nutzung.zeilen)
+    && ["id", "created_at", "vorgang_id", "knowledge_object_id"].every(k => nutzung.spalten.includes(k))
+    && nutzung.modus === (nutzung.spalten.includes("run_id") ? "lauf-und-objektbezug" : "legacy-objektbezug")
+    && Array.isArray(s.blobJobNutzung), "explizit gebundenes altes oder aktuelles Nutzungsschema");
+  // Logging ist ein begrenzter Spiegel und im alten Schema nicht laufgebunden.
+  // Nur das vollstaendige, vor Sendung gebuchte aktive Geldbuch traegt hier
+  // eine negative Aussage; dessen Abwesenheit/Unlesbarkeit sperrt den Eingriff.
+  const buch = s.kostenBuch;
+  B.pruefeBuch(buch, buch?.contract);
+  const jobBuchungen = Object.values(buch.calls).filter(c => c.runId === jobId).sort((a,b) => a.id.localeCompare(b.id));
+  verlange(gleich(jobBuchungen, [...(s.jobBuchungen || [])].sort((a,b) => a.id.localeCompare(b.id))), "vollstaendige Buch-/Jobzuordnung");
+  if (!pflicht) verlange(Number.isFinite(zeit(j.created_at)) && zeit(buch.contract.startsAt) <= zeit(j.created_at)
+    && Object.values(buch.calls).every(c => c.callType !== "understanding" || zeit(c.createdAt) < zeit(j.created_at)
+      || zeit(c.createdAt) > jetztMs || typeof c.runId === "string" && c.runId.trim().length > 0)
+    && jobBuchungen.length === 0, "Slotrest: vollstaendige aktive Buchabdeckung ohne unzuordenbare Analysebuchung erforderlich");
 
   const request = async url => {
     const key = new URL(url, "http://offline.invalid").searchParams.get("id")?.replace(/^eq\./, "");
@@ -97,10 +114,12 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   const archiv = R.erzeuge({ request, storeId: "main" });
   const original = await archiv.lesen(id, stand), aktuell = s.aktuell;
   verlange(original && aktuell?.id === id && [original, aktuell].every(d => d.link_type === "direct"
-    && (!pflicht || d.source_id === quelle.id) && typeof d.summary === "string" && d.summary.trim()
+    && (!pflicht || d.source_id === quelle.id)
     && Number.isFinite(zeit(d.published_at)))
     && ["url", "canonical_url", "title", "source_name"].every(k => typeof original[k] === "string"
       && original[k].trim() && original[k] === aktuell[k]), "amtliches Archiv und eindeutige aktuelle Identitaet");
+  verlange([original, aktuell].every(d => typeof d.summary === "string" && d.summary.trim()),
+    pflicht ? "positiv belegter amtlicher Originalauszug fehlt" : "Slotrest: positiv belegter Originaltext fehlt; Titel und Fundstelle reichen nicht");
   const wege = D.abrufwege(quelle);
   const google = !pflicht && wege.some(url => new URL(url).hostname === "news.google.com");
   if (!pflicht) verlange(quelle.crawlMethod === "rss" && wege.length > 0 && wege.every(url => {
@@ -135,7 +154,7 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
       && R.standHash(aktuell) === stand
       && s.links.length === 1 && s.kos[0]?.understanding_status === "pending"
       && s.links[0].raw_document_id === id && s.links[0].knowledge_object_id === s.kos[0].id
-      && s.cas.length === 0 && gleich(s.jobBuchungen, []) && gleich(s.jobNutzung, []),
+      && s.cas.length === 0 && gleich(s.jobBuchungen, []) && gleich(nutzung.zeilen, []) && gleich(s.blobJobNutzung, []),
     "Slotrest mit identischem Original, genau einem pending-KO und ohne CAS-/Modellbuchung");
   } else if (s.links.length) {
     const ko = s.kos[0], link = s.links[0];
