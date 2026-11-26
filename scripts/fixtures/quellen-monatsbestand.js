@@ -6,6 +6,8 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { toRawDocumentRow } = require("../../lib/helmut/dedup");
 const { standHash } = require("../../lib/helmut/roh-quellenstaende");
+const { hash } = require("../../lib/helmut/quellen-lektuerebeleg");
+const artikelStatus = require("../../lib/helmut/artikel-verarbeitungszustand");
 const { einzelArtikelAuftrag, setzePlanungFort } = require("../../lib/helmut/scalable-pipeline");
 const { fristen } = require("../../lib/helmut/quellen-faelligkeit");
 const D = require("../../lib/helmut/source-demand");
@@ -14,9 +16,16 @@ const TAG = 86400000;
 const START = Date.parse("2026-11-24T00:00:00Z");
 const tage = Array.from({ length: 30 }, (_, i) => new Date(START + i * TAG).toISOString().slice(0, 10));
 const stoertage = ["2026-11-27", "2026-11-28", "2026-12-10", "2026-12-11"];
+const keinZiel = "kein-bestaetigtes-artikelziel";
+const titelAbweichend = "artikeltitel-abweichend";
+const bereichFehlt = "artikelbereich-mehrdeutig-oder-fehlend";
+const artikelAbseits = [
+  [keinZiel, 804, 61, 16], [titelAbweichend, 24, 2, 1],
+  ["strukturierter-artikel-mehrdeutig-oder-fehlend", 17], ["artikelmetadaten-mehrdeutig-oder-fehlend", 12],
+  [bereichFehlt, 9, 1, 1], ["artikeldatum-abweichend", 1]
+];
 const terminal = [
   ["profil", 869, "betriebskosten-profilbindung-abweichend"],
-  ["artikel-abseits", 867, "artikel-abseits: kein-bestaetigtes-artikelziel"],
   ["versionsdiagnose", 120, "artikel-eingangsfehler: quellenstand-versionskonflikt"],
   ["wartezeit", 88, "verstehen-uebersprungen-dauerhaft: zeitbudget"],
   ["metadaten", 55, "quellenstand-metadatenabweichung"],
@@ -30,22 +39,40 @@ const vor = iso(START - 6*TAG);
 const stunde = ms => iso(ms).slice(0,13) + "Z";
 const gruppen = [
   ...terminal.map(([art, n, error]) => ({ name: "terminal-" + art, n, error, terminal: true })),
-  { name: "profil-wieder", n: 738, error: "wiedervorlage 1 nach: betriebskosten-profilbindung-abweichend" },
-  ...[["datum",74],["titel",44],["herausgeber",20]].map(([art,n]) => ({name:"diagnose-" + art, n,
-    error:"wiedervorlage 1 nach: artikel-eingangsfehler: quellenstand-versionskonflikt"})),
-  { name: "ausgang-wieder", n: 2, error: "wiedervorlage 1 nach: modellausgang-unbekannt: quellenbeleg-parteien" },
-  { name: "ausgang-wartend", n: 1, error: "modellausgang-unbekannt: quellenbeleg-parteien" },
-  { name: "analyse-sonstige", n: 317, error: null }
+  ...artikelAbseits.flatMap(([abseits, anzahl, erneut, wieder2]) => [
+    { name: "terminal-artikel-abseits-" + abseits, n: anzahl, error: "artikel-abseits: " + abseits, terminal: true, abseits },
+    ...(erneut ? [{ name: "alt-artikel-abseits-" + abseits, n: erneut, error: "artikel-abseits: " + abseits,
+      abseits, wieder: 1, wieder2 }] : [])
+  ]),
+  { name: "profil-wieder", n: 738, error: "betriebskosten-profilbindung-abweichend", wieder: 1, wieder2: 14 },
+  ...[["datum",74,15],["titel",44,8],["herausgeber",20,4]].map(([art,n,wieder2]) => ({name:"diagnose-" + art, n,
+    error:"artikel-eingangsfehler: quellenstand-versionskonflikt", wieder: 1, wieder2, max: 1 })),
+  { name: "ausgang-wieder", n: 2, error: "modellausgang-unbekannt: quellenbeleg-parteien", wieder: 1, max: 1 },
+  { name: "ausgang-wartend", n: 1, error: "modellausgang-unbekannt: quellenbeleg-parteien", mitVersuch: 1 },
+  { name: "analyse-fortsetzung", n: 88, error: "zurueckgestellt: verstehen-uebersprungen: verstehen-fortsetzung" },
+  { name: "analyse-budget", n: 61, error: "zurueckgestellt: verstehen-uebersprungen: budget-nicht-verfuegbar", mitVersuch: 2 },
+  { name: "alt-wartefrist", n: 18, error: "verstehen-uebersprungen-dauerhaft: artikelkontext-zeitbudget seit 122 h", wieder: 1, wieder2: 1 },
+  { name: "analyse-tagesbetrieb", n: 10, error: "zurueckgestellt: analyse-wartet-auf-tagesbetrieb", aktuell: 1, mitVersuch: 1 },
+  { name: "analyse-quellenstand", n: 4, error: "artikel-eingangsfehler: quellenstand-nicht-bestaetigt", mitVersuch: 4 },
+  { name: "alt-operatorbindung", n: 2, error: "payload-ungueltig: wiederaufnahme", wieder: 1, max: 1 },
+  { name: "alt-artikelpruefung", n: 2, error: "artikel-pruefung-fehlgeschlagen", wieder: 1 },
+  { name: "analyse-wartefrist", n: 1, error: "verstehen-uebersprungen-dauerhaft: zeitbudget seit 122 h", mitVersuch: 1 },
+  { name: "analyse-metadaten", n: 1, error: "quellenstand-metadatenabweichung", mitVersuch: 1 },
+  { name: "analyse-ohne-fehler", n: 66, error: null, aktuell: 27 }
 ];
 
 function analyseZeile(gruppe, i, amtlich) {
   const terminal = gruppe.terminal === true;
   const diagnose = gruppe.name.startsWith("diagnose-") || gruppe.name === "terminal-versionsdiagnose";
-  const wieder = gruppe.name.startsWith("diagnose-") || ["profil-wieder", "ausgang-wieder"].includes(gruppe.name);
-  const datum = amtlich ? iso(START-3*3600000) : gruppe.name === "analyse-sonstige" && i < 28 ? iso(START) : vor;
-  const archiv = amtlich || toRawDocumentRow({ url:"https://nachrichten.fixture.invalid/archiv/" + gruppe.name + "/" + i,
+  const wieder = i < (gruppe.wieder2 ?? 0) ? 2 : gruppe.wieder ?? 0;
+  const datum = amtlich ? iso(START-3*3600000) : i < (gruppe.aktuell ?? 0) ? iso(START) : vor;
+  const publisher = gruppe.abseits === keinZiel;
+  const archiv = amtlich || toRawDocumentRow({
+    url: publisher ? null : "https://nachrichten.fixture.invalid/archiv/" + gruppe.name + "/" + i,
+    linkType: publisher ? "publisher" : "direct",
     title:"Synthetischer Bericht zur Arbeitsmarktpolitik " + gruppe.name + " " + i,
-    summary:"Eine synthetische Meldung dokumentiert die Beratung im Testmandat.", sourceName:"Prüfverlag", sourceId:"pruefverlag",
+    summary: gruppe.abseits ? null : "Eine synthetische Meldung dokumentiert die Beratung im Testmandat.",
+    sourceName:"Prüfverlag", sourceId:"pruefverlag",
     publishedAt: vor, retrievedAt: vor });
   const beobachtet = { ...archiv };
   if (gruppe.name === "diagnose-datum") beobachtet.published_at = iso(START - 5*TAG);
@@ -54,11 +81,28 @@ function analyseZeile(gruppe, i, amtlich) {
   const stand = standHash(archiv);
   const job = einzelArtikelAuftrag({ id: archiv.id, stand, fenster: stunde(Date.parse(datum)), priority: amtlich ? 35 : 80 });
   if (diagnose) { job.idempotencyKey += "|eingangsfehler|versionskonflikt"; job.payload.artikelFehler = "quellenstand-versionskonflikt"; }
+  if (gruppe.name === "analyse-quellenstand") job.payload.artikelFehler = "quellenstand-nicht-bestaetigt";
+  if (gruppe.name === "alt-operatorbindung") {
+    job.idempotencyKey += "|begrenzt-" + i;
+    job.payload.wiederaufnahme = { vorgangId: "vg-synthetische-altbindung-" + i, bisMs: START - TAG };
+  }
+  if (gruppe.abseits) {
+    const beleg = publisher ? { art: "gebundener-publisherverweis" } : {
+      art: "bestaetigter-extraktionsfehler", schluessel: hash([archiv.id, "extraktion"]),
+      negativHash: hash([archiv.id, gruppe.abseits]), ...(gruppe.abseits === bereichFehlt ? { gepruefteRevision: 2 } : {})
+    };
+    const basis = { version: 1, zustand: "abseits", dokumentId: archiv.id, artikelVersion: stand, grund: gruppe.abseits, beleg };
+    job.payload.artikelVerarbeitungszustand = { ...basis, zustandsHash: hash(basis) };
+    assert(artikelStatus.lese(job.payload.artikelVerarbeitungszustand, job.payload));
+  }
+  const max = gruppe.max ?? (diagnose ? 1 : 3);
   const zeile = { gruppe:gruppe.name, raw:archiv, beobachtet:standHash(beobachtet), stand, amtlich:Boolean(amtlich),
     key:job.idempotencyKey, typ:job.jobType, payload:job.payload, fenster:job.freshnessWindow,
     gesehen:gruppe.name === "profil-wieder" && i < 2 ? stunde(START) : null, faellig:datum, zuerst:datum,
-    fehler:gruppe.error, status:terminal ? "fehlgeschlagen" : "wartend", priority:job.priority, max:3,
-    versuche:terminal ? 3 : 0, wieder:wieder ? 1 : 0, ende:amtlich ? iso(START-3600000) : terminal ? iso(START-TAG) : null };
+    fehler:wieder ? `wiedervorlage ${wieder} nach: ${gruppe.error}` : gruppe.error,
+    status:terminal ? "fehlgeschlagen" : "wartend", priority:job.priority, max,
+    versuche:terminal ? max : i < (gruppe.mitVersuch ?? 0) ? 1 : 0, wieder,
+    ende:amtlich ? iso(START-3600000) : terminal ? iso(START-TAG) : null };
   if ((amtlich && gruppe.name === "terminal-wartezeit") || gruppe.name === "terminal-cas-unbekannt") {
     const identity = require("../../lib/helmut/vorgang-identity");
     zeile.vorgang = identity.deriveVorgangId(identity.clusterRawDocuments([archiv])[0]);
@@ -83,9 +127,9 @@ function speichere(db, zeilen) {
         (v->>'zuerst')::timestamptz,(v->>'priority')::smallint,v->>'status',v->'payload',(v->>'versuche')::int,
         (v->>'max')::int,(v->>'wieder')::int,v->>'fehler',(v->>'ende')::timestamptz from d returning id,idempotency_key),
       roh as (insert into public.raw_documents(id,canonical_url,content_hash,title,summary,url,source_name,source_id,source_type,
-        published_at,retrieved_at,raw,confidence,document_type,wahlperiode)
+        published_at,retrieved_at,raw,confidence,document_type,wahlperiode,link_type)
         select x.id,x.canonical_url,x.content_hash,x.title,x.summary,x.url,x.source_name,x.source_id,x.source_type,
-        x.published_at,x.retrieved_at,x.raw,x.confidence,x.document_type,x.wahlperiode from d
+        x.published_at,x.retrieved_at,x.raw,x.confidence,x.document_type,x.wahlperiode,x.link_type from d
         cross join lateral jsonb_populate_record(null::public.raw_documents, v->'raw') x where v ? 'raw'),
       archiv as (insert into public.helmut_store(id,data) select
         'main-rohstand-'||substr(v->'raw'->>'id',4)||'-'||(v->>'stand'),

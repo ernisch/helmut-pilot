@@ -394,6 +394,11 @@ async function main(schreibeZwischenstand) {
       tagesbericht.briefingFrist &&= morgenstand?.abrufbar === true;
       if (monat) {
         tagesbericht.betriebsbuch = monatsbestand.tagesbeleg(db,tag);
+        const rechtzeitig = new Set(tagesbericht.ausgaben
+          .filter(ausgabe => Date.parse(ausgabe.generated_at) <= frist).map(ausgabe => ausgabe.slot));
+        const morgenGespeichert = ["lage", "mandatsbriefing", "morgenlage"].every(slot => rechtzeitig.has(slot));
+        tagesbericht.lageFrist = rechtzeitig.has("lage") && laeufe.some(lauf => lauf.lage?.vollstaendig);
+        tagesbericht.briefingFrist = morgenGespeichert && morgenstand?.vollstaendig === true;
         const ids = db.psql(`select count(distinct a->>'jobId') from public.helmut_store s
           cross join lateral jsonb_array_elements(s.data->'ergebnis'->'analyse') a
           join helmut_monat.startbestand b on b.id::text = a->>'jobId' and b.amtlich
@@ -404,6 +409,9 @@ async function main(schreibeZwischenstand) {
         const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
         const tagechecks = {
           produktLesbar: morgenstand?.abrufbar === true,
+          ausgabenVorFrist: morgenGespeichert && morgenstand?.lageAbsaetze > 0,
+          vollstaendigeAusgabenWieErwartet: tagesbericht.briefingFrist === !tagesbericht.teilfassungErwartet
+            && (tagesbericht.teilfassungErwartet || tagesbericht.lageFrist),
           abdeckungBelegt: abdeckung?.geplant > 0 && abdeckung.bestaetigt <= abdeckung.geplant,
           vollstaendigWieErwartet: morgenstand?.vollstaendig === !tagesbericht.teilfassungErwartet,
           teilfassungBenannt: !tagesbericht.teilfassungErwartet || morgenstand?.paketFehler?.includes("quellenversorgung-unvollstaendig"),
@@ -411,10 +419,12 @@ async function main(schreibeZwischenstand) {
           originalquote: tagesbericht.originalReservierungen <= 16,
           slotgrenze: tagesbericht.fenster <= konfiguration.fenster && laeufe.filter(l => l.arbeitsfenster).length <= slots.length,
           buchGeklaert: tagesbericht.betriebsbuch.ungeklaert === 0,
+          keinNeuerFaelligerAltbestand: tagesbericht.betriebsbuch.rueckstand.every(row => row.neuerAltbestand === 0),
           simulierteWegeBekannt: transport.unbekannt.length === 0,
           startfassungen: tagesbericht.wiederbeobachteteTerminalfassungen === (tag === szenarioTage[0] ? 3 : 0),
           abdeckungWieErwartet: abdeckung?.geplant > 0 && abdeckung.geplant-abdeckung.bestaetigt === (sollStoerung ? 1 : 0),
-          wiederaufnahme: !sollStoerung || tagesbericht.quellen.some(q=>q.quelle==="bt-termine-plenum" && q.belegHash && q.verspaetet)
+          wiederaufnahme: !sollStoerung || tagesbericht.quellen.some(q => q.quelle === "bt-termine-plenum"
+            && q.belegHash && q.verspaetet && ["terminstand", "bestaetigt_unveraendert"].includes(q.abruf))
         };
         for (const [name,ok] of Object.entries(tagechecks)) note(tag + " " + name, ok ? "geprueft" : "fehlgeschlagen");
         tage.push(tagesbericht);
