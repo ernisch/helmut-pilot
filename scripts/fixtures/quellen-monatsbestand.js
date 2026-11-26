@@ -42,7 +42,7 @@ function analyseZeile(gruppe, i, amtlich) {
   const terminal = gruppe.terminal === true;
   const diagnose = gruppe.name.startsWith("diagnose-") || gruppe.name === "terminal-versionsdiagnose";
   const wieder = gruppe.name.startsWith("diagnose-") || ["profil-wieder", "ausgang-wieder"].includes(gruppe.name);
-  const datum = gruppe.name === "analyse-sonstige" && i < 28 ? iso(START) : vor;
+  const datum = amtlich ? iso(START-3*3600000) : gruppe.name === "analyse-sonstige" && i < 28 ? iso(START) : vor;
   const archiv = amtlich || toRawDocumentRow({ url:"https://nachrichten.fixture.invalid/archiv/" + gruppe.name + "/" + i,
     title:"Synthetischer Bericht zur Arbeitsmarktpolitik " + gruppe.name + " " + i,
     summary:"Eine synthetische Meldung dokumentiert die Beratung im Testmandat.", sourceName:"Prüfverlag", sourceId:"pruefverlag",
@@ -58,7 +58,7 @@ function analyseZeile(gruppe, i, amtlich) {
     key:job.idempotencyKey, typ:job.jobType, payload:job.payload, fenster:job.freshnessWindow,
     gesehen:gruppe.name === "profil-wieder" && i < 2 ? stunde(START) : null, faellig:datum, zuerst:datum,
     fehler:gruppe.error, status:terminal ? "fehlgeschlagen" : "wartend", priority:job.priority, max:3,
-    versuche:terminal ? 3 : 0, wieder:wieder ? 1 : 0, ende:terminal ? iso(START-TAG) : null };
+    versuche:terminal ? 3 : 0, wieder:wieder ? 1 : 0, ende:amtlich ? iso(START-3600000) : terminal ? iso(START-TAG) : null };
   if ((amtlich && gruppe.name === "terminal-wartezeit") || gruppe.name === "terminal-cas-unbekannt") {
     const identity = require("../../lib/helmut/vorgang-identity");
     zeile.vorgang = identity.deriveVorgangId(identity.clusterRawDocuments([archiv])[0]);
@@ -99,19 +99,22 @@ function speichere(db, zeilen) {
 async function startbestand(db, profil, fixture) {
   const datum = tage[0];
   const scheduler = require("../../lib/helmut/scheduler");
-  const dip = require("../../lib/helmut/dip");
-  const amtlich = fixture.dokumente(datum, true, true).slice(1).map(d =>
-    toRawDocumentRow({ ...scheduler.dipDocToRawItem(dip.normalizeDrucksache(d), {primary:scheduler.dipPrimaryEnabled()}),
-      retrievalPathId:"rp-dip" }));
+  const cache = {};
+  const plan = await D.kompiliereQuellenbedarf({ profile:[profil], jetztMs:START - TAG,
+    quellenFuerProfil:p => scheduler.getSourcesForProfile(p,{planCache:cache}) });
+  const crawler = require("../../lib/helmut/crawler");
+  const amtlich = fixture.monatsquellen().flatMap(quelle => {
+    const aktiverWeg = plan.auftraege.find(j => j.payload?.quelle?.id === quelle.id)?.payload.quelle;
+    assert(aktiverWeg && D.amtlicheMorgenPrioritaet(aktiverWeg), "Amtlicher Planweg fehlt: " + quelle.id);
+    return crawler.parseRssItems(fixture.monatsfeed(quelle,datum))
+      .map(entry => toRawDocumentRow(crawler.normalizeRawItem(entry,aktiverWeg)));
+  });
   assert.equal(new Set(amtlich.map(d => d.id)).size, 3);
   db.psql("create schema helmut_monat; create table helmut_monat.startbestand(id uuid primary key, gruppe text not null,startstatus text not null,fehler text,amtlich boolean,archivhash text,beobachtet text,vorgang text);");
   for (const g of gruppen) {
     speichere(db, Array.from({length:g.n}, (_,i) => analyseZeile(g,i,
       g.name === "terminal-metadaten" && i<2 ? amtlich[i] : g.name === "terminal-wartezeit" && i===0 ? amtlich[2] : null)));
   }
-  const cache = {};
-  const plan = await D.kompiliereQuellenbedarf({ profile:[profil], jetztMs:START - TAG,
-    quellenFuerProfil:p => scheduler.getSourcesForProfile(p,{planCache:cache}) });
   const geteilt = plan.auftraege.filter(j => j.payload.art === "geteilt");
   const rss = geteilt.filter(j => j.payload.quelle.crawlMethod === "rss" && j.payload.quelle.retrievalPathId?.startsWith("rp-fixture-rss-"));
   assert(rss.length > 0 && geteilt.length > 100, "Synthetischer Katalog für alte Abrufe fehlt");

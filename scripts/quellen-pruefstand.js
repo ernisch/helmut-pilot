@@ -307,7 +307,7 @@ async function main(schreibeZwischenstand) {
     vergleich = { vorher: { arbeitsschluessel, bedarf: 1, httpAnfragen: 2 },
       nachher: { arbeitsschluessel, bedarf: 1, httpAnfragen } };
     note("Identische leere RSS-Antwort", "geprueft", "7b1f55b0 → Arbeitsstand: 2 → 1 Abrufe, 1 → 0 falsche Fundstücke");
-    const eingabe = fixture.katalog();
+    const eingabe = fixture.katalog(monat);
     konfiguration.fixtureHash = createHash("sha256").update(JSON.stringify({
       katalog: eingabe, mandat: fixture.mandat, ...(saubererMorgen ? { saubererMorgen } : {}), ...(stoertag ? { stoertag } : {})
     })).digest("hex");
@@ -400,7 +400,7 @@ async function main(schreibeZwischenstand) {
           where left(s.data->>'bestaetigtAm',10)='${tag}';`);
         tagesbericht.wiederbeobachteteTerminalfassungen = Number(ids);
         const sollStoerung = stoertag.includes(tag);
-        tagesbericht.teilfassungErwartet = sollStoerung || tagesbericht.wiederbeobachteteTerminalfassungen > 0;
+        tagesbericht.teilfassungErwartet = sollStoerung || tag === szenarioTage[0];
         const abdeckung = morgenstand?.versorgung?.abrufabdeckung;
         const tagechecks = {
           produktLesbar: morgenstand?.abrufbar === true,
@@ -412,7 +412,7 @@ async function main(schreibeZwischenstand) {
           slotgrenze: tagesbericht.fenster <= konfiguration.fenster && laeufe.filter(l => l.arbeitsfenster).length <= slots.length,
           buchGeklaert: tagesbericht.betriebsbuch.ungeklaert === 0,
           simulierteWegeBekannt: transport.unbekannt.length === 0,
-          startfassungen: tag !== szenarioTage[0] || tagesbericht.wiederbeobachteteTerminalfassungen === 3,
+          startfassungen: tagesbericht.wiederbeobachteteTerminalfassungen === (tag === szenarioTage[0] ? 3 : 0),
           abdeckungWieErwartet: abdeckung?.geplant > 0 && abdeckung.geplant-abdeckung.bestaetigt === (sollStoerung ? 1 : 0),
           wiederaufnahme: !sollStoerung || tagesbericht.quellen.some(q=>q.quelle==="bt-termine-plenum" && q.belegHash && q.verspaetet)
         };

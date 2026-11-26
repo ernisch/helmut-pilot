@@ -23,7 +23,12 @@ const mandat = Object.freeze({
   focusTopics: ["Arbeit", "Wirtschaft", "Digitales"], profileActive: true
 });
 
-function katalog() {
+function monatsquellen() {
+  const ids = ["bundesregierung", "bmas"];
+  return ids.map(id => require("../../lib/helmut/sources").v1Sources.find(q => q.id === id));
+}
+
+function katalog(monat = false) {
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const { resolveProfilePackages } = require("../../lib/helmut/quellenarchitektur/profile-packages");
   const pakete = resolveProfilePackages(mandat);
@@ -34,6 +39,13 @@ function katalog() {
     ["publisher-fixture.invalid", "nachrichten.fixture.invalid", "media", "journalistic"]
   ].map(([id, canonical_domain, publisher_type, evidence_role]) =>
     ({ id, name: id, canonical_domain, publisher_type, evidence_role }));
+  if (monat) {
+    for (const q of monatsquellen()) {
+      const domain = new URL(q.rssUrl).hostname.replace(/^www\./,"");
+      publishers.push({ id:"publisher-" + domain, name:q.name, canonical_domain:domain,
+        publisher_type:"ministry", evidence_role:"official_primary" });
+    }
+  }
   const retrievalPaths = [], packagePaths = [];
   const links = new Set();
   function weg(row, packageId) {
@@ -41,6 +53,10 @@ function katalog() {
     links.add(packageId);
     packagePaths.push({ package_id: packageId, retrieval_path_id: row.id });
   }
+  if (monat) for (const q of monatsquellen()) weg({
+    id:"rp-" + q.id, legacy_source_id:q.id, publisher_id:"publisher-" + new URL(q.rssUrl).hostname.replace(/^www\./,""),
+    name:q.name, represents_type:q.type, method:"rss", url:q.rssUrl
+  }, "pkg-bund-basis");
   for (const q of QUELLEN) weg({
     id: q.retrievalPathId, legacy_source_id: q.id, publisher_id: "publisher-bundestag.de",
     method: q.crawlMethod, url: q.url
@@ -92,7 +108,7 @@ function pdf(zeilen) {
 }
 
 function termine(saubererMorgen, wiederanlauf, monatstag) {
-  const terminDatum = monatstag && new Date(Date.parse(monatstag) + 86400000).toLocaleDateString("de-DE", {weekday:"long", day:"2-digit", month:"2-digit", year:"numeric", timeZone:"UTC"});
+  const terminDatum = monatstag && new Date(Date.parse(monatstag) + 86400000).toLocaleDateString("de-DE", {weekday:"long", day:"2-digit", month:"2-digit", year:"numeric", timeZone:"UTC"}).replace(", ", ", dem ");
   const kalenderDatum = datum => datum.replaceAll("-", "");
   const { QUELLEN } = require("../../lib/helmut/quellen-bundestag-termine");
   const seiten = new Map();
@@ -198,7 +214,7 @@ function dipProbe(tag, wiederanlauf) {
     original: `https://dserver.bundestag.de/btd/21/099/21099${tagNummer}.pdf` };
 }
 
-function dokumente(tag, wiederanlauf, monat) {
+function dokumente(tag, wiederanlauf) {
   const dip = dipProbe(tag, wiederanlauf);
   const aktuell = {
         id: Number(dip.dokumentId), titel: DIP_TITEL, drucksachetyp: "Antrag",
@@ -208,11 +224,16 @@ function dokumente(tag, wiederanlauf, monat) {
         vorgangsbezug: [{ id: dip.vorgangId, titel: DIP_TITEL, vorgangstyp: "Antrag" }],
         fundstelle: { pdf_url: dip.original }
       };
-  if (!monat || tag !== "2026-11-24") return [aktuell];
-  // Drei bereits archivierte Fassungen mit noch offenem Fehlerentscheid.
-  return [aktuell, ...[91, 92, 93].map(n => ({ ...aktuell, id: 991000 + n,
-    titel: DIP_TITEL + " · synthetischer Vorbefund " + n,
-    datum: "2026-11-23", fundstelle: {pdf_url: "https://dserver.bundestag.de/btd/21/098/21098" + n + ".pdf"} }))];
+  return [aktuell];
+}
+
+function monatsfeed(quelle, tag) {
+  if (tag !== "2026-11-24") return leer;
+  const namen = quelle.id === "bundesregierung"
+    ? ["Bundeskabinett zum Klimabericht", "Kabinett zur Wohnraumförderung"]
+    : ["Arbeitsmarktbericht zur Qualifizierung"];
+  return rss(namen.map((titel,i) => item(new URL("/synthetik-monatsprobe/beleg-" + (i+1),quelle.url).href,
+    titel, "Mon, 23 Nov 2026 20:00:00 GMT", quelle.url)));
 }
 
 function antworten(uhr, saubererMorgen, stoertag, monat) {
@@ -252,9 +273,13 @@ function antworten(uhr, saubererMorgen, stoertag, monat) {
       const seiten = monat ? tage.get(tag) : bt;
       if (seiten.has(url.pathname)) return seiten.get(url.pathname)(tag);
     }
+    if (monat) {
+      const quelle = monatsquellen().find(q => q.rssUrl === url.href);
+      if (quelle) return { type:"application/rss+xml", body:monatsfeed(quelle,tag) };
+    }
     const dip = dipProbe(tag, wiederanlauf);
     if (url.origin === new URL(DIP).origin && url.pathname === "/api/v1/drucksache")
-      return { type: "application/json", body: JSON.stringify({ documents: dokumente(tag, wiederanlauf, monat)
+      return { type: "application/json", body: JSON.stringify({ documents: dokumente(tag, wiederanlauf)
       }) };
     if (url.origin === new URL(DIP).origin && url.pathname === `/api/v1/vorgang/${dip.vorgangId}`)
       return { type: "application/json", body: JSON.stringify({ id: dip.vorgangId, typ: "Vorgang",
@@ -367,4 +392,4 @@ async function transport(uhr, { saubererMorgen = false, stoertag = null, monat =
   return { ...fixtures, stoppe };
 }
 
-module.exports = { mandat, katalog, transport, dipProbe, dokumente, AZURE };
+module.exports = { mandat, katalog, transport, dipProbe, monatsquellen, monatsfeed, AZURE };
