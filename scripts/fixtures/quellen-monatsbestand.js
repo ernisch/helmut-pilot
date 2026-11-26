@@ -121,6 +121,8 @@ async function startbestand(db, profil, fixture) {
   assert(rss.length >= 4 && googleRss.length > 1 && geteilt.length > 100, "Synthetischer Katalog für alte Abrufe fehlt");
   const abrufe = [];
   const heutigeUrls = new Set(cache.plan.aktiv.map(weg => weg.url));
+  const googleKatalogUrls = [...heutigeUrls].filter(url => /^https:\/\/news\.google\.com\//.test(url));
+  assert(googleKatalogUrls.length > 1, "Google-URLs im synthetischen Katalog fehlen");
   const altabgleich = { imKatalog:0, gleicherPlanweg:0, gleichePlanUrl:0, quellenkennungImPlan:0, ohneAbrufweg:0, google:0 };
   for (const [gruppe, n, quelle] of [["rss-alt",469,rss],["abruf-vertagt",122,geteilt],["abruf-sonstige",146,geteilt],["abruf-terminal",1,rss]]) {
     for (let i=0;i<n;i++) {
@@ -132,8 +134,10 @@ async function startbestand(db, profil, fixture) {
       if (gruppe === "rss-alt") {
         const q = vorbild.payload.quelle;
         const aktuelleQuelle = vorlagen[i % vorlagen.length].payload.quelle;
-        const andere = vorlagen[(i + 1) % vorlagen.length].payload.quelle;
-        const alteUrl = i < 4 ? aktuelleQuelle.url : i < 428 ? andere.url
+        const katalogUrl = googleKatalogUrls[i % googleKatalogUrls.length];
+        const andereKatalogUrl = katalogUrl === aktuelleQuelle.url
+          ? googleKatalogUrls[(i + 1) % googleKatalogUrls.length] : katalogUrl;
+        const alteUrl = i < 4 ? aktuelleQuelle.url : i < 428 ? andereKatalogUrl
           : "https://news.google.com/rss/search?q=veralteter-synthetischer-abruf-" + i;
         delete q.retrievalPathId;
         q.url = q.rssUrl = alteUrl;
@@ -141,7 +145,7 @@ async function startbestand(db, profil, fixture) {
         variante.searchParams.set("alte-variante", String(i));
         q.rssUrls = [alteUrl, variante.href];
         if (heutigeUrls.has(alteUrl)) altabgleich.imKatalog++;
-        if (aktuelleQuelle.retrievalPathId === q.retrievalPathId) altabgleich.gleicherPlanweg++;
+        if (q.retrievalPathId && aktuelleQuelle.retrievalPathId === q.retrievalPathId) altabgleich.gleicherPlanweg++;
         if (aktuelleQuelle.url === q.url) altabgleich.gleichePlanUrl++;
         if (aktuelleQuelle.id === q.id) altabgleich.quellenkennungImPlan++;
         if (!q.retrievalPathId) altabgleich.ohneAbrufweg++;
