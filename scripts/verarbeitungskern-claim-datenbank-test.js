@@ -248,6 +248,13 @@ async function main() {
     'document_understanding', '${key}', ${window}, '${stand}', now()-interval '1 hour', ${priority}::smallint, 3, null);`);
   enqueueAnalyse("vor-migration", oldDay, 35);
   enqueueAnalyse("vor-migration", heute, 80);
+  check("Vorwärtsmigration und Rückweg stoppen bei einer fremden Prioritätsspalte", () => {
+    sql("alter table public.helmut_jobs add column quellen_prioritaet_tag text;");
+    assert.throws(() => sql(file(artikelprioritaet)), /Command failed/);
+    assert.throws(() => sql(file("rollback_" + artikelprioritaet)), /Command failed/);
+    assert.equal(sql("select format_type(atttypid,atttypmod) from pg_attribute where attrelid='public.helmut_jobs'::regclass and attname='quellen_prioritaet_tag';"), "text");
+    sql("alter table public.helmut_jobs drop column quellen_prioritaet_tag;");
+  });
   sql(file(artikelprioritaet));
   check("Eine alte Pflichtpriorität überlebt den ersten neuen Hintergrundbeleg nicht", () => {
     assert.equal(sql("select priority from public.helmut_jobs where idempotency_key='vor-migration';"), "35");
@@ -327,9 +334,11 @@ async function main() {
   const teilHash = text => createHash("sha256").update(text).digest("hex").slice(0, 32);
   const diagnoseKey = `document_understanding|${teilHash(rohId)}|${teilHash(rohId + ":" + "b".repeat(64))}|eingangsfehler|versionskonflikt`;
   const diagnosePayload = JSON.stringify({ ...JSON.parse(payload), artikelFehler: "quellenstand-versionskonflikt" });
+  const tag = sql("select current_date;");
+  const planDaten = { zustand: "fertig", tag, manifestHash: createHash("sha256").update(JSON.stringify([tag, [], null])).digest("hex"),
+    auftraege: [], tagesplan: null, version: 1, cursor: 0 };
   sql(`create table public.helmut_store(id text primary key, data jsonb);
-    insert into public.helmut_store values ('main-quellenplan-'||current_date::text,
-      jsonb_build_object('zustand','fertig','tag',current_date::text,'manifestHash',repeat('b',64),'auftraege','[]'::jsonb));
+    insert into public.helmut_store values ('main-quellenplan-'||current_date::text,'${JSON.stringify(planDaten)}');
     insert into public.helmut_jobs (job_type,idempotency_key,freshness_window,payload,first_due_at,due_at,last_error,wiedervorlagen)
     values ('document_understanding','${diagnoseKey}',${oldDay},'${diagnosePayload}',
       now()-interval '5 days', now()-interval '1 day',
@@ -342,9 +351,17 @@ async function main() {
     const vor = repariere([]);
     assert.equal(vor.anzahl, 1);
     const bindung = [["tag",vor.tag],["anzahl",vor.anzahl]];
-    assert.throws(() => repariere([...bindung,["modus","parken"],["digest","0".repeat(64)]]), /Command failed/);
+    const planbeleg = path.join(root, "scripts/ops/quellen-altbestand-planbeleg.js");
+    const belegPruefen = data => execFileSync(process.execPath, [planbeleg, tag], {
+      input: JSON.stringify({ id: "main-quellenplan-" + tag, data, digest: vor.planDigest }), encoding: "utf8",
+      stdio: ["pipe","pipe","pipe"]
+    }).trim();
+    assert.equal(belegPruefen(planDaten), vor.planDigest);
+    assert.throws(() => belegPruefen({ ...planDaten, manifestHash: "0".repeat(64) }), /Command failed/);
+    assert.throws(() => repariere([...bindung,["modus","parken"],["digest",vor.vorDigest],["plan_digest","0".repeat(64)]]), /Command failed/);
+    assert.throws(() => repariere([...bindung,["modus","parken"],["digest","0".repeat(64)],["plan_digest",vor.planDigest]]), /Command failed/);
     assert.equal(sql("select count(*) from public.helmut_jobs where status='wartend';"), "2");
-    const nach = repariere([...bindung,["modus","parken"],["digest",vor.vorDigest]]);
+    const nach = repariere([...bindung,["modus","parken"],["digest",vor.vorDigest],["plan_digest",vor.planDigest]]);
     assert.equal(nach.anzahl, 1);
     assert.notEqual(nach.nachDigest, vor.vorDigest);
     assert.equal(sql("select status||':'||wiedervorlagen||':'||attempts from public.helmut_jobs where finished_at is not null;"),

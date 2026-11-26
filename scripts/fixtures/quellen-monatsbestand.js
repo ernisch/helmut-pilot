@@ -185,11 +185,14 @@ async function parken(db) {
   };
   const geplant = await setzePlanungFort({ jetztMs:START, planungsDeadlineMs:START+60000, darfNeuPlanen:true, ganztags:true });
   assert(geplant.ok !== false, "Echter Tagesplan nicht bestätigt");
+  const { erzeugePlanungsrest } = require("../../lib/helmut/quellen-planungsrest");
+  const plan = await erzeugePlanungsrest({ request: db.storage.supabaseRequest, storeId: "main" }).lesen(tage[0]);
+  assert.equal(plan?.zustand, "fertig");
   const bericht=[];
   for(const [klasse,anzahl] of [["diagnose",138],["profil",736],["modellausgang",2]]) {
     const v=ausfuehren({modus:"vorschau",klasse});
     assert.equal(v.anzahl,anzahl);
-    const r=ausfuehren({modus:"parken",klasse,anzahl,tag:v.tag,digest:v.vorDigest});
+    const r=ausfuehren({modus:"parken",klasse,anzahl,tag:v.tag,digest:v.vorDigest,plan_digest:v.planDigest});
     assert.equal(r.anzahl,anzahl);
     bericht.push({klasse,anzahl,vorDigest:v.vorDigest,nachDigest:r.nachDigest});
   }
@@ -211,6 +214,13 @@ function tagesbeleg(db,tag) {
   assert.equal(bestand.unerlaubteAltabschluesse, 0, "Historische RSS-Definition ohne aktuellen Weg abgeschlossen");
   assert.equal(bestand.casGeschuetzt, 2, "Historische CAS-Ausgänge verändert");
   assert.equal(bestand.unbelegteWiederholungen, 0, "Historische Terminalentscheidung verändert");
-  return { ...q, bestand };
+  const rueckstand = JSON.parse(db.psql(`select coalesce(jsonb_agg(to_jsonb(b)), '[]'::jsonb) from (
+    select j.job_type, count(*) as offen,
+      count(*) filter (where j.due_at <= now()) as faellig,
+      count(*) filter (where s.id is null and j.first_due_at < '${tag}'::date and j.due_at <= now()) as "neuerAltbestand"
+    from public.helmut_jobs j left join helmut_monat.startbestand s on s.id=j.id
+    where j.status in ('wartend','laeuft') group by j.job_type order by j.job_type
+  ) b`));
+  return { ...q, bestand, rueckstand };
 }
 module.exports = { tage,stoertage,startbestand,parken,tagesbeleg };

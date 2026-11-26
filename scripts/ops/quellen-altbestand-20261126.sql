@@ -1,6 +1,7 @@
 -- Ein freigegebener, gebundener Eingriff in wieder vorgelegte Altanalysen.
 -- psql-Variablen: modus=vorschau|parken|rueckweg, klasse=diagnose|profil|modellausgang.
--- Für parken/rueckweg: tag (UTC), anzahl, digest und für rueckweg zusätzlich ids (JSON).
+-- Für parken/rueckweg: tag (UTC), anzahl, digest. Für parken zusätzlich der
+-- kanonisch verifizierte plan_digest, für rueckweg die quittierten ids (JSON).
 -- Mit leerem Aufruf wird nur die Vorschau der diagnostischen Aufträge ausgegeben.
 \set ON_ERROR_STOP on
 \if :{?modus}
@@ -23,6 +24,10 @@
 \else
   \set digest ''
 \endif
+\if :{?plan_digest}
+\else
+  \set plan_digest ''
+\endif
 \if :{?ids}
 \else
   \set ids '[]'
@@ -35,7 +40,8 @@ set local statement_timeout = '15s';
 
 create temporary table helmut_altparameter on commit drop as
 select :'modus'::text as modus, :'klasse'::text as klasse, :'tag'::text as tag,
-       :'anzahl'::integer as anzahl, :'digest'::text as digest, :'ids'::jsonb as ids;
+       :'anzahl'::integer as anzahl, :'digest'::text as digest, :'ids'::jsonb as ids,
+       :'plan_digest'::text as plan_digest;
 create temporary table helmut_altziel (id uuid primary key, hash text not null, substanz text not null) on commit drop;
 create temporary table helmut_altquittung (ausgabe jsonb not null) on commit drop;
 
@@ -47,6 +53,7 @@ declare
   v_digest text;
   v_jetzt timestamptz := transaction_timestamp();
   v_notiz text;
+  v_plan_digest text;
 begin
   select * into strict p from helmut_altparameter;
   if p.modus not in ('vorschau', 'parken', 'rueckweg')
@@ -54,6 +61,7 @@ begin
     or jsonb_typeof(p.ids) is distinct from 'array'
     or (p.modus <> 'vorschau' and (p.tag <> v_tag or p.anzahl not between 1 and 1000
       or p.digest !~ '^[a-f0-9]{64}$'))
+    or (p.modus = 'parken' and p.plan_digest !~ '^[a-f0-9]{64}$')
     or (p.modus <> 'rueckweg' and p.ids <> '[]'::jsonb)
     or (p.modus = 'rueckweg' and jsonb_array_length(p.ids) <> p.anzahl)
   then raise exception 'altbestand: ungueltige oder abgelaufene Freigabebindung'; end if;
@@ -70,11 +78,17 @@ begin
          and j.last_error like 'wiedervorlage % nach: %'
        order by j.id;
   else
-    if not exists (select 1 from public.helmut_store
+    select encode(sha256(convert_to(data::text, 'UTF8')), 'hex') into v_plan_digest
+      from public.helmut_store
       where id = 'main-quellenplan-' || v_tag and data->>'zustand' = 'fertig'
-        and data->>'tag' = v_tag and data->>'manifestHash' ~ '^[a-f0-9]{64}$'
-        and jsonb_typeof(data->'auftraege') = 'array')
-    then raise exception 'altbestand: bestaetigter Tagesplan fehlt'; end if;
+        and data->>'tag' = v_tag and data->'version' = '1'::jsonb
+        and data->>'manifestHash' ~ '^[a-f0-9]{64}$'
+        and data ?& array['auftraege','cursor','manifestHash','tag','tagesplan','version','zustand']
+        and data - array['auftraege','cursor','manifestHash','tag','tagesplan','version','zustand'] = '{}'::jsonb
+        and jsonb_typeof(data->'auftraege') = 'array'
+        and data->'cursor' = to_jsonb(jsonb_array_length(data->'auftraege'));
+    if v_plan_digest is null or (p.modus = 'parken' and p.plan_digest <> v_plan_digest)
+    then raise exception 'altbestand: bestaetigter Tagesplan fehlt oder weicht ab'; end if;
 
     -- Schuetzt auch eine Belegreferenz, die der alte RPC nicht als last_seen markiert hat.
     with belegt as materialized (
@@ -154,7 +168,7 @@ begin
     into v_notiz from helmut_altziel;
   insert into helmut_altquittung values (jsonb_build_object(
     'modus', p.modus, 'klasse', p.klasse, 'tag', v_tag, 'anzahl', v_anzahl, 'vorDigest', v_digest,
-    'nachDigest', v_notiz,
+    'nachDigest', v_notiz, 'planDigest', v_plan_digest,
     'ids', coalesce((select jsonb_agg(id order by id) from helmut_altziel), '[]'::jsonb)));
 end;
 $operation$;

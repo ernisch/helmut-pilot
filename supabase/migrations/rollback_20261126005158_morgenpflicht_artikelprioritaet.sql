@@ -2,11 +2,14 @@
 begin;
 set local lock_timeout = '3s';
 set local statement_timeout = '15s';
+lock table public.helmut_jobs in access exclusive mode;
 
 do $guard$
 declare
   v_body text;
   v_definer boolean;
+  v_spalte_vorhanden boolean;
+  v_spalte_erwartet boolean;
 begin
   select md5(prosrc), prosecdef into v_body, v_definer
     from pg_proc
@@ -15,6 +18,14 @@ begin
     or v_definer is distinct from false then
     raise exception 'helmut_enqueue_job: unbekannter Ausgangsstand';
   end if;
+  select count(*) = 1, coalesce(bool_and(atttypid = 'date'::regtype and not attnotnull and not atthasdef
+      and attgenerated = '' and attidentity = ''), false)
+    into v_spalte_vorhanden, v_spalte_erwartet
+    from pg_attribute where attrelid = 'public.helmut_jobs'::regclass
+      and attname = 'quellen_prioritaet_tag' and not attisdropped;
+  if (v_body = 'c2e01bf1edc204a03b66c96cb28eaec6' and v_spalte_vorhanden)
+    or (v_body = '83ba56b53b1cfc44afd580675298ae81' and not v_spalte_erwartet)
+  then raise exception 'helmut_jobs: unbekannter Stand der Prioritaetsspalte'; end if;
 end;
 $guard$;
 
