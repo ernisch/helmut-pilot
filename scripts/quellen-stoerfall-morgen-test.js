@@ -50,7 +50,7 @@ function casSpeicher() {
   };
 }
 
-async function fall(fehler) {
+async function fall(fehler,versuche) {
   clock=Date.parse(tag+"T05:35:00Z");
   const contract={version:1,profileId:profile.id,startsAt:tag+"T00:00:00.000Z",dailyLimitUsd:1,totalLimitUsd:30,
     route:{provider:"azure",responsesUrl:"https://offline.openai.azure.com/openai/v1/responses",model:"gpt-5-mini"}};
@@ -84,7 +84,7 @@ async function fall(fehler) {
     sourceId:"bundesregierung",linkType:"direct",publishedAt:tag+"T05:00:00Z",retrievedAt:tag+"T05:30:00Z"});
   const job=P.einzelArtikelAuftrag({id:doc.id,stand:R.standHash(doc),fenster:tag+"T05Z"});
   const row={id:analyseId,job_type:job.jobType,idempotency_key:job.idempotencyKey,tenant_id:null,payload:job.payload,
-    status:"laeuft",attempts:1,max_attempts:3,lease_owner:"kombiniert",lease_expires_at:tag+"T05:40:00Z",created_at:tag+"T05:30:00Z"};
+    status:"laeuft",attempts:versuche,max_attempts:3,lease_owner:"kombiniert",lease_expires_at:tag+"T05:40:00Z",created_at:tag+"T05:30:00Z"};
   const understandingDeps={canSpend:async()=>({allowed:true}),modelName:()=>"gpt-5-mini",logSkip:()=>{},
     findVorgangCandidates:async()=>[],listVorgangDocuments:async()=>[],saveSources:async()=>({ok:true}),
     markFailed:async()=>{},save:async()=>A.fail("Fehlerantwort wird nie Wissensobjekt"),
@@ -96,19 +96,28 @@ async function fall(fehler) {
     listFullProfiles:async()=>[profile],verstehenKonkurrenz:()=>true,
     klassen:{belege:async()=>({erlaubt:true,slot:"synthetischer-verstehensslot"}),gebeFrei:async()=>{}},
     zurueckstellen:async()=>A.fail("Gesendeter unbekannter Modellausgang wird nicht automatisch vorgelegt"),
-    eagerUnderstanding:async docs=>{
-      const r=await U.understandOneCluster({documents:docs},understandingDeps);
+    eagerUnderstanding:async(docs,optionen)=>{
+      A(Number.isFinite(optionen.deadlineMs)&&optionen.deadlineMs>clock,"Echte Handlerdeadline muss weitergegeben werden");
+      A(optionen.deadlineMs<=clock+120000,"Kein neues Analysefenster durch Testadapter");
+      const r=await U.understandOneCluster({documents:docs},understandingDeps,optionen);
       return {processed:1,counts:{[r.status]:1},results:[r]};
     },
     finish:async args=>{
       A.equal(args.owner,row.lease_owner);A.equal(args.id,row.id);A.equal(args.ok,false);writes++;
-      row.status="fehlgeschlagen";row.last_error=args.error;row.finished_at=new Date().toISOString();
+      // Native helmut_finish_job: Fehler sind erst an der Versuchsgrenze
+      // terminal. Die fachliche UNKNOWN-Sperre besteht schon davor.
+      row.status=row.attempts>=row.max_attempts?"fehlgeschlagen":"wartend";
+      row.last_error=args.error;row.finished_at=row.status==="fehlgeschlagen"?new Date().toISOString():null;
+      row.due_at=new Date(clock+args.retryDelayMs).toISOString();
       row.lease_owner=null;row.lease_expires_at=null;
       return {verfuegbar:true,uebernommen:true,neuerStatus:row.status};
     }
   };
   const ausgang=await P.fuehreAuftragAus({auftrag:row,besitzer:"kombiniert",restzeitMs:120000,deps:handlerDeps});
-  A.equal(ausgang.ausgang,"endgueltig-fehlgeschlagen");A.equal(writes,1);A.equal(cas.r.zustand,"unbekannt");A.equal(sends,1);
+  const terminal=versuche>=row.max_attempts;
+  A.equal(ausgang.ausgang,terminal?"endgueltig-fehlgeschlagen":"wiederholt");
+  A.equal(row.status,terminal?"fehlgeschlagen":"wartend");
+  A.equal(row.finished_at!==null,terminal);A.equal(writes,1);A.equal(cas.r.zustand,"unbekannt");A.equal(sends,1);
   A.deepEqual(transport,[fehler==="timeout"?{code:"ETIMEDOUT"}:{status:fehler==="invalid"?200:Number(fehler)}]);
   const geldVor=structuredClone(auth[B.KEY]);
   A.equal(Object.keys(geldVor.calls).length,1);A.equal(Object.values(geldVor.calls)[0].status,"ungeklaert");
@@ -122,14 +131,20 @@ async function fall(fehler) {
     first_due_at:planauftrag.dueAt,payload:planauftrag.payload,status:"wartend",last_error:"HTTP 503"};
   const env={HELMUT_SCALABLE_PIPELINE:"on",HELMUT_QUELLEN_ARBEITSFENSTER:"on"};
   const deps={planungsrest:{lesen:async()=>({zustand:"fertig",auftraege:[planauftrag]})},
-    offeneVorbedingungen:async()=>({verfuegbar:true,offen:0,fehlgeschlagen:0}),request:async url=>{
+    offeneVorbedingungen:async()=>({verfuegbar:true,offen:0,fehlgeschlagen:0})};
+  const requestFuer=(quelle,quittungen)=>async url=>{
       if(dbAusfall)throw Error("Supabase storage failed (521): synthetischer Leseausfall");
       const u=new URL(url,"http://offline.invalid");
-      if(u.pathname.endsWith("helmut_jobs"))return u.searchParams.has("idempotency_key")?[structuredClone(source)]:[structuredClone(row)];
-      return [...belege.values()].map(x=>structuredClone(x));
-    }};
-  const lese=()=>V.lese({mandat:profile.id,jetztMs:clock,quellenBis:require("../lib/helmut/quellen-tagesbetrieb").zeiten(clock).redaktionsschluss,env,deps});
+      if(u.pathname.endsWith("helmut_jobs"))return u.searchParams.has("idempotency_key")?[structuredClone(quelle)]:[structuredClone(row)];
+      return [...quittungen.values()].map(x=>structuredClone(x));
+    };
+  const lese=(quelle=source,quittungen=belege)=>V.lese({mandat:profile.id,jetztMs:clock,
+    quellenBis:require("../lib/helmut/quellen-tagesbetrieb").zeiten(clock).redaktionsschluss,env,
+    deps:{...deps,request:requestFuer(quelle,quittungen)}});
   A.equal(source.status,"wartend");A.equal(source.last_error,"HTTP 503");A.equal(belege.size,0);
+  // Zwei getrennte Quellenverlaeufe: fruehe Quittung isoliert den Analysestatus;
+  // spaete Quittung belegt die echte Fristluecke, ohne fruehe Bestaetigung zu erfinden.
+  const spaeteQuelle=structuredClone(source),spaeteBelege=new Map();
   // Deklarierte Quellenrueckkehr noch VOR Redaktionsschluss; UNKNOWN der Analyse
   // ist unabhaengig davon. Alle Zustandswechsel folgen derselben virtuellen Uhr.
   clock=Date.parse(tag+"T05:40:00Z");
@@ -137,10 +152,22 @@ async function fall(fehler) {
   const basis={version:1,bindung:F.quellbindung({id:source.id,tenantId:null,firstDueAt:source.first_due_at,payload:source.payload}),
     bestaetigtAm:new Date().toISOString(),ergebnis:{art:"rohfassungen",rohIds:[doc.id],analyse:[{jobId:analyseId,rohId:doc.id,stand:R.standHash(doc)}]}};
   belege.set(abrufId,{id:"main-quellenfaelligkeit-"+abrufId,data:{...basis,belegHash:H.hash(basis)}});
+  clock=Date.parse(tag+"T06:10:00Z");
+  const fehlt=await lese(spaeteQuelle,spaeteBelege);
+  A.equal(fehlt.zustand,"offen");A.equal(fehlt.pflichtAbrufabdeckung.bestaetigt,0);
+  A.notEqual(fehlt.verarbeitungBeendet,true,"Fehlender503-Abruf ist kein beendeter Gesamtstand");
+  const frueh=await lese();A.equal(frueh.pflichtAbrufabdeckung.bestaetigt,1);
+  A.equal(frueh.zustand,"offen");A.equal(frueh.verarbeitungBeendet===true,terminal);
+  clock=Date.parse(tag+"T06:15:00Z");
+  Object.assign(spaeteQuelle,{status:"erledigt",finished_at:new Date().toISOString()});
+  const spaeteBasis={...basis,bestaetigtAm:new Date().toISOString()};
+  spaeteBelege.set(abrufId,{id:"main-quellenfaelligkeit-"+abrufId,data:{...spaeteBasis,belegHash:H.hash(spaeteBasis)}});
+  const verspaetet=await lese(spaeteQuelle,spaeteBelege);
+  A.equal(verspaetet.zustand,"offen");A.equal(verspaetet.pflichtAbrufabdeckung.bestaetigt,0,"Rueckkehr nach Redaktionsschluss bleibt fuer diesen Morgen partial");
   clock=Date.parse(tag+"T06:20:00Z");
   dbAusfall=true;const unbekannt=await lese();A.equal(unbekannt.zustand,"unbekannt");dbAusfall=false;
   const wiederDa=await lese();A.equal(wiederDa.pflichtAbrufabdeckung.bestaetigt,1);
-  A.equal(wiederDa.zustand,"offen");A.equal(wiederDa.verarbeitungBeendet,true);
+  A.equal(wiederDa.zustand,"offen");A.equal(wiederDa.verarbeitungBeendet===true,terminal);
 
   const packetStorage={assertTenant:S.assertTenant,
     getRenderedBriefingV3:async(id,slot,day)=>structuredClone(pakete.get(`bf-${id}-${slot}-${day}`)||null),
@@ -160,18 +187,29 @@ async function fall(fehler) {
   await A.rejects(speichern,/Schreibantwort verloren/);A.equal(packetWrites,1);
   const replay=await speichern();A.equal(replay.beleg.vollstaendig,false);A.equal(replay.beleg.verifiziert,true);
   A.equal(replay.briefing.currentHelmutState.emptyState.kind,"gap");A.equal(packetWrites,1,"Readback statt zweitem Paketwrite");
+  clock=Date.parse(tag+"T06:21:00Z");
+  const offenBriefing=C.toBriefingContractV3({profile,decisions:[],kosById:{},sourcesByVorgang:{},now:new Date(),versorgung:wiederDa});
+  const teilstand=await M.speicherePaket({profile,userId:profile.id,briefing:offenBriefing,storage:packetStorage,tag,now:new Date()});
+  A.equal(teilstand.beleg.vollstaendig,false);A.equal(teilstand.briefing.currentHelmutState.emptyState.kind,"gap");
+  A.equal(teilstand.briefing.currentHelmutState.versorgung.verarbeitungBeendet===true,terminal);
+  A.equal(packetWrites,2,"Nur bestaetigte neue Teilfassung per Vorwert-CAS ergaenzt");
   // Derselbe fachliche Auftrag bleibt auch nach Quellen-/DB-Rueckkehr gesperrt.
+  if(!terminal){
+    Object.assign(row,{status:"laeuft",attempts:2,lease_owner:"kombiniert",lease_expires_at:tag+"T06:25:00Z"});
+    const folge=await P.fuehreAuftragAus({auftrag:row,besitzer:"kombiniert",restzeitMs:120000,deps:handlerDeps});
+    A.equal(folge.ausgang,"wiederholt");A.equal(row.status,"wartend");A.equal(writes,2);
+  }
   const erneut=await U.understandOneCluster({documents:[doc]},understandingDeps);
   A.equal(erneut.status,"skipped-ausgang-unbekannt");A.equal(sends,1);A.equal(cas.r.ki,1);
   A.deepEqual(auth[B.KEY],geldVor);B.pruefeBuch(auth[B.KEY],auth[B.KEY].contract);
   A(clock<Date.parse(tag+"T06:30:00Z"));
-  anzahl++;console.log(`PASS kombinierter Morgen ${fehler}: Quelle503 + AnalyseUNKNOWN + DB521 + verlorene Paketantwort, kein Doppelaufruf`);
+  anzahl++;console.log(`PASS kombinierter Morgen ${fehler} attempts${versuche}/3: ${terminal?"terminal":"wartend"}, fehlender/spaeter503-Beleg + AnalyseUNKNOWN + DB521 + Paketantwortverlust, kein Doppelaufruf`);
 }
 
 (async()=>{
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ,"aktiv","Nur ueber scripts/lokal.js starten");
-  for(const fehler of ["timeout","invalid","429","500","503","521"])await fall(fehler);
-})().then(()=>console.log(`${anzahl}/6 neue kombinierte Morgen-Stoerfaelle bestanden; HTTPS/DB synthetisch, keine Anbieter-/Productionprobe.`))
+  for(const fehler of ["timeout","invalid","429","500","503","521"])for(const versuche of [1,3])await fall(fehler,versuche);
+})().then(()=>console.log(`${anzahl}/12 neue kombinierte Morgen-Stoerfaelle bestanden; HTTPS/DB synthetisch, keine Anbieter-/Productionprobe.`))
   .catch(e=>{console.error(e.stack);process.exitCode=1;})
   .finally(()=>{
     https.request=original.request;S.mutateAuthStore=original.mutate;S.listFullProfiles=original.profiles;
