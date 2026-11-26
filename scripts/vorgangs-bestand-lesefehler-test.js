@@ -143,6 +143,26 @@ function resolverDeps({ kandidaten = [], exakt = null, links = {}, fehler = fals
 
   // ── (B) Resolver fail closed ────────────────────────────────────────────────────────────
   abschnitt("Resolver: Bestandslesefehler ist kein leeres Bestandsverzeichnis");
+  await pruefe("Resolver liest genug verknüpfte Dokumente für den Größenriegel", async () => {
+    const doc = rohesDokument("vorgangsgroesse", "Zitterpappel");
+    const c = clusterAus([doc]);
+    const kandidat = ko("vg-vorgangsgroesse");
+    const { VORGANG_MAX_DOKUMENTE } = require("../lib/helmut/vorgang-identity");
+    const { deps } = resolverDeps({ kandidaten: [kandidat] });
+    deps.listVorgangDocuments = async (_id, limit) => {
+      A.equal(limit, VORGANG_MAX_DOKUMENTE);
+      return Array.from({ length: limit }, (_, i) => ({ ...doc, id: "alt-" + i }));
+    };
+    const a = await resolveVorgang(c, deps, {});
+    A.equal(a.existing, null);
+    A.equal(a.spuren[0].grund, "vorgang-voll");
+    deps.listVorgangDocuments = async (_id, limit) =>
+      Array.from({ length: limit - 1 }, (_, i) => ({ ...doc, id: "alt-" + i }));
+    const gruppe = { ...c, documents: [doc, { ...doc, id: "weiterer-neuer-beleg" }] };
+    const b = await resolveVorgang(gruppe, deps, {});
+    A.equal(b.existing, null);
+    A.equal(b.spuren[0].grund, "vorgang-voll");
+  });
   await pruefe("§3 ein Bestandslesefehler fuehrt zu resolution: bestand-lesefehler", async () => {
     const c = clusterAus([rohesDokument("lf-1", "Zitterpappel")]);
     const vorschlag = deriveVorgangId(c);

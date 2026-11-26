@@ -117,29 +117,35 @@ async function startbestand(db, profil, fixture) {
   }
   const geteilt = plan.auftraege.filter(j => j.payload.art === "geteilt");
   const rss = geteilt.filter(j => j.payload.quelle.crawlMethod === "rss" && j.payload.quelle.retrievalPathId?.startsWith("rp-fixture-rss-"));
-  assert(rss.length > 0 && geteilt.length > 100, "Synthetischer Katalog für alte Abrufe fehlt");
+  const googleRss = geteilt.filter(j => /^https:\/\/news\.google\.com\//.test(j.payload.quelle.url));
+  assert(rss.length >= 4 && googleRss.length > 1 && geteilt.length > 100, "Synthetischer Katalog für alte Abrufe fehlt");
   const abrufe = [];
   const heutigeUrls = new Set(cache.plan.aktiv.map(weg => weg.url));
-  const altabgleich = { imKatalog:0, gleicherPlanweg:0, gleichePlanUrl:0, quellenkennungImPlan:0 };
+  const altabgleich = { imKatalog:0, gleicherPlanweg:0, gleichePlanUrl:0, quellenkennungImPlan:0, ohneAbrufweg:0, google:0 };
   for (const [gruppe, n, quelle] of [["rss-alt",469,rss],["abruf-vertagt",122,geteilt],["abruf-sonstige",146,geteilt],["abruf-terminal",1,rss]]) {
     for (let i=0;i<n;i++) {
-      const vorbild = structuredClone(quelle[i % quelle.length]);
-      const zeit = START - (2 + Math.floor(i/quelle.length))*TAG - (["rss-alt","abruf-vertagt","abruf-sonstige","abruf-terminal"].indexOf(gruppe)*3600000);
-      const fenster = stunde(zeit - (gruppe === "rss-alt" ? i % quelle.length * 3600000 : 0));
+      const vorlagen = gruppe === "rss-alt" && i >= 4 ? googleRss : quelle;
+      const vorbild = structuredClone(vorlagen[i % vorlagen.length]);
+      const zeit = START - (2 + Math.floor(i/vorlagen.length))*TAG - (["rss-alt","abruf-vertagt","abruf-sonstige","abruf-terminal"].indexOf(gruppe)*3600000);
+      const fenster = stunde(zeit - (gruppe === "rss-alt" ? i % vorlagen.length * 3600000 : 0));
       let key = vorbild.idempotencyKey.replace(/\|[^|]+$/, "|" + fenster);
       if (gruppe === "rss-alt") {
         const q = vorbild.payload.quelle;
-        const aktuelleQuelle = quelle[i % quelle.length].payload.quelle;
-        const andere = quelle[(i + 1) % quelle.length].payload.quelle;
+        const aktuelleQuelle = vorlagen[i % vorlagen.length].payload.quelle;
+        const andere = vorlagen[(i + 1) % vorlagen.length].payload.quelle;
         const alteUrl = i < 4 ? aktuelleQuelle.url : i < 428 ? andere.url
-          : "https://nachrichten.fixture.invalid/frueher/" + i + ".xml";
-        q.retrievalPathId = "rp-alt-" + aktuelleQuelle.retrievalPathId;
+          : "https://news.google.com/rss/search?q=veralteter-synthetischer-abruf-" + i;
+        delete q.retrievalPathId;
         q.url = q.rssUrl = alteUrl;
-        q.rssUrls = [alteUrl];
+        const variante = new URL(alteUrl);
+        variante.searchParams.set("alte-variante", String(i));
+        q.rssUrls = [alteUrl, variante.href];
         if (heutigeUrls.has(alteUrl)) altabgleich.imKatalog++;
         if (aktuelleQuelle.retrievalPathId === q.retrievalPathId) altabgleich.gleicherPlanweg++;
         if (aktuelleQuelle.url === q.url) altabgleich.gleichePlanUrl++;
         if (aktuelleQuelle.id === q.id) altabgleich.quellenkennungImPlan++;
+        if (!q.retrievalPathId) altabgleich.ohneAbrufweg++;
+        if (new URL(q.url).hostname === "news.google.com") altabgleich.google++;
         key = "source_fetch|geteilt|" + createHash("sha256").update(D.abrufwege(q).map(D.kanonischeUrl).join("\n")).digest("hex").slice(0,32) + "|" + fenster;
       }
       const zuerst = gruppe === "abruf-sonstige" && i<3 ? iso(START) : iso(zeit);
@@ -152,7 +158,7 @@ async function startbestand(db, profil, fixture) {
     }
   }
   assert.equal(new Set(abrufe.map(a=>a.key)).size,abrufe.length,"Doppelte synthetische Abrufschlüssel");
-  assert.deepEqual(altabgleich,{imKatalog:428, gleicherPlanweg:0, gleichePlanUrl:4, quellenkennungImPlan:469});
+  assert.deepEqual(altabgleich,{imKatalog:428, gleicherPlanweg:0, gleichePlanUrl:4, quellenkennungImPlan:469, ohneAbrufweg:469, google:465});
   speichere(db,abrufe);
   const stand = bilanz(db);
   assert.equal(stand.start,3962);
