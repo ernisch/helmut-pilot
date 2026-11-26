@@ -119,39 +119,52 @@ async function startbestand(db, profil, fixture) {
   const rss = geteilt.filter(j => j.payload.quelle.crawlMethod === "rss" && j.payload.quelle.retrievalPathId?.startsWith("rp-fixture-rss-"));
   assert(rss.length > 0 && geteilt.length > 100, "Synthetischer Katalog für alte Abrufe fehlt");
   const abrufe = [];
+  const heutigeUrls = new Set(cache.plan.aktiv.map(weg => weg.url));
+  const altabgleich = { imKatalog:0, gleicherPlanweg:0, gleichePlanUrl:0, quellenkennungImPlan:0 };
   for (const [gruppe, n, quelle] of [["rss-alt",469,rss],["abruf-vertagt",122,geteilt],["abruf-sonstige",146,geteilt],["abruf-terminal",1,rss]]) {
     for (let i=0;i<n;i++) {
       const vorbild = structuredClone(quelle[i % quelle.length]);
       const zeit = START - (2 + Math.floor(i/quelle.length))*TAG - (["rss-alt","abruf-vertagt","abruf-sonstige","abruf-terminal"].indexOf(gruppe)*3600000);
-      const fenster = stunde(zeit);
+      const fenster = stunde(zeit - (gruppe === "rss-alt" ? i % quelle.length * 3600000 : 0));
       let key = vorbild.idempotencyKey.replace(/\|[^|]+$/, "|" + fenster);
       if (gruppe === "rss-alt") {
         const q = vorbild.payload.quelle;
-        if (i<428) q.type = "fruehere-einstufung";
-        else { q.url = q.rssUrl = "https://nachrichten.fixture.invalid/frueher/" + i + ".xml"; q.rssUrls = [q.url]; }
+        const aktuelleQuelle = quelle[i % quelle.length].payload.quelle;
+        const andere = quelle[(i + 1) % quelle.length].payload.quelle;
+        const alteUrl = i < 4 ? aktuelleQuelle.url : i < 428 ? andere.url
+          : "https://nachrichten.fixture.invalid/frueher/" + i + ".xml";
+        q.retrievalPathId = "rp-alt-" + aktuelleQuelle.retrievalPathId;
+        q.url = q.rssUrl = alteUrl;
+        q.rssUrls = [alteUrl];
+        if (heutigeUrls.has(alteUrl)) altabgleich.imKatalog++;
+        if (aktuelleQuelle.retrievalPathId === q.retrievalPathId) altabgleich.gleicherPlanweg++;
+        if (aktuelleQuelle.url === q.url) altabgleich.gleichePlanUrl++;
+        if (aktuelleQuelle.id === q.id) altabgleich.quellenkennungImPlan++;
         key = "source_fetch|geteilt|" + createHash("sha256").update(D.abrufwege(q).map(D.kanonischeUrl).join("\n")).digest("hex").slice(0,32) + "|" + fenster;
       }
       const zuerst = gruppe === "abruf-sonstige" && i<3 ? iso(START) : iso(zeit);
       const faellig = gruppe === "abruf-vertagt" || (gruppe === "abruf-sonstige" && i<6) ? iso(START) : iso(START+18*3600000);
       vorbild.payload.faelligkeit = fristen(vorbild,zuerst);
       abrufe.push({gruppe,key,typ:"source_fetch",payload:vorbild.payload,fenster,faellig,zuerst,priority:100,
-        fehler:gruppe==="rss-alt" ? "quellenbedarf-nicht-mehr-bestaetigt" : gruppe==="abruf-vertagt" ? "abrufphase-zeitbudget" : null,
+        fehler:gruppe==="rss-alt" ? "quellenbedarf-nicht-mehr-bestaetigt" : gruppe==="abruf-vertagt" ? "zurueckgestellt: anbietergrenze: anbietergrenze-minutengrenze" : null,
         status:gruppe==="abruf-terminal" ? "fehlgeschlagen":"wartend",max:5,versuche:gruppe==="abruf-terminal"?5:0,
         ende:gruppe==="abruf-terminal"?vor:null,wieder:0});
     }
   }
   assert.equal(new Set(abrufe.map(a=>a.key)).size,abrufe.length,"Doppelte synthetische Abrufschlüssel");
+  assert.deepEqual(altabgleich,{imKatalog:428, gleicherPlanweg:0, gleichePlanUrl:4, quellenkennungImPlan:469});
   speichere(db,abrufe);
   const stand = bilanz(db);
   assert.equal(stand.start,3962);
   assert.equal(stand.terminal,2029);
   assert.equal(stand.amtlich,3);
   assert.equal(Number(db.psql("select count(*) from public.helmut_jobs where job_type='source_fetch' and status='wartend' and due_at<=now()")),128);
-  return stand;
+  return { ...stand, altabgleich };
 }
 
 function bilanz(db) {
-  return JSON.parse(db.psql(`select jsonb_build_object('casGeschuetzt',(select count(*) from helmut_monat.startbestand b
+  return JSON.parse(db.psql(`select jsonb_build_object('unerlaubteAltabschluesse',(select count(*) from helmut_monat.startbestand b
+      join public.helmut_jobs j using(id) where b.gruppe='rss-alt' and j.status='erledigt'), 'casGeschuetzt',(select count(*) from helmut_monat.startbestand b
       join public.helmut_verstehen_reservierungen c on c.vorgang_id=b.vorgang
       where c.zustand='unbekannt' and c.ki_aufrufe=1 and c.versuche=1 and c.fencing=1),
     'unbelegteWiederholungen',(select count(*) from helmut_monat.startbestand b join public.helmut_jobs z using(id)
@@ -195,6 +208,7 @@ function tagesbeleg(db,tag) {
   assert(Number.isSafeInteger(q.gesamt) && q.gesamt>=0 && q.gesamt<=30000000 && q.heute>=0 && q.heute<=1000000,"Betriebsbuchgrenze");
   assert(Number.isSafeInteger(q.aufrufe) && q.aufrufe <= 100, "Modellaufrufzahl");
   const bestand = bilanz(db);
+  assert.equal(bestand.unerlaubteAltabschluesse, 0, "Historische RSS-Definition ohne aktuellen Weg abgeschlossen");
   assert.equal(bestand.casGeschuetzt, 2, "Historische CAS-Ausgänge verändert");
   assert.equal(bestand.unbelegteWiederholungen, 0, "Historische Terminalentscheidung verändert");
   return { ...q, bestand };
