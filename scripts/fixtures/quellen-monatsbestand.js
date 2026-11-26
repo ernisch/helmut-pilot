@@ -256,7 +256,7 @@ async function parken(db) {
 
 function alteBuchungen(db) {
   return JSON.parse(db.psql(`select jsonb_build_object('hash', encode(sha256(convert_to(
-    coalesce(jsonb_object_agg(id,c),'{}'::jsonb)::text,'UTF8')),'hex'),
+    coalesce(jsonb_object_agg(x.id,c),'{}'::jsonb)::text,'UTF8')),'hex'),
     'offen',count(*) filter(where c->>'status' = 'ungeklaert'))
     from public.helmut_store s cross join lateral jsonb_each(s.data->'${budget.KEY}'->'calls') as x(id,c)
     where s.id='main-auth' and c->>'day' < '${tage[0]}';`));
