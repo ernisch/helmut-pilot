@@ -60,6 +60,10 @@ Der Produktionslesestand um 02:27 Uhr bestätigte 1.216 wartende und fällige An
 
 Die Abrufseite zeigte zusätzlich 469 nicht mehr exakt planbestätigte alte RSS-Definitionen, 122 an der Anbieterminute vertagte RSS-Aufträge und einen terminalen DIP-Auftrag vom Vortag mit inaktiver Anbietersteuerung. Der heutige amtliche Abrufstand lag um 02:37 Uhr bei 12 von 12 erledigten Positionen. Insgesamt waren 23 von 43 fälligen Quellenpositionen erledigt. Das ist ein Zwischenstand vor dem Redaktionsschluss. Anbietergrenze, Nutzungsrechte und fehlende Identität bleiben wirksame Sperren. Für alte RSS-Definitionen sind genaue Ersetzung und Quellennachweis noch je Auftrag zu belegen.
 
+Der direkte Paarvergleich der 469 Altdefinitionen mit dem heutigen Plan ergab 469 Treffer nach Quellkennung, 4 nach gleicher URL und 0 nach exakt gleicher URL und Abrufwegkennung. Die heutigen Jobs zu 34 dieser Altpositionen hatten bereits eine Quittung. Die gleiche Quellkennung reicht für den Rückschluss auf eine fachlich bestätigte Ersetzung nicht aus.
+
+Bei den 55 Metadatenfehlern lagen 35 Datumsabweichungen, 19 Titelabweichungen und eine Herausgeberabweichung vor. Sechs gespeicherte Auszüge unterschieden sich zusätzlich. Die 88 Wartefristfälle zerfallen in 56 Verstehensfortsetzungen, 21 Budgetfälle, 10 Kontext-Zeitbudgets und einen Abschnittsfortsetzungsfall.
+
 ### Drei fehlgeschlagene amtliche Pflichtanalysen
 
 Zwei bestätigte Abrufquittungen von Bundesregierung und Bundestag verwiesen auf drei terminale Analysen mit passendem Auftragsschlüssel und Versionshash.
@@ -67,13 +71,17 @@ Zwei bestätigte Abrufquittungen von Bundesregierung und Bundestag verwiesen auf
 - **Bundesregierung, zwei Fassungen:** Titel, Herausgeber, Direktlink und kanonische URL stimmen mit der gespeicherten aktuellen Zeile überein. Die publikationszeitlichen Angaben unterscheiden sich. In einem Fall sind die gespeicherten Auszüge gleich und es gibt kein verknüpftes Knowledge Object. Im anderen Fall unterscheiden sich die Auszüge und es gibt ein verknüpftes Objekt mit abgeschlossenem CAS. Vor Wiederaufnahme müssen exakte Archivfassung, Inhalt und vorhandener Abschluss zusammen nachgewiesen werden. Ein Objektlink allein trägt diesen Nachweis nicht.
 - **Bundestag, eine Fassung:** Archiv und aktuelle Zeile stimmen beim untersuchten Dokument überein. Der alte Auftrag endete am 19.11. nach 122 Stunden im Kontext-Zeitbudget. Das verknüpfte Objekt trägt einen CAS-Zustand `unbekannt` mit zwei gezählten Aufrufen. Alte Sperre und Kostenbeleg erhalten. Wiederaufnahme erst nach Klärung dieses Ausgangs.
 
-Der heutige globale Aufrufzähler lag um 02:37 Uhr bei 35. Ein bestätigter Tagesdeckel, der Geldvertrag einschließlich offener Reservierungen und die Originalgrenze bleiben separate Entscheidungen. Der Patch ordnet nur eine bestätigt erschöpfte tägliche Aufrufzahl dem Tageswechsel zu.
+Die fünf Bundestags-Terminwege hatten in Production bestätigte Terminstände ohne Konflikt. Die getrennte DIP-Quittung um 01:01:03 Uhr war `teilweise`, obwohl alle elf referenzierten, belegten Analysen erledigt waren. Mindestens eine alte DIP-Eingangsdiagnose wurde erneut beobachtet. Der beanstandete Rohpayload ist gemäß Eingangsvertrag nicht gespeichert. Ohne diese Fassung lässt sich die konkrete quellseitige Feldabweichung nicht bestimmen. Die geprüften elf Analysen und der negative Eingangsbeleg bleiben gültig.
+
+Der heutige globale Aufrufzähler lag um 02:37 Uhr bei 35. Um 02:48 Uhr wies das Betriebsbuch 0,275056 USD abgerechnet und keine offene heutige Buchung aus. Insgesamt waren 9,038227 USD gebunden, einschließlich fünf offener historischer Buchungen. Ein bestätigter Tagesdeckel, der Geldvertrag einschließlich offener Reservierungen und die Originalgrenze bleiben separate Entscheidungen. Der Patch ordnet nur eine bestätigt erschöpfte tägliche Aufrufzahl dem Tageswechsel zu.
 
 ### Zusätzliche Ursachen und Reparatur
 
 - Die frühere RPC konnte einen alten Pflichtwert beim heutigen Hintergrundfund stehen lassen. Die unveränderliche erste Einreihung und der neue Prioritätstag unterscheiden einen alten Wert von heutiger amtlicher Priorität. Eine echte heutige Priorität bleibt bei weiteren optionalen Funden erhalten.
 - Vor Beginn des Pflichtfensters beendete schon die erste zurückgestellte Hintergrundanalyse alle weiteren Claims des gemischten Restfensters. Jetzt endet nur der Analysestrom. Erlaubte Abrufe behalten das bestehende Restzeit-, Anbieter- und Quotenbudget. Beide Fehler sind mit Regressionen abgedeckt.
 - Der Monatsversuch vom 25.11. belegt 26 vollständige Morgen und 4 erwartete Teilfassungen bei HTTP 503. Der veröffentlichte Nachweis benennt 96 abgearbeitete ältere Aufträge. Er deckt die oben gemessenen Fehlerkohorten, gebundenen Altanalysen und Prioritätsübernahme nicht ab. Der dokumentierte lokale Testcommit ist über den verbundenen GitHub-Stand nicht erhältlich. Der erneute Lauf verwendet den versionierten isolierten Prüfstand und synthetische Fassungen, Auftragsdaten und Buchungen.
+
+Der erste erneute Monatsversuch deckte einen Fehler in den Prüfdaten auf. Vier nachgebildete Bundestags-PDFs lieferten kein im Parser unterstütztes amtliches Sitzungsdatum. Zudem wurden drei fachlich unabhängige historische Fehler demselben synthetischen DIP-Vorgang wie der Tagesanlass zugeordnet. Der Durchlauf endete nach seinem ersten Tag mit 48/52 bestätigten Abrufen und fehlendem DIP-Ausweis. Der Originalbericht bleibt unter SHA-256 `4a3fef6fc66cb6f2c8c97ab285ada9b68a7236de367fa1d1196e8e39128cb6d8` erhalten. Die korrigierte Kurzprüfung bestätigte 54/54 Abrufe, fünf konfliktfreie Terminbelege, einen aktuellen DIP-Ausweis und alle drei weiterhin sichtbaren Terminalfälle. Der vollständige erneute Monatsnachweis bleibt eigenständig erforderlich.
 
 ## Kontrollierter Rollout nach der Morgenprüfung
 
