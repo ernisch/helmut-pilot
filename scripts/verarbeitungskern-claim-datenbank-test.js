@@ -4,6 +4,7 @@
 // netzlose lokale Container; keine Production-Kennung und kein externer DB-Host.
 const fs = require("node:fs"), path = require("node:path");
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 const { execFileSync, spawn } = require("node:child_process");
 const root = path.join(__dirname, ".."), migrations = path.join(root, "supabase/migrations");
 const container = process.env.HELMUT_TEST_CORE_CONTAINER;
@@ -240,12 +241,23 @@ async function main() {
   const enqueueSignatur = "'public.helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)'::regprocedure";
   const enqueueRechte = () => sql(`select json_build_array(oid,proacl,prosecdef,proconfig) from pg_proc where oid=${enqueueSignatur};`);
   const rechteVorher = enqueueRechte();
-  sql(file(artikelprioritaet));
   const heute = "to_char(now() at time zone 'UTC','YYYY-MM-DD')||'T00Z'";
   const rohId = "rd-" + "a".repeat(64);
   const payload = JSON.stringify({ dokumentIds: [rohId], quellenstaende: { [rohId]: "b".repeat(64) } });
   const enqueueAnalyse = (key, window, priority, stand = payload) => sql(`select neu from public.helmut_enqueue_job(
     'document_understanding', '${key}', ${window}, '${stand}', now()-interval '1 hour', ${priority}::smallint, 3, null);`);
+  enqueueAnalyse("vor-migration", oldDay, 35);
+  enqueueAnalyse("vor-migration", heute, 80);
+  sql(file(artikelprioritaet));
+  check("Eine alte Pflichtpriorität überlebt den ersten neuen Hintergrundbeleg nicht", () => {
+    assert.equal(sql("select priority from public.helmut_jobs where idempotency_key='vor-migration';"), "35");
+    enqueueAnalyse("vor-migration", heute, 80);
+    assert.equal(sql("select priority from public.helmut_jobs where idempotency_key='vor-migration';"), "80");
+    enqueueAnalyse("vor-migration", heute, 50);
+    enqueueAnalyse("vor-migration", heute, 80);
+    assert.equal(sql("select priority from public.helmut_jobs where idempotency_key='vor-migration';"), "50");
+  });
+  reset();
   const queueStand = key => sql(`select row(id, status, priority, attempts, due_at, first_due_at, freshness_window, payload)::text
     from public.helmut_jobs where idempotency_key='${key}';`);
   check("Heute benötigte identische Fassung erhält Vorrang vor Hintergrund und Altbestand", () => {
@@ -310,6 +322,37 @@ async function main() {
     assert.equal(meta(),before); assert.equal(sql(jobbestand),state);
     assert.equal(sql("select count(*) from information_schema.columns where table_schema='public' and table_name='helmut_jobs' and column_name='last_seen_window';"),"0");
     assert.equal(sql("select count(*) from pg_indexes where indexname='helmut_jobs_tagesarbeit_idx';"),"0");
+  });
+  sql(file(migration)); sql(file(artikelprioritaet)); reset();
+  const teilHash = text => createHash("sha256").update(text).digest("hex").slice(0, 32);
+  const diagnoseKey = `document_understanding|${teilHash(rohId)}|${teilHash(rohId + ":" + "b".repeat(64))}|eingangsfehler|versionskonflikt`;
+  const diagnosePayload = JSON.stringify({ ...JSON.parse(payload), artikelFehler: "quellenstand-versionskonflikt" });
+  sql(`create table public.helmut_store(id text primary key, data jsonb);
+    insert into public.helmut_store values ('main-quellenplan-'||current_date::text,
+      jsonb_build_object('zustand','fertig','tag',current_date::text,'manifestHash',repeat('b',64),'auftraege','[]'::jsonb));
+    insert into public.helmut_jobs (job_type,idempotency_key,freshness_window,payload,first_due_at,due_at,last_error,wiedervorlagen)
+    values ('document_understanding','${diagnoseKey}',${oldDay},'${diagnosePayload}',
+      now()-interval '5 days', now()-interval '1 day',
+      'wiedervorlage 1 nach: artikel-eingangsfehler: quellenstand-versionskonflikt',1),
+    ('document_understanding','nur-normaler-auftrag',${oldDay},'${payload}',now()-interval '5 days',now(),null,0);`);
+  const wartung = fs.readFileSync(path.join(root, "scripts/ops/quellen-altbestand-20261126.sql"), "utf8");
+  const repariere = args => JSON.parse(sql(args.map(([k,v]) => `\\set ${k} '${v}'`).join("\n") + "\n" + wartung)
+    .split("\n").find(line => line.startsWith("{")));
+  check("Altbestandskorrektur bindet genau die Diagnose, erhält ihren Beleg und erlaubt den gebundenen Rückweg", () => {
+    const vor = repariere([]);
+    assert.equal(vor.anzahl, 1);
+    const bindung = [["tag",vor.tag],["anzahl",vor.anzahl]];
+    assert.throws(() => repariere([...bindung,["modus","parken"],["digest","0".repeat(64)]]), /Command failed/);
+    assert.equal(sql("select count(*) from public.helmut_jobs where status='wartend';"), "2");
+    const nach = repariere([...bindung,["modus","parken"],["digest",vor.vorDigest]]);
+    assert.equal(nach.anzahl, 1);
+    assert.notEqual(nach.nachDigest, vor.vorDigest);
+    assert.equal(sql("select status||':'||wiedervorlagen||':'||attempts from public.helmut_jobs where finished_at is not null;"),
+      "fehlgeschlagen:1:0");
+    assert.equal(sql("select status from public.helmut_jobs where idempotency_key='nur-normaler-auftrag';"), "wartend");
+    const zurueck = repariere([...bindung,["modus","rueckweg"],["digest",nach.nachDigest],["ids",JSON.stringify(nach.ids)]]);
+    assert.equal(zurueck.anzahl, 1);
+    assert.equal(sql("select count(*) from public.helmut_jobs where status='wartend' and finished_at is null;"), "2");
   });
   console.log(`${passed}/${passed} gezielte SQL-Pruefungen bestanden; kein Last-/Production-Test.`);
 }

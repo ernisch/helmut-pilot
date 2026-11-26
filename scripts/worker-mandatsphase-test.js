@@ -228,5 +228,36 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     A.equal(w.q.hole(alt.id).attempts, 0);
     A.equal(r.bilanzen[0].zurueckstellGruende["analyse-wartet-auf-tagesbetrieb"], 1);
   });
+  await test("Alter Pflichtwert trotz heutiger Wiederbeobachtung verdrängt keinen amtlichen Tagesbeleg", async () => {
+    const w = welt();
+    const alt = await enqueue(w, "document_understanding", 35, { freshnessWindow: "2026-11-12T00Z" });
+    const amtlich = await enqueue(w, "document_understanding", 50, { freshnessWindow: "2026-11-12T00Z" });
+    w.deps.claim = async args => {
+      const r = await w.q.claim(args);
+      return { ...r, auftraege: r.auftraege.map(row => ({ ...row, last_seen_window: "2026-11-13T00Z",
+        quellen_prioritaet_tag: row.id === amtlich.id ? "2026-11-13" : null })) };
+    };
+    w.deps.handler = { document_understanding: async job => { w.trace.push(job.id); return { ok: true }; } };
+    const r = await w.run({ ganztags: true, typen: ["document_understanding"] });
+    A.deepEqual(w.trace, [amtlich.id]);
+    A.equal(w.q.hole(amtlich.id).status, "erledigt");
+    A.equal(w.q.hole(alt.id).attempts, 0);
+    A.equal(r.bilanzen[0].zurueckstellGruende["analyse-wartet-auf-tagesbetrieb"], 1);
+  });
+  await test("Zurückgestellte Hintergrundanalyse beendet erlaubte Abrufe im Nachtfenster nicht", async () => {
+    const w = welt();
+    const analyse = await enqueue(w, "document_understanding", 80);
+    const abruf = await enqueue(w, "source_fetch", 100);
+    w.deps.claimQuellenfaelligkeit = async () => ({ verfuegbar: true, auftraege: [] });
+    w.deps.handler = {
+      document_understanding: async () => A.fail("Hintergrundanalyse im Nachtfenster"),
+      source_fetch: async job => { w.trace.push(job.id); return { ok: true }; }
+    };
+    const r = await w.run({ ganztags: true, typen: ["source_fetch", "document_understanding"] });
+    A.deepEqual(w.trace, [abruf.id]);
+    A.equal(w.q.hole(abruf.id).status, "erledigt");
+    A.equal(w.q.hole(analyse.id).attempts, 0);
+    A.equal(r.bilanzen[0].zurueckstellGruende["analyse-wartet-auf-tagesbetrieb"], 1);
+  });
   console.log(`${count}/${count} neue Worker-Mandatsphasen-Gruppen bestanden; keine externen Aufrufe.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });

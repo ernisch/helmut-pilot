@@ -11,7 +11,7 @@ begin
   select md5(prosrc), prosecdef into v_body, v_definer
     from pg_proc
     where oid = to_regprocedure('public.helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)');
-  if v_body is null or v_body not in ('c2e01bf1edc204a03b66c96cb28eaec6', 'b509a0ca0a0e00f2e128c50efabade9b')
+  if v_body is null or v_body not in ('c2e01bf1edc204a03b66c96cb28eaec6', '83ba56b53b1cfc44afd580675298ae81')
     or v_definer is distinct from false then
     raise exception 'helmut_enqueue_job: unbekannter Ausgangsstand';
   end if;
@@ -59,4 +59,5 @@ begin
   return query select v_id, v_neu;
 end;
 $$;
+alter table public.helmut_jobs drop column if exists quellen_prioritaet_tag;
 commit;
