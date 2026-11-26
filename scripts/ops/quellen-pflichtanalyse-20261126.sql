@@ -4,8 +4,12 @@
 -- Die private Ausgabe nativ mit der gleichnamigen JS-Datei pruefen.
 -- Freigeben: zusaetzlich tag=UTC-Tag, bindung=private JS-Ausgabe (JSON).
 -- Rueckweg: bindung=unveraenderte private Freigabequittung, vor Workeruebernahme.
--- Keine Provideraufrufe, CAS-/Kosten-/Originalaenderungen oder Freigabe eines Laufs.
+-- Keine Provideraufrufe, Kosten-/Originalaenderungen oder Freigabe eines Laufs.
 -- klasse=metadaten-pflicht (Standard) oder separat geprueft slotrest-20261126.
+-- cas-pflichtneuversuch-20261126: separat genehmigter einzelner BT-Neuversuch;
+-- native CAS-Entscheidung, historische Aufruf-/Geldzaehler bleiben erhalten.
+-- 'erneut' gilt vorgangsweit: konkurrierende Wiederaufnahme vorher ausschliessen.
+-- Mehrere Textabschnitte koennen regulaere weitere gegatete Modellstarts brauchen.
 \set ON_ERROR_STOP on
 \if :{?modus}
 \else
@@ -66,9 +70,21 @@ begin
 end;
 $usage$;
 
+create function pg_temp.helmut_pflichtvormerkung(p_cas jsonb)
+returns jsonb language plpgsql stable as $marker$
+declare v_zeilen jsonb;
+begin
+  if to_regclass('public.helmut_verstehen_vormerkungen') is null then return null; end if;
+  execute 'select coalesce(jsonb_agg(to_jsonb(v) order by v.vorgang_id),''[]''::jsonb)
+    from public.helmut_verstehen_vormerkungen v where v.vorgang_id in(select jsonb_array_elements_text($1))'
+    into v_zeilen using p_cas;
+  return v_zeilen;
+end;
+$marker$;
+
 -- Vollstaendige, private Vor-/Nachwerte; auch die CAS-Abwesenheit fuer eine
 -- nativ abgeleitete, noch nicht verknuepfte Vorgangskennung ist damit pruefbar.
-create function pg_temp.helmut_pflichtstand(p_job uuid, p_abruf uuid, p_tag text,p_cas jsonb)
+create function pg_temp.helmut_pflichtstand(p_job uuid, p_abruf uuid, p_tag text,p_cas jsonb,p_klasse text)
 returns jsonb language sql stable as $snapshot$
   select jsonb_build_object(
     'job', (select to_jsonb(j) from public.helmut_jobs j where j.id=p_job),
@@ -82,7 +98,19 @@ returns jsonb language sql stable as $snapshot$
       from public.ko_document_links l where l.raw_document_id=(select payload->'dokumentIds'->>0 from public.helmut_jobs where id=p_job)),
     'kos', (select coalesce(jsonb_agg(to_jsonb(k) order by k.id),'[]'::jsonb) from public.knowledge_objects k
       where k.id in (select knowledge_object_id from public.ko_document_links where raw_document_id=(select payload->'dokumentIds'->>0 from public.helmut_jobs where id=p_job))),
+    'casOperator',case when p_klasse='cas-pflichtneuversuch-20261126' then (select jsonb_build_object('definitionHash',encode(sha256(convert_to(pg_get_functiondef(f.oid),'UTF8')),'hex'),
+      'securityDefiner',f.prosecdef,'konfiguration',to_jsonb(f.proconfig),'eigentuemer',pg_get_userbyid(f.proowner),
+      'acl',f.proacl::text,'rollen',(select jsonb_agg(jsonb_build_object('rolle',r.rolname,
+        'execute',has_function_privilege(r.oid,f.oid,'EXECUTE')) order by r.rolname)
+        from pg_roles r where r.rolname in('anon','authenticated','service_role','postgres')))
+      from pg_proc f where f.oid=to_regprocedure('public.helmut_verstehen_ausgang_aufloesen(text,text)')) else null end,
     'casIds',p_cas,
+    'casVormerkungen',case when p_klasse='cas-pflichtneuversuch-20261126' then pg_temp.helmut_pflichtvormerkung(p_cas) else null end,
+    'koBestandsdokumente',case when p_klasse='cas-pflichtneuversuch-20261126' then
+      (select coalesce(jsonb_agg(jsonb_build_object('link',to_jsonb(l),'roh',to_jsonb(r)) order by l.raw_document_id),'[]'::jsonb)
+       from public.ko_document_links l left join public.raw_documents r on r.id=l.raw_document_id
+       where l.knowledge_object_id in(select knowledge_object_id from public.ko_document_links
+         where raw_document_id=(select payload->'dokumentIds'->>0 from public.helmut_jobs where id=p_job))) else null end,
     'cas', (select coalesce(jsonb_agg(to_jsonb(c) order by c.vorgang_id),'[]'::jsonb) from public.helmut_verstehen_reservierungen c
       where c.vorgang_id in (select jsonb_array_elements_text(p_cas))),
     'jobBuchungen', (select coalesce(jsonb_agg(c.value order by c.key),'[]'::jsonb)
@@ -104,11 +132,13 @@ do $operation$
 declare
   p record; v_tag text := current_date::text; v_vor jsonb; v_nach jsonb;
   v_inhalt text; v_digest text; v_nach_digest text; v_job jsonb; b jsonb;
-  v_jetzt timestamptz := clock_timestamp(); v_anzahl integer; v_cas jsonb;
+  v_jetzt timestamptz := clock_timestamp(); v_anzahl integer; v_cas jsonb; v_cas_vor jsonb;
+  v_cas_neu boolean; v_ausgang text; v_substanz_vor jsonb; v_substanz_nach jsonb;
 begin
   select * into strict p from helmut_pflichtparameter;
+  v_cas_neu := p.klasse='cas-pflichtneuversuch-20261126';
   if p.modus not in ('vorschau','freigeben','rueckweg') or p.job_id=p.abruf_id
-    or p.klasse not in ('metadaten-pflicht','slotrest-20261126')
+    or p.klasse not in ('metadaten-pflicht','slotrest-20261126','cas-pflichtneuversuch-20261126')
     or (p.modus<>'vorschau' and p.tag<>v_tag)
   then raise exception 'pflichtanalyse: ungueltige oder abgelaufene Einzelbindung'; end if;
   v_cas := case when p.modus='vorschau' then p.cas_ids else p.bindung->'casIds' end;
@@ -122,10 +152,11 @@ begin
     lock table public.helmut_jobs in share row exclusive mode;
     lock table public.helmut_store,public.raw_documents,public.ko_document_links,
       public.knowledge_objects,public.helmut_verstehen_reservierungen,public.llm_usage,public.document_findings in share mode;
+    if v_cas_neu then lock table public.helmut_verstehen_vormerkungen in share mode; end if;
     if exists(select 1 from public.helmut_jobs where status='laeuft')
     then raise exception 'pflichtanalyse: laufende Workerarbeit'; end if;
   end if;
-  v_vor := pg_temp.helmut_pflichtstand(p.job_id,p.abruf_id,v_tag,v_cas);
+  v_vor := pg_temp.helmut_pflichtstand(p.job_id,p.abruf_id,v_tag,v_cas,p.klasse);
   v_inhalt := v_vor::text;
   v_digest := encode(sha256(convert_to(v_inhalt,'UTF8')),'hex');
   v_job := v_vor->'job'; b := p.bindung;
@@ -159,6 +190,37 @@ begin
       if v_job->>'last_error' is distinct from 'quellenstand-metadatenabweichung'
         or (v_job->>'finished_at')::timestamptz>=v_tag::date::timestamptz
       then raise exception 'pflichtanalyse: kein historischer Metadaten-Pflichtfall'; end if;
+    elsif v_cas_neu then
+      v_cas_vor := v_vor->'cas'->0;
+      if coalesce(v_job->>'last_error','') !~ '^verstehen-uebersprungen-dauerhaft: artikelkontext-zeitbudget seit [0-9]+ h$'
+        or (v_job->>'finished_at')::timestamptz>=v_tag::date::timestamptz
+        or v_job->'attempts' is distinct from '3'::jsonb or v_job->'max_attempts' is distinct from '3'::jsonb
+        or v_job->'wiedervorlagen' is distinct from '2'::jsonb
+        or v_job->'payload' ? 'quellenRestDokumentIds'
+        or v_vor->'abruf'->'payload'->'quelle'->>'id' is distinct from 'bundestag'
+        or jsonb_array_length(v_cas)<>1 or jsonb_array_length(v_vor->'cas')<>1
+        or v_cas_vor->>'vorgang_id' is distinct from b->'casNeuversuch'->>'vorgangId'
+        or b->'casNeuversuch'->>'entscheidung' is distinct from 'erneut'
+        or b->'casNeuversuch'->'quellenRestDokumentIds' is distinct from v_job->'payload'->'dokumentIds'
+        or v_cas_vor->>'zustand' is distinct from 'unbekannt'
+        or v_cas_vor->>'besitzer' is not null or v_cas_vor->>'lease_bis' is not null
+        or v_cas_vor->'fencing' is distinct from '2'::jsonb or v_cas_vor->'ki_aufrufe' is distinct from '2'::jsonb
+        or v_cas_vor->'versuche' is distinct from '2'::jsonb or v_cas_vor->'ergebnis_fencing' is distinct from '1'::jsonb
+        or jsonb_array_length(v_vor->'casVormerkungen') is distinct from 1
+        or v_vor->'casVormerkungen'->0->>'vorgang_id' is distinct from v_cas_vor->>'vorgang_id'
+        or v_vor->'casVormerkungen'->0->'fehlversuche' is distinct from '1'::jsonb
+        or v_vor->'casVormerkungen'->0->'letzte_fencing' is distinct from '2'::jsonb
+        or v_vor->'casOperator'->>'definitionHash' is distinct from '5e666151d7046e87fdd0f319df7fca4e6c2414a6f7d5ff7bcc62d6c592eb2bd5'
+        or v_vor->'casOperator'->'securityDefiner' is distinct from 'false'::jsonb
+        or v_vor->'casOperator'->>'acl' is distinct from '{postgres=X/postgres,service_role=X/postgres}'
+        or v_vor->'jobBuchungen'<>'[]'::jsonb or v_vor->'jobNutzung'->'zeilen'<>'[]'::jsonb
+        or v_vor->'blobJobNutzung'<>'[]'::jsonb
+        or exists(select 1 from public.knowledge_objects k where k.vorgang_id=v_cas_vor->>'vorgang_id'
+          and coalesce(k.verstehen_fencing,-1)>=2)
+      then raise exception 'pflichtanalyse: kein gebundener einzelner BT-CAS-Neuversuch'; end if;
+      v_ausgang := public.helmut_verstehen_ausgang_aufloesen(v_cas_vor->>'vorgang_id','erneut');
+      if v_ausgang is distinct from 'erneut-freigegeben'
+      then raise exception 'pflichtanalyse: native Neuversuchsentscheidung unbestaetigt'; end if;
     else
       if v_job->>'last_error' !~ '^verstehen-uebersprungen-dauerhaft: verstehen-fortsetzung seit [0-9]+ h$'
         or (v_job->>'finished_at')::timestamptz<'2026-11-26T07:03:58Z'::timestamptz
@@ -172,7 +234,8 @@ begin
     end if;
     update public.helmut_jobs set status='wartend',finished_at=null,
       max_attempts=max_attempts+1,
-      quellen_prioritaet_tag=case when p.klasse='metadaten-pflicht' then v_tag::date else quellen_prioritaet_tag end,
+      payload=case when v_cas_neu then payload||jsonb_build_object('quellenRestDokumentIds',payload->'dokumentIds') else payload end,
+      quellen_prioritaet_tag=case when p.klasse='metadaten-pflicht' or v_cas_neu then v_tag::date else quellen_prioritaet_tag end,
       updated_at=clock_timestamp()
       where id=p.job_id;
   else
@@ -183,22 +246,43 @@ begin
       or v_job->>'lease_expires_at' is not null
       or (v_job->>'max_attempts')::int<>(b->'vor'->'job'->>'max_attempts')::int+1
       or v_job->'attempts' is distinct from b->'vor'->'job'->'attempts'
-      or (v_vor-'job') is distinct from ((b->'vor')-'job')
-      or (v_job-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at'])
-        is distinct from ((b->'vor'->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at'])
+      or (v_vor-array['job','cas']) is distinct from ((b->'vor')-array['job','cas'])
+      or (not v_cas_neu and v_vor->'cas' is distinct from b->'vor'->'cas')
+      or (v_job-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at','payload'])
+        is distinct from ((b->'vor'->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at','payload'])
+      or v_job->'payload' is distinct from (case when v_cas_neu then b->'vor'->'job'->'payload'
+        ||jsonb_build_object('quellenRestDokumentIds',b->'vor'->'job'->'payload'->'dokumentIds') else b->'vor'->'job'->'payload' end)
     then raise exception 'pflichtanalyse: Rueckweg nach Drift oder Workeruebernahme gesperrt'; end if;
+    if v_cas_neu then
+      v_cas_vor := b->'vor'->'cas'->0;
+      if jsonb_array_length(v_vor->'cas')<>1
+        or v_vor->'cas'->0->>'zustand' is distinct from 'offen'
+        or v_vor->'cas'->0->>'letzter_grund' is distinct from 'erneut-freigegeben'
+        or ((v_vor->'cas'->0)-array['zustand','letzter_grund','updated_at'])
+          is distinct from (v_cas_vor-array['zustand','letzter_grund','updated_at'])
+      then raise exception 'pflichtanalyse: CAS-Rueckweg nach Uebernahme gesperrt'; end if;
+      update public.helmut_verstehen_reservierungen set zustand=v_cas_vor->>'zustand',
+        letzter_grund=v_cas_vor->>'letzter_grund',updated_at=(v_cas_vor->>'updated_at')::timestamptz
+        where vorgang_id=v_cas_vor->>'vorgang_id';
+    end if;
     update public.helmut_jobs set status='fehlgeschlagen',
       finished_at=(b->'vor'->'job'->>'finished_at')::timestamptz,
       max_attempts=(b->'vor'->'job'->>'max_attempts')::int,
+      payload=b->'vor'->'job'->'payload',
       quellen_prioritaet_tag=(b->'vor'->'job'->>'quellen_prioritaet_tag')::date,
       updated_at=clock_timestamp() where id=p.job_id;
   end if;
   get diagnostics v_anzahl = row_count;
   if v_anzahl<>1 then raise exception 'pflichtanalyse: Einzelupdate unbestaetigt'; end if;
-  v_nach := pg_temp.helmut_pflichtstand(p.job_id,p.abruf_id,v_tag,v_cas);
-  if (v_vor-'job') is distinct from (v_nach-'job')
-    or ((v_vor->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at'])
-      is distinct from ((v_nach->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at'])
+  v_nach := pg_temp.helmut_pflichtstand(p.job_id,p.abruf_id,v_tag,v_cas,p.klasse);
+  v_substanz_vor := v_vor-array['job','cas']; v_substanz_nach := v_nach-array['job','cas'];
+  if v_substanz_vor is distinct from v_substanz_nach
+    or (not v_cas_neu and v_vor->'cas' is distinct from v_nach->'cas')
+    or (v_cas_neu and ((v_vor->'cas'->0)-array['zustand','letzter_grund','updated_at'])
+      is distinct from ((v_nach->'cas'->0)-array['zustand','letzter_grund','updated_at']))
+    or ((v_vor->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at','payload'])
+      is distinct from ((v_nach->'job')-array['status','finished_at','max_attempts','quellen_prioritaet_tag','updated_at','payload'])
+    or (not v_cas_neu and v_vor->'job'->'payload' is distinct from v_nach->'job'->'payload')
   then raise exception 'pflichtanalyse: geschuetzte Substanz veraendert'; end if;
   v_nach_digest := encode(sha256(convert_to(v_nach::text,'UTF8')),'hex');
   insert into helmut_pflichtquittung values(jsonb_build_object('version',1,
