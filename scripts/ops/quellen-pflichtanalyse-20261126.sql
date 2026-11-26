@@ -5,10 +5,15 @@
 -- Freigeben: zusaetzlich tag=UTC-Tag, bindung=private JS-Ausgabe (JSON).
 -- Rueckweg: bindung=unveraenderte private Freigabequittung, vor Workeruebernahme.
 -- Keine Provideraufrufe, CAS-/Kosten-/Originalaenderungen oder Freigabe eines Laufs.
+-- klasse=metadaten-pflicht (Standard) oder separat geprueft slotrest-20261126.
 \set ON_ERROR_STOP on
 \if :{?modus}
 \else
   \set modus vorschau
+\endif
+\if :{?klasse}
+\else
+  \set klasse metadaten-pflicht
 \endif
 \if :{?job_id}
 \else
@@ -37,7 +42,7 @@ set local lock_timeout = '3s';
 set local statement_timeout = '15s';
 create temporary table helmut_pflichtparameter on commit drop as
 select :'modus'::text modus, :'job_id'::uuid job_id, :'abruf_id'::uuid abruf_id,
-  :'tag'::text tag, :'bindung'::jsonb bindung, :'cas_ids'::jsonb cas_ids;
+  :'tag'::text tag, :'bindung'::jsonb bindung, :'cas_ids'::jsonb cas_ids, :'klasse'::text klasse;
 create temporary table helmut_pflichtquittung (ausgabe jsonb) on commit drop;
 
 -- Vollstaendige, private Vor-/Nachwerte; auch die CAS-Abwesenheit fuer eine
@@ -59,6 +64,15 @@ returns jsonb language sql stable as $snapshot$
     'casIds',p_cas,
     'cas', (select coalesce(jsonb_agg(to_jsonb(c) order by c.vorgang_id),'[]'::jsonb) from public.helmut_verstehen_reservierungen c
       where c.vorgang_id in (select jsonb_array_elements_text(p_cas))),
+    'jobBuchungen', (select coalesce(jsonb_agg(c.value order by c.key),'[]'::jsonb)
+      from public.helmut_store a cross join lateral jsonb_each(coalesce(a.data->'betriebskostenBudget'->'calls','{}'::jsonb)) c
+      where a.id='main-auth' and c.value->>'runId'=p_job::text),
+    'jobNutzung', (select coalesce(jsonb_agg(to_jsonb(u) order by u.id),'[]'::jsonb)
+      from public.llm_usage u where u.run_id=p_job::text),
+    'fundstellen', (select coalesce(jsonb_agg(to_jsonb(f) order by f.original_url),'[]'::jsonb)
+      from public.document_findings f where f.raw_document_id=(select payload->'dokumentIds'->>0 from public.helmut_jobs where id=p_job)
+      and f.source_id=(select payload->'quelle'->>'id' from public.helmut_jobs where id=p_abruf)
+      and f.retrieval_path_id=(select payload->'quelle'->>'retrievalPathId' from public.helmut_jobs where id=p_abruf)),
     'kostenDigest', (select encode(sha256(convert_to(coalesce(data->'betriebskostenBudget','null'::jsonb)::text,'UTF8')),'hex') from public.helmut_store where id='main-auth'));
 $snapshot$;
 
@@ -70,6 +84,7 @@ declare
 begin
   select * into strict p from helmut_pflichtparameter;
   if p.modus not in ('vorschau','freigeben','rueckweg') or p.job_id=p.abruf_id
+    or p.klasse not in ('metadaten-pflicht','slotrest-20261126')
     or (p.modus<>'vorschau' and p.tag<>v_tag)
   then raise exception 'pflichtanalyse: ungueltige oder abgelaufene Einzelbindung'; end if;
   v_cas := case when p.modus='vorschau' then p.cas_ids else p.bindung->'casIds' end;
@@ -82,7 +97,7 @@ begin
     -- Kurzes, arbeitsfreies Operatorfenster; keine parallele Queue-/Original-/CAS-Aenderung.
     lock table public.helmut_jobs in share row exclusive mode;
     lock table public.helmut_store,public.raw_documents,public.ko_document_links,
-      public.knowledge_objects,public.helmut_verstehen_reservierungen in share mode;
+      public.knowledge_objects,public.helmut_verstehen_reservierungen,public.llm_usage,public.document_findings in share mode;
     if exists(select 1 from public.helmut_jobs where status='laeuft')
     then raise exception 'pflichtanalyse: laufende Workerarbeit'; end if;
   end if;
@@ -95,10 +110,11 @@ begin
 
   if p.modus='vorschau' then
     insert into helmut_pflichtquittung values(jsonb_build_object('version',1,'modus','vorschau',
-      'tag',v_tag,'jobId',p.job_id,'abrufId',p.abruf_id,'gelesenAm',v_jetzt,'inhalt',v_inhalt,'digest',v_digest));
+      'tag',v_tag,'klasse',p.klasse,'jobId',p.job_id,'abrufId',p.abruf_id,'gelesenAm',v_jetzt,'inhalt',v_inhalt,'digest',v_digest));
     return;
   end if;
   if b->'version' is distinct from '1'::jsonb or b->>'tag' is distinct from v_tag
+    or b->>'klasse' is distinct from p.klasse
     or b->>'jobId' is distinct from p.job_id::text or b->>'abrufId' is distinct from p.abruf_id::text
     or b->>'geprueftAm' is null or (b->>'geprueftAm')::timestamptz>v_jetzt
     or (b->>'geprueftAm')::timestamptz<v_jetzt-interval '15 minutes'
@@ -110,14 +126,29 @@ begin
       or v_job->>'status' is distinct from 'fehlgeschlagen'
       or v_job->>'job_type' is distinct from 'document_understanding'
       or v_job->'tenant_id' is distinct from 'null'::jsonb
-      or v_job->>'last_error' is distinct from 'quellenstand-metadatenabweichung'
-      or v_job->>'finished_at' is null or (v_job->>'finished_at')::timestamptz>=v_tag::date::timestamptz
+      or v_job->>'finished_at' is null
       or v_job->>'lease_owner' is not null or v_job->>'lease_expires_at' is not null
       or (v_job->>'attempts')::int<>(v_job->>'max_attempts')::int
       or (v_job->>'max_attempts')::int not between 1 and 49
     then raise exception 'pflichtanalyse: historischer Vorwert oder native Bindung abweichend'; end if;
+    if p.klasse='metadaten-pflicht' then
+      if v_job->>'last_error' is distinct from 'quellenstand-metadatenabweichung'
+        or (v_job->>'finished_at')::timestamptz>=v_tag::date::timestamptz
+      then raise exception 'pflichtanalyse: kein historischer Metadaten-Pflichtfall'; end if;
+    else
+      if v_job->>'last_error' !~ '^verstehen-uebersprungen-dauerhaft: verstehen-fortsetzung seit [0-9]+ h$'
+        or (v_job->>'finished_at')::timestamptz<'2026-11-26T07:03:58Z'::timestamptz
+        or (v_job->>'finished_at')::timestamptz>='2026-11-26T07:04:13Z'::timestamptz
+        or v_job->'attempts' is distinct from '3'::jsonb or v_job->'max_attempts' is distinct from '3'::jsonb
+        or v_job->'wiedervorlagen' is distinct from '1'::jsonb
+        or v_vor->'jobBuchungen'<>'[]'::jsonb or v_vor->'jobNutzung'<>'[]'::jsonb
+        or v_vor->'cas'<>'[]'::jsonb
+      then raise exception 'pflichtanalyse: kein belegter einzelner Slotrest des 26Nov-Vorfalls'; end if;
+    end if;
     update public.helmut_jobs set status='wartend',finished_at=null,
-      max_attempts=max_attempts+1,quellen_prioritaet_tag=v_tag::date,updated_at=clock_timestamp()
+      max_attempts=max_attempts+1,
+      quellen_prioritaet_tag=case when p.klasse='metadaten-pflicht' then v_tag::date else quellen_prioritaet_tag end,
+      updated_at=clock_timestamp()
       where id=p.job_id;
   else
     if b->>'modus' is distinct from 'freigegeben' or b->'nach' is distinct from v_vor
@@ -147,7 +178,7 @@ begin
   v_nach_digest := encode(sha256(convert_to(v_nach::text,'UTF8')),'hex');
   insert into helmut_pflichtquittung values(jsonb_build_object('version',1,
     'modus',case p.modus when 'freigeben' then 'freigegeben' else 'zurueckgenommen' end,
-    'tag',v_tag,'jobId',p.job_id,'abrufId',p.abruf_id,'geprueftAm',b->>'geprueftAm','casIds',v_cas,
+    'tag',v_tag,'klasse',p.klasse,'jobId',p.job_id,'abrufId',p.abruf_id,'geprueftAm',b->>'geprueftAm','casIds',v_cas,
     'vor',v_vor,'nach',v_nach,'vorDigest',v_digest,'nachDigest',v_nach_digest));
 end;
 $operation$;

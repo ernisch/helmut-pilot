@@ -21,9 +21,9 @@ const digest = text => createHash("sha256").update(text).digest("hex");
 const q = value => "'" + JSON.stringify(value).replaceAll("'","''") + "'::jsonb";
 let anzahl=0;
 async function test(name,fn) { await fn(); console.log("PASS "+name); anzahl++; }
-function vorschau(s) {
+function vorschau(s,klasse="metadaten-pflicht") {
   const inhalt=JSON.stringify(s);
-  return {version:1,modus:"vorschau",tag,jobId,abrufId,gelesenAm:new Date(now).toISOString(),inhalt,digest:digest(inhalt)};
+  return {version:1,modus:"vorschau",klasse,tag,jobId,abrufId,gelesenAm:new Date(now).toISOString(),inhalt,digest:digest(inhalt)};
 }
 function bestand() {
   const original = require("../lib/helmut/dedup").toRawDocumentRow({
@@ -33,7 +33,7 @@ function bestand() {
     sourceId:"bundesregierung",sourceName:"Bundesregierung",sourceType:"ministry",linkType:"direct",
     publishedAt:new Date(Date.parse(tag)-86400000).toISOString(),retrievedAt:tag+"T00:00:00.000Z"});
   const stand=R.standHash(original), job=einzelArtikelAuftrag({id:original.id,stand});
-  const quelle=require("../lib/helmut/sources").v1Sources.find(s=>s.id==="bundesregierung");
+  const quelle=structuredClone(require("../lib/helmut/sources").v1Sources.find(s=>s.id==="bundesregierung"));
   const dueAt=tag+"T00:00:00.000Z";
   const planauftrag={jobType:"source_fetch",idempotencyKey:"amtliche-pflicht-test-"+tag,tenantId:null,dueAt,priority:50,
     payload:{art:"geteilt",quelle}};
@@ -70,6 +70,34 @@ function mitAltabschluss(s) {
     ergebnis_hash:V.ergebnisHash(ko),ki_aufrufe:1,versuche:1}];
   s.casIds=casKennungen(vorschau(s));return s;
 }
+function mitSlotrest(s) {
+  s.aktuell={...s.archive[0].data.dokument};
+  s.job={...s.job,last_error:"verstehen-uebersprungen-dauerhaft: verstehen-fortsetzung seit 141 h",
+    finished_at:"2026-11-26T07:04:00.000Z",wiedervorlagen:1,quellen_prioritaet_tag:null};
+  s.abruf.priority=100;s.plan.data.auftraege[0].priority=100;
+  const p=s.plan.data;p.manifestHash=digest(JSON.stringify(L.kanonisch([tag,p.auftraege,p.tagesplan])));
+  const vg=I.deriveVorgangId(I.clusterRawDocuments([s.aktuell])[0]);
+  s.kos=[{id:"ko-"+vg,vorgang_id:vg,ko_version:1,source_document_count:1,understanding_status:"pending"}];
+  s.links=[{raw_document_id:s.aktuell.id,knowledge_object_id:s.kos[0].id}];
+  s.jobBuchungen=[];s.jobNutzung=[];s.casIds=casKennungen(vorschau(s));return s;
+}
+function mitGoogleSlotrest(s) {
+  const doc=s.archive[0].data.dokument, proxy="https://news.google.com/rss/articles/CBMiSynthetischerPruefartikel";
+  doc.raw={...doc.raw,originalUrl:proxy};s.aktuell=structuredClone(doc);
+  const stand=R.standHash(doc), j=einzelArtikelAuftrag({id:doc.id,stand});
+  s.job.payload=j.payload;s.job.idempotency_key=j.idempotencyKey;
+  s.archive=[{id:`main-rohstand-${doc.id.slice(3)}-${stand}`,data:{version:1,quellenHash:stand,dokument:doc}}];
+  const quelle=s.abruf.payload.quelle;
+  Object.assign(quelle,{id:"synthetische-google-route",retrievalPathId:"rp-synthetische-google-route",type:"media",
+    url:"https://news.google.com/search?q=Bundespolitik",rssUrl:"https://news.google.com/rss/search?q=Bundespolitik",rssUrls:[]});
+  s.plan.data.auftraege[0].payload.quelle=quelle;
+  const p=s.plan.data;p.manifestHash=digest(JSON.stringify(L.kanonisch([tag,p.auftraege,p.tagesplan])));
+  const b=s.beleg.data;delete b.belegHash;b.bindung=F.quellbindung({id:abrufId,tenantId:null,firstDueAt:s.abruf.first_due_at,payload:s.abruf.payload});
+  b.ergebnis.analyse[0].stand=stand;s.beleg.data={...b,belegHash:belegHash(b)};
+  s.fundstellen=[{raw_document_id:doc.id,source_id:quelle.id,retrieval_path_id:quelle.retrievalPathId,
+    original_url:proxy,link_type:"direct",found_at:new Date(now-3600000).toISOString()}];
+  s.casIds=casKennungen(vorschau(s));return s;
+}
 (async()=>{
   await test("exakte archivierte Pflichtversion ohne KO wird nur wartend freigegeben",async()=>{
     const b=await pruefe(vorschau(bestand()),optionen);A.equal(b.modus,"freigeben");A.equal(b.altabschluss,null);
@@ -77,6 +105,38 @@ function mitAltabschluss(s) {
   await test("aelterer CAS-fertiger Abschluss beweist seine eigene Fassung, nicht die angeforderte",async()=>{
     const b=await pruefe(vorschau(mitAltabschluss(bestand())),optionen);
     A.equal(b.altabschluss.exakteVersionBereitsGelesen,false);A.notEqual(b.altabschluss.gelesenStand,b.altabschluss.angefordertStand);
+  });
+  await test("gueltige Teilquittung gibt nur ihre exakt referenzierte Pflichtanalyse frei",async()=>{
+    const s=bestand(), b=s.beleg.data;delete b.belegHash;b.ergebnis.art="teilweise";
+    b.ergebnis.rohIds.push("rd-"+"f".repeat(64));s.beleg.data={...b,belegHash:belegHash(b)};
+    const freigabe=await pruefe(vorschau(s),optionen);A.equal(freigabe.abrufBleibtTeilweise,true);
+    A.equal(freigabe.vor.beleg.data.ergebnis.art,"teilweise");
+  });
+  await test("nur belegter optionaler Slotrest des exakten Vorfalls ist freigebbar",async()=>{
+    const b=await pruefe(vorschau(mitSlotrest(bestand()),"slotrest-20261126"),optionen);
+    A.equal(b.klasse,"slotrest-20261126");A.equal(b.vor.job.quellen_prioritaet_tag,null);
+  });
+  await test("Google-Slotrest bindet aktuellen Fundweg trotz historisch anderem source_id",async()=>{
+    const s=mitGoogleSlotrest(mitSlotrest(bestand()));A.notEqual(s.aktuell.source_id,s.abruf.payload.quelle.id);
+    const b=await pruefe(vorschau(s,"slotrest-20261126"),optionen);A.equal(b.klasse,"slotrest-20261126");
+  });
+  await test("Google-Slotrest sperrt fremden Weg, alte Fundstelle und unsicheres Originalziel",async()=>{
+    for(const mutate of [s=>{s.fundstellen[0].retrieval_path_id="rp-fremd";},s=>{s.fundstellen[0].source_id="fremd";},
+      s=>{s.fundstellen[0].found_at=new Date(now-8*86400000).toISOString();},s=>{s.fundstellen=[];},
+      s=>{s.fundstellen[0].link_type="google_proxy";},s=>{s.fundstellen[0].original_url="https://news.google.com/search?q=all";},
+      s=>{s.archive[0].data.dokument.url="https://127.0.0.1/private";}]){
+      const s=mitGoogleSlotrest(mitSlotrest(bestand()));mutate(s);
+      await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen));
+    }
+  });
+  await test("Slotrest ausserhalb Vorfall, mit CAS, Modellbuchung oder Textdrift bleibt gesperrt",async()=>{
+    for(const mutate of [s=>{s.job.finished_at="2026-11-26T07:04:13Z";},s=>{s.job.finished_at="2026-11-26T07:03:57Z";},
+      s=>{s.job.wiedervorlagen=2;},s=>{s.job.last_error="verstehen-uebersprungen-dauerhaft: zeitbudget";},
+      s=>{s.cas=[{vorgang_id:s.casIds[0],zustand:"unbekannt"}];},s=>{s.jobBuchungen=[{runId:jobId}];},
+      s=>{s.jobNutzung=[{run_id:jobId}];},s=>{s.aktuell.summary+=" anderer Text";},
+      s=>{s.kos[0].understanding_status="complete";},s=>{s.job.quellen_prioritaet_tag=tag;},s=>{s.abruf.priority=50;}]){
+      const s=mitSlotrest(bestand());mutate(s);await A.rejects(()=>pruefe(vorschau(s,"slotrest-20261126"),optionen));
+    }
   });
   const negativ=[
     ["Titelabweichung",s=>{s.aktuell.title+=" anderer Titel";}],
@@ -125,7 +185,9 @@ function mitAltabschluss(s) {
       create table helmut_store(id text primary key,data jsonb);create table raw_documents(id text primary key,url text,canonical_url text,title text,summary text,source_name text,source_id text,source_type text,link_type text,published_at timestamptz,retrieved_at timestamptz,raw jsonb);
       create table knowledge_objects(id text primary key,vorgang_id text,ko_version int,source_document_count int,verstehen_fencing bigint,understanding_status text,classification_confidence jsonb);
       create table ko_document_links(knowledge_object_id text,raw_document_id text);
-      create table helmut_verstehen_reservierungen(vorgang_id text,zustand text,besitzer text,lease_bis timestamptz,fencing bigint,ergebnis_fencing bigint,ergebnis_hash text,ki_aufrufe int,versuche int);`);
+      create table helmut_verstehen_reservierungen(vorgang_id text,zustand text,besitzer text,lease_bis timestamptz,fencing bigint,ergebnis_fencing bigint,ergebnis_hash text,ki_aufrufe int,versuche int);
+      create table llm_usage(id text,run_id text);
+      create table document_findings(raw_document_id text,source_id text,retrieval_path_id text,original_url text,link_type text,found_at timestamptz);`);
     const s=bestand(), j=s.job,a=s.abruf;
     psql(`insert into helmut_store values(${q(s.plan.id)}#>>'{}',${q(s.plan.data)}),(${q(s.beleg.id)}#>>'{}',${q(s.beleg.data)}),(${q(s.archive[0].id)}#>>'{}',${q(s.archive[0].data)});
       insert into raw_documents select x.* from jsonb_populate_record(null::raw_documents,${q(s.aktuell)}) x;
@@ -133,8 +195,8 @@ function mitAltabschluss(s) {
       values('${jobId}','document_understanding',${q(j.idempotency_key)}#>>'{}','alt',now()-interval '2 day',now()-interval '2 day','fehlgeschlagen',${q(j.payload)},3,3,'${j.last_error}','${j.finished_at}',2),
       ('${abrufId}','source_fetch',${q(a.idempotency_key)}#>>'{}','${tag}','${a.first_due_at}','${a.first_due_at}','erledigt',${q(a.payload)},1,3,null,'${a.finished_at}',0);`);
     const sql=readFileSync(path.join(__dirname,"ops/quellen-pflichtanalyse-20261126.sql"),"utf8");
-    const ausfuehren=(modus,bindung)=>{
-      const vars={modus,job_id:jobId,abruf_id:abrufId,tag,cas_ids:JSON.stringify(s.casIds),...(bindung?{bindung:JSON.stringify(bindung)}:{})};
+    const ausfuehren=(modus,bindung,klasse="metadaten-pflicht",casIds=s.casIds)=>{
+      const vars={modus,klasse,job_id:jobId,abruf_id:abrufId,tag,cas_ids:JSON.stringify(casIds),...(bindung?{bindung:JSON.stringify(bindung)}:{})};
       const text=Object.entries(vars).map(([k,v])=>`\\set ${k} '${v.replaceAll("'","\\'")}'`).join("\n")+"\n"+sql;
       return JSON.parse(psql(text).split("\n").at(-1));
     };
@@ -172,6 +234,24 @@ function mitAltabschluss(s) {
       const claimed=JSON.parse(psql("select to_jsonb(j) from helmut_claim_jobs('isolierter-pruefer',1,60000,array['document_understanding']) j"));
       A.equal(claimed.id,jobId);A.equal(claimed.attempts,original.attempts+1);A.equal(claimed.status,"laeuft");
       A.throws(()=>ausfuehren("rueckweg",receipt));
+    });
+    await test("SQL-Slotrest-Freigabe erhaelt optionale Prioritaet und hat eigenen Rueckweg",async()=>{
+      const slot=mitSlotrest(bestand()), ko=slot.kos[0];
+      psql(`update helmut_jobs set status='fehlgeschlagen',attempts=3,max_attempts=3,wiedervorlagen=1,
+        lease_owner=null,lease_expires_at=null,finished_at='${slot.job.finished_at}',
+        last_error='${slot.job.last_error}',quellen_prioritaet_tag=null where id='${jobId}';
+        update helmut_jobs set priority=100 where id='${abrufId}';
+        update helmut_store set data=${q(slot.plan.data)} where id=${q(slot.plan.id)}#>>'{}';
+        update raw_documents set published_at='${slot.aktuell.published_at}';
+        insert into knowledge_objects select x.* from jsonb_populate_record(null::knowledge_objects,${q(ko)}) x;
+        insert into ko_document_links values(${q(ko.id)}#>>'{}',${q(slot.aktuell.id)}#>>'{}');`);
+      const rufe=(modus,bindung)=>ausfuehren(modus,bindung,"slotrest-20261126",slot.casIds);
+      const b=await pruefe(rufe("vorschau"),{...optionen,jetztMs:Date.now()});
+      const r=rufe("freigeben",b);A.equal(r.nach.job.status,"wartend");
+      A.equal(r.nach.job.max_attempts,4);A.equal(r.nach.job.attempts,3);
+      A.equal(r.nach.job.quellen_prioritaet_tag,null);A.deepEqual(r.nach.cas,[]);
+      const rollback=rufe("rueckweg",r);A.equal(rollback.nach.job.status,"fehlgeschlagen");
+      A.equal(rollback.nach.job.max_attempts,3);A.equal(rollback.nach.job.quellen_prioritaet_tag,null);
     });
   }finally{psql(`drop database ${db} with (force);`,"postgres");}
 })().then(()=>console.log(`${anzahl} gezielte Pflichtanalyse-Pruefungen bestanden`)).catch(e=>{console.error(e.stack);if(e.stderr)console.error(String(e.stderr));process.exitCode=1;});

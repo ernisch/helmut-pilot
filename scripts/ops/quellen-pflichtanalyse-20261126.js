@@ -44,6 +44,8 @@ function casKennungen(v) {
 
 async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   const s = lese(v), j = s.job, a = s.abruf;
+  const klasse = v.klasse || "metadaten-pflicht", pflicht = klasse === "metadaten-pflicht";
+  verlange(["metadaten-pflicht", "slotrest-20261126"].includes(klasse), "freigegebene Fehlerklasse");
   const zeit = value => Date.parse(value);
   verlange(Number.isFinite(jetztMs) && /^\d{4}-\d{2}-\d{2}$/.test(tag || "")
     && new Date(jetztMs).toISOString().slice(0, 10) === tag && v.tag === tag
@@ -51,7 +53,10 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
     && v.jobId === jobId && v.abrufId === abrufId && j.id === jobId && a.id === abrufId
     && zeit(v.gelesenAm) <= jetztMs && zeit(v.gelesenAm) >= jetztMs - 15 * 60000, "frische Tages-/Einzelbindung");
   verlange(j.job_type === "document_understanding" && j.tenant_id === null && j.status === "fehlgeschlagen"
-    && j.last_error === "quellenstand-metadatenabweichung" && zeit(j.finished_at) < zeit(tag)
+    && (pflicht ? j.last_error === "quellenstand-metadatenabweichung" && zeit(j.finished_at) < zeit(tag)
+      : /^verstehen-uebersprungen-dauerhaft: verstehen-fortsetzung seit [0-9]+ h$/.test(j.last_error || "")
+        && zeit(j.finished_at) >= zeit("2026-11-26T07:03:58Z") && zeit(j.finished_at) < zeit("2026-11-26T07:04:13Z")
+        && zeit(j.finished_at) <= jetztMs && j.attempts === 3 && j.max_attempts === 3 && j.wiedervorlagen === 1)
     && j.lease_owner === null && j.lease_expires_at === null
     && Number.isSafeInteger(j.attempts) && j.attempts === j.max_attempts && j.max_attempts >= 1 && j.max_attempts < 50,
   "historischer Metadaten-Endzustand");
@@ -72,8 +77,9 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   const p = auftraege[0], quelle = p.payload?.quelle;
   const prioritaet = D.amtlicheMorgenPrioritaet(quelle);
   const schnitt = require("../../lib/helmut/quellen-tagesbetrieb").zeiten(jetztMs).redaktionsschluss;
-  verlange(prioritaet !== null && p.tenantId == null && p.payload?.art === "geteilt"
-    && zeit(p.dueAt) >= zeit(tag) && zeit(p.dueAt) <= schnitt && zeit(p.dueAt) <= jetztMs
+  verlange((pflicht ? prioritaet !== null : p.priority === 100 && a.priority === 100 && j.quellen_prioritaet_tag == null)
+    && p.tenantId == null && p.payload?.art === "geteilt"
+    && zeit(p.dueAt) >= zeit(tag) && (!pflicht || zeit(p.dueAt) <= schnitt) && zeit(p.dueAt) <= jetztMs
     && a.job_type === "source_fetch" && a.tenant_id === null && a.status === "erledigt"
     && a.lease_owner === null && a.lease_expires_at === null
     && zeit(a.first_due_at) === zeit(p.dueAt) && gleich(a.payload, p.payload)
@@ -81,8 +87,8 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   const beleg = s.beleg?.data;
   verlange(s.beleg?.id === "main-quellenfaelligkeit-" + a.id && F.belegGueltig(beleg, {
     id: a.id, tenantId: a.tenant_id, firstDueAt: a.first_due_at, payload: a.payload
-  }) && zeit(beleg.bestaetigtAm) <= zeit(a.finished_at) && zeit(beleg.bestaetigtAm) <= schnitt
-    && beleg.ergebnis.art === "rohfassungen" && !beleg.ergebnis.quellenkonflikt
+  }) && zeit(beleg.bestaetigtAm) <= zeit(a.finished_at) && (!pflicht || zeit(beleg.bestaetigtAm) <= schnitt)
+    && ["rohfassungen", "teilweise"].includes(beleg.ergebnis.art) && !beleg.ergebnis.quellenkonflikt
     && beleg.ergebnis.rohIds.includes(id)
     && beleg.ergebnis.analyse.filter(x => x.jobId === jobId).length === 1
     && beleg.ergebnis.analyse.some(x => x.jobId === jobId && x.rohId === id && x.stand === stand),
@@ -91,17 +97,47 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   const archiv = R.erzeuge({ request, storeId: "main" });
   const original = await archiv.lesen(id, stand), aktuell = s.aktuell;
   verlange(original && aktuell?.id === id && [original, aktuell].every(d => d.link_type === "direct"
-    && d.source_id === quelle.id && typeof d.summary === "string" && d.summary.trim()
+    && (!pflicht || d.source_id === quelle.id) && typeof d.summary === "string" && d.summary.trim()
     && Number.isFinite(zeit(d.published_at)))
     && ["url", "canonical_url", "title", "source_name"].every(k => typeof original[k] === "string"
       && original[k].trim() && original[k] === aktuell[k]), "amtliches Archiv und eindeutige aktuelle Identitaet");
-  const hosts = D.abrufwege(quelle).map(url => new URL(url).hostname.replace(/^www\./, ""));
+  const wege = D.abrufwege(quelle);
+  const google = !pflicht && wege.some(url => new URL(url).hostname === "news.google.com");
+  if (!pflicht) verlange(quelle.crawlMethod === "rss" && wege.length > 0 && wege.every(url => {
+    const u = new URL(url); return u.protocol === "https:" && !u.username && !u.password && !u.port;
+  }), "Slotrest: gebundene sichere RSS-Herkunft");
+  const hosts = [...wege, ...(!pflicht && quelle.url ? [quelle.url] : [])].map(url => {
+    const u = new URL(url);
+    verlange(u.protocol === "https:" && !u.username && !u.password && !u.port, "sicherer gebundener Quellenhost");
+    return u.hostname.replace(/^www\./, "");
+  });
+  const { artikelHost } = require("../../lib/helmut/artikelkontext-abrufschutz");
   verlange([original.url, original.canonical_url].every(url => {
-    const u = new URL(url); return u.protocol === "https:" && hosts.includes(u.hostname.replace(/^www\./, ""));
-  }), "amtlicher Originalhost");
+    const host = artikelHost(url).replace(/^www\./, "");
+    return host !== "news.google.com" && (google || hosts.includes(host));
+  }), "sicherer gebundener Originalhost");
+  if (google) {
+    const proxy = url => typeof url === "string" && url.length <= 420
+      && /^https:\/\/news\.google\.com\/rss\/articles\/[a-zA-Z0-9_-]+(?:\?oc=\d+)?$/.test(url);
+    verlange(proxy(original.raw?.originalUrl) && proxy(aktuell.raw?.originalUrl)
+      && /^rp-[a-z0-9_-]{1,125}$/i.test(quelle.retrievalPathId || "")
+      && Array.isArray(s.fundstellen) && s.fundstellen.length >= 1 && s.fundstellen.length <= 32
+      && s.fundstellen.some(f => f.raw_document_id === id && f.source_id === quelle.id
+        && f.retrieval_path_id === quelle.retrievalPathId && f.link_type === "direct" && proxy(f.original_url)
+        && zeit(f.found_at) <= jetztMs && zeit(f.found_at) >= jetztMs - 7 * 86400000),
+    "Slotrest: frische exakt quellen-/weggebundene Google-Artikelfundstelle fehlt");
+  }
 
   let altabschluss = null;
-  if (s.links.length) {
+  if (!pflicht) {
+    verlange(["id", "url", "canonical_url", "title", "source_name", "source_id", "summary"]
+      .every(k => original[k] === aktuell[k]) && zeit(original.published_at) === zeit(aktuell.published_at)
+      && R.standHash(aktuell) === stand
+      && s.links.length === 1 && s.kos[0]?.understanding_status === "pending"
+      && s.links[0].raw_document_id === id && s.links[0].knowledge_object_id === s.kos[0].id
+      && s.cas.length === 0 && gleich(s.jobBuchungen, []) && gleich(s.jobNutzung, []),
+    "Slotrest mit identischem Original, genau einem pending-KO und ohne CAS-/Modellbuchung");
+  } else if (s.links.length) {
     const ko = s.kos[0], link = s.links[0];
     verlange(link.raw_document_id === id && link.knowledge_object_id === ko.id
       && ko.understanding_status === "complete" && Number.isInteger(ko.ko_version) && ko.ko_version >= 1
@@ -129,8 +165,9 @@ async function pruefe(v, { tag, jobId, abrufId, jetztMs = Date.now() } = {}) {
   // Keine unsichtbare CAS-Freigabe: andere belegte Kandidaten muessen abwesend
   // sein. Auch offen/aufgegeben/UNKNOWN oder ein fremder fertiger CAS stoppt.
   verlange(s.cas.every(c => altabschluss && c.vorgang_id === altabschluss.vorgangId), "ungeklaerter weiterer CAS-Kandidat");
-  return { version: 1, modus: "freigeben", tag, jobId, abrufId,
-    geprueftAm: new Date(jetztMs).toISOString(), casIds: s.casIds, digest: v.digest, vor: s, altabschluss };
+  return { version: 1, modus: "freigeben", klasse, tag, jobId, abrufId,
+    geprueftAm: new Date(jetztMs).toISOString(), casIds: s.casIds, digest: v.digest, vor: s, altabschluss,
+    abrufBleibtTeilweise: beleg.ergebnis.art === "teilweise" };
 }
 
 module.exports = { pruefe, casKennungen };
