@@ -167,11 +167,19 @@ async function starteQuellenDatenbank({ begrenzterPool = false, monatslauf = fal
       $jwt$;`);
 
     psql(readFileSync(path.join(SUPABASE, "schema.sql"), "utf8"));
+    // Das lokale Grundschema enthält die späteren optionalen Ledger-Spalten.
+    // Der gemessene Pilotbestand verwendet noch die Legacy-Tabelle ohne diese Migration.
+    if (monatslauf) psql(`alter table public.llm_usage drop column tenant_id, drop column profile_id,
+      drop column run_id, drop column pipeline_step;`);
     for (const name of MIGRATIONEN) {
+      if (monatslauf && name === "20260902121500_llm_usage_relational.sql") continue;
       try { psql(readFileSync(path.join(SUPABASE, "migrations", name), "utf8")); }
       catch (error) { throw Error(`Migration im Prüfstand fehlgeschlagen (${name}): ${String(error.stderr || "").split("\n").find(zeile => zeile.startsWith("ERROR:")) || error.code}`); }
     }
     psql(`insert into public.helmut_store(id,data) values ('main-auth','{"users":[],"sessions":[]}');`);
+    if (monatslauf) assert.equal(psql(`select count(*) from information_schema.columns
+      where table_schema='public' and table_name='llm_usage'
+        and column_name in ('tenant_id','profile_id','run_id','pipeline_step');`), "0");
 
     const claimSignatur = "public.helmut_claim_quellenfaelligkeit(text,bigint,boolean)";
     const claimMd5 = psql(`select md5(prosrc) from pg_proc where oid = '${claimSignatur}'::regprocedure;`);
