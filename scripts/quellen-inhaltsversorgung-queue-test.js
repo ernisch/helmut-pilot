@@ -143,6 +143,21 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     await assert.rejects(understanding({ ...job, createdAt: "2020-01-01T00:00:00Z" }, deps({
       vorbereiteGespeicherteInhalte: async () => result([]) }), { auftragsDeadlineMs: start + 120000 }), /verstehen-uebersprungen-dauerhaft/);
   });
+  await test("Belegter Slotrestmangel macht einen historischen Analyseauftrag nicht terminal", async () => {
+    const doc = docs[0], buchungen = [];
+    const alt = { ...P.einzelArtikelAuftrag({ id: doc.id, stand: "a".repeat(64) }),
+      id: job.id, createdAt: "2026-11-04T00:00:00.000Z" };
+    const r = await understanding(alt, deps({
+      env: { ...env, HELMUT_SCALABLE_PIPELINE: "on", HELMUT_VERSTEHEN_CAS: "on" },
+      ladeRohdokumentStaende: async () => [doc],
+      vorbereiteGespeicherteInhalte: async () => ({ ...result([doc]), befund: [{ id: doc.id, status: "belegt" }] }),
+      budget: { reserviere: async () => ({ erlaubt: true }), melde: async b => buchungen.push(b.ungenutzt) },
+      eagerUnderstanding: async () => ({ processed: 0, restzeitVorErstemClusterErschoepft: true })
+    }), { auftragsDeadlineMs: start + 120000 });
+    assert.equal(r.grund, "analyse-slotrest-erschoepft");
+    assert.equal(r.zeitbudgetErschoepft, true);
+    assert.deepEqual(buchungen, [true]);
+  });
   await test("Bestaetigte Originalgrenze vertagt den Einzelartikel bis zur Freigabe statt pauschal", async () => {
     const doc = docs[0], wiederFaelligMs = Date.parse("2026-11-10T00:00:00.000Z");
     const row = { id: job.id, job_type: "document_understanding", created_at: job.createdAt,
@@ -341,6 +356,41 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         schlafe: async ms => { sleeps++; clock += ms; }
       } });
     assert.equal(r.erledigt, 1); assert.equal(calls, 2); assert.ok(sleeps >= 1 && sleeps <= 3); assert.ok(clock - start < 35000);
+  });
+  await test("Alter Analyseauftrag im Slotrest verbraucht weder Versuch noch nächsten Quellenauftrag", async () => {
+    const envFenster = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on" };
+    const analyse = { id: "alter-analyseauftrag", job_type: "document_understanding", attempts: 3,
+      max_attempts: 3, created_at: new Date(start - 72 * 3600000).toISOString() };
+    const abruf = { id: "unabhaengiger-abruf", job_type: "source_fetch" };
+    let zeit = start, abrufe = 0, claims = 0;
+    const r = await P.arbeite({ env: envFenster, budgetMs: 120000, stapel: 2,
+      types: ["document_understanding", "source_fetch"], deps: deps({ env: envFenster, now: () => zeit,
+        claim: async ({ types }) => {
+          if (++claims === 1) {
+            assert.deepEqual(types, ["document_understanding", "source_fetch"]);
+            zeit += 85000;
+            return { verfuegbar: true, auftraege: [analyse, abruf] };
+          }
+          assert.deepEqual(types, ["source_fetch"]);
+          return { verfuegbar: true, auftraege: [] };
+        },
+        handler: { document_understanding: async () => assert.fail("Für Modellarbeit fehlt die Restzeit"),
+          source_fetch: async () => { abrufe++; return { ok: true }; } },
+        zurueckstellen: async ({ id, grund }) => {
+          assert.equal(id, analyse.id);
+          assert.equal(grund, "zeitbudget-des-laufs-erschoepft");
+          return { verfuegbar: true, uebernommen: true };
+        },
+        finish: async ({ id }) => {
+          assert.equal(id, abruf.id);
+          return { verfuegbar: true, uebernommen: true };
+        }
+      }) });
+    assert.equal(r.erledigt, 1);
+    assert.equal(r.stapelrestZurueckgegeben, 1);
+    assert.equal(r.endgueltigFehlgeschlagen, 0);
+    assert.equal(abrufe, 1);
+    assert.equal(claims, 2);
   });
   await test("Inneres Budgetnein nach aeusserer Freigabe benutzt die bestehende Stundenpause", async () => {
     const ready = { ...docs[0], summary: "Die Gewerkschaft fordert verbindliche Tarife für alle Beschäftigten und bessere soziale Absicherung. Die nächste Verhandlungsrunde beginnt im November." };

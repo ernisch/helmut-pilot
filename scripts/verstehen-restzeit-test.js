@@ -381,6 +381,20 @@ async function main() {
     check("§7.1 KEIN Modellaufruf, KEINE Reservierung", p.kiAufrufe === 0 && speicher.zeilen.size === 0);
     check("§7.2 ALLE Cluster ehrlich vorgemerkt (Nachholkandidaten)",
       vorgemerkt.length >= 1 && (r.deferred || 0) + vorgemerkt.length >= 2);
+    let freigaben = 0;
+    const zeile = require("../lib/helmut/dedup").toRawDocumentRow({ title: rohdokumente[0].title,
+      url: "https://quelle.fixture.invalid/restzeit", publishedAt: rohdokumente[0].published_at });
+    const stand = require("../lib/helmut/roh-quellenstaende").standHash(zeile);
+    const gebunden = await runUnderstandingShadow([zeile], {
+      enabled: () => true, aiEnabled: () => true, gateMode: () => "off",
+      acquireLock: async () => ({ granted: true }), releaseLock: async () => { freigaben++; },
+      deadlineMs: Date.now() + 1000, quellenstaende: { [zeile.id]: stand },
+      savePendingBulk: async () => assert.fail("Ein dauerhafter Queue-Auftrag benötigt keine zweite Vormerkung"),
+      ...baueDeps(p, speicher)
+    });
+    check("§7.3 Gebundener Auftrag meldet den fehlenden Slotrest und löst die Sperre",
+      gebunden.restzeitVorErstemClusterErschoepft === true && gebunden.processed === 0 && gebunden.vorgemerkt === 0
+      && p.kiAufrufe === 0 && speicher.zeilen.size === 0 && freigaben === 1);
   }
 
   abschnitt("§8 Warteschlangenpfad: absolutes Auftragsfensterende erreicht den Handler");

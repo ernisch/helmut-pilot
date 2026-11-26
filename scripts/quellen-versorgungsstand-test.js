@@ -122,7 +122,9 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     const pruefe = async (zustand, quellenBis = schnitt, bestaetigt, beendet = false) => A.deepEqual(await V.lese({ mandat: profile.id,
       jetztMs: morgen.getTime(), env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis }),
     { ...signal(zustand), ...(zustand === "unbekannt" && bestaetigt === undefined ? {}
-      : { abrufabdeckung: { geplant: 1, bestaetigt: bestaetigt ?? 0 } }), ...(beendet ? { verarbeitungBeendet: true } : {}) });
+      : { abrufabdeckung: { geplant: 1, bestaetigt: bestaetigt ?? 0 },
+        pflichtAbrufabdeckung: { geplant: faellig.priority === 35 ? 1 : 0, bestaetigt: faellig.priority === 35 ? bestaetigt ?? 0 : 0 } }),
+    ...(beendet ? { verarbeitungBeendet: true } : {}) });
     await pruefe("kein-bekannter-rueckstand", schnitt, 1);
     queue = []; await pruefe("offen");
     for (const status of ["wartend", "laeuft", "fehlgeschlagen"]) {
@@ -155,12 +157,16 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       payload: { ...analyse.payload, quellenRestDokumentIds: [], quellenAbschnitte: {} } }];
     await pruefe("kein-bekannter-rueckstand", schnitt, 1);
     faellig.priority = 80;
-    analysen = [{ ...analyse, status: "wartend" }]; await pruefe("kein-bekannter-rueckstand", schnitt, 1);
+    analysen = [{ ...analyse, status: "wartend" }]; await pruefe("unbekannt", schnitt, 1);
 
+    faellig.priority = 35;
+    analysen = [analyse];
     deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 1, fehlgeschlagen: 0 });
     await pruefe("offen", schnitt, 1);
 
     const neuerStand = Array.from({ length: 162 }, (_, i) => erstelle("quelle-" + i, 0));
+    neuerStand[0].priority = 35;
+    neuerStand[161].priority = 35;
     plan.auftraege = [...neuerStand, ...unbelangte];
     queue = neuerStand.map((job, i) => ({ ...row, id: "00000000-0000-0000-0000-" + String(i).padStart(12, "0"),
       idempotency_key: job.idempotencyKey, payload: job.payload, status: i < 152 ? "erledigt" : "fehlgeschlagen" }));
@@ -176,9 +182,14 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       const batch = url.searchParams.get(jobs ? "idempotency_key" : "id");
       return (jobs ? queue : belege).filter(r => batch.includes(JSON.stringify(jobs ? r.idempotency_key : r.id)));
     };
-    const v = await V.lese({ mandat: profile.id, jetztMs: morgen.getTime(),
+    deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 0, fehlgeschlagen: 0 });
+    const leseMorgen = () => V.lese({ mandat: profile.id, jetztMs: morgen.getTime(),
       env: { ...env, HELMUT_SCALABLE_PIPELINE: "on" }, deps, quellenBis: schnitt });
-    A.deepEqual(v, { ...signal("offen"), abrufabdeckung: { geplant: 162, bestaetigt: 152 } });
+    A.deepEqual(await leseMorgen(), { ...signal("offen"), abrufabdeckung: { geplant: 162, bestaetigt: 152 },
+      pflichtAbrufabdeckung: { geplant: 2, bestaetigt: 1 } });
+    neuerStand[161].priority = 100;
+    A.deepEqual(await leseMorgen(), { ...signal("kein-bekannter-rueckstand"), abrufabdeckung: { geplant: 162, bestaetigt: 152 },
+      pflichtAbrufabdeckung: { geplant: 1, bestaetigt: 1 } });
   });
   const rows = new Map(); let updates = 0;
   const storage = { assertTenant: require("../lib/helmut/storage").assertTenant,
