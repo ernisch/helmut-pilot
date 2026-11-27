@@ -123,6 +123,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "ko-quellenfassungen-datenbank-test.js", // eigener Pflichtschritt PG17/PostgREST; keine positive Abnahme ohne native Umgebung
   "verarbeitungskern-claim-datenbank-test.js", // nur expliziter netzloser PG17-Kernschritt mit eigenem Testcontainer
   "starttor-native-reader-datenbank-test.js", // eigener Pflichtschritt: echter netzloser PG17.6, kein Offline-Scheinbeleg
   "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip

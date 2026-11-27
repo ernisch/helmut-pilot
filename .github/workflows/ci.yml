@@ -757,6 +757,19 @@ jobs:
           node scripts/lokal.js -- node scripts/verarbeitungskern-claim-datenbank-test.js
           node scripts/lokal.js -- bash scripts/quellenfaelligkeit-datenbank-test.sh
 
+      - name: KO-Quellenfassungen gegen isolierte PostgreSQL und PostgREST
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
+          PGPASSWORD: "helmut"
+        run: |
+          node scripts/lokal.js scripts/ko-quellenfassungen-datenbank-test.js
+          node scripts/lokal.js scripts/verstehen-cas-vertrag-test.js --only=quellenfassung
+
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2

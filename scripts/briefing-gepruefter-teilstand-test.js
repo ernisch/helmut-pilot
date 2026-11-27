@@ -29,7 +29,7 @@ async function fixture(){
     A.equal(id,profile.id);reads.push([slot,date]);return clone(rows.get(`bf-${id}-${slot}-${date}`)||null);},
     insertRenderedBriefingV3:async row=>{rows.set(row.id,clone(row));return {saved:true};},
     getPublicationSourceIdentities:deps=>originals[0][1].getPublicationSourceIdentities(deps,{request:async url=>{
-      const q=new URL(url,"https://local.invalid");A.equal(q.pathname,"/rest/v1/ko_document_links");
+      const q=new URL(url,"https://local.invalid");A.equal(q.pathname,"/rest/v1/helmut_ko_quellen");
       A.equal(q.searchParams.get("select"),"knowledge_object_id,raw_document_id,raw_documents(id,url,canonical_url)");
       requests.push(url);return clone(identities.slice(Number(q.searchParams.get("offset")),
         Number(q.searchParams.get("offset"))+Number(q.searchParams.get("limit"))));}})};

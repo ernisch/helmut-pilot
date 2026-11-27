@@ -80,6 +80,13 @@ const vorschau = s => { const inhalt = JSON.stringify(s); return { version: 1, m
   await test("formal gueltiger anderer Finanzvertrag bleibt am unveraenderten Produktpin gesperrt", async () => {
     await A.rejects(O.pruefe(vorschau(bestand(synthetisch)), opts), /unveraenderter1\/30USD-Vertrag/);
   });
+  await test("CAS-Vorflug verweigert fremde, aktive und unvollstaendige Eigentuemer ohne Freigabe", async () => {
+    O.pruefeCasRuhe([], jetzt);
+    for (const c of [null, {}, [{ vorgang_id: "synthetisch", zustand: "modell-laeuft",
+      besitzer: "synthetisch", lease_bis: "2026-09-10T00:00:00Z" }],
+      [{ vorgang_id: "synthetisch", zustand: "reserviert", besitzer: "synthetisch", lease_bis: tag + "T23:00:00Z" }]])
+      A.throws(() => O.pruefeCasRuhe(c, jetzt), /CAS-Eigentuemer/);
+  });
   if (!process.argv.includes("--container")) { console.log(`${tests} negative Fachgruppen PASS; private positive SQL-Abnahme nicht ausgefuehrt.`); return; }
   A.equal(arg("--container"), "helmut-pflichtanalyse-20261126");
   A(process.argv.includes("--original") && process.argv.includes("--vertrag"), "Private Originalbindungen sind Pflicht");
@@ -101,7 +108,7 @@ const vorschau = s => { const inhalt = JSON.stringify(s); return { version: 1, m
       create table helmut_store(id text primary key,data jsonb);create table raw_documents(${Object.keys(doc).map(k => '"' + k + '" ' + (k === "raw" ? "jsonb" : typeof doc[k] === "number" ? "int" : "text")).join(",")});
       create table knowledge_objects(id text primary key,vorgang_id text,verstehen_fencing bigint);
       create table ko_document_links(knowledge_object_id text,raw_document_id text);
-      create table helmut_verstehen_reservierungen(vorgang_id text primary key,zustand text,besitzer text,lease_bis timestamptz,fencing bigint,ergebnis_fencing bigint,ergebnis_hash text,ki_aufrufe int,versuche int,letzter_grund text,updated_at timestamptz);
+      create table helmut_verstehen_reservierungen(vorgang_id text primary key,zustand text,besitzer text,lease_bis timestamptz,fencing bigint,ergebnis_fencing bigint,ergebnis_hash text,ki_aufrufe int,versuche int,letzter_grund text,updated_at timestamptz,created_at timestamptz,eingabe_hash text);
       create table helmut_verstehen_vormerkungen(vorgang_id text primary key);
       create table llm_usage(id text primary key,created_at timestamptz,vorgang_id text,knowledge_object_id text);
       create table document_findings(raw_document_id text,source_id text,retrieval_path_id text,original_url text);
@@ -132,6 +139,38 @@ const vorschau = s => { const inhalt = JSON.stringify(s); return { version: 1, m
       return JSON.parse(psql(input).split("\n").at(-1));
     };
     const prepared = async () => O.pruefe(ausfuehren("vorschau"), opts);
+    if (process.argv.includes("--nur-cas-leases")) {
+      A(process.argv.includes("--cas-original"), "Sieben private Originalzeilen sind Pflicht");
+      const alte = JSON.parse(fs.readFileSync(arg("--cas-original"), "utf8")).cas;
+      // Originalbestand, kein Austausch des Produktpins oder des Funktionshashes.
+      O.pruefeCasRuhe(alte, jetzt);
+      await test("sieben echte abgelaufene CAS bleiben bei Aktivierung und Rueckweg bytegleich", async () => {
+        setup(); psql(`insert into helmut_verstehen_reservierungen select * from jsonb_populate_recordset(null::helmut_verstehen_reservierungen,${literal(alte)});`);
+        const b = await prepared(); A.deepEqual(b.vor.aktiveCas, alte);
+        const r = ausfuehren("freigeben", b, undefined, "EU-EINZELNEUVERSUCH-20261128");
+        A.deepEqual(r.vor.aktiveCas, alte); A.deepEqual(r.nach.aktiveCas, alte);
+        A.deepEqual(r.vor.kostenBuch, r.nach.kostenBuch);
+        const zurueck = ausfuehren("rueckweg", r); A.deepEqual(zurueck.nach.aktiveCas, alte);
+        A.deepEqual(zurueck.nach.kostenBuch, b.vor.kostenBuch);
+      });
+      await test("neue/veraenderte aktive oder abgelaufene CAS stoppen auch mit frischem SQL-Vorwert atomar", async () => {
+        for (const change of ["update helmut_verstehen_reservierungen set lease_bis='2026-11-28T23:00:00Z' where vorgang_id='vg-altersrente-20261121-53831c'",
+          "update helmut_verstehen_reservierungen set lease_bis=null where vorgang_id='vg-altersrente-20261121-53831c'",
+          "update helmut_verstehen_reservierungen set fencing=fencing+1 where vorgang_id='vg-altersrente-20261121-53831c'",
+          "insert into helmut_verstehen_reservierungen(vorgang_id,zustand,besitzer,lease_bis) values('synthetisch-fremd','modell-laeuft','synthetisch','2026-11-20T00:00:00Z')"]) {
+          setup(); psql(`insert into helmut_verstehen_reservierungen select * from jsonb_populate_recordset(null::helmut_verstehen_reservierungen,${literal(alte)});`);
+          psql(change); const v = ausfuehren("vorschau"), vor = JSON.parse(v.inhalt);
+          await A.rejects(O.pruefe(v, opts), /CAS-Eigentuemer/);
+          A.throws(() => ausfuehren("freigeben", { version: 1, tag, modus: "vorbereitet", aktiviert: false,
+            entscheidung: "erneut", abrufId, geprueftAm: new Date(jetzt).toISOString(), vor, digest: v.digest },
+            undefined, "EU-EINZELNEUVERSUCH-20261128"));
+          A.equal(psql("select max_attempts from helmut_jobs where job_type='document_understanding'"),"3");
+          A.equal(psql("select count(*) from helmut_store where id like 'main-operator-restpflicht-%'"),"0");
+        }
+      });
+      console.log(`${tests} gezielte CAS-Nachtragsgruppen PASS; alte sechs Gruppen nicht erneut ausgefuehrt.`);
+      return;
+    }
     setup(); let b = await prepared(), receipt;
     await test("native SQL sperrt27Nov, falsches GO, Tages-/Quellen-/Finanzdrift und aktive Lease", async () => {
       A.throws(() => ausfuehren("freigeben", b, "2026-11-27T13:00:00Z", "EU-EINZELNEUVERSUCH-20261128"));

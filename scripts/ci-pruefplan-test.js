@@ -128,7 +128,7 @@ check("Alte Datenbank-Mengenläufe bleiben im Workflow erhalten und bei jedem Er
   assert(mengen.every(step => /^        if: \$\{\{ false \}\}/m.test(step)));
   assert(!workflow.includes("node scripts/test-synthetik-500-resource-diagnostic.js"));
   for (const suite of ["auth-quellen-kern-datenbank-test.js", "anbietersteuerung-datenbank-test.js",
-    "lage-quellen-rest-datenbank-test.js", "vorbedingung-mandatsfilter-datenbank-test.js"]) {
+    "lage-quellen-rest-datenbank-test.js", "ko-quellenfassungen-datenbank-test.js", "vorbedingung-mandatsfilter-datenbank-test.js"]) {
     assert(steps.some(step => step.includes(suite) && /^        if: steps\.plan\.outputs\.database == 'true'$/m.test(step)), suite);
   }
   assert(steps.some(step => step.startsWith("Queue-Leases,") && step.includes("--network none")

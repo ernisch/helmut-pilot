@@ -190,7 +190,7 @@ async function main() {
         if (c === "quellenauszug_beleg:raw->helmutQuellenkontext") return ["quellenauszug_beleg",null];
         return [c,d[c]];
       }).filter(([,v]) => v !== undefined)));
-      if (u.pathname.endsWith("/ko_document_links")) result = result.map(d => ({
+      if (u.pathname.endsWith("/helmut_ko_quellen")) result = result.map(d => ({
         knowledge_object_id:"ko-vg-dip", raw_document_id:d.id, raw_documents:d }));
     }
     res.writeHead(200, { "Content-Type":"application/json" }); res.end(JSON.stringify(result));

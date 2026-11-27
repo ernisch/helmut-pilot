@@ -58,18 +58,22 @@ async function main() {
     // Minimale synthetische Projektion von supabase/schema.sql, keine Migration.
     // Dieselben Textkennungen, timestamptz, FK und zusammengesetzten Schluessel.
     // Keine neue Rolle und kein Konto; der vorhandene lokale DB Eigentuemer liest.
-    psql(`create table public.knowledge_objects(id text primary key);
+    psql(`create table public.knowledge_objects(id text primary key,ko_version integer not null default 1);
       create table public.raw_documents(id text primary key, title text, url text,
         canonical_url text, published_at timestamptz, summary text, source_name text,
         source_type text, source_id text, retrieved_at timestamptz,
         document_type text, link_type text, confidence text, raw jsonb);
+      create table public.helmut_store(id text primary key,data jsonb not null);
       create table public.ko_document_links(
         knowledge_object_id text not null references public.knowledge_objects(id) on delete cascade,
         raw_document_id text not null references public.raw_documents(id) on delete cascade,
+        created_at timestamptz not null default now(),
         primary key(knowledge_object_id,raw_document_id));
       alter table public.knowledge_objects enable row level security;
       alter table public.raw_documents enable row level security;
       alter table public.ko_document_links enable row level security;`);
+    psql(require("node:fs").readFileSync(require("node:path").join(__dirname,
+      "../supabase/migrations/20261127131039_ko_quellenfassungen.sql"), "utf8"));
     const listener = net.createServer(); listener.listen(0, "127.0.0.1");
     await once(listener, "listening");
     const apiPort = listener.address().port;
@@ -107,14 +111,14 @@ async function main() {
     // Echte Module und echter Transport: keine Funktionskopie, kein VM, kein Mock.
     const storage = require("../lib/helmut/storage");
     const now = new Date("2026-09-13T09:00:00.000Z");
-    const reset = () => psql("truncate public.ko_document_links,public.raw_documents,public.knowledge_objects;");
+    const reset = () => psql("truncate public.helmut_ko_quellenfassungen,public.ko_document_links,public.raw_documents,public.knowledge_objects;");
     const seed = (ko, id, date = "2026-09-13T08:00:00Z") => psql(`
-      insert into public.knowledge_objects values (${sqlString(ko)}) on conflict do nothing;
+      insert into public.knowledge_objects(id) values (${sqlString(ko)}) on conflict do nothing;
       insert into public.raw_documents(id,title,url,canonical_url,published_at,summary)
       values (${sqlString(id)},${sqlString('Synthetische Quelle ' + id)},
         ${sqlString('https://example.invalid/' + encodeURIComponent(id))},null,
         ${date === null ? "null" : sqlString(date)},'Synthetischer Auszug ohne Originalabruf');
-      insert into public.ko_document_links values (${sqlString(ko)},${sqlString(id)});`);
+      insert into public.ko_document_links(knowledge_object_id,raw_document_id) values (${sqlString(ko)},${sqlString(id)});`);
     const meta = ids => storage.listAktuelleLageQuellen(ids, now);
     const bound = (ko, docs) => storage.getSourcesForVorgang("synthetischer-vorgang",
       { lageKoId: ko, lageQuellen: docs });
@@ -251,7 +255,7 @@ async function main() {
       assert.equal(gateway.messung.anfragen, before);
     });
     const report = gateway.bericht();
-    assert.deepEqual(Object.keys(report.nachRpc), ["GET /ko_document_links"]);
+    assert.deepEqual(Object.keys(report.nachRpc), ["GET /helmut_ko_quellen"]);
     assert.equal(report.fehler, 0);
     console.log("REST_MESSUNG " + JSON.stringify(report));
     console.log(`REST_GRUPPEN ${passed}/15 bestanden; Abschluss erst nach Bereinigung`);

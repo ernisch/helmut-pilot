@@ -49,7 +49,7 @@ async function fixture(){
     reads.push([id,slot,date]);return clone(rows.get(`bf-${id}-${slot}-${date}`)||null);},
     insertRenderedBriefingV3:async row=>{rows.set(row.id,clone(row));return {saved:true};},
     getPublicationSourceIdentities:deps=>native.getPublicationSourceIdentities(deps,{request:async path=>{
-      const q=new URL(path,"https://local.invalid");A.equal(q.pathname,"/rest/v1/ko_document_links");identityReads.push(path);
+      const q=new URL(path,"https://local.invalid");A.equal(q.pathname,"/rest/v1/helmut_ko_quellen");identityReads.push(path);
       const offset=Number(q.searchParams.get("offset")),limit=Number(q.searchParams.get("limit"));return clone(identities.slice(offset,offset+limit));}})};
   await B.materialisiere({profile,userId:profile.id,briefing,lageAnsicht:lage,storage,now});
   const row=rows.get(`bf-${profile.id}-${B.SLOT}-${day}`);

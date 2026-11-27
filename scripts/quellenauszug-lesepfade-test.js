@@ -31,7 +31,7 @@ async function main() {
     const projected = docs.map(({ raw, ...d }) => ({ ...d,
       ...(select.includes("quellenauszug_beleg:raw->helmutQuellenkontext")
         ? { quellenauszug_beleg: raw.helmutQuellenkontext || null } : {}) }));
-    const result = url.pathname.endsWith("/ko_document_links") ? projected.map(d => ({
+    const result = url.pathname.endsWith("/helmut_ko_quellen") ? projected.map(d => ({
       knowledge_object_id: "ko-vg-satz", raw_document_id: d.id, raw_documents: d
     })) : projected;
     res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify(result));

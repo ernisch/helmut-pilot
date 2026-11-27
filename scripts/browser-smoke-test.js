@@ -205,7 +205,7 @@ async function tagespaketSmoke(playwright, { jsonb = false, ruhelageOnly = false
     storage.getPublicationSourceIdentities = deps => originals[0][1].getPublicationSourceIdentities(deps, {
       request: async requestPath => {
         const url = new URL(requestPath, "https://local.invalid");
-        assert.equal(url.pathname, "/rest/v1/ko_document_links");
+        assert.equal(url.pathname, "/rest/v1/helmut_ko_quellen");
         assert.equal(url.searchParams.get("select"), "knowledge_object_id,raw_document_id,raw_documents(id,url,canonical_url)");
         const filter = url.searchParams.get("knowledge_object_id");
         const ids = JSON.parse("[" + filter.slice(4, -1) + "]");

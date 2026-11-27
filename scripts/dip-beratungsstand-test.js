@@ -267,7 +267,7 @@ async function main() {
     global.fetch=async(url,opts)=>{
       const u=new URL(url);assert.equal(u.origin,"https://offline.invalid");
       assert(!opts.method || opts.method==="GET");
-      if(u.pathname==="/rest/v1/ko_document_links") return json([{raw_documents:native}]);
+      if(u.pathname==="/rest/v1/helmut_ko_quellen") return json([{raw_documents:native}]);
       if(u.pathname==="/rest/v1/knowledge_objects") return json([{
         id:"ko-declared-offline-vorgang",vorgang_id:"declared-offline-vorgang",
         ko_document_links:[{raw_document_id:native.id,raw_documents:native}]

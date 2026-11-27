@@ -215,3 +215,136 @@ gesperrt. Eine getrennte Versionsbindung für die Quellenleser wird vorbereitet;
 keine globale Regel-A-Ausnahme, kein erfundener Lektürebeleg oder Ereignistag.
 Neue Migration und Bestandskorrektur benötigen ihren eigenen geprüften Umfang.
 
+## Regulärer Rollout von PR #1362 und gezielte Bestandsvorbereitung
+
+PR #1362 ist als `dadf999f390736094219b6a0f1ea7dcccd999700` gemergt
+(Tree `53aafc8222ec890ded6fc4374ddc457b51a28505`). PR-CI `46005365285`
+und Main-CI `46006757780` bestanden; beide unabhängigen Teilreviews sind erhalten.
+Vercel `dpl_56PBeq2FnAMkvhEgxM4QLJzm5MzM` ist READY mit Produktionsalias.
+Der echte reguläre Hetzner-Lauf am 27.11. von 14:45 bis 14:48:21 Uhr Berlin
+belegt denselben Commit: 141 Zielaufträge = drei erledigt + 137 vertagt + ein
+endgültiger historischer Budgetwartefall, keine Wiederholung oder Leaseverluste.
+Das ist ein Rolloutnachweis, keine vollständige Betriebsabnahme.
+
+Der normale Kundenleser antwortete um 14:30:31 Uhr Berlin mit HTTP 200 und
+64 Meldungen, weiterhin quittiert TEILWEISE. Die geschützte GIZ-Mischfassung
+`2109409.pdf`/`ko-vg-wirtschaftliche-20261113-a78a93` fehlt. Der andere
+GIZ-Beitrag `2109421.pdf` bleibt verfügbar; die Policy ist kein allgemeiner
+GIZ- oder Parteienfilter. Die Policy bleibt
+`23e4bb853f7de2faafc471c0408e7de1e51875e8bc8e740d760796ee5dfb7bff`.
+Der gescheiterte Morgen vom 27.11. wird nicht nachträglich umgewertet.
+
+### Zusätzliche Produktionsdiagnosen richtig zuordnen
+
+Zum Lesestand 14:26:54 Uhr Berlin wurden seit 01:00 Uhr 50 eindeutige Aufträge
+endgültig fehlgeschlagen: 14 Eingangsdiagnosen, 13 Prüfungen vorhandener failed-KOs,
+ein neuer UNKNOWN und 22 historische Budgetwartefristen. Die 50 Endfehler stimmen
+mit der Summe der abgeschlossenen Quellenlaufquittungen überein; wiederholt
+vertagte Aufträge werden dadurch nicht zu zusätzlichen eindeutigen Aufträgen.
+Die fehlende Abschlussquittung des 01:30-Uhr-Laufs bleibt ausdrücklich UNKNOWN.
+
+Bis 14:49:37 Uhr kamen drei Eingangsdiagnosen und ein alter Budgetwartefall hinzu.
+Die drei Diagnosen wurden bereits um 09:18:30 Uhr angelegt, erst um 14:31 Uhr
+terminal. Beide Fassungen aller drei Artikel sind unveränderlich archiviert;
+alle sechs Standhashes wurden nachgerechnet. Originale Edge-Logs belegen
+erfolgreiche Archiv-GETs vor der Diagnoseanlage, keine HTTP-Fehler im engen
+Zeitfenster. Der Konflikt lautet `Table.Briefings` gegenüber `Table.Media` bei
+gleichem Titel, Text, URL und Datumsinstant. Der vorhandene Metadatenschutz wird
+ebenfalls als `quellenstand-nicht-bestaetigt` quittiert: Hier fehlt kein Archiv.
+Keine unbelegte Verlagsalias-Freigabe, kein zusätzlicher Abruf oder Modellneuversuch.
+Andere kanonische Fassungsaufträge bleiben separat budgetbedingt bzw. mit alter
+Profilwiedervorlage offen. Die Diagnosen erzeugen keinen neuen Pflichtbedarf.
+
+### Geschützte BReg-Quellenfassungen
+
+Die geplante additive Migration `20261127131039_ko_quellenfassungen.sql` bindet
+Quellensätze an KO-ID, tatsächliche KO-Version und Roh-ID. Archiv-FK, Standhash,
+vollständiger Archivdigest sowie Anzahl und Manifesthash sichern den vollständigen
+Satz. Ausschließlich ausdrücklich initialisierte KOs werden geschützt; kein
+globaler Backfill. Ungeschützte Bestände behalten ihren bisherigen Quellenpfad.
+Alle neuen Schnittstellen sind service-only und SECURITY INVOKER mit RLS.
+
+Die aktuelle und die ausdrücklich angeforderte historische Quellensicht lesen
+Archivdaten in einem SQL-Snapshot, vor Datumsfilter, Sortierung und Seitenlimit.
+Eine geschützte neue KO-Version ohne vollständigen Quellensatz bleibt UNKNOWN.
+Die Batch-/Einzel- und Lagepfade dürfen dafür keinen Titel-/URL-Ersatz erfinden.
+Der bestätigte Schreibaufruf prüft unter KO-Zeilensperre die tatsächlich gespeicherte
+Version. Eine Teilbestätigung ist nur für ein bereits vollständiges unverändertes
+Manifest zulässig; die erste Anlage verlangt `source_document_count`.
+
+Technische vollständige Quellenbindung und positive Modelllektüre bleiben getrennt:
+Der gezielte Nachpersistenz-Abbruchfall erhält 13 technische Quellen, aber nur die
+tatsächlich bestätigten zwölf Promptlektüren. Die Wiederaufnahme ergänzt die Bindung
+ohne zweiten Modellaufruf. Die lokalen Modelle sind Mocks, keine Anbieteraufrufe.
+Die gezielten nativen Leser-/RLS-/Snapshot-, Writer- und Wiederaufnahmebelege liegen
+privat vor. Unabhängiger Runtime-/Schema-Review bestanden; die integrierte Pflicht-CI
+am endgültigen PR-Kopf bleibt vor Aktivierung verbindlich.
+
+Die frische Bestandsprüfung ergibt 60 Quellenkanten an
+`ko-vg-bundesregierung-20241119-743c6b` und eine an
+`ko-vg-entlastungen-20260417-6517e5`, beide KO-Version 1. Insgesamt sind es
+60 verschiedene Rohzeilen. 13 besitzen exakt passende heutige Archive;
+17 bestehende Archivversionen und 105 Fundstellen bleiben unverändert.
+47 Rohzeilen besitzen bisher kein Archiv. Der konkrete vorbereitete Umfang ist:
+47 heutige Insert-only-Bestandssnapshots, 61 vollständige Versionsbindungen und
+eine Promotion der Zielrohzeile auf den bereits gespeicherten amtlichen RSS-Stand
+`0968e51ad7faa8d8f2d74416e55ebcbb5a86312b6d2a8c1ba1d4ff44dbe6a795`.
+Snapshots erhalten den tatsächlich vorhandenen Inhalt und seine echten Feldzeitpunkte.
+Sie sind ausdrücklich keine nachgebauten historischen KI-Lektüren oder neuen Abrufe.
+
+Aktivierungsreihenfolge: neues konkretes GO, additive Migration unter altem
+kanonischem Bestand, geprüfter Merge und reguläres Deployment auf beiden Plattformen,
+frischer Vorflug, dann erst die atomare Bestandskorrektur. Kein zusätzlicher Workerstart.
+Rückweg nur vor Konsum und bei exakt unverändertem Nachbestand: Promotion und genau
+die neuen Bindungen zurücknehmen. Die 47 echten Snapshots und die Einmalquittung
+bleiben erhalten. Nach neuem Claim, Ergebnis, Verwendung oder Drift kein blinder
+Rollback. Der Schema-Rückweg verweigert noch vorhandene Bindungsdaten.
+
+### Abgelaufene CAS-Eigentümer sind keine aktuellen Worker
+
+Sieben zusätzliche historische CAS-Zeilen tragen abgelaufene Eigentümer-Leases
+(September bis 26.11.). Sie werden weder freigegeben noch gelöscht. Der enge
+EU-Operator unterschied diesen Bestand zunächst nicht von laufender Arbeit.
+Der Nachtrag erlaubt nur eine leere Liste oder genau die sieben vollständig
+hashgebundenen unveränderten Altzeilen mit nachweislich abgelaufener Lease.
+Unbekannte, veränderte, fehlerhafte oder aktive Eigentümer stoppen weiterhin.
+Der kanonische Vollhash lautet
+`76f8a7856e80e9ea9b614c1aa11b57af3029ad764570027c3f7ea9b13252af18`.
+Die gezielte native Nachtragsprobe erhält alle sieben CAS-Zeilen und das Kostenbuch
+bei Aktivierung und Rückweg bytegleich. Ein frisch gebundener veränderter oder
+zusätzlicher Eigentümer wird auch von SQL abgewiesen. Unabhängiger Nachtragsreview PASS.
+Die früheren sechs positiven Operatorgruppen wurden nicht erneut ausgeführt.
+
+Diese sieben CAS-Zeilen sind von den sieben ungeklärten **Geldbindungen** zu
+unterscheiden. Beide Bestände bleiben geschützt. Stand 14:49 Uhr: 81 Modellaufrufe,
+0,789474 USD heutige Bindung, 10,331840 USD kumulativ; Grenzen unverändert
+1 USD/UTC-Tag, 30 USD gesamt, 100 Hetzner-Aufrufe und 16 Originale. Für 100/16
+liegt zuletzt der direkte Betreiber-Envbeleg vom 26.11. vor, kein erfundener neuer
+SSH-Nachweis. Keine Freigabe einer Reserve, kein pauschaler Retry oder Budgetanstieg.
+
+Der inerte BReg-Operator liegt unter
+`scripts/ops/quellen-breg-fassung-20261127.{js,sql,-test.js}`; sein Root-Wrapper
+führt die drei synthetischen CI-Gruppen aus. Sieben getrennte native Prüfgruppen
+mit unveränderten echten Produktpins bestanden: 47+61+1, Erhalt aller Altarchive,
+Fundstellen, KOs, CAS-Zeilen und Finanzdaten, atomarer Abbruch bei falschem GO,
+Vorwert-/Rechte-/Quotenabweichung sowie gesperrter Rückweg nach Konsum oder Drift.
+Globale Driftwachen binden jede vollständige Tabellenzeile über nativen SHA256
+und sortierte Zeilenhashes, ohne einen riesigen rekursiven JSON-Aggregatbaum.
+Aktivierungsbindung und Rückweg benötigen nur 405 beziehungsweise 139 Byte;
+die vollständige private Vorschau und der tatsächliche Beleg bleiben erhalten.
+Der vorhandene geprüfte Transport entfernt nur den psql-Prolog und bindet die
+drei Parameter kollisionsfrei als SQL-Dollar-Literale. Der Transaktionskern bleibt
+unverändert; der SQL-Körper umfasst weniger als 30 KB und die begrenzten Parameter
+bleiben deutlich unter der API-Eingangsgrenze. Ein reiner Produktions-SELECT
+bestätigt für diesen bestehenden Zugang `current_user=session_user=postgres`,
+UTC und keine Recovery. Kein zusätzlicher SSH-/Datenbankzugang wird eingerichtet.
+
+Die neue Migration, Bestandskorrektur und EU-Wiederaufnahme sind noch nicht aktiviert.
+Vor deren Freigabe müssen unabhängiger Operatorreview und beide Pflichtprüfungen
+am endgültigen integrierten Kopf vorliegen. Die bisherige gemeinsame isolierte
+PostgreSQL-Prozessuhr stammt aus einer Dezember-Simulation; sie wird für keinen
+heutigen positiven Aktivierungsbeleg verwendet. Der heutige Operatornachweis wurde
+mit einem getrennten kleinen PG17.6-Prozess und unverfälschter 27.-November-Uhr
+geführt. Danach wurden nur dieser eigene Prozess beendet und sein Cluster entfernt;
+gemeinsamer Monatsserver und Production wurden nicht neu gestartet.
+
