@@ -87,6 +87,9 @@ unklarem Speichern sowie zwei Budget-Gegenfälle. Ein zweiter Modellstart bleibt
 gesperrt. Bei unbestätigtem Kostenabschluss bleiben exakt 212.000 Mikro-USD gebunden;
 bei bestätigter Antwort bleibt der echte Senderbeleg erhalten. Bestehende
 CAS-Prüfungen 107/107 und Nutzungsprotokoll-Prüfungen 38/38 bestehen weiter.
+Vier ältere P1-Erwartungen verlangten noch die falschen Nachstart-Marker und
+stoppten die erste Pflicht-CI. Mit unveränderten Fehler-, Speicher- und
+Datenschutzprüfungen verlangen sie jetzt deren Abwesenheit; lokal 347/347 bestanden.
 Historische falsche Marker und unbekannte Ausgänge werden dadurch nicht verändert.
 
 ## Gezielte Nachweise
