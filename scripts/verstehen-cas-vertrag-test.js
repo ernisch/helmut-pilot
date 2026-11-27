@@ -371,10 +371,58 @@ async function pruefeKostenwahrheit() {
   }
 }
 
+// Gezielter Anschlussfall: bestehende CAS-Attrappe wiederverwenden, kein neuer
+// Anbieter-/Modelltransport und keine Wiederholung der 107 Bestandsgruppen.
+async function pruefeQuellenfassungsNachholung() {
+  const A = require("node:assert/strict"), U = require("../lib/helmut/understanding");
+  const D = require("../lib/helmut/dedup"), QF = require("../lib/helmut/ko-quellenfassung");
+  const docs = Array.from({length:13},(_,i)=>QF.bindeArchiv(D.toRawDocumentRow({
+    title:`Bundestag debattiert Haushaltsentwurf Quellenmeldung ${i}`,
+    url:`https://example.invalid/synthetischer-haushalt/${i}`,sourceName:"Synthetisches Amt",sourceType:"ministry",
+    publishedAt:"2026-11-25T08:30:00Z",retrievedAt:"2026-11-26T00:01:00Z",linkType:"direct",
+    summary:"Der synthetische Bundestag berät einen Haushaltsentwurf. Die Ausschüsse prüfen Einnahmen und Ausgaben."})));
+  const vorgangId="vg-quellenfassung-nachholung",p=neuesProtokoll(),speicher=baueSpeicherAttrappe();
+  let existing={id:`ko-${vorgangId}`,vorgang_id:vorgangId,ko_version:1,understanding_status:"complete",classification_confidence:{}};
+  let failLink=true,manifest=null;
+  const saved=speicher.verstehenSpeichere;
+  speicher.verstehenSpeichere=async args=>{const r=await saved(args);
+    if(r.gespeichert)existing=structuredClone(speicher.inhalte.get(vorgangId));return r;};
+  const deps=baueDeps(p,speicher,{runId:"offline-quellenfassung-nachholung",getExistingStreng:async()=>existing,
+    saveSources:async(id,positive,opts)=>{
+      A.equal(opts.koVersion,2);A.equal(opts.quellenFassungDokumente.length,13);
+      A.equal(existing.ko_version,2,"Bindung erst nach bestaetigter KO-Persistenz");
+      if(failLink){failLink=false;throw Error("isolierter Abbruch vor Manifestwrite");}
+      A.equal(positive.length,12,"positiver Promptfilter bleibt unveraendert");
+      manifest=opts.quellenFassungDokumente.map(d=>d.id);return{saved:positive.length};
+    }});
+  const run=()=>U.understandUpdate({documents:docs},deps,{vorgangId,existing:structuredClone(existing),neueDocs:docs,
+    alleDocs:docs,neueAnker:[],spur:{},quellenRestDokumentIds:docs.map(d=>d.id)});
+  const first=await run();A.equal(first.status,"skipped-store");A.equal(existing.ko_version,2);A.equal(manifest,null);
+  A.equal(p.kiAufrufe,1);A.equal(speicher.zeilen.get(vorgangId).zustand,"fertig");
+  const lecture=structuredClone(existing.classification_confidence.helmut_quellen_lektuere);
+  A.equal(lecture.quellen.length,12,"keine Lektuere fuer 13. Quelle erfinden");
+  const second=await run();A.equal(second.status,"duplicate");A.equal(p.kiAufrufe,1);A.equal(manifest.length,13);
+  A.deepEqual(existing.classification_confidence.helmut_quellen_lektuere,lecture);
+  check("Quellenfassung: Fehler nach KO-v2 und vor Manifestwrite kostenlos mit 12/13 positiver Lektuere nachgeholt",true);
+  // Bereits-fertig-Absage bleibt ebenso an die vorhandene Ergebnisversion gebunden.
+  let callbackVersion=null;
+  const callbackExisting={...existing,classification_confidence:{}};
+  const callbackDeps=baueDeps(neuesProtokoll(),baueSpeicherAttrappe(),{runId:"offline-quellenfassung-callback",getExistingStreng:async()=>callbackExisting,
+    verstehenVertrag:()=>({reserviere:async()=>({erlaubt:false,grund:"bereits-fertig"})}),
+    saveSources:async(id,positive,opts)=>{callbackVersion=opts?.koVersion;A.equal(opts.quellenFassungDokumente.length,13);return{saved:positive.length};}});
+  const result=await U.understandUpdate({documents:docs},callbackDeps,{vorgangId,existing:callbackExisting,
+    neueDocs:docs,alleDocs:docs,neueAnker:[],spur:{},quellenRestDokumentIds:docs.map(d=>d.id)});
+  A.equal(result.status,"duplicate");A.equal(callbackVersion,2);
+  check("Quellenfassung: bereits-fertig-Callback reicht bestehende KO-v2 und technische Vollbindung weiter",true);
+}
+
 async function main() {
   console.log("Helmut — Vertragstest des atomaren Verstehensvertrags (OP-30 CAS)");
   const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
-  if (only && !["kostenwahrheit", "bestand"].includes(only)) throw Error("Unbekannte Testauswahl");
+  if (only && !["kostenwahrheit", "bestand", "quellenfassung"].includes(only)) throw Error("Unbekannte Testauswahl");
+  if (only === "quellenfassung") {
+    await pruefeQuellenfassungsNachholung();console.log(`PASS ${pass} FAIL ${fail}`);return;
+  }
   if (only !== "bestand") await pruefeKostenwahrheit();
   if (only === "kostenwahrheit") {
     console.log(`PASS ${pass} FAIL ${fail}`); process.exit(fail > 0 ? 1 : 0);

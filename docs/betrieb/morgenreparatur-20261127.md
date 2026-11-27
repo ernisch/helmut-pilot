@@ -215,3 +215,264 @@ gesperrt. Eine getrennte Versionsbindung für die Quellenleser wird vorbereitet;
 keine globale Regel-A-Ausnahme, kein erfundener Lektürebeleg oder Ereignistag.
 Neue Migration und Bestandskorrektur benötigen ihren eigenen geprüften Umfang.
 
+## Regulärer Rollout von PR #1362 und gezielte Bestandsvorbereitung
+
+PR #1362 ist als `dadf999f390736094219b6a0f1ea7dcccd999700` gemergt
+(Tree `53aafc8222ec890ded6fc4374ddc457b51a28505`). PR-CI `46005365285`
+und Main-CI `46006757780` bestanden; beide unabhängigen Teilreviews sind erhalten.
+Vercel `dpl_56PBeq2FnAMkvhEgxM4QLJzm5MzM` ist READY mit Produktionsalias.
+Der echte reguläre Hetzner-Lauf am 27.11. von 14:45 bis 14:48:21 Uhr Berlin
+belegt denselben Commit: 141 Zielaufträge = drei erledigt + 137 vertagt + ein
+endgültiger historischer Budgetwartefall, keine Wiederholung oder Leaseverluste.
+Das ist ein Rolloutnachweis, keine vollständige Betriebsabnahme.
+
+Der normale Kundenleser antwortete um 14:30:31 Uhr Berlin mit HTTP 200 und
+64 Meldungen, weiterhin quittiert TEILWEISE. Die geschützte GIZ-Mischfassung
+`2109409.pdf`/`ko-vg-wirtschaftliche-20261113-a78a93` fehlt. Der andere
+GIZ-Beitrag `2109421.pdf` bleibt verfügbar; die Policy ist kein allgemeiner
+GIZ- oder Parteienfilter. Die Policy bleibt
+`23e4bb853f7de2faafc471c0408e7de1e51875e8bc8e740d760796ee5dfb7bff`.
+Der gescheiterte Morgen vom 27.11. wird nicht nachträglich umgewertet.
+
+### Zusätzliche Produktionsdiagnosen richtig zuordnen
+
+Zum Lesestand 14:26:54 Uhr Berlin wurden seit 01:00 Uhr 50 eindeutige Aufträge
+endgültig fehlgeschlagen: 14 Eingangsdiagnosen, 13 Prüfungen vorhandener failed-KOs,
+ein neuer UNKNOWN und 22 historische Budgetwartefristen. Die 50 Endfehler stimmen
+mit der Summe der abgeschlossenen Quellenlaufquittungen überein; wiederholt
+vertagte Aufträge werden dadurch nicht zu zusätzlichen eindeutigen Aufträgen.
+Die fehlende Abschlussquittung des 01:30-Uhr-Laufs bleibt ausdrücklich UNKNOWN.
+
+Bis 14:49:37 Uhr kamen drei Eingangsdiagnosen und ein alter Budgetwartefall hinzu.
+Die drei Diagnosen wurden bereits um 09:18:30 Uhr angelegt, erst um 14:31 Uhr
+terminal. Beide Fassungen aller drei Artikel sind unveränderlich archiviert;
+alle sechs Standhashes wurden nachgerechnet. Originale Edge-Logs belegen
+erfolgreiche Archiv-GETs vor der Diagnoseanlage, keine HTTP-Fehler im engen
+Zeitfenster. Der Konflikt lautet `Table.Briefings` gegenüber `Table.Media` bei
+gleichem Titel, Text, URL und Datumsinstant. Der vorhandene Metadatenschutz wird
+ebenfalls als `quellenstand-nicht-bestaetigt` quittiert: Hier fehlt kein Archiv.
+Keine unbelegte Verlagsalias-Freigabe, kein zusätzlicher Abruf oder Modellneuversuch.
+Andere kanonische Fassungsaufträge bleiben separat budgetbedingt bzw. mit alter
+Profilwiedervorlage offen. Die Diagnosen erzeugen keinen neuen Pflichtbedarf.
+
+### Geschützte BReg-Quellenfassungen
+
+Die geplante additive Migration `20261127131039_ko_quellenfassungen.sql` bindet
+Quellensätze an KO-ID, tatsächliche KO-Version und Roh-ID. Archiv-FK, Standhash,
+vollständiger Archivdigest sowie Anzahl und Manifesthash sichern den vollständigen
+Satz. Ausschließlich ausdrücklich initialisierte KOs werden geschützt; kein
+globaler Backfill. Ungeschützte Bestände behalten ihren bisherigen Quellenpfad.
+Alle neuen Schnittstellen sind service-only und SECURITY INVOKER mit RLS.
+
+Die aktuelle und die ausdrücklich angeforderte historische Quellensicht lesen
+Archivdaten in einem SQL-Snapshot, vor Datumsfilter, Sortierung und Seitenlimit.
+Eine geschützte neue KO-Version ohne vollständigen Quellensatz bleibt UNKNOWN.
+Die Batch-/Einzel- und Lagepfade dürfen dafür keinen Titel-/URL-Ersatz erfinden.
+Der bestätigte Schreibaufruf prüft unter KO-Zeilensperre die tatsächlich gespeicherte
+Version. Eine Teilbestätigung ist nur für ein bereits vollständiges unverändertes
+Manifest zulässig; die erste Anlage verlangt `source_document_count`.
+
+Technische vollständige Quellenbindung und positive Modelllektüre bleiben getrennt:
+Der gezielte Nachpersistenz-Abbruchfall erhält 13 technische Quellen, aber nur die
+tatsächlich bestätigten zwölf Promptlektüren. Die Wiederaufnahme ergänzt die Bindung
+ohne zweiten Modellaufruf. Die lokalen Modelle sind Mocks, keine Anbieteraufrufe.
+Die gezielten nativen Leser-/RLS-/Snapshot-, Writer- und Wiederaufnahmebelege liegen
+privat vor. Unabhängiger Runtime-/Schema-Review bestanden; die integrierte Pflicht-CI
+am endgültigen PR-Kopf bleibt vor Aktivierung verbindlich.
+
+Die Bestandsprüfung um 14:41 Uhr Berlin ergab 60 Quellenkanten an
+`ko-vg-bundesregierung-20241119-743c6b` und eine an
+`ko-vg-entlastungen-20260417-6517e5`, beide KO-Version 1. Insgesamt sind es
+60 verschiedene Rohzeilen. 13 besitzen exakt passende heutige Archive;
+17 bestehende Archivversionen und 105 Fundstellen bleiben unverändert.
+47 Rohzeilen besaßen dabei kein Archiv. Der ursprüngliche Vorbereitungsumfang war:
+47 heutige Insert-only-Bestandssnapshots, 61 vollständige Versionsbindungen und
+eine Promotion der Zielrohzeile auf den bereits gespeicherten amtlichen RSS-Stand
+`0968e51ad7faa8d8f2d74416e55ebcbb5a86312b6d2a8c1ba1d4ff44dbe6a795`.
+Snapshots erhalten den tatsächlich vorhandenen Inhalt und seine echten Feldzeitpunkte.
+Sie sind ausdrücklich keine nachgebauten historischen KI-Lektüren oder neuen Abrufe.
+
+Die erneute reine Bestandslesung um 15:28 Uhr Berlin belegt einen regulären Nachtrag:
+18 Archive und 106 Fundstellen, darunter ein inzwischen exakt archivierter weiterer
+kanonischer Stand. Alle 60 Rohzeilen, zwei KOs und 61 Kanten sowie die ursprünglichen
+17 Archive und 105 Fundstellen sind unverändert. Deshalb sind aktuell nur noch
+46 neue Bestandssnapshots erforderlich. Der Operator fordert die ursprünglichen
+17/105 vollständigen Originalanker weiterhin unverändert als Teilmenge und bindet
+alle regulären Nachträge vollständig an die frische Vorschau. Er validiert deren
+Hash, Schema, Rohidentität, URL und Quellenautorität. Andere Standfassungen werden
+erhalten und nicht als kanonische KO-Quelle verwendet. Nur wirklich fehlende exakte
+kanonische Archive werden angelegt, höchstens 47; vorhandene korrekte Archive werden
+wiederverwendet. Die 61 Versionsbindungen und eine Promotion bleiben fest.
+
+Aktivierungsreihenfolge: neues konkretes GO, additive Migration unter altem
+kanonischem Bestand, geprüfter Merge und reguläres Deployment auf beiden Plattformen,
+frischer Vorflug, dann erst die atomare Bestandskorrektur. Kein zusätzlicher Workerstart.
+Rückweg nur vor Konsum und bei exakt unverändertem Nachbestand: Promotion und genau
+die neuen Bindungen zurücknehmen. Die 47 echten Snapshots und die Einmalquittung
+bleiben erhalten. Nach neuem Claim, Ergebnis, Verwendung oder Drift kein blinder
+Rollback. Der Schema-Rückweg verweigert noch vorhandene Bindungsdaten.
+
+### Abgelaufene CAS-Eigentümer sind keine aktuellen Worker
+
+Sieben zusätzliche historische CAS-Zeilen tragen abgelaufene Eigentümer-Leases
+(September bis 26.11.). Sie werden weder freigegeben noch gelöscht. Der enge
+EU-Operator unterschied diesen Bestand zunächst nicht von laufender Arbeit.
+Der Nachtrag erlaubt nur eine leere Liste oder genau die sieben vollständig
+hashgebundenen unveränderten Altzeilen mit nachweislich abgelaufener Lease.
+Unbekannte, veränderte, fehlerhafte oder aktive Eigentümer stoppen weiterhin.
+Der kanonische Vollhash lautet
+`76f8a7856e80e9ea9b614c1aa11b57af3029ad764570027c3f7ea9b13252af18`.
+Die gezielte native Nachtragsprobe erhält alle sieben CAS-Zeilen und das Kostenbuch
+bei Aktivierung und Rückweg bytegleich. Ein frisch gebundener veränderter oder
+zusätzlicher Eigentümer wird auch von SQL abgewiesen. Unabhängiger Nachtragsreview PASS.
+Die früheren sechs positiven Operatorgruppen wurden nicht erneut ausgeführt.
+
+Diese sieben CAS-Zeilen sind von den sieben ungeklärten **Geldbindungen** zu
+unterscheiden. Beide Bestände bleiben geschützt. Stand 14:49 Uhr: 81 Modellaufrufe,
+0,789474 USD heutige Bindung, 10,331840 USD kumulativ; Grenzen unverändert
+1 USD/UTC-Tag, 30 USD gesamt, 100 Hetzner-Aufrufe und 16 Originale. Für 100/16
+liegt zuletzt der direkte Betreiber-Envbeleg vom 26.11. vor, kein erfundener neuer
+SSH-Nachweis. Keine Freigabe einer Reserve, kein pauschaler Retry oder Budgetanstieg.
+
+Der inerte BReg-Operator liegt unter
+`scripts/ops/quellen-breg-fassung-20261127.{js,sql,-test.js}`; sein Root-Wrapper
+führt die drei synthetischen CI-Gruppen aus. Sieben getrennte native Prüfgruppen
+mit unveränderten echten Produktpins bestanden: 47+61+1, Erhalt aller Altarchive,
+Fundstellen, KOs, CAS-Zeilen und Finanzdaten, atomarer Abbruch bei falschem GO,
+Vorwert-/Rechte-/Quotenabweichung sowie gesperrter Rückweg nach Konsum oder Drift.
+Zusätzliche drei native Append-Gruppen bestehen mit den unveränderten Produktpins:
+aktueller Bestand 46+61+1, weitere reguläre Nachträge mit 45+61+1 und 65 erhaltenen
+Archiven nach dem Rückweg sowie Abbruch bei Ankerlöschung, Mutation, fremder
+Identität/Autorität und jeder Änderung nach der frischen Vorwertbindung.
+Vier synthetische Gruppen bleiben vom privaten Produktnachweis getrennt.
+Globale Driftwachen binden jede vollständige Tabellenzeile über nativen SHA256
+und sortierte Zeilenhashes, ohne einen riesigen rekursiven JSON-Aggregatbaum.
+Aktivierungsbindung und Rückweg benötigen nur 405 beziehungsweise 139 Byte;
+die vollständige private Vorschau und der tatsächliche Beleg bleiben erhalten.
+Der vorhandene geprüfte Transport entfernt nur den psql-Prolog und bindet die
+drei Parameter kollisionsfrei als SQL-Dollar-Literale. Der Transaktionskern bleibt
+unverändert; SQL-Körper und begrenzte Parameter bleiben deutlich unter der
+API-Eingangsgrenze. Ein reiner Produktions-SELECT
+bestätigt für diesen bestehenden Zugang `current_user=session_user=postgres`,
+UTC und keine Recovery. Kein zusätzlicher SSH-/Datenbankzugang wird eingerichtet.
+
+Die neue Migration, Bestandskorrektur und EU-Wiederaufnahme sind noch nicht aktiviert.
+Vor deren Freigabe müssen unabhängiger Operatorreview und beide Pflichtprüfungen
+am endgültigen integrierten Kopf vorliegen. Die bisherige gemeinsame isolierte
+PostgreSQL-Prozessuhr stammt aus einer Dezember-Simulation; sie wird für keinen
+heutigen positiven Aktivierungsbeleg verwendet. Der heutige Operatornachweis wurde
+mit einem getrennten kleinen PG17.6-Prozess und unverfälschter 27.-November-Uhr
+geführt. Danach wurden nur dieser eigene Prozess beendet und sein Cluster entfernt;
+gemeinsamer Monatsserver und Production wurden nicht neu gestartet.
+
+### CI-Anschlussprobe: neue Schemaabhängigkeit ausdrücklich mitnehmen
+
+Am ersten integrierten Kopf `1b7163ea` bestand die frische Browserprüfung;
+Pflicht-CI `46014585685` stoppte in der bestehenden nativen Drei-Profil-Probe
+mit `skipped-bestandslesefehler`. Ihr isolierter Schemaaufbau verwendete eine
+feste Liste von 21 Migrationen und installierte die neue Quellenleseschnittstelle
+noch nicht. Erstfehler und bereinigter Abbruch bleiben privat erhalten.
+
+Die begrenzte Liste enthält jetzt zusätzlich genau diese erforderliche Migration.
+Sie wird nach den allgemeinen Fixture-Grants installiert, damit ihre engen
+Append-only-Rechte erhalten bleiben. Ein echter Datenbank-Readback verlangt
+SELECT und INSERT für service_role, verweigert UPDATE/DELETE sowie jeden Zugang
+für anon/authenticated. Die gezielte Auswahlprüfung scheiterte vor dem Nachtrag
+und besteht danach; fehlende neue Migration wird ausdrücklich abgewiesen.
+Keine pauschale Installation geschützter Kohortenpfade, keine gelockerte Prüfung
+und keine erneute Monatssimulation. Beide Pflichtchecks müssen für den neuen
+endgültigen Kopf erneut erfolgreich sein.
+
+Die korrigierte native Anschlussprobe sowie die Browserprüfung bestanden am Kopf
+`9653e63e`. Die nachfolgenden Offline-Prüfungen fanden noch zwei alte Mocks, die
+nur den Einzelquellenleser ersetzten und unbeabsichtigt auf den bisherigen
+Batch-Fehlerfallback angewiesen waren. Die Fixtures liefern jetzt ausdrücklich
+denselben vollständigen Batch mit identischen Quellen und geprüften KO-/Vorgangs-
+bindungen. Kandidatenzeit 36/36 und Publication Eligibility 12/12 bestanden gezielt;
+Policy-, GIZ-, Tenant-, Original-, Schreib- und Modellschutz bleiben erhalten.
+Der Runtime-Fehlerschutz wurde dafür nicht geändert. Beide Erstfehler bleiben
+erhalten; Nachträge werden gemeinsam auf einem neuen CI-Endkopf geprüft.
+
+Auch die bereits vorhandene Altlink-Erhaltungsprobe wurde wegen des geänderten
+Schreibwegs gezielt weiterverwendet: Ihr alter Tabellen-POST-Mock scheiterte am
+neuen atomaren Link-RPC. Der Fixture-RPC prüft jetzt Payload, Fremdschlüssel und
+eindeutige Kanten vor dem ersten Write, erhält idempotenten Bestand und simuliert
+echte RPC-Fehler. Alle bisherigen Raw-/Linkfehler- und Bestandsschutzprüfungen
+bleiben erhalten; 27/27 gezielte Fälle bestehen. Kein Runtime-Nachtrag dafür.
+
+## Frische Betriebsbilanz vor der neuen Freigabe
+
+Die reine Supabase-Lesung vom 27.11. um 16:11:26 Uhr Berlin bestätigt
+55 heute terminal abgeschlossene Dokumentaufträge. Das sind eindeutige Aufträge,
+keine Zählung wiederholter Vertagungen. Die historische Bilanz mit 41 bzw. 50
+Endzuständen bleibt als datierter Zwischenstand erhalten.
+
+| Fehlerklasse | Zahl | Bewertung und Behandlung |
+| --- | ---: | --- |
+| Eingangsdiagnosen | 18 | Vier HIB-Projektionsfehler durch #1360 und zwei belegte DIP-Langtitel durch #1362 korrigiert; acht frühere Quellenstandsabweichungen, drei nachgewiesene Table-Herausgeberkonflikte und ein neuer BMG-Titelkonflikt bleiben geschützt |
+| Prüfung zuvor fehlgeschlagener KOs | 13 | Historische negative Ergebnisse/UNKNOWN, keine 13 neuen Modellaufrufe; kein verwertbares Originalresultat für eine pauschale Entsperrung |
+| Neuer Modellausgang UNKNOWN | 1 | EU-Einzelfall, 0,212 USD weiter gebunden; bedingter Wiederaufnahmeweg für den 28.11. vorbereitet |
+| Dauerhafte Budgetwartefrist | 23 | Sämtlich vor dem heutigen Tag angelegte Aufträge; bestehende 48-Stunden-Wache bleibt erhalten |
+
+Der zusätzliche BMG-Fall `05d1afa7-d8bb-46df-a760-0e78ad1ea364` wurde
+um 15:30 Uhr Berlin terminal. Zwei gespeicherte Fassungen derselben URL nennen
+unterschiedliche Titel: eine Linnemann-Aussage zur Notfallversorgung und das
+Passieren des Bundesrats. Beide Archive liegen vor. Das beweist einen Titelkonflikt,
+keinen fehlenden Speicherstand oder Azure-Ausfall. Ohne maßgeblichen Originalbeleg
+keine Titelgleichsetzung; aktueller Pflichtbedarf ist gesondert zu lesen.
+
+Der reguläre Hetzner-Lauf von 16:00 bis 16:03:56 Uhr Berlin auf `dadf999f`
+endete erfolgreich: 172 Zielaufträge = vier erledigt + 168 vertagt,
+null Endfehler und Leaseverluste. Die Queue enthält 1.680 fällige Analysen und
+62 fällige Abrufe; um 12:21 Uhr waren es 1.575/97. Der Analysestau ist nicht
+behoben. 81 Modellaufrufe, sieben Originalabrufe, 0,789474 USD Tagesbindung,
+10,331840 USD Gesamtbindung und sieben offene Geldbindungen sind unverändert.
+0,210526 USD verbleibende Tageskapazität decken die erforderliche Reservierung
+von 0,212 USD nicht. Das ist ein berechtigter Schutzstopp, keine Freigabe für
+eine Budgeterhöhung oder das Auflösen alter Reserven.
+
+Der normale Kundenleser lieferte um 16:12:12 Uhr Berlin HTTP 200 und weiterhin
+64 Meldungen als quittierte Teilfassung, gespeichert am Morgen um 07:20:23 Uhr.
+Der GIZ-Riegel schließt weiterhin genau den geschützten Mischinhalt aus;
+der andere zulässige GIZ-Beitrag bleibt enthalten. Die beiden alten BReg-KOs
+sind in dieser Antwort ebenfalls nicht enthalten. Der heutige Morgen bleibt FAIL;
+ein erfolgreicher Quellenlauf ersetzt keine vollständige Morgenabnahme.
+
+Private Originale: `pr1363-betrieb-1611-original.json`,
+`pr1363-neueste-eingangsdiagnose-original.json` und
+`pr1363-kundenleser-vorfreigabe{,.body}.json`. Neue Migration, BReg-Korrektur
+und EU-Wiederaufnahme bleiben bis zum konkreten GO inaktiv.
+
+Die anschließende reine Pflichtlesung um 16:13:44 Uhr bestätigt unverändert
+zwölf erledigte Abrufaufträge mit zehn vollständigen und zwei teilweisen
+Quittungen. Von 84 referenzierten Analysen sind 83 erledigt, nur der EU-UNKNOWN
+bleibt offen. Der historische Bundestags-Einzelauftrag ist kein Bestandteil
+dieser heutigen Analysereferenzen; daraus folgt kein neuer Retry-Auftrag.
+
+Die gleichzeitige Rückstandslesung unterscheidet die 1.680 fälligen Analysen
+nach ihren gespeicherten letzten Gründen: 918 historische Wiedervorlagen
+(darunter 692 alte Profilbindungen und 138 Versionskonflikte), 259 Vertagungen
+(139 Verstehensfortsetzungen und 118 Budgetwartefälle), 488 ohne Fehlertext
+sowie 15 weitere geschützte Altpositionen. Ein letzter Fehlertext beweist keinen
+neuen heutigen Aufruf. Diese Fälle bleiben sichtbar; weder die neue Migration
+noch der Quellenoperator setzen sie pauschal zurück oder behaupten ihre Erledigung.
+
+### Gezielter Anschluss der übrigen Briefing-Testaufbauten
+
+Am Kopf `8438f86f` bestanden Browser, Offline-Grundprüfung und die neuen nativen
+Versions-/RLS-Prüfungen. Die breitere Bereichsregression fand acht weitere ältere
+Testaufbauten: Sieben ersetzten nur den Einzelquellenleser; der echte neue
+Batchleser stoppte in ihrer nicht konfigurierten Offline-Umgebung korrekt mit
+UNKNOWN. Die achte extrahierte den echten Storagecode, injizierte aber noch
+den alten Transportnamen.
+
+Nur diese acht Testdateien wurden angepasst. Batch und Einzelleser liefern
+dieselben vorbereiteten Quellen unter exakter KO-/Vorgangsbindung; der VM-Test
+verlangt ausdrücklich die neue Quellenfassungssicht. Sämtliche bestehenden
+fachlichen Assertions bleiben erhalten. Eine zusätzliche Quellenpflicht-Gegenprobe
+verlangt Weitergabe desselben typisierten UNKNOWN und null Legacy-Ersatzlesungen
+trotz vorhandener Quellen. Gezielte acht Suiten: 277/277 bestanden, unabhängig
+am Diff geprüft. Kein Produktcode oder Schutzmechanismus wurde dafür geändert.
+Der volle verpflichtende CI-Nachweis am neuen Endkopf bleibt erforderlich;
+keine lokale Wiederholung der bereits ausreichend belegten Suiten oder des Monats.
+

@@ -212,7 +212,18 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
     const h = harness();
     S.v3StoreReady = () => true;
     S.listKnowledgeObjects = async () => h.kos;
-    S.getSourcesForVorgang = async id => h.sourcesByVorgang[id];
+    const fixtureSources = id => {
+      A(Object.hasOwn(h.sourcesByVorgang, id), "Nur vorbereitete Vorgangsquellen");
+      return h.sourcesByVorgang[id];
+    };
+    S.getSourcesForVorgang = async id => fixtureSources(id);
+    S.getPruefSourcesByVorgaenge = async rows => {
+      A(Array.isArray(rows)); A.equal(new Set(rows.map(k => k.id)).size, rows.length);
+      return Object.fromEntries(rows.map(k => {
+        A(h.kos.some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+        return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+      }));
+    };
     require("../lib/helmut/decisions").decideForUser = (_p, kos) => kos.map(k => ({
       knowledge_object_id: k.id, vorgang_id: k.vorgang_id, score: 50,
       decision: "Beobachten", matched_features: [] }));

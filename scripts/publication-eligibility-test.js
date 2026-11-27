@@ -148,7 +148,7 @@ const callWitness = async env => {
   });
   // The actual builders with synthetic in-memory DB reads only.
   let candidates = [ko("held"), ko("safe", "https://other.example/safe")];
-  const before = JSON.stringify(candidates); let forbidden = 0;
+  const before = JSON.stringify(candidates); let forbidden = 0, batchReads = 0;
   global.fetch = () => { forbidden++; throw Error("network forbidden"); };
   for (const name of ["saveKnowledgeObject", "saveRawDocument", "saveRenderedBriefingV3", "insertRenderedBriefingV3",
     "saveDecisions", "acquirePipelineLock"]) S[name] = () => { forbidden++; throw Error("write forbidden"); };
@@ -156,7 +156,20 @@ const callWitness = async env => {
     if (typeof require("../lib/helmut/ai")[key] === "function") require("../lib/helmut/ai")[key] = () => { forbidden++; throw Error("model forbidden"); };
   S.v3StoreReady = () => true; S.getPublicationSourceIdentities = metadata;
   S.listKnowledgeObjects = async ({ limit = 500, offset = 0 } = {}) => candidates.slice(offset, offset + limit);
-  S.getSourcesForVorgang = async id => [doc(candidates.find(k => k.vorgang_id === id))];
+  const fixtureSources = id => {
+    const known = candidates.find(k => k.vorgang_id === id);
+    A(known, "Nur Quellen der vorbereiteten Vorgangsbindung");
+    return [doc(known)];
+  };
+  S.getSourcesForVorgang = async id => fixtureSources(id);
+  S.getPruefSourcesByVorgaenge = async rows => {
+    A(Array.isArray(rows)); A.equal(new Set(rows.map(k => k.id)).size, rows.length);
+    batchReads++;
+    return Object.fromEntries(rows.map(k => {
+      A(candidates.some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+      return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+    }));
+  };
   S.listMatchingResults = async () => candidates.map(k => ({ knowledge_object_id: k.id }));
   S.listKnowledgeObjectsByIds = async ids => candidates.filter(k => ids.includes(k.id));
   S.listAktuelleLageQuellen = async ids => candidates.filter(k => ids.includes(k.id))
@@ -174,6 +187,7 @@ const callWitness = async env => {
     A(!JSON.stringify(active.briefing).includes("vg-held"));
     A.deepEqual(active.eingabe.publicationEligibilityPolicy, P.publicInfo());
     A(!active.eingabe.aussagen.some(a => a.text === P.current().hash));
+    A.equal(batchReads, 3, "Jeder Builder liest seine vollstaendigen Quellen explizit im Batch");
     A.equal(JSON.stringify(candidates), before); A.equal(forbidden, 0);
   });
   await test("Actual Lage storedmatch refill and independent Radar path remain usable", async () => {

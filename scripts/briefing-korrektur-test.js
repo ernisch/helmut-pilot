@@ -18,7 +18,20 @@ const initial = structuredClone({ kos, sources, profile });
 let reads = 0, sourceObserver = null;
 S.v3StoreReady = () => true;
 S.listKnowledgeObjects = async () => { reads++; return kos; };
-S.getSourcesForVorgang = async id => sourceObserver ? sourceObserver(id) : sources[id];
+const fixtureSources = async id => {
+  A(Object.hasOwn(sources, id), "Nur vorbereitete Vorgangsquellen");
+  return sourceObserver ? sourceObserver(id) : sources[id];
+};
+S.getSourcesForVorgang = fixtureSources;
+S.getPruefSourcesByVorgaenge = async rows => {
+  A(Array.isArray(rows)); A.equal(new Set(rows.map(k => k.id)).size, rows.length);
+  const out = {};
+  for (const k of rows) {
+    A(kos.some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+    out[k.vorgang_id] = await fixtureSources(k.vorgang_id);
+  }
+  return out;
+};
 require("../lib/helmut/decisions").decideForUser = (_p, rows) => rows.slice(0, 2).map(k => ({
   knowledge_object_id: k.id, vorgang_id: k.vorgang_id, score: 50, decision: "Beobachten", matched_features: [] }));
 const server = require("../server");

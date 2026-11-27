@@ -26,7 +26,9 @@ function doc(n, current = false) { return { id: "d-" + n, title: "Beratung zur P
   summary: "Die Beratung zur Pflege ist vorgesehen.", source_name: "Testquelle" }; }
 function setup(docs) { rows = docs.map(d => ({ knowledge_object_id: ko.id, raw_document_id: d.id, raw_documents: d })); requests = []; corrupt = null; lastInput = null; }
 async function transport(endpoint) {
-  const p = new URL("https://example.invalid" + endpoint).searchParams; requests.push(p);
+  const url = new URL("https://example.invalid" + endpoint);
+  assert.equal(url.pathname, "/rest/v1/helmut_ko_quellen", "Echte Quellenfassungssicht statt direkter Live-Raw-Leser");
+  const p = url.searchParams; requests.push(p);
   let result = structuredClone(rows);
   const filter = p.get("knowledge_object_id");
   if (filter.startsWith("in.")) {
@@ -48,7 +50,7 @@ async function transport(endpoint) {
   return result;
 }
 const readers = vm.runInNewContext(code.slice(start, end) + "\n({listAktuelleLageQuellen,getSourcesForVorgang})", {
-  require: createRequire(file), v3StoreReady: () => true, supabaseRequest: transport,
+  require: createRequire(file), v3StoreReady: () => true, koQuellenRequest: transport,
   KO_ID_STAPEL: 100, RAW_DOC_SEITE: 1000, StorageReadError: storage.StorageReadError,
   console, Date, Set, Map, encodeURIComponent
 });

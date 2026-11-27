@@ -45,7 +45,7 @@ function startStub({ links = [], status = 200 } = {}) {
   const server = http.createServer((req, res) => {
     anfragen.push(req.method + " " + req.url);
     if (status !== 200) { res.writeHead(status, { "Content-Type": "application/json" }); res.end(JSON.stringify({ message: "stub error" })); return; }
-    if (req.url.startsWith("/rest/v1/ko_document_links")) {
+    if (req.url.startsWith("/rest/v1/helmut_ko_quellen") || req.url.startsWith("/rest/v1/ko_document_links")) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(links));
       return;

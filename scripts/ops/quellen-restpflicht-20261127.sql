@@ -122,7 +122,18 @@ begin
  perform pg_temp.restfordere(v_tag='2026-11-28' and b->>'tag'=v_tag and b->'version'='1'::jsonb
   and b->>'abrufId'=p.abruf_id::text and (b->>'geprueftAm')::timestamptz between v_jetzt-interval '5 minutes' and v_jetzt,
   '28Nov und frische Bindung');
- perform pg_temp.restfordere(vor->'aktiveJobs'='[]'::jsonb and vor->'aktiveSlots'='[]'::jsonb and vor->'aktiveCas'='[]'::jsonb,
+  -- Der historische Eigentuemerbestand ist kein aktiver Worker. Nur die exakt
+  -- am27Nov gesicherten sieben vollstaendigen Altzeilen duerfen stehenbleiben.
+  -- Kein Lease-/CAS-/Kosten-Reset; neue, geaenderte oder zukuenftige Leases STOP.
+  perform pg_temp.restfordere(vor->'aktiveCas'='[]'::jsonb or (
+   jsonb_array_length(vor->'aktiveCas')=7
+   and pg_temp.resthash(vor->'aktiveCas')='76f8a7856e80e9ea9b614c1aa11b57af3029ad764570027c3f7ea9b13252af18'
+   and not exists(select 1 from jsonb_array_elements(vor->'aktiveCas') x
+    where x->>'zustand' not in('reserviert','modell-laeuft') or coalesce(x->>'besitzer','')=''
+     or x->>'lease_bis' is null or (x->>'lease_bis')::timestamptz>=v_jetzt
+     or x->>'vorgang_id'='vg-dieswöchigen-20261126-03af76')),
+   'aktive oder ungepruefte CAS-Eigentuemer');
+  perform pg_temp.restfordere(vor->'aktiveJobs'='[]'::jsonb and vor->'aktiveSlots'='[]'::jsonb,
   'keine parallele Workerarbeit');
  if p.modus='freigeben' then
   perform pg_temp.restfordere(p.freigabe='EU-EINZELNEUVERSUCH-20261128' and b->>'modus'='vorbereitet'

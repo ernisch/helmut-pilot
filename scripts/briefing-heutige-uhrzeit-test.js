@@ -30,7 +30,15 @@ const doc = { id: "d-uhrzeit", title: ko.headline,
 let input = structuredClone(ko), docs = [structuredClone(doc)];
 storage.v3StoreReady = () => true;
 storage.listKnowledgeObjects = async () => structuredClone([input]);
-storage.getSourcesForVorgang = async () => structuredClone(docs);
+const fixtureSources = id => { assert.equal(id, input.vorgang_id); return structuredClone(docs); };
+storage.getSourcesForVorgang = async id => fixtureSources(id);
+storage.getPruefSourcesByVorgaenge = async rows => {
+  assert(Array.isArray(rows)); assert.equal(new Set(rows.map(k => k.id)).size, rows.length);
+  return Object.fromEntries(rows.map(k => {
+    assert.equal(k.id, input.id); assert.equal(k.vorgang_id, input.vorgang_id);
+    return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+  }));
+};
 // Ranking ist nicht Gegenstand dieses Tests; der echte Builder, Zeitfilter und
 // Ausgabevertrag bleiben aktiv. Der private Ursprungsbeleg nutzt echtes Ranking.
 decisions.decideForUser = () => [{ knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id,

@@ -113,7 +113,18 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); passed+
   const before = JSON.stringify({ ko, bad, doc });
   S.v3StoreReady = () => true;
   S.listKnowledgeObjects = async () => [bad, ko];
-  S.getSourcesForVorgang = async id => [{ ...doc, id: id === "vg-b" ? "rd-b" : doc.id }];
+  const fixtureSources = id => {
+    A([ko, bad].some(k => k.vorgang_id === id), "Nur bekannte Vorgangsquellen");
+    return [{ ...doc, id: id === "vg-b" ? "rd-b" : doc.id }];
+  };
+  S.getSourcesForVorgang = async id => fixtureSources(id);
+  S.getPruefSourcesByVorgaenge = async rows => {
+    A(Array.isArray(rows)); A.equal(new Set(rows.map(k => k.id)).size, rows.length);
+    return Object.fromEntries(rows.map(k => {
+      A([ko, bad].some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+      return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+    }));
+  };
   decisions.decideForUser = (_p, kos) => kos.map((k, i) => ({ knowledge_object_id: k.id,
     vorgang_id: k.vorgang_id, score: 90-i, decision: "Sofort reagieren", priority_type: "chance", matched_features: [] }));
   const server = require("../server");

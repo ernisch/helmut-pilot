@@ -772,7 +772,7 @@ async function speicherUndLeser(erzeugt, bezeichnung) {
       zeilen = zeilen.slice(offset, offset + Number(url.searchParams.get("limit") || 1000));
       return antwort(zeilen.map(row => projiziere(row, select)));
     }
-    if (methode === "GET" && url.pathname === "/rest/v1/ko_document_links") {
+    if (methode === "GET" && url.pathname === "/rest/v1/helmut_ko_quellen") {
       const koFilter = url.searchParams.get("knowledge_object_id") || "";
       const koIds = koFilter.startsWith("in.") ? JSON.parse("[" + koFilter.slice(4, -1) + "]") : [koFilter.replace(/^eq\./, "")];
       let zeilen = links.filter(link => koIds.includes(link.knowledge_object_id))

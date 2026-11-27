@@ -309,7 +309,7 @@ async function pruefeSuchwegKarte() {
             .map(({ raw, ...d }) => ({ ...d,
               ...readPatch, ...(select.includes("quellenauszug_beleg:raw->helmutQuellenkontext")
                 ? { quellenauszug_beleg: raw.helmutQuellenkontext || null } : {}) }));
-          if (u.pathname.endsWith("/ko_document_links")) result = result.map(d => ({ raw_document_id: d.id, raw_documents: d }));
+          if (u.pathname.endsWith("/helmut_ko_quellen")) result = result.map(d => ({ raw_document_id: d.id, raw_documents: d }));
         }
       }
       res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify(result));

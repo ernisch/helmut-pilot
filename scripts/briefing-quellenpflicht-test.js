@@ -90,7 +90,18 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
   const original = JSON.stringify({ ko, ohne, doc });
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [ohne, ko];
-  storage.getSourcesForVorgang = async id => id === ko.vorgang_id ? [doc] : [];
+  const fixtureSources = id => {
+    assert([ohne, ko].some(k => k.vorgang_id === id), "Nur bekannte Vorgangsquellen");
+    return id === ko.vorgang_id ? [doc] : [];
+  };
+  storage.getSourcesForVorgang = async id => fixtureSources(id);
+  storage.getPruefSourcesByVorgaenge = async rows => {
+    assert(Array.isArray(rows)); assert.equal(new Set(rows.map(k => k.id)).size, rows.length);
+    return Object.fromEntries(rows.map(k => {
+      assert([ohne, ko].some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+      return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+    }));
+  };
   decisions.decideForUser = () => [ohne, ko].map((k, i) => ({ knowledge_object_id: k.id,
     vorgang_id: k.vorgang_id, score: 80-i*10, decision: "Sofort reagieren", priority_type: "chance", matched_features: [] }));
   const server = require("../server");
@@ -101,6 +112,21 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
     assert.equal(b.currentHelmutState.primaryVorgangId, null,
       "Quellenbindung allein belegt noch keinen Mandatsauftrag");
     assert(!JSON.stringify(b).includes(ohne.display_title));
+  });
+  await test("Ungeklaerte Quellenfassung nutzt trotz vorhandener Legacyquellen keinen Ersatz", async () => {
+    const batch = storage.getPruefSourcesByVorgaenge;
+    const single = storage.getSourcesForVorgang;
+    const error = new storage.StorageReadError("ko_quellenfassungen", new Error("synthetisch-fehlender-satz"));
+    assert.equal(error.code, "KO_QUELLENFASSUNG_UNAVAILABLE");
+    let fallbackReads = 0;
+    storage.getPruefSourcesByVorgaenge = async () => { throw error; };
+    storage.getSourcesForVorgang = async id => { fallbackReads++; return fixtureSources(id); };
+    try {
+      await assert.rejects(server.__buildV3Briefing(profile, profile.id), e => e === error);
+      assert.equal(fallbackReads, 0);
+    } finally {
+      storage.getPruefSourcesByVorgaenge = batch; storage.getSourcesForVorgang = single;
+    }
   });
   await test("Die Lesepruefung veraendert keinen gespeicherten Inhalt", () => assert.equal(JSON.stringify({ ko, ohne, doc }), original));
   console.log(`${passed}/${passed+failed} Quellenpflichtgruppen bestanden`);

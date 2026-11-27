@@ -38,17 +38,44 @@ function snapshot() {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://127.0.0.1");
-    const table = url.pathname.replace("/rest/v1/", "");
+    const endpoint = url.pathname.replace("/rest/v1/", "");
+    const rpc = endpoint === "rpc/helmut_ko_quellen_verknuepfe";
+    const table = rpc ? "ko_document_links" : endpoint;
     assert.equal(req.method, "POST", "Verknuepfen braucht keinen vorherigen Read");
     assert(db[table], "Unerwarteter Datenzugriff " + table);
     let body = "";
     for await (const part of req) body += part;
     const payload = JSON.parse(body);
-    const rows = Array.isArray(payload) ? payload : [payload];
-    requests.push({ table, prefer: req.headers.prefer, rows: clone(rows) });
+    if (rpc) {
+      assert.deepEqual(Object.keys(payload).sort(), ["p_fassungen", "p_links", "p_versionen"]);
+      assert(Array.isArray(payload.p_links) && payload.p_links.length > 0);
+      assert.deepEqual(payload.p_versionen, {}, "Diese Fixture modelliert nur ungeschuetzte Legacy-KOs");
+      assert.equal(payload.p_fassungen, null, "Keine fingierten Archiv-/Lektueremanifeste");
+    }
+    const rows = rpc ? payload.p_links : Array.isArray(payload) ? payload : [payload];
+    requests.push({ table, rpc, prefer: req.headers.prefer, rows: clone(rows) });
     if (table === "raw_documents") rawRequests++;
     if (table === failTable || (table === "raw_documents" && rawRequests === failRawRequest)) {
       res.writeHead(500); res.end("Absichtlicher lokaler Speicherfehler"); return;
+    }
+    if (rpc) {
+      // Der echte RPC bestaetigt die angeforderten Kanten auch bei Idempotenz.
+      // Alle FK-/Shapepruefungen kommen vor dem ersten Write (atomarer Stapel).
+      const keys = new Set();
+      for (const row of rows) {
+        assert.deepEqual(Object.keys(row).sort(), ["knowledge_object_id", "raw_document_id"]);
+        assert.equal(typeof row.knowledge_object_id, "string"); assert(row.knowledge_object_id);
+        assert.equal(typeof row.raw_document_id, "string"); assert(row.raw_document_id);
+        assert(db.knowledge_objects.has(row.knowledge_object_id), "FK Wissensobjekt fehlt");
+        assert(db.raw_documents.has(row.raw_document_id), "FK Quelle fehlt");
+        const key = row.knowledge_object_id + "|" + row.raw_document_id;
+        assert(!keys.has(key), "Doppelte Kante im RPC-Auftrag"); keys.add(key);
+      }
+      for (const row of rows) {
+        const key = row.knowledge_object_id + "|" + row.raw_document_id;
+        if (!db.ko_document_links.has(key)) db.ko_document_links.set(key, clone(row));
+      }
+      res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(rows.length)); return;
     }
     const keys = Object.keys(rows[0] || {}).sort();
     for (const row of rows) assert.deepEqual(Object.keys(row).sort(), keys,
@@ -108,6 +135,7 @@ function erhalten(before = alt) {
         await pruefe(p.name + ": " + name + " ersetzt keinen Bestand", async () => {
           p.ok(await p.run([incoming])); erhalten();
           assert(db.ko_document_links.has(koId + "|" + alt.id));
+          assert(requests.filter(x => x.table === "ko_document_links").every(x => x.rpc));
           assert.equal(db.raw_documents.size, 1);
         });
       }
@@ -145,6 +173,7 @@ function erhalten(before = alt) {
           failTable = table; p.failed(await p.run([quelle("alt", null)])); erhalten();
           assert(!db.ko_document_links.has(koId + "|" + alt.id));
           if (table === "raw_documents") assert(!requests.some(x => x.table === "ko_document_links"));
+          else assert(requests.some(x => x.table === "ko_document_links" && x.rpc), "Linkfehler stammt aus echtem RPC-Aufruf");
         });
       }
       await pruefe(p.name + ": Fehler im zweiten Quellenstapel bleibt sichtbar", async () => {

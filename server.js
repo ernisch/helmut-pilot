@@ -3991,7 +3991,10 @@ async function loadSourcesByVorgang(kos) {
   // Kein Cache: Aenderungen an Quellen werden bei jedem Appabruf neu gelesen.
   if (kos && kos.length) {
     try { return await storageModul.getPruefSourcesByVorgaenge(kos); }
-    catch (_) { /* Kompatibler Einzelpfad bei fehlenden Zeilen/Transportfehlern. */ }
+    catch (error) {
+      if (error?.code === "KO_QUELLENFASSUNG_UNAVAILABLE") throw error;
+      /* Kompatibler Einzelpfad bei ungeschuetzten Legacyadaptern. */
+    }
   }
   const sources = {};
   for (let i = 0; i < (kos || []).length; i += 8) {

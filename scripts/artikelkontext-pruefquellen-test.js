@@ -54,7 +54,7 @@ async function transport(target, options = {}) {
     raw_documents: selected(d, p.get("select")) }));
   if (url.pathname === "/rest/v1/knowledge_objects")
     return new Response(JSON.stringify([{ ...ko, ko_document_links: projection }]));
-  assert.equal(url.pathname, "/rest/v1/ko_document_links");
+  assert.equal(url.pathname, "/rest/v1/helmut_ko_quellen");
   assert.equal(p.get("knowledge_object_id"), "eq." + ko.id);
   const ids = p.get("raw_document_id");
   return new Response(JSON.stringify(ids ? projection.filter(r => JSON.parse("[" + ids.slice(4, -1) + "]").includes(r.raw_document_id)) : projection));

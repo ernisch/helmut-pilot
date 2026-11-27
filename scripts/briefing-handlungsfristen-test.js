@@ -32,9 +32,20 @@ let recommendation = ko.recommendation;
 const snapshot = JSON.stringify(ko);
 storage.v3StoreReady = () => true;
 storage.listKnowledgeObjects = async () => [{ ...ko, recommendation }];
-storage.getSourcesForVorgang = async () => [{ id: "d-frist", title: ko.headline,
+const fixtureSources = id => {
+  assert.equal(id, ko.vorgang_id);
+  return [{ id: "d-frist", title: ko.headline,
   summary: ko.was_ist_passiert + " Einreichungsfrist morgen bis 12 Uhr.", url: ko.best_source_url, source_name: "Deutscher Bundestag",
   source_type: "parliament", published_at: sourceDate }];
+};
+storage.getSourcesForVorgang = async id => fixtureSources(id);
+storage.getPruefSourcesByVorgaenge = async rows => {
+  assert(Array.isArray(rows)); assert.equal(new Set(rows.map(k => k.id)).size, rows.length);
+  return Object.fromEntries(rows.map(k => {
+    assert.equal(k.id, ko.id); assert.equal(k.vorgang_id, ko.vorgang_id);
+    return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+  }));
+};
 decisions.decideForUser = () => [{ knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id,
   score: 60, decision: "Sofort reagieren", priority_type: "chance", matched_features: [], chance: "", risk: "" }];
 const server = require("../server.js");

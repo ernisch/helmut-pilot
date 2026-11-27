@@ -423,7 +423,7 @@ async function main(){
       Object.assign(process.env,{SUPABASE_URL:"https://offline.invalid",SUPABASE_SERVICE_ROLE_KEY:"offline",HELMUT_V3_STORE:"1",HELMUT_SUPABASE_STORE_ID:"offline"});
       const d=doc(),json=v=>new Response(JSON.stringify(v));
       global.fetch=async(url,options={})=>{A.equal(new URL(url).origin,"https://offline.invalid");A(!options.method||options.method==="GET");
-        if(new URL(url).pathname==="/rest/v1/ko_document_links")return json([{raw_documents:d}]);
+        if(new URL(url).pathname==="/rest/v1/helmut_ko_quellen")return json([{raw_documents:d}]);
         if(new URL(url).pathname==="/rest/v1/knowledge_objects")return json([{id:"ko-synth",vorgang_id:"synth",ko_document_links:[{raw_document_id:d.id,raw_documents:d}]}]);
         throw Error("Unerwarteter Transport: "+new URL(url).pathname);};
       try{

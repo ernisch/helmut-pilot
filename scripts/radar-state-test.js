@@ -7,6 +7,7 @@
 // Leerzustaende und die harten Verbote (keine hartkodierte Partei/Wahlkreis/Ausschuss,
 // keine Demo, keine personenspezifische Sonderlogik, keine Kosten/Secrets, keine unsicheren URLs).
 
+const assert = require("node:assert/strict");
 const radarState = require("../lib/helmut/radarState");
 const briefingContract = require("../lib/helmut/briefingContract");
 
@@ -675,6 +676,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const origReady = storage.v3StoreReady;
   const origList = storage.listKnowledgeObjects;
   const origGet = storage.getSourcesForVorgang;
+  const origBatch = storage.getPruefSourcesByVorgaenge;
   const origDecide = decisionsEngine.decideForUser;
 
   const oldIso = new Date(NOW - 200 * 864e5).toISOString(); // bewusst alt (kein Augment-Frischepfad)
@@ -699,7 +701,18 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   try {
     storage.v3StoreReady = () => true;
     storage.listKnowledgeObjects = async () => kosInStore;
-    storage.getSourcesForVorgang = async (vid) => docsByVorgang[vid] || [];
+    const fixtureSources = vid => {
+      assert(kosInStore.some(k => k.vorgang_id === vid), "Nur vorbereitete Vorgangsquellen");
+      return docsByVorgang[vid] || [];
+    };
+    storage.getSourcesForVorgang = async vid => fixtureSources(vid);
+    storage.getPruefSourcesByVorgaenge = async rows => {
+      assert(Array.isArray(rows)); assert.equal(new Set(rows.map(k => k.id)).size, rows.length);
+      return Object.fromEntries(rows.map(k => {
+        assert(kosInStore.some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+        return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+      }));
+    };
     const server = require("../server.js");
 
     // Pfad A: keine Decisions ('keine-treffer' VOR dem Hauptpfad).
@@ -746,6 +759,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     storage.v3StoreReady = origReady;
     storage.listKnowledgeObjects = origList;
     storage.getSourcesForVorgang = origGet;
+    storage.getPruefSourcesByVorgaenge = origBatch;
     decisionsEngine.decideForUser = origDecide;
   }
 

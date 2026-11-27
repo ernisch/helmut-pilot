@@ -5,6 +5,7 @@
 const { createHash } = require("node:crypto");
 const { readFileSync } = require("node:fs");
 const { isDeepStrictEqual: gleich } = require("node:util");
+const { kanonisch } = require("../../lib/helmut/quellen-lektuerebeleg");
 const R = require("../../lib/helmut/roh-quellenstaende");
 const I = require("../../lib/helmut/vorgang-identity");
 const B = require("../../lib/helmut/betriebskosten-budget");
@@ -17,10 +18,22 @@ const ZIEL = Object.freeze({ tag: "2026-11-28", job: "f346fe50-dadb-4139-b68a-b7
   stand: "f5f2bf9ca0ab59c5adcbc341d5a9c4bc904ffd741842c8feae5b079e28e9f779",
   vg: "vg-dieswöchigen-20261126-03af76", ticket: "6423f47f-f7e9-4a33-9774-48b84f795f03",
   operator: "5e666151d7046e87fdd0f319df7fca4e6c2414a6f7d5ff7bcc62d6c592eb2bd5",
-  kostenvertrag: "8c98b2e18ee5dc21c73561bbf5bad2d8cb6c76f8ccd533b3153270bbd7d9a348" });
+  kostenvertrag: "8c98b2e18ee5dc21c73561bbf5bad2d8cb6c76f8ccd533b3153270bbd7d9a348",
+  alteCasHash: "76f8a7856e80e9ea9b614c1aa11b57af3029ad764570027c3f7ea9b13252af18" });
 const hash = text => createHash("sha256").update(text).digest("hex");
 const muss = (ok, warum) => { if (!ok) throw Error("restpflicht: " + warum); };
 const zeit = value => Date.parse(value);
+function pruefeCasRuhe(cas, jetztMs) {
+  muss(Array.isArray(cas), "CAS-Eigentuemerbestand fehlt");
+  if (!cas.length) return;
+  // Exakt sieben am27Nov rein lesend gesicherte Altzustaende, keine generelle
+  // Freigabe abgelaufener Modell-Leases. Alle Felder bleiben im Vor-/Nachsnapshot.
+  muss(cas.length === 7 && hash(JSON.stringify(kanonisch(cas))) === ZIEL.alteCasHash
+    && cas.every(c => ["reserviert", "modell-laeuft"].includes(c.zustand)
+      && typeof c.besitzer === "string" && c.besitzer.length > 0
+      && Number.isFinite(zeit(c.lease_bis)) && zeit(c.lease_bis) < jetztMs
+      && c.vorgang_id !== ZIEL.vg), "aktive oder ungepruefte CAS-Eigentuemer");
+}
 async function pruefe(v, { jetztMs = Date.now() } = {}) {
   muss(v?.version === 1 && v.modus === "vorschau" && v.verbraucht === false
     && typeof v.inhalt === "string" && Buffer.byteLength(v.inhalt) <= 8 * 1024 * 1024
@@ -42,7 +55,8 @@ async function pruefe(v, { jetztMs = Date.now() } = {}) {
     && c.besitzer === null && c.lease_bis === null && c.fencing === 1 && c.versuche === 1 && c.ki_aufrufe === 1
     && c.ergebnis_hash === null && c.ergebnis_fencing === null
     && c.letzter_grund === "modellfehler:betriebskosten-abschluss-unbestaetigt", "UNKNOWN ohne KO und ohne Ergebnis");
-  muss(gleich(s.aktiveJobs, []) && gleich(s.aktiveSlots, []) && gleich(s.aktiveCas, [])
+  pruefeCasRuhe(s.aktiveCas, jetztMs);
+  muss(gleich(s.aktiveJobs, []) && gleich(s.aktiveSlots, [])
     && s.rawJobs?.length === 1 && gleich(s.rawJobs[0], j), "keine Workerarbeit oder konkurrierende Rohauftraege");
   const original = s.archive?.find(a => a.id === `main-rohstand-${ZIEL.raw.slice(3)}-${ZIEL.stand}`)?.data;
   muss(original?.version === 1 && original.quellenHash === ZIEL.stand
@@ -107,6 +121,6 @@ async function pruefe(v, { jetztMs = Date.now() } = {}) {
     geprueftAm: new Date(jetztMs).toISOString(), digest: v.digest, vor: s,
     entscheidung: "erneut", hinweis: "Keine Aktivierung ohne frisches konkretes Betreiber-GO. Kein Workerstart." };
 }
-module.exports = { ZIEL, pruefe };
+module.exports = { ZIEL, pruefe, pruefeCasRuhe };
 if (require.main === module) Promise.resolve().then(() => pruefe(JSON.parse(readFileSync(0, "utf8"))))
   .then(b => console.log(JSON.stringify(b))).catch(e => { console.error(e.message); process.exitCode = 1; });
