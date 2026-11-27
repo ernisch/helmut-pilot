@@ -400,3 +400,79 @@ eindeutige Kanten vor dem ersten Write, erhält idempotenten Bestand und simulie
 echte RPC-Fehler. Alle bisherigen Raw-/Linkfehler- und Bestandsschutzprüfungen
 bleiben erhalten; 27/27 gezielte Fälle bestehen. Kein Runtime-Nachtrag dafür.
 
+## Frische Betriebsbilanz vor der neuen Freigabe
+
+Die reine Supabase-Lesung vom 27.11. um 16:11:26 Uhr Berlin bestätigt
+55 heute terminal abgeschlossene Dokumentaufträge. Das sind eindeutige Aufträge,
+keine Zählung wiederholter Vertagungen. Die historische Bilanz mit 41 bzw. 50
+Endzuständen bleibt als datierter Zwischenstand erhalten.
+
+| Fehlerklasse | Zahl | Bewertung und Behandlung |
+| --- | ---: | --- |
+| Eingangsdiagnosen | 18 | Vier HIB-Projektionsfehler durch #1360 und zwei belegte DIP-Langtitel durch #1362 korrigiert; acht frühere Quellenstandsabweichungen, drei nachgewiesene Table-Herausgeberkonflikte und ein neuer BMG-Titelkonflikt bleiben geschützt |
+| Prüfung zuvor fehlgeschlagener KOs | 13 | Historische negative Ergebnisse/UNKNOWN, keine 13 neuen Modellaufrufe; kein verwertbares Originalresultat für eine pauschale Entsperrung |
+| Neuer Modellausgang UNKNOWN | 1 | EU-Einzelfall, 0,212 USD weiter gebunden; bedingter Wiederaufnahmeweg für den 28.11. vorbereitet |
+| Dauerhafte Budgetwartefrist | 23 | Sämtlich vor dem heutigen Tag angelegte Aufträge; bestehende 48-Stunden-Wache bleibt erhalten |
+
+Der zusätzliche BMG-Fall `05d1afa7-d8bb-46df-a760-0e78ad1ea364` wurde
+um 15:30 Uhr Berlin terminal. Zwei gespeicherte Fassungen derselben URL nennen
+unterschiedliche Titel: eine Linnemann-Aussage zur Notfallversorgung und das
+Passieren des Bundesrats. Beide Archive liegen vor. Das beweist einen Titelkonflikt,
+keinen fehlenden Speicherstand oder Azure-Ausfall. Ohne maßgeblichen Originalbeleg
+keine Titelgleichsetzung; aktueller Pflichtbedarf ist gesondert zu lesen.
+
+Der reguläre Hetzner-Lauf von 16:00 bis 16:03:56 Uhr Berlin auf `dadf999f`
+endete erfolgreich: 172 Zielaufträge = vier erledigt + 168 vertagt,
+null Endfehler und Leaseverluste. Die Queue enthält 1.680 fällige Analysen und
+62 fällige Abrufe; um 12:21 Uhr waren es 1.575/97. Der Analysestau ist nicht
+behoben. 81 Modellaufrufe, sieben Originalabrufe, 0,789474 USD Tagesbindung,
+10,331840 USD Gesamtbindung und sieben offene Geldbindungen sind unverändert.
+0,210526 USD verbleibende Tageskapazität decken die erforderliche Reservierung
+von 0,212 USD nicht. Das ist ein berechtigter Schutzstopp, keine Freigabe für
+eine Budgeterhöhung oder das Auflösen alter Reserven.
+
+Der normale Kundenleser lieferte um 16:12:12 Uhr Berlin HTTP 200 und weiterhin
+64 Meldungen als quittierte Teilfassung, gespeichert am Morgen um 07:20:23 Uhr.
+Der GIZ-Riegel schließt weiterhin genau den geschützten Mischinhalt aus;
+der andere zulässige GIZ-Beitrag bleibt enthalten. Die beiden alten BReg-KOs
+sind in dieser Antwort ebenfalls nicht enthalten. Der heutige Morgen bleibt FAIL;
+ein erfolgreicher Quellenlauf ersetzt keine vollständige Morgenabnahme.
+
+Private Originale: `pr1363-betrieb-1611-original.json`,
+`pr1363-neueste-eingangsdiagnose-original.json` und
+`pr1363-kundenleser-vorfreigabe{,.body}.json`. Neue Migration, BReg-Korrektur
+und EU-Wiederaufnahme bleiben bis zum konkreten GO inaktiv.
+
+Die anschließende reine Pflichtlesung um 16:13:44 Uhr bestätigt unverändert
+zwölf erledigte Abrufaufträge mit zehn vollständigen und zwei teilweisen
+Quittungen. Von 84 referenzierten Analysen sind 83 erledigt, nur der EU-UNKNOWN
+bleibt offen. Der historische Bundestags-Einzelauftrag ist kein Bestandteil
+dieser heutigen Analysereferenzen; daraus folgt kein neuer Retry-Auftrag.
+
+Die gleichzeitige Rückstandslesung unterscheidet die 1.680 fälligen Analysen
+nach ihren gespeicherten letzten Gründen: 918 historische Wiedervorlagen
+(darunter 692 alte Profilbindungen und 138 Versionskonflikte), 259 Vertagungen
+(139 Verstehensfortsetzungen und 118 Budgetwartefälle), 488 ohne Fehlertext
+sowie 15 weitere geschützte Altpositionen. Ein letzter Fehlertext beweist keinen
+neuen heutigen Aufruf. Diese Fälle bleiben sichtbar; weder die neue Migration
+noch der Quellenoperator setzen sie pauschal zurück oder behaupten ihre Erledigung.
+
+### Gezielter Anschluss der übrigen Briefing-Testaufbauten
+
+Am Kopf `8438f86f` bestanden Browser, Offline-Grundprüfung und die neuen nativen
+Versions-/RLS-Prüfungen. Die breitere Bereichsregression fand acht weitere ältere
+Testaufbauten: Sieben ersetzten nur den Einzelquellenleser; der echte neue
+Batchleser stoppte in ihrer nicht konfigurierten Offline-Umgebung korrekt mit
+UNKNOWN. Die achte extrahierte den echten Storagecode, injizierte aber noch
+den alten Transportnamen.
+
+Nur diese acht Testdateien wurden angepasst. Batch und Einzelleser liefern
+dieselben vorbereiteten Quellen unter exakter KO-/Vorgangsbindung; der VM-Test
+verlangt ausdrücklich die neue Quellenfassungssicht. Sämtliche bestehenden
+fachlichen Assertions bleiben erhalten. Eine zusätzliche Quellenpflicht-Gegenprobe
+verlangt Weitergabe desselben typisierten UNKNOWN und null Legacy-Ersatzlesungen
+trotz vorhandener Quellen. Gezielte acht Suiten: 277/277 bestanden, unabhängig
+am Diff geprüft. Kein Produktcode oder Schutzmechanismus wurde dafür geändert.
+Der volle verpflichtende CI-Nachweis am neuen Endkopf bleibt erforderlich;
+keine lokale Wiederholung der bereits ausreichend belegten Suiten oder des Monats.
+
