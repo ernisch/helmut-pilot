@@ -85,25 +85,40 @@ function brandenburgQuelle(time = "2026-10-08T10:57:00.000Z") {
     display_title: source.title, display_summary: source.summary, why_relevant: "Synthetischer Themenbezug.", recommendation: "Beobachten." };
   const kos = [{ ...model, ...old, id: "ko-base", vorgang_id: "vg-base" }, { ...model, ...old },
     { ...model, ...old, id: "ko-ersterfassung", vorgang_id: "vg-ersterfassung", created_at: "2026-10-08T07:18:00Z" }];
-  let reads = 0; const loaded = [];
+  let reads = 0, batchReads = 0, singleReads = 0; const loaded = [];
   const groups = Object.fromEntries(kos.map(k => [k.vorgang_id, [{ ...source, id: "rd-" + k.id, url: "https://example.org/politik/" + k.id }]]));
   const snapshot = JSON.stringify({ kos, groups });
   S.v3StoreReady = () => true;
   S.listKnowledgeObjects = async () => { reads++; return kos; };
-  S.getSourcesForVorgang = async id => { reads++; loaded.push(id); return groups[id]; };
+  const fixtureSources = id => {
+    A(Object.hasOwn(groups, id), "Nur Quellen der vorbereiteten Vorgangsbindung");
+    return structuredClone(groups[id]);
+  };
+  S.getSourcesForVorgang = async id => { reads++; singleReads++; loaded.push(id); return fixtureSources(id); };
+  S.getPruefSourcesByVorgaenge = async rows => {
+    A(Array.isArray(rows)); A.equal(new Set(rows.map(k => k.id)).size, rows.length);
+    reads++; batchReads++;
+    return Object.fromEntries(rows.map(k => {
+      A(kos.some(known => known.id === k.id && known.vorgang_id === k.vorgang_id), "Exakte KO-/Vorgangsbindung");
+      loaded.push(k.vorgang_id);
+      return [k.vorgang_id, fixtureSources(k.vorgang_id)];
+    }));
+  };
   E.decideForUser = (_p, rows, opts) => (opts.limit === 50 ? rows.filter(k => k.id === "ko-base") : rows)
     .map(k => ({ knowledge_object_id: k.id, vorgang_id: k.vorgang_id, score: 40, decision: "Beobachten", matched_features: [] }));
   const build = require("../server").__buildV3Briefing, profile = { id: "synthetik-audit-test", focusTopics: ["Bildung"] };
   await test("Echter Appbuilder behaelt Basis/A-artige Erstaufnahme und entfernt reine Audit-Ergaenzung", async () => {
     const out = await build(profile, profile.id, { now });
     A.deepEqual(out.items.map(i => i.knowledgeObjectId).sort(), ["ko-base", "ko-ersterfassung"]);
-    A.equal(reads, 4); A.deepEqual(loaded.sort(), ["vg-audit", "vg-base", "vg-ersterfassung"]);
+    A.equal(reads, 2); A.equal(batchReads, 1); A.equal(singleReads, 0);
+    A.deepEqual(loaded.sort(), ["vg-audit", "vg-base", "vg-ersterfassung"]);
   });
   await test("Echter Eingabebuilder behaelt alle geladenen KO-/Quellenoriginale im Nachweis", async () => {
-    reads = 0; loaded.length = 0;
+    reads = 0; batchReads = 0; singleReads = 0; loaded.length = 0;
     const out = await build(profile, profile.id, { now, aussagenEingabe: true });
-    A.equal(reads, 4); A.equal(out.korrekturBasis.kos.length, 3);
+    A.equal(reads, 2); A.equal(batchReads, 1); A.equal(singleReads, 0); A.equal(out.korrekturBasis.kos.length, 3);
     A.deepEqual(Object.keys(out.korrekturBasis.sourcesByVorgang).sort(), ["vg-audit", "vg-base", "vg-ersterfassung"]);
+    A.deepEqual(out.korrekturBasis.sourcesByVorgang, groups);
     A(!out.briefing.items.some(i => i.knowledgeObjectId === old.id));
     A.equal(JSON.stringify({ kos, groups }), snapshot);
   });

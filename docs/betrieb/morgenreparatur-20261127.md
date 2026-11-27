@@ -280,17 +280,29 @@ Die gezielten nativen Leser-/RLS-/Snapshot-, Writer- und Wiederaufnahmebelege li
 privat vor. Unabhängiger Runtime-/Schema-Review bestanden; die integrierte Pflicht-CI
 am endgültigen PR-Kopf bleibt vor Aktivierung verbindlich.
 
-Die frische Bestandsprüfung ergibt 60 Quellenkanten an
+Die Bestandsprüfung um 14:41 Uhr Berlin ergab 60 Quellenkanten an
 `ko-vg-bundesregierung-20241119-743c6b` und eine an
 `ko-vg-entlastungen-20260417-6517e5`, beide KO-Version 1. Insgesamt sind es
 60 verschiedene Rohzeilen. 13 besitzen exakt passende heutige Archive;
 17 bestehende Archivversionen und 105 Fundstellen bleiben unverändert.
-47 Rohzeilen besitzen bisher kein Archiv. Der konkrete vorbereitete Umfang ist:
+47 Rohzeilen besaßen dabei kein Archiv. Der ursprüngliche Vorbereitungsumfang war:
 47 heutige Insert-only-Bestandssnapshots, 61 vollständige Versionsbindungen und
 eine Promotion der Zielrohzeile auf den bereits gespeicherten amtlichen RSS-Stand
 `0968e51ad7faa8d8f2d74416e55ebcbb5a86312b6d2a8c1ba1d4ff44dbe6a795`.
 Snapshots erhalten den tatsächlich vorhandenen Inhalt und seine echten Feldzeitpunkte.
 Sie sind ausdrücklich keine nachgebauten historischen KI-Lektüren oder neuen Abrufe.
+
+Die erneute reine Bestandslesung um 15:28 Uhr Berlin belegt einen regulären Nachtrag:
+18 Archive und 106 Fundstellen, darunter ein inzwischen exakt archivierter weiterer
+kanonischer Stand. Alle 60 Rohzeilen, zwei KOs und 61 Kanten sowie die ursprünglichen
+17 Archive und 105 Fundstellen sind unverändert. Deshalb sind aktuell nur noch
+46 neue Bestandssnapshots erforderlich. Der Operator fordert die ursprünglichen
+17/105 vollständigen Originalanker weiterhin unverändert als Teilmenge und bindet
+alle regulären Nachträge vollständig an die frische Vorschau. Er validiert deren
+Hash, Schema, Rohidentität, URL und Quellenautorität. Andere Standfassungen werden
+erhalten und nicht als kanonische KO-Quelle verwendet. Nur wirklich fehlende exakte
+kanonische Archive werden angelegt, höchstens 47; vorhandene korrekte Archive werden
+wiederverwendet. Die 61 Versionsbindungen und eine Promotion bleiben fest.
 
 Aktivierungsreihenfolge: neues konkretes GO, additive Migration unter altem
 kanonischem Bestand, geprüfter Merge und reguläres Deployment auf beiden Plattformen,
@@ -328,14 +340,19 @@ führt die drei synthetischen CI-Gruppen aus. Sieben getrennte native Prüfgrupp
 mit unveränderten echten Produktpins bestanden: 47+61+1, Erhalt aller Altarchive,
 Fundstellen, KOs, CAS-Zeilen und Finanzdaten, atomarer Abbruch bei falschem GO,
 Vorwert-/Rechte-/Quotenabweichung sowie gesperrter Rückweg nach Konsum oder Drift.
+Zusätzliche drei native Append-Gruppen bestehen mit den unveränderten Produktpins:
+aktueller Bestand 46+61+1, weitere reguläre Nachträge mit 45+61+1 und 65 erhaltenen
+Archiven nach dem Rückweg sowie Abbruch bei Ankerlöschung, Mutation, fremder
+Identität/Autorität und jeder Änderung nach der frischen Vorwertbindung.
+Vier synthetische Gruppen bleiben vom privaten Produktnachweis getrennt.
 Globale Driftwachen binden jede vollständige Tabellenzeile über nativen SHA256
 und sortierte Zeilenhashes, ohne einen riesigen rekursiven JSON-Aggregatbaum.
 Aktivierungsbindung und Rückweg benötigen nur 405 beziehungsweise 139 Byte;
 die vollständige private Vorschau und der tatsächliche Beleg bleiben erhalten.
 Der vorhandene geprüfte Transport entfernt nur den psql-Prolog und bindet die
 drei Parameter kollisionsfrei als SQL-Dollar-Literale. Der Transaktionskern bleibt
-unverändert; der SQL-Körper umfasst weniger als 30 KB und die begrenzten Parameter
-bleiben deutlich unter der API-Eingangsgrenze. Ein reiner Produktions-SELECT
+unverändert; SQL-Körper und begrenzte Parameter bleiben deutlich unter der
+API-Eingangsgrenze. Ein reiner Produktions-SELECT
 bestätigt für diesen bestehenden Zugang `current_user=session_user=postgres`,
 UTC und keine Recovery. Kein zusätzlicher SSH-/Datenbankzugang wird eingerichtet.
 
@@ -365,4 +382,14 @@ und besteht danach; fehlende neue Migration wird ausdrücklich abgewiesen.
 Keine pauschale Installation geschützter Kohortenpfade, keine gelockerte Prüfung
 und keine erneute Monatssimulation. Beide Pflichtchecks müssen für den neuen
 endgültigen Kopf erneut erfolgreich sein.
+
+Die korrigierte native Anschlussprobe sowie die Browserprüfung bestanden am Kopf
+`9653e63e`. Die nachfolgenden Offline-Prüfungen fanden noch zwei alte Mocks, die
+nur den Einzelquellenleser ersetzten und unbeabsichtigt auf den bisherigen
+Batch-Fehlerfallback angewiesen waren. Die Fixtures liefern jetzt ausdrücklich
+denselben vollständigen Batch mit identischen Quellen und geprüften KO-/Vorgangs-
+bindungen. Kandidatenzeit 36/36 und Publication Eligibility 12/12 bestanden gezielt;
+Policy-, GIZ-, Tenant-, Original-, Schreib- und Modellschutz bleiben erhalten.
+Der Runtime-Fehlerschutz wurde dafür nicht geändert. Beide Erstfehler bleiben
+erhalten; Nachträge werden gemeinsam auf einem neuen CI-Endkopf geprüft.
 

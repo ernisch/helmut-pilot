@@ -10,6 +10,7 @@ const lit=x=>"'"+String(x).replaceAll("'","''")+"'";
 const j=x=>lit(JSON.stringify(x))+"::jsonb";
 let passed=0;
 const test=async(name,fn)=>{if(process.argv.includes("--nur-nativ")&&!name.startsWith("Privat/native:"))return;
+ if(process.argv.includes("--nur-append")&&!name.includes("Append"))return;
  if(process.argv.includes("--nur-ergaenzung")&&!name.includes("Ergaenzung"))return;
  await fn();console.log("PASS "+(++passed)+" "+name);};
 function synthetisch(){
@@ -29,8 +30,9 @@ function synthetisch(){
  const kanten=roh.map(r=>({knowledge_object_id:kos[0],raw_document_id:r.id,created_at:"2026-08-20T00:00:00+00:00"}));
  kanten.push({...kanten[0],knowledge_object_id:kos[1]});
  return {s:{roh,kos:kos.map((id,i)=>({id,ko_version:1,understanding_status:"complete",verstehen_fencing:i?1:null})),
-  kanten,zielKanten:kanten.filter(l=>l.raw_document_id===raw),archive,bindungen:[]},
-  ziel:{raw,kos,rawIds:roh.map(r=>r.id),alt:R.standHash(roh[0]),neu:R.standHash(neu)}};
+  kanten,zielKanten:kanten.filter(l=>l.raw_document_id===raw),archive,findings:[],bindungen:[]},
+  ziel:{raw,kos,rawIds:roh.map(r=>r.id),alt:R.standHash(roh[0]),neu:R.standHash(neu),
+    anker:{archive:archive.map(B.digest),findings:[]}}};
 }
 function original(file){
  const x=JSON.parse(fs.readFileSync(file,"utf8")),o=x.result||x;
@@ -54,6 +56,19 @@ function original(file){
    s=>s.bindungen.push({knowledge_object_id:"vorbindung"})
   ]){const {s,ziel}=synthetisch();mutate(s);A.throws(()=>O.plane(s,ziel),/breg-fassung:/);}
  });
+ await test("Synthetischer Fachkern: Append bewahrt feste Anker, verwendet exakte Archive und erzeugt nur fehlende",()=>{
+  const {s,ziel}=synthetisch(),d=s.roh[13],anders={...s.roh[14],title:"Anderer synthetischer Stand"};
+  const archiv=d=>({id:B.pointer(d.id,R.standHash(d)),data:{version:1,quellenHash:R.standHash(d),dokument:structuredClone(d)}});
+  s.archive.push(archiv(d),archiv(anders));const p=O.plane(s,ziel);
+  A.equal(p.neueArchive.length,46);A.equal(p.anzahl.vorarchive,19);
+  A(!p.neueArchive.some(a=>a.data.dokument.id===d.id));
+  A(p.neueArchive.some(a=>a.data.dokument.id===anders.id));
+  for(const mutate of [
+   x=>x.archive.shift(),x=>x.archive[0].data.dokument.source_id="fremd",
+   x=>x.archive.at(-1).data.dokument.source_id="fremd",
+   x=>x.archive.at(-1).data.dokument.id="rd-"+"f".repeat(64)
+  ]){const clone=structuredClone(s);mutate(clone);A.throws(()=>O.plane(clone,ziel),/breg-fassung:/);}
+ });
  await test("Unveraenderter Produktwrapper weist selbst konsistente synthetische Bestands-/Fassungspins ab",()=>{
   const {s}=synthetisch(),inhalt=JSON.stringify(s);
   A.throws(()=>O.pruefe({version:1,modus:"vorschau",inhalt,digest:require("crypto").createHash("sha256").update(inhalt).digest("hex"),
@@ -61,9 +76,12 @@ function original(file){
  });
  if(!arg("--privat")){console.log(passed+" synthetische Gruppen PASS; private native Produktpin-Abnahme nicht ausgefuehrt.");return;}
  const dir=path.resolve(arg("--privat"));A(dir.startsWith("/workspace/helmut-reparatur-20261127-"));
- const a=original(path.join(dir,"breg-ops-vorwerte-1-original.json"));
- const b=original(path.join(dir,"breg-ops-vorwerte-2-original.json"));
+ const kontroll=process.argv.includes("--kontrolle")?"-kontrolle":"";
+ const a=original(path.join(dir,"breg-ops-vorwerte-1"+kontroll+"-original.json"));
+ const b=original(path.join(dir,"breg-ops-vorwerte-2"+kontroll+"-original.json"));
  const c=original(path.join(dir,"breg-ops-vorwerte-3-original.json"));
+ const erwarteteNeueArchive=a.roh.filter(r=>!b.archive.some(v=>v.id===B.pointer(r.id,R.standHash(r)))).length;
+ const erwarteteArchiveDanach=b.archive.length+erwarteteNeueArchive;
  const container="helmut-monat-pr1359-20261126";
  const inspect=JSON.parse(execFileSync("docker",["inspect",container],{encoding:"utf8"}))[0];
  A.equal(inspect.HostConfig.NetworkMode,"none");A.match(inspect.Config.Image,/^postgres:17\.6-/);
@@ -150,7 +168,65 @@ function original(file){
   const before=()=>{const v=run("vorschau");letzteVorschau=v;try{return O.pruefe(v);}catch(e){
    fs.writeFileSync(path.join(dir,"breg-ops-fehler-vorschau-private.json"),JSON.stringify(v),{mode:0o600});throw e;}};
   setup();
-  await test("Privat/native: unveraenderte echte60IDs/add680/0968/2KOs/17Archive/105Findings und7 Alt-CAS bestehen",()=>{
+  if(kontroll)await test("Privat/native: Append18/106 mit unveraenderten Produktpins ergibt46+61+1 und behaelt Nachtraege im Rueckweg",()=>{
+   A.equal(b.archive.length,18);A.equal(b.fundstellen.length,106);
+   const p=before(),r=run("freigeben",p,go("freigeben",p.digest));
+   A.equal(r.plan.neueArchive.length,46);A.equal(r.bindungen.length,61);
+   A.deepEqual(r.plan.anzahl,{vorarchive:18,neueArchive:46,findings:106,bindungen:61,promotionen:1});
+   A.equal(r.plan.neueArchive.some(a=>a.data.quellenHash==="14169d3ce9c7ead7fceec7200bd988391f4ea4cf390ff23c5caaf7a217d923fd"),false);
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"64");
+   for(const [name,value] of [["vorschau",letzteVorschau],["vorbereitet",p],["quittung",r]])
+    fs.writeFileSync(path.join(dir,"breg-ops-append-"+name+"-private.json"),JSON.stringify(value),{mode:0o600});
+   run("rueckweg",rueck(r),go("rueckweg",r.nachDigest));
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"64");
+   A.equal(psql("select count(*) from document_findings;"),"106");
+  });
+  if(kontroll)await test("Privat/native: Append weitere volle Nachtraege gebunden; andere Fassung unverlinkt;45+61+1 und alle65 Archive im Rueckweg",()=>{
+   setup();const initial=before(),v=JSON.parse(letzteVorschau.inhalt);
+   const missing=O.plane(v,{...O.ZIEL,rawIds:v.roh.map(r=>r.id).sort()}).neueArchive;
+   const canon=missing[0],other={...missing[1].data.dokument,title:"Synthetischer weiterer amtlicher Archivstand"};
+   const historical={id:B.pointer(other.id,R.standHash(other)),data:{version:1,quellenHash:R.standHash(other),dokument:other}};
+   rows("helmut_store",[{...canon,updated_at:new Date().toISOString()},{...historical,updated_at:new Date().toISOString()}]);
+   const finding={...b.fundstellen[0],raw_document_id:other.id,source_id:"synthetischer-regulaerer-nachtrag",
+    original_url:other.url,retrieval_path_id:"rp-synthetischer-nachtrag",found_at:new Date().toISOString(),created_at:new Date().toISOString()};
+   rows("document_findings",[finding]);
+   A.throws(()=>run("freigeben",initial,go("freigeben",initial.digest)),/Vorwert/);
+   const p=before(),r=run("freigeben",p,go("freigeben",p.digest));
+   A.deepEqual(r.plan.anzahl,{vorarchive:20,neueArchive:45,findings:107,bindungen:61,promotionen:1});
+   A(!r.plan.bindungen.some(l=>l.raw_source_version_id===historical.id));
+   A(r.plan.neueArchive.some(a=>a.data.dokument.id===other.id));
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"65");
+   run("rueckweg",rueck(r),go("rueckweg",r.nachDigest));
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"65");
+   A.equal(psql("select count(*) from document_findings;"),"107");
+  });
+  if(kontroll)await test("Privat/native: Append Altanker Mutation/Loeschung, fremde Raw/Kante/Autoritaet und Nachlaufdrift STOP",()=>{
+   const ankerArchiv=b.archive.find(a=>O.ZIEL.anker.archive.includes(B.digest(a)));
+   const ankerFinding=b.fundstellen.find(f=>O.ZIEL.anker.findings.includes(B.digest(f)));
+   for(const change of [
+    "delete from helmut_store where id="+lit(ankerArchiv.id),
+    "update helmut_store set data=jsonb_set(data,'{dokument,title}',to_jsonb('drift'::text)) where id="+lit(ankerArchiv.id),
+    "delete from document_findings where to_jsonb(document_findings)="+j(ankerFinding),
+    "update document_findings set source_id='fremd' where to_jsonb(document_findings)="+j(ankerFinding),
+    "update raw_documents set source_id='fremd' where id="+lit(O.ZIEL.raw),
+    "insert into ko_document_links(knowledge_object_id,raw_document_id) values("+lit(O.ZIEL.kos[1])+","+lit(a.roh.find(r=>r.id!==O.ZIEL.raw).id)+")"
+   ]){setup();psql(change);A.throws(()=>before(),/breg-fassung:/);
+    A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"0");}
+   for(const kind of ["authority","foreign-raw","schema"]){
+    setup();before();const v=JSON.parse(letzteVorschau.inhalt);
+    const source=structuredClone(O.plane(v,{...O.ZIEL,rawIds:v.roh.map(r=>r.id).sort()}).neueArchive[0]);
+    if(kind==="authority")source.data.dokument.source_id="fremde-Autoritaet";
+    if(kind==="foreign-raw")source.data.dokument.id="rd-"+"f".repeat(64);
+    if(kind==="schema")source.data.fremdesFeld=true;
+    rows("helmut_store",[{...source,updated_at:new Date().toISOString()}]);
+    A.throws(()=>before(),/breg-fassung:|ko-quellenfassung-/);
+   }
+   setup();const p=before(),r=run("freigeben",p,go("freigeben",p.digest));
+   psql("update document_findings set found_at=now() where to_jsonb(document_findings)="+j(ankerFinding));
+   A.throws(()=>run("rueckweg",rueck(r),go("rueckweg",r.nachDigest)),/Quittung/);
+   A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"61");
+  });
+  await test("Privat/native: unveraenderte echte60IDs/add680/0968/2KOs/Archiv-/Finding-Anker und7 Alt-CAS bestehen",()=>{
    prepared=before();A.match(prepared.planDigest,/^[a-f0-9]{64}$/);
    A.equal(B.digest(JSON.parse(letzteVorschau.inhalt).sicherung.aktiveCas),O.ZIEL.alteCasHash);
   });
@@ -174,10 +250,10 @@ function original(file){
     "update helmut_verstehen_reservierungen set besitzer=null where vorgang_id="+lit(c.aktive_cas[0].vorgang_id),
     "update helmut_store set data=jsonb_set(data,'{betriebskostenBudget,bound}','0'::jsonb) where id='main-auth'"
    ]){setup();const p=before();psql(change);A.throws(()=>run("freigeben",p,go("freigeben",p.digest)),/breg-fassung:/);
-    A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"0");A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"17");}
+    A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"0");A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),String(b.archive.length));}
   });
   setup();prepared=before();
-  await test("Privat/native:47+61+1 atomar, bitgleiches Finanzbuch/Alt-CAS/Journale; Altleser bleiben exakt",()=>{
+  await test("Privat/native: nur fehlende Archive+61+1 atomar, bitgleiches Finanzbuch/Alt-CAS/Journale; Altleser bleiben exakt",()=>{
    const old=JSON.parse(letzteVorschau.inhalt);receipt=run("freigeben",prepared,go("freigeben",prepared.digest));
    A.equal(receipt.modus,"aktiviert");A.equal(receipt.bindungen.length,61);
    for(const [name,value] of [["vorschau",letzteVorschau],["vorbereitet",prepared],["quittung",receipt]])
@@ -186,19 +262,19 @@ function original(file){
     aktivierung:Buffer.byteLength(JSON.stringify(prepared)),rueckweg:Buffer.byteLength(JSON.stringify(rueck(receipt))),
     go:Buffer.byteLength(JSON.stringify(go("freigeben",prepared.digest))),sql:Buffer.byteLength(sql),
     quittung:Buffer.byteLength(JSON.stringify(receipt))}));
-   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"64");
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),String(erwarteteArchiveDanach));
    A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"61");
    A.equal(psql("select bool_and(vollstaendig) from helmut_ko_quellenmanifeste;"),"t");
    A.equal(psql("select count(*) from helmut_ko_quellen q where (select x.title from public.raw_documents(q) x)=(q.source_archive->'dokument'->>'title');"),"61");
    A.equal(B.digest(JSON.parse(psql("select data->'betriebskostenBudget' from helmut_store where id='main-auth'"))),B.digest(c.kostenbuch));
    A.equal(psql("select source_id from raw_documents where id="+lit(O.ZIEL.raw)),"bundesregierung");
    A.throws(()=>run("freigeben",prepared,go("freigeben",prepared.digest)),/breg-fassung:/);
-   A.equal(old.archive.length,17);
+   A.equal(old.archive.length,b.archive.length);
   });
-  await test("Privat/native: Rueckweg vor Konsum,47 neue Archive und verbrauchtes Einmalrecht bleiben",()=>{
+  await test("Privat/native: Rueckweg vor Konsum,alle Archive und verbrauchtes Einmalrecht bleiben",()=>{
    const r=run("rueckweg",rueck(receipt),go("rueckweg",receipt.nachDigest));A.equal(r.modus,"zurueckgenommen");
    A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"0");
-   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"64");
+   A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),String(erwarteteArchiveDanach));
    A.equal(psql("select count(*) from helmut_store where id like 'main-operator-breg-fassung-20261127%';"),"2");
    A.equal(psql("select source_id from raw_documents where id="+lit(O.ZIEL.raw)),a.roh.find(r=>r.id===O.ZIEL.raw).source_id);
    A.throws(()=>run("rueckweg",rueck(receipt),go("rueckweg",receipt.nachDigest)),/breg-fassung:/);
@@ -228,7 +304,7 @@ function original(file){
     "update helmut_jobs set status='laeuft',lease_owner='synthetischer-neuer-owner',lease_expires_at=now()+interval '1 minute' where id="+lit(c.diagnose_job[0].id)
    ]){setup();p=before();psql(change);A.throws(()=>run("freigeben",p,go("freigeben",p.digest)),/breg-fassung:/);
     A.equal(psql("select count(*) from helmut_ko_quellenfassungen;"),"0");
-    A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),"17");}
+    A.equal(psql("select count(*) from helmut_store where id like '%-rohstand-%';"),String(b.archive.length));}
   });
  }finally{
   if(gestartet)cleanExec(["pg_ctl","-D",pgdir,"-m","fast","-w","stop"]);
