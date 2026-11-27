@@ -153,3 +153,65 @@ Reservierungen, Negativurteile und Laufquittungen werden nicht zurückgesetzt.
 Nach Deployment tatsächlichen Code/Ort, reguläre Jobs und Kosten rein lesend prüfen.
 Das vollständige Morgenbriefing bleibt bis zum nächsten echten Produktionsnachweis offen.
 
+## Nachkontrolle und weitere Pflichtlücken am 27.11.
+
+Der reguläre Hetzner-Lauf um 13:15 Uhr Berlin auf `781c7445` endete um 13:18:22
+erfolgreich: 157 Zielaufträge, drei erledigt und 154 zurückgestellt, null
+endgültige Fehler oder Leaseverluste. Das bestätigt den laufenden Code, keine
+vollständige Versorgung und keinen erneuten produktiven Modellfehlernachweis.
+Der Kundenleser lieferte weiter 64 Meldungen als quittierte Teilfassung;
+83 von 84 referenzierten Morgenanalysen waren erledigt, ein UNKNOWN blieb gesperrt.
+
+### DIP-Langtitel: nachgewiesener weiterer Aufnahmefehler
+
+Der Betreiber beschaffte um 13:42 Uhr ausschließlich lesend die zwei amtlichen
+Metadatenantworten für `292778` und `292779`. Originalbytes und Prüfsummen
+liegen privat vor; die öffentlichen Metadaten sind als Offline-Fixtures erhalten.
+Beide gültigen Titel sind 472 Zeichen lang. Die bisherige 300-Zeichen-Grenze
+verwarf erst die DIP-Bindung und anschließend den ganzen Rohdatentitel.
+
+Nur vollständig gebundene DIP-Titel erhalten jetzt den bestehenden endlichen
+600-Zeichen-Rahmen der DIP-Vorgangstitel. Die allgemeine Schlagzeilengrenze bleibt
+300. Rollen, Dokumenttyp, Titel, Datum und URL werden weiterhin vollständig
+hashgebunden; die 5.000-Zeichen-Gesamtgrenze und alle übrigen Typ-/Größenwachen
+bleiben erhalten. Keine gekürzte Gesetzesbezeichnung oder Rollenvermutung.
+Der neue Originalfall scheiterte vor der Korrektur. Danach bestehen 26 Gruppen
+über Adapter, beide Schreibwege, sechs Leser und Fachbelege; zusätzliche
+Grenzfälle weisen 600/601, ungebundene 300/301, Manipulation und Gesamtgröße nach.
+Die zwei historischen Eingangsdiagnosen und die alte Teilquittung bleiben erhalten.
+Eine neue gültige Fassung bekommt regulär ihren eigenen gebundenen Auftrag.
+
+### Enger EU-Wiederaufnahmeweg, noch keine Produktionsfreigabe
+
+Der neue Operator `scripts/ops/quellen-restpflicht-20261127.{js,sql}` bereitet
+ausschließlich den Fall `f346fe50-dadb-4139-b68a-b78fd88cf4ea` für den 28.11. vor.
+Ein frischer Tagesplan muss weiterhin exakt diesen Pflichtbedarf, Artikel und
+Archivhash bestätigen. Die native CAS-Entscheidung und der Auftrag werden
+gemeinsam vorwertgebunden behandelt; höchstens eine neue Versuchskapazität,
+keine Zählernullung. Alle sieben ungeklärten Geldbindungen bleiben erhalten.
+Die vorgangsweite Entscheidung ist keine Zusage genau eines HTTP-Aufrufs;
+notwendige reguläre Abschnittsfortsetzungen bleiben unter den unveränderten
+Sender-, CAS-, Geld-, Aufruf- und Originalgrenzen.
+
+Sechs lokale Gruppen einschließlich isoliertem PostgreSQL und echtem Queue-Claim
+bestanden: Vorwert-/Tages-/GO-/Quellen-/Kosten-/Leaseabweichungen stoppen,
+Originale und Reserven bleiben gleich, eine dauerhafte Einmalquittung verhindert
+eine zweite Freigabe auch nach dem Rückweg. Der Rückweg ist nach Workerübernahme
+gesperrt. Die unveränderte heutige Uhr lehnt eine Aktivierung ab. Nur die private
+Testuhr wurde auf den 28.11. gestellt; Artikel-, Vorgangs-, Ticket-, Vertrags- und
+Funktionspins blieben unverändert. CI prüft die synthetischen Negativverträge;
+der positive native Nachweis verwendet den privaten Originalkostenvertrag.
+Eine neue konkrete Betreiberfreigabe bleibt vor der Produktionsaktion erforderlich.
+
+### Bundesregierung: historische Quellen dürfen nicht umgehängt werden
+
+Die Pflichtteilquittung enthält eine alte Eingangsdiagnose zu
+`rd-0477967d342ba91bd337044bd1a6ff70f7db589f8b7bd03ae35bfbf1a3054068`
+(„Entlastungen für Deutschland“). Die gespeicherte amtliche RSS-Fassung vom
+25.11. steht einer alten Google-Fassung vom April gegenüber. Zwei fertige alte
+Analysen hängen ohne native Lektürebindung an derselben Rohzeile. Deren
+Überschreiben würde historische Quellen auf Novembertext umhängen und bleibt
+gesperrt. Eine getrennte Versionsbindung für die Quellenleser wird vorbereitet;
+keine globale Regel-A-Ausnahme, kein erfundener Lektürebeleg oder Ereignistag.
+Neue Migration und Bestandskorrektur benötigen ihren eigenen geprüften Umfang.
+

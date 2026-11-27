@@ -38,8 +38,50 @@ function beidePfade(d) {
   assert.deepEqual(fach.quellen[0].dokumentangaben, expected);
   return { lage, fach };
 }
+const langeOriginale = ["292778", "292779"].map(id => require(`./fixtures/dip-originale-20261127/${id}.json`));
+function langeAmtlicheTitel() {
+  for (const original of langeOriginale) test(`Amtlicher Langtitel ${original.id}: unverkuerzt durch Adapter, Rohprojektion und Fachbelege`, () => {
+    assert.equal(original.titel.length, 472);
+    const item = S.dipDocToRawItem(DIP.normalizeDrucksache(original), { primary: true });
+    const row = D.toRawDocumentRow(item), q = Q.quellenangaben(row);
+    assert(q, "Gueltige amtliche DIP-Metadaten duerfen nicht an der allgemeinen Schlagzeilengrenze scheitern");
+    assert.equal(row.title, original.titel);
+    assert.equal(q.originaltitel, original.titel);
+    assert.equal(q.dokumenttyp, "Unterrichtung");
+    assert.equal(q.urheberLautDIP[0].einbringer, false);
+    assert.equal(q.ereignisdatum, null);
+    assert.equal(q.vorgangsbezuegeLautDIP[0].id, "342138");
+    assert(U.buildUnderstandingPrompt({ documents: [row] }).includes(JSON.stringify(original.titel)));
+    assert.deepEqual(L.baueEingabe(kos, { "vg-dip": [row] }, new Date("2026-11-27T12:42:02Z"))[0].quellenbelege[0].dokumentangaben, q);
+    assert.deepEqual(B.baueEingabe({ briefing: { items: [] }, sourcesByVorgang: { "vg-dip": [row] },
+      profile: { id: "synthetisch" }, userId: "synthetisch", day: "2026-11-27", kos }).quellen[0].dokumentangaben, q);
+  });
+  test("Langtitel bleiben eng an eine gueltige DIP-Bindung und 600 Zeichen gebunden", () => {
+    const d = langeOriginale[0];
+    const item = S.dipDocToRawItem(DIP.normalizeDrucksache(d), { primary: true });
+    const maximal = S.dipDocToRawItem(DIP.normalizeDrucksache({ ...d, titel: "T".repeat(600) }));
+    assert.equal(D.toRawDocumentRow(maximal).title.length, 600);
+    const zuLang = S.dipDocToRawItem(DIP.normalizeDrucksache({ ...d, titel: "T".repeat(601) }));
+    assert.equal(D.toRawDocumentRow(zuLang).title, null);
+    assert.equal(Q.quellenangaben(D.toRawDocumentRow(zuLang)), null);
+    for (const bad of [{ ...item, sourceId: "rss" }, { ...item, dipQuellfelder: undefined },
+      { ...item, dipQuellfelder: { ...item.dipQuellfelder, hash: "0".repeat(64) } },
+      { ...item, title: item.title + " beschlossen" }]) {
+      const row = D.toRawDocumentRow(bad);
+      assert.equal(row.title, null); assert.equal(Q.quellenangaben(row), null);
+    }
+    const ungebunden = { ...item, sourceId: "rss", dipQuellfelder: undefined, title: "T".repeat(300) };
+    assert.equal(D.toRawDocumentRow(ungebunden).title.length, 300);
+    assert.equal(D.toRawDocumentRow({ ...ungebunden, title: "T".repeat(301) }).title, null);
+    const zuViel = DIP.normalizeDrucksache({ ...d, urheber: Array(20).fill({
+      titel: "U".repeat(160), bezeichnung: "B".repeat(160), einbringer: false }) });
+    assert.equal(zuViel.dipQuellfelder, undefined, "Die unveraenderte5k-Gesamtgrenze bleibt wirksam");
+  });
+}
 async function main() {
   assert.equal(process.env.HELMUT_LOKALER_SCHUTZ, "aktiv");
+  langeAmtlicheTitel();
+  if (process.argv.includes("--only=langtitel")) { console.log(`${passed}/${passed} Gruppen erfolgreich`); return; }
   test("Originaltitel, Antworttyp, Urheber und Ressort bleiben getrennt erhalten", () => {
     assert(expected); assert.equal(expected.originaltitel, original.titel);
     assert.equal(row.title, "Pruefung kommunaler Beratungsangebote");
@@ -101,7 +143,7 @@ async function main() {
     assert.deepEqual(Q.quellenangaben(d), expected);
   });
   test("Ueberlange oder untypisierte Felder werden ganz abgelehnt, niemals gekuerzt", () => {
-    for (const patch of [{ titel:"Lang ".repeat(100) }, { urheber:Array(21).fill({ titel:"Regierung" }) },
+    for (const patch of [{ titel:"Lang ".repeat(121) }, { urheber:Array(21).fill({ titel:"Regierung" }) },
       { ressort:[{ titel:"Lang ".repeat(40) }] }, { drucksachetyp:{ falsch:true } }, { urheber:"Regierung" },
       { fundstelle:{ pdf_url:"https://dip.bundestag.de.fremd.example/a" } }]) {
       const n = DIP.normalizeDrucksache({ ...original, ...patch });
@@ -137,7 +179,8 @@ async function main() {
       const data = JSON.parse(content); result = data;
       if (u.pathname.endsWith("/raw_documents")) {
         assert.equal(req.headers.prefer, "resolution=ignore-duplicates,return=representation");
-        for (const d of data) saved.set(d.id, { ...copy(d), published_at:"2026-09-19T00:00:00+00:00" });
+        for (const d of data) saved.set(d.id, { ...copy(d), published_at: d.published_at
+          ? new Date(d.published_at).toISOString() : null });
       }
     } else {
       const select = u.searchParams.get("select") || "";
@@ -179,6 +222,39 @@ async function main() {
       assert.equal(Object.hasOwn(result[0],"raw"),false);
       assert.deepEqual(Q.quellenangaben(result[0]),expected,name); beidePfade(result[0]);
       passed++; console.log("PASS " + name + ": gebundene Dokumentangaben in beiden Fachpfaden");
+    }
+    const longItems = langeOriginale.map(o => S.dipDocToRawItem(DIP.normalizeDrucksache(o), { primary: true }));
+    const longRows = longItems.map(D.toRawDocumentRow);
+    const expectedLong = new Map(longRows.map(d => [d.id, Q.quellenangaben(d)]));
+    saved.clear();
+    assert.equal((await storage.persistiereRohdokumenteWarteschlange(longItems)).ok, true);
+    assert.equal(saved.size, 2);
+    for (const d of saved.values()) assert.deepEqual(Q.quellenangaben(d), expectedLong.get(d.id));
+    saved.clear();
+    assert.equal((await storage.persistRawDocumentsDeduped(longRows)).persisted, 2);
+    assert.equal(saved.size, 2);
+    for (const d of saved.values()) assert.deepEqual(Q.quellenangaben(d), expectedLong.get(d.id));
+    passed++; console.log("PASS Amtliche Langtitel: beide echten Schreibwege erhalten Titel und Quellenbindung");
+    const longStored = [...saved.values()];
+    const longReaders = [
+      ["Erstverstehen", () => storage.listRecentRawDocuments(10,30)],
+      ["Rohdokumentfenster", () => storage.listRawDocuments({ limit:10,days:30 })],
+      ["Warteschlangenauftrag", () => storage.getRawDocumentsByIds(longStored.map(d => d.id))],
+      ["Aktualisierung", () => storage.listKoDocuments("ko-vg-dip")],
+      ["Vorgangsquellen", () => storage.getSourcesForVorgang("vg-dip")],
+      ["Gebundene Lagequellen", () => storage.getSourcesForVorgang("vg-dip",{ lageKoId:"ko-vg-dip",lageQuellen:longStored })]
+    ];
+    for (const [name,read] of longReaders) {
+      const result = await read(); assert.equal(result.length, 2, name);
+      for (const d of result) {
+        assert.equal(d.title.length, 472, name);
+        assert.equal(Object.hasOwn(d, "raw"), false, name);
+        assert.deepEqual(Q.quellenangaben(d), expectedLong.get(d.id), name);
+        assert(U.buildUnderstandingPrompt({ documents: [d] }).includes(JSON.stringify(d.title)));
+        assert.deepEqual(L.baueEingabe(kos, { "vg-dip": [d] }, new Date("2026-11-27T12:42:02Z"))[0]
+          .quellenbelege[0].dokumentangaben, expectedLong.get(d.id));
+      }
+      passed++; console.log("PASS " + name + ": amtliche Langtitel bleiben vollstaendig gebunden");
     }
   } finally {
     for (const n of names) { if (env[n] === undefined) delete process.env[n]; else process.env[n] = env[n]; }
