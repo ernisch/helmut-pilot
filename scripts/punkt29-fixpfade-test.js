@@ -12,7 +12,7 @@
 //          Fehler gebucht (kein erfundener letzter Erfolg, keine zurueckgesetzte
 //          Fehlerserie); ein ehrlicher Skip bleibt von einem Fehler unterscheidbar.
 //   P29-2  ein nicht verwertbarer KI-Rueckgabewert (null/kein Objekt) wird
-//          kontrolliert geparkt (markFailed + Skip-Log) statt als anonymer
+//          kontrolliert geparkt (markFailed + Fehlerdiagnose) statt als anonymer
 //          cluster-error ohne Endzustand zu enden; kein unbegrenzter Retry.
 //   P29-3  eine gescheiterte/vertagte Aktualisierung endet nicht als stilles
 //          "duplicate", sondern wird BEGRENZT wieder aufgenommen (Deckel, kein
@@ -262,9 +262,11 @@ function fairnessUmgebung() {
     };
     const u = await understanding.runUnderstandingShadow(ROH, api);
     const geparkt = [...s.knowledgeObjects.values()].find((k) => k.understanding_status === "failed");
-    check("B1 null-Antwort: kein cluster-error, sondern skipped-invalid mit failed-Parkung und Skip-Log",
+    const diagnose = u.results.find(r => r.status === "skipped-invalid");
+    check("B1 null-Antwort: kein cluster-error, sondern skipped-invalid mit failed-Parkung und ohne Nicht-Aufruf-Marker",
       (u.counts["cluster-error"] || 0) === 0 && (u.counts["skipped-invalid"] || 0) === 1
-        && Boolean(geparkt) && skips.includes("skipped-understanding-invalid"),
+        && Boolean(geparkt) && geparkt.status === "pending" && skips.length === 0
+        && diagnose?.reason === "ki-antwort-nicht-verwertbar" && diagnose.errors.includes("ki-antwort-nicht-verwertbar"),
       JSON.stringify({ counts: u.counts, skips }));
     check("B2 der gesunde Nachbar-Cluster laeuft unbeeindruckt durch (saved)",
       (u.counts.saved || 0) === 1, JSON.stringify(u.counts));

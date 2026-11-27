@@ -90,6 +90,8 @@ CAS-Prüfungen 107/107 und Nutzungsprotokoll-Prüfungen 38/38 bestehen weiter.
 Vier ältere P1-Erwartungen verlangten noch die falschen Nachstart-Marker und
 stoppten die erste Pflicht-CI. Mit unveränderten Fehler-, Speicher- und
 Datenschutzprüfungen verlangen sie jetzt deren Abwesenheit; lokal 347/347 bestanden.
+Weitere gleiche Erwartungen im Ebenenkonsistenz- und Nullantwort-Vertrag wurden
+mit unveränderten Sperren korrigiert: gezielt 8/8 Gruppen und 40/40 Prüfungen.
 Historische falsche Marker und unbekannte Ausgänge werden dadurch nicht verändert.
 
 ## Gezielte Nachweise
