@@ -56,6 +56,8 @@ function user(i, extra = {}) {
     politicianId: `local-${i}`, role: "abgeordneter", active: false, ...extra };
 }
 async function check(name, run) {
+  const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
+  if (only && !name.includes(only)) return;
   blob = { users: [], adminSettings: { existing: "preserve" } };
   calls = []; conflictOnce = false; conflictSequence = 0; loseReply = false; malformedRead = false;
   try { await run(); passed += 1; console.log(`PASS  ${name}`); }
@@ -63,6 +65,62 @@ async function check(name, run) {
 }
 (async () => {
   try {
+    await check("Lesestoerung: bestaetigte Modellnutzung uebersteht zwei transiente Auth-GET-Fehler ohne Doppelbuchung", async () => {
+      const transport = globalThis.fetch;
+      let reads = 0;
+      globalThis.fetch = async (url, options = {}) => {
+        if ((!options.method || options.method === "GET") && ++reads <= 2)
+          return response(reads === 1 ? 520 : 521, { message: "temporarily unavailable" });
+        return transport(url, options);
+      };
+      try {
+        const receipt = await storage.recordLlmUsage({ model: "gpt-5-mini", callType: "understanding",
+          runId: "offline-nutzung", success: true, usage: { input_tokens: 100, output_tokens: 20, total_tokens: 120 } },
+        { relationalAktiv: false });
+        assert.equal(receipt?._ablage.blob, true);
+        assert.equal(reads, 3);
+        assert.equal(blob.llmUsage.length, 1);
+        assert.equal(blob.llmUsage[0].id, receipt.id);
+        assert.equal(calls.filter(c => c.method !== "GET").length, 1);
+      } finally { globalThis.fetch = transport; }
+    });
+    await check("Lesestoerung: dauerhafter 521 bleibt unbekannt und schreibt keine Ersatzdaten", async () => {
+      const transport = globalThis.fetch;
+      let reads = 0;
+      globalThis.fetch = async () => { reads++; return response(521, { message: "unavailable" }); };
+      try {
+        const receipt = await storage.recordLlmUsage({ model: "gpt-5-mini", callType: "understanding",
+          runId: "offline-nutzung", success: true }, { relationalAktiv: false });
+        assert.equal(receipt, null);
+        assert.equal(reads, 3);
+        assert.equal(calls.length, 0);
+        assert.deepEqual(blob, { users: [], adminSettings: { existing: "preserve" } });
+      } finally { globalThis.fetch = transport; }
+    });
+    await check("Lesestoerung: permanente Auth-Ablehnung wird nicht wiederholt", async () => {
+      const transport = globalThis.fetch;
+      let reads = 0;
+      globalThis.fetch = async () => { reads++; return response(403, { message: "denied" }); };
+      try {
+        await assert.rejects(storage.readAuthStore(), /403/);
+        assert.equal(reads, 1);
+        assert.equal(calls.length, 0);
+      } finally { globalThis.fetch = transport; }
+    });
+    await check("Lesestoerung: Gesamtlesefrist wird durch Wiederaufnahme nicht verlaengert", async () => {
+      const transport = globalThis.fetch, clock = Date.now;
+      let reads = 0;
+      globalThis.fetch = async () => {
+        reads++;
+        Date.now = () => clock() + 60000;
+        return response(521, { message: "unavailable" });
+      };
+      try {
+        await assert.rejects(storage.readAuthStore(), /521/);
+        assert.equal(reads, 1);
+        assert.equal(calls.length, 0);
+      } finally { globalThis.fetch = transport; Date.now = clock; }
+    });
     await check("500 parallele Kontoanlagen bleiben vollstaendig und getrennt gespeichert", async () => {
       const result = await Promise.all(Array.from({ length: 500 }, (_, i) => accounts.createUser(user(i + 1))));
       assert.equal(result.length, 500);

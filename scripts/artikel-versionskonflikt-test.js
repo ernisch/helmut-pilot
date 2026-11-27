@@ -64,8 +64,61 @@ async function abschliessen(w) {
     ladeRohdokumentStaende: () => A.fail("Diagnose darf keine Artikelarbeit starten"), finish: w.q.finish, extendLease: w.q.extendLease } });
 }
 let count = 0;
-async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
+const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
+async function test(name, fn) { if (only && !name.includes(only)) return; await fn(); count++; console.log("PASS " + name); }
 (async () => {
+  await test("Native hib-Projektion erhaelt den belegten Archivstand ohne neue Metadaten-Ausnahme", async () => {
+    const w = welt({ gute: 0 });
+    const amtlichesItem = { ...w.items[0], url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
+      sourceId: "bundestag", sourceName: "Bundestag", sourceType: "bundestag", linkType: "direct",
+      retrievalPathId: "rp-bundestag", publishedAt: "2026-11-13T10:06:00Z" };
+    const amtlich = D.toRawDocumentRow(amtlichesItem);
+    const eingang = { ...amtlichesItem, content: null, summary: null,
+      sourceId: "general-hib", sourceName: "Deutscher Bundestag", retrievalPathId: "rp-general-hib",
+      title: `${amtlich.title} - Deutscher Bundestag`, publishedAt: "2026-11-13T10:10:34Z" };
+    const fund = D.toRawDocumentRow(eingang), stand = R.standHash(fund);
+    // Genau die Form des nativen getRawDocumentsByIds-Lesers: Pfadprojektion
+    // statt raw, kein erfundener zweiter Quellenbeleg.
+    const projection = { ...amtlich, quellenabrufpfad: amtlich.raw.retrievalPathId };
+    delete projection.raw;
+    w.items = [eingang]; w.kanonisch.clear(); w.archiv.clear();
+    w.kanonisch.set(amtlich.id, structuredClone(projection));
+    w.archiv.set(key(fund), structuredClone(fund));
+    let konflikt;
+    try { await w.native([fund.id], { [fund.id]: stand }); } catch (error) { konflikt = error; }
+    A.equal(konflikt?.message, "quellenstand-metadatenabweichung");
+    const beleg = S.leseRohdokumentKonfliktBeleg(konflikt);
+    A.equal(beleg?.inhaltlichAbweichend, false, "Vorhandener hib-Vertrag gilt auch fuer die native Pfadprojektion");
+    A.deepEqual(beleg.dokument, fund); A.equal(beleg.stand, stand);
+    const r = await w.run();
+    A.equal(r.abrufErgebnis.art, "rohfassungen"); A.equal(r.teilfehler, undefined);
+    A.deepEqual(r.abrufErgebnis.analyse.map(a => [a.rohId, a.stand]), [[fund.id, stand]]);
+    A.equal(w.q.alle().length, 1); A.equal(w.q.alle()[0].payload.artikelFehler, undefined);
+    A.deepEqual(w.kanonisch.get(amtlich.id), projection); A.deepEqual(w.forbidden, []);
+
+    const job = w.q.alle()[0]; let gelesen;
+    const result = await P.HANDLER.document_understanding(job, {
+      ...w.deps, env: { ...env, HELMUT_VERSTEHEN_CAS: "on" },
+      klassen: { belege: async () => ({ erlaubt: false }) },
+      ladeRohdokumentStaende: async (...args) => { gelesen = args; return w.native(...args); }
+    }, { auftragsDeadlineMs: now + 120000 });
+    A.equal(result.grund, "klassengrenze-belegt: verstehen");
+    A.deepEqual(gelesen, [[fund.id], { [fund.id]: stand }]);
+    for (const diff of [{ title: "Ein anderer Bericht" }, { source_name: "Anderer Herausgeber" },
+      { quellenabrufpfad: "rp-fremd" }, { published_at: "2026-11-13T10:11:00Z" }]) {
+      w.kanonisch.set(amtlich.id, { ...projection, ...diff });
+      let error;
+      try { await w.native([fund.id], { [fund.id]: stand }); } catch (e) { error = e; }
+      A.equal(S.leseRohdokumentKonfliktBeleg(error)?.inhaltlichAbweichend, true);
+      await A.rejects(P.HANDLER.document_understanding(job, {
+        ...w.deps, env: { ...env, HELMUT_VERSTEHEN_CAS: "on" }
+      }, { auftragsDeadlineMs: now + 120000 }), /quellenstand-metadatenabweichung/);
+    }
+    w.kanonisch.set(amtlich.id, projection);
+    w.archiv.get(key(fund)).summary = "Nicht gebundener anderer Text";
+    await A.rejects(w.native([fund.id], { [fund.id]: stand }), /quellenstand-bindung/);
+    A.deepEqual(w.forbidden, []);
+  });
   await test("Nativer Reader lehnt weiter ab und bindet nur echten vorhandenen Versionskonflikt privat", async () => {
     const w = welt({ gute: 0 }), row = D.toRawDocumentRow(w.items[0]);
     let error;
@@ -285,6 +338,6 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-  A.equal(count, 11);
+    if (!only) A.equal(count, 12);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });

@@ -1,5 +1,7 @@
 # CURRENT STATE — Helmut
 
+**27.11. Morgenabnahme nicht bestanden.** Rechtzeitig verfügbare Teilfassung, eine terminale Pflichtanalyse und kein freigegebener Lage-Text. Gezielte Korrekturen für native HIB-Projektion, DIP-Metadaten im Lage-Auszug und transiente Auth-GETs; keine Bestandsentsperrung oder Limiterhöhung. [Befunde, Nachweise und Rolloutgrenze](betrieb/morgenreparatur-20261127.md).
+
 **26.11. PR #1359.** [Reparaturstand, Befunde und Rückweg](betrieb/quellenreparatur-20261126.md).
 
 **25.11. Offline.** Lasttest 320/323, 0/2 vollständig. Einzelmorgen 51/51. [Monat 26/30 vollständig](betrieb/quellen-monatssimulation-20261125.md). Teilfassung Desktop/Mobil 15/15, Budget PostgreSQL 59/59. [Lasttest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Einzelmorgen](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955) · [Drei Tage](https://github.com/ernisch/helmut-pilot/actions/runs/45596100664)
