@@ -77,7 +77,13 @@ function abgewiesen({ r, p }, modus, cas = true, fehler = "decision_level-antwor
   assert.equal(p.writes.length, 0); assert.equal(p.unknown, cas ? 1 : 0); assert.equal(p.frei, 0);
   assert.equal(p.failed, modus === "update" ? 0 : 1);
   assert.equal(p.updates, modus === "update" ? 1 : 0);
-  assert.equal(p.geloest, 0); assert(p.logs.includes("skipped-understanding-invalid"));
+  assert.equal(p.geloest, 0);
+  if (modus === "update") assert.equal(r.begruendung, "aktualisierung-ungueltig");
+  else assert.equal(r.reason, "validierung-fehlgeschlagen");
+  assert.equal(r.ausgang, cas ? "unbekannt" : undefined);
+  // Die Ebenen-/Quellensperre bleibt ein Fachfehler nach Modellstart, kein
+  // kostenfreier Nicht-Aufruf im Nutzungsprotokoll.
+  assert.deepEqual(p.logs, []);
 }
 function gespeichert({ r, p }, modus, analyse, level) {
   assert.equal(r.status, modus === "update" ? "updated" : "saved");

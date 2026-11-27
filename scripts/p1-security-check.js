@@ -1539,17 +1539,20 @@ async function c7UnderstandingChecks() {
   check("C7 Budget: canSpend=false -> kein KI-Call, skipped-budget geloggt",
     understandCalls === 0 && budget.counts["skipped-budget"] === 1 && skips.includes("skipped-understanding-budget"));
 
-  // (h) Ungueltige KI-Antwort -> nicht speichern, sauber skippen + loggen, kein Crash.
+  // (h) Ungueltige KI-Antwort -> Fehlerdiagnose, nicht speichern und keinen
+  // kostenfreien Nicht-Aufruf nach dem Modellstart behaupten.
   saved.length = 0; skips.length = 0;
   const invalid = await u.runUnderstandingShadow(items, { ...baseDeps, requestUnderstanding: () => ({ was_ist_passiert: "x" }) });
-  check("C7 Robustheit: ungueltige KI-Antwort -> nicht gespeichert, skipped-invalid geloggt (kein Crash)",
-    saved.length === 0 && invalid.counts["skipped-invalid"] === 1 && skips.includes("skipped-understanding-invalid"));
+  check("C7 Robustheit: ungueltige KI-Antwort -> nicht gespeichert, skipped-invalid diagnostiziert, kein Nicht-Aufruf-Marker",
+    saved.length === 0 && invalid.counts["skipped-invalid"] === 1 && skips.length === 0
+      && invalid.results[0]?.reason === "validierung-fehlgeschlagen" && invalid.results[0]?.errors?.length > 0);
 
-  // (i) KI-Fehler (throw) -> sauberer Skip, kein Crash.
-  skips.length = 0;
+  // (i) KI-Fehler (throw) -> Fehlerresultat ohne Speicherung oder Fake-Nicht-Aufruf.
+  saved.length = 0; skips.length = 0;
   const errored = await u.runUnderstandingShadow(items, { ...baseDeps, requestUnderstanding: () => { throw new Error("boom mit http body"); } });
-  check("C7 Robustheit: KI-Fehler -> skipped-error, kein Antwort-/Fehlertext im Log",
-    errored.counts["skipped-error"] === 1 && skips.includes("skipped-understanding-error")
+  check("C7 Robustheit: KI-Fehler -> skipped-error, nicht gespeichert, kein Nicht-Aufruf-Marker oder Inhalt im Nutzungslog",
+    errored.counts["skipped-error"] === 1 && saved.length === 0 && skips.length === 0
+      && typeof errored.results[0]?.errorCode === "string" && errored.results[0].errorCode.length > 0
       && !skips.some((s) => s.includes("boom")));
 }
 
@@ -1771,19 +1774,23 @@ async function c8UnderstandingChecks() {
   understandCalls = 0; saved.length = 0; skips.length = 0; failed.length = 0;
   const inv = await u.understandOneCluster(cluster, { ...baseDeps, requestUnderstanding: () => ({ was_ist_passiert: "x" }) },
     { vorgangId: "vg-x", existing: { ...pendingKo } });
-  check("C8 Robustheit: ungueltige KI-Antwort auf pending -> skipped-invalid, KO als failed geparkt (nicht gespeichert)",
+  check("C8 Robustheit: ungueltige KI-Antwort auf pending -> skipped-invalid, failed geparkt, kein Nicht-Aufruf-Marker",
     inv.status === "skipped-invalid" && saved.length === 0 && failed.length === 1 && failed[0].vorgangId === "vg-x"
-      && skips.includes("skipped-understanding-invalid"));
+      && inv.reason === "validierung-fehlgeschlagen" && inv.errors?.length > 0 && skips.length === 0);
   check("C8 DSGVO: failed-Metadaten tragen KEINEN Antwort-/Fehler-/Prompt-Inhalt (nur headline + Modell)",
     !("error" in failed[0].meta) && !("answer" in failed[0].meta) && !("prompt" in failed[0].meta)
       && failed[0].meta.understanding_model === "gpt-5-mini");
 
-  // (c) KI-Fehler (throw) auf pending -> failed markiert, sauberer Skip, kein Inhalt geloggt.
-  understandCalls = 0; skips.length = 0; failed.length = 0;
+  // (c) KI-Fehler nach Modellstart -> failed markiert, Fehlerdiagnose bleibt;
+  // keine Speicherung, kein kostenfreier Nicht-Aufruf und kein Inhalt im Nutzungslog.
+  understandCalls = 0; saved.length = 0; skips.length = 0; failed.length = 0;
   const err = await u.understandOneCluster(cluster, { ...baseDeps, requestUnderstanding: () => { throw new Error("boom http body 500"); } },
     { vorgangId: "vg-x", existing: { ...pendingKo } });
-  check("C8 Robustheit: KI-Fehler auf pending -> skipped-error, failed markiert, kein Fehlertext im Log",
-    err.status === "skipped-error" && failed.length === 1 && skips.includes("skipped-understanding-error")
+  check("C8 Robustheit: KI-Fehler auf pending -> skipped-error, failed markiert, kein Nicht-Aufruf-Marker oder Inhalt im Nutzungslog",
+    err.status === "skipped-error" && saved.length === 0 && failed.length === 1 && failed[0].vorgangId === "vg-x"
+      && typeof err.errorCode === "string" && err.errorCode.length > 0 && skips.length === 0
+      && !["error", "answer", "prompt"].some(key => key in failed[0].meta)
+      && failed[0].meta.understanding_model === "gpt-5-mini"
       && !skips.some((s) => s.includes("boom")));
 
   // (c2) Eager-Pfad: KI-Fehler bei NEUEM Vorgang (kein existing) -> ebenfalls geparkt.
