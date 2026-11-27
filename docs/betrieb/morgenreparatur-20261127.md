@@ -348,3 +348,21 @@ mit einem getrennten kleinen PG17.6-Prozess und unverfälschter 27.-November-Uhr
 geführt. Danach wurden nur dieser eigene Prozess beendet und sein Cluster entfernt;
 gemeinsamer Monatsserver und Production wurden nicht neu gestartet.
 
+### CI-Anschlussprobe: neue Schemaabhängigkeit ausdrücklich mitnehmen
+
+Am ersten integrierten Kopf `1b7163ea` bestand die frische Browserprüfung;
+Pflicht-CI `46014585685` stoppte in der bestehenden nativen Drei-Profil-Probe
+mit `skipped-bestandslesefehler`. Ihr isolierter Schemaaufbau verwendete eine
+feste Liste von 21 Migrationen und installierte die neue Quellenleseschnittstelle
+noch nicht. Erstfehler und bereinigter Abbruch bleiben privat erhalten.
+
+Die begrenzte Liste enthält jetzt zusätzlich genau diese erforderliche Migration.
+Sie wird nach den allgemeinen Fixture-Grants installiert, damit ihre engen
+Append-only-Rechte erhalten bleiben. Ein echter Datenbank-Readback verlangt
+SELECT und INSERT für service_role, verweigert UPDATE/DELETE sowie jeden Zugang
+für anon/authenticated. Die gezielte Auswahlprüfung scheiterte vor dem Nachtrag
+und besteht danach; fehlende neue Migration wird ausdrücklich abgewiesen.
+Keine pauschale Installation geschützter Kohortenpfade, keine gelockerte Prüfung
+und keine erneute Monatssimulation. Beide Pflichtchecks müssen für den neuen
+endgültigen Kopf erneut erfolgreich sein.
+

@@ -13,6 +13,7 @@ for(const label of["diagnostic-mock-schema-required","diagnostic-one-explicit-ca
 // Only the current application seams used below: profiles/RLS, sources/KO,
 // budgets/locks, matching audit, Understanding leases/CAS and usage recording.
 // Historical cohort gates/timers/daybooks are separate operator installations.
+const QUELLENFASSUNGEN_MIGRATION="20261127131039_ko_quellenfassungen.sql";
 const DIAGNOSTIC_MIGRATIONS=Object.freeze([
   "20260711_presale_hardening.sql","20260712_mandate_profile_completeness.sql","20260712_mandate_profile_fields.sql",
   "20260712_tenant_rls_policies.sql","20260713_source_architecture.sql","20260714_ko_classification.sql",
@@ -20,7 +21,7 @@ const DIAGNOSTIC_MIGRATIONS=Object.freeze([
   "20260717_llm_budget_reservation.sql","20260718_source_crawl_telemetry.sql","20260719_pipeline_lock_atomic.sql",
   "20260720_crawl_runs_relational.sql","20260721_security_advisor_hardening.sql","20260727_process_runs_relational.sql",
   "20260728_matching_audit.sql","20260808_llm_budget_fairness.sql","20260813090100_verteilte_grenzen.sql",
-  "20260814180000_verstehen_cas.sql","20260823043633_verstehen_aufgeben_erneut_freigegeben.sql","20260902121500_llm_usage_relational.sql"]);
+  "20260814180000_verstehen_cas.sql","20260823043633_verstehen_aufgeben_erneut_freigegeben.sql","20260902121500_llm_usage_relational.sql",QUELLENFASSUNGEN_MIGRATION]);
 function diagnosticMigrations(files){
   assert(Array.isArray(files));const available=new Map();for(const file of files){assert(path.isAbsolute(file));
     const name=path.basename(file);assert(!available.has(name),"diagnostic-schema-migration-list-unique");available.set(name,file);}
@@ -170,8 +171,18 @@ async function prepareDatabase(c,bootstrap=null){
   const root=path.join(c.resultRoot,"schema");fs.mkdirSync(root,{mode:0o700});const native=nativeSchemaBootstrap(root,Z),files=native.files;
   psql(c,native.prefix);psql(c,fs.readFileSync(files.schemaDatei,"utf8"));
   assert.equal(psql(c,"select extversion from pg_extension where extname='vector';"),"0.8.7","diagnostic-native-vector-version-required");
-  for(const file of diagnosticMigrations(files.migrationen))psql(c,fs.readFileSync(file,"utf8"));
+  const selected=diagnosticMigrations(files.migrationen);
+  for(const file of selected.filter(f=>path.basename(f)!==QUELLENFASSUNGEN_MIGRATION))psql(c,fs.readFileSync(file,"utf8"));
   psql(c,native.suffix);
+  // Der Legacy-Bootstrap vergibt breite Fixture-Rechte. Die aktuellen engen
+  // Append-only-Rechte erst danach herstellen; niemals fuer die Probe lockern.
+  psql(c,fs.readFileSync(selected.find(f=>path.basename(f)===QUELLENFASSUNGEN_MIGRATION),"utf8"));
+  assert.equal(psql(c,"select has_table_privilege('service_role','public.helmut_ko_quellenfassungen','SELECT')"
+    +" and has_table_privilege('service_role','public.helmut_ko_quellenfassungen','INSERT')"
+    +" and not has_table_privilege('service_role','public.helmut_ko_quellenfassungen','UPDATE,DELETE')"
+    +" and not has_table_privilege('anon','public.helmut_ko_quellenfassungen','SELECT,INSERT,UPDATE,DELETE')"
+    +" and not has_table_privilege('authenticated','public.helmut_ko_quellenfassungen','SELECT,INSERT,UPDATE,DELETE');"),
+    "t","diagnostic-mock-schema-required");
   psql(c,"insert into public.helmut_store(id,data)values('main-auth','{\"users\":[],\"llmUsage\":[]}'::jsonb)on conflict(id)do nothing;");
   assert.equal(psql(c,"select count(*)from public.mandate_profiles;"),"0");
   assert.equal(psql(c,"select count(*)from public.knowledge_objects;"),"0");

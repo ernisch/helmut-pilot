@@ -148,13 +148,15 @@ async function understandingErrorProjectionCase(){
 async function diagnosticMigrationSelectionCase(){
   await test("application schema selection excludes protected cohort installations and requires its dependencies",()=>{
     const root=path.join(__dirname,"../supabase/migrations"),all=fs.readdirSync(root).filter(n=>n.endsWith(".sql")&&!/rollback/i.test(n)).map(n=>path.join(root,n));
-    const selected=D.diagnosticMigrations(all),names=selected.map(n=>path.basename(n));assert.equal(selected.length,21);
+    const selected=D.diagnosticMigrations(all),names=selected.map(n=>path.basename(n));assert.equal(selected.length,22);
     assert(!names.some(n=>/testfenster|end_runtime|endwaechter|eu_|current_inputs|vier_start|jobqueue/.test(n)));
     const sql=selected.map(file=>fs.readFileSync(file,"utf8")).join("\n");
-    for(const symbol of["profil_extras","helmut_reserve_llm_call","helmut_acquire_pipeline_lock","helmut_publish_matching_run","helmut_klasse_belege","helmut_verstehen_speichere","kein_aufruf"])
+    for(const symbol of["profil_extras","helmut_reserve_llm_call","helmut_acquire_pipeline_lock","helmut_publish_matching_run","helmut_klasse_belege","helmut_verstehen_speichere","kein_aufruf","helmut_ko_quellenfassungen","helmut_ko_quellen_verknuepfe"])
       assert(sql.includes(symbol));
     assert(!/create extension[^;]*pg_cron|create schema helmut_end500_internal/i.test(sql));
     const missing=all.filter(file=>!file.endsWith("20260728_matching_audit.sql"));assert.throws(()=>D.diagnosticMigrations(missing),/diagnostic-required-schema-migration-missing/);
+    const missingSources=all.filter(file=>!file.endsWith("20261127131039_ko_quellenfassungen.sql"));
+    assert.throws(()=>D.diagnosticMigrations(missingSources),/diagnostic-required-schema-migration-missing/);
     assert.throws(()=>D.diagnosticMigrations([...all,selected[0]]),/diagnostic-schema-migration-list-unique/);
     assert.deepEqual(D.diagnosticMigrations([...all,path.join(root,"20990101000000_UNAPPROVED_FUTURE.sql")]),selected);
     const guard=fs.readFileSync(path.join(root,"20261007104720_synthetik500_unabhaengiger_endwaechter.sql"),"utf8");
