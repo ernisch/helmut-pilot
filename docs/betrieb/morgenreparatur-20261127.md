@@ -71,6 +71,24 @@ Permanente Rechtefehler und ungültige Antwortstrukturen bleiben geschlossen.
 Kein POST/PATCH wird dadurch wiederholt, keine CAS-Grundlinie oder Mutationsfrist
 geändert. Bei fortdauernder Störung bleiben Kosten-/Modellausgang unbekannt.
 
+### Falsche Nicht-Aufruf-Meldung nach dem Modellstart
+
+In acht Fehlerpfaden von Erstverstehen und Aktualisierung wurde nach einem möglichen
+Modellversand zusätzlich `keinAufruf=true` mit Modell `none` protokolliert. Dies
+erklärte den widersprüchlichen Nullkosten-Marker beim heutigen unbestätigten
+Kostenabschluss. Diese acht Meldungen entfallen: Den Kostenbeleg schreibt weiterhin
+ausschließlich die bestehende KI-Engstelle. Fachfehler bleiben in Ergebnis und CAS
+sichtbar. Die beiden belegten Budget-Nichtstarts behalten ihre Nullkosten-Meldung.
+
+Der gezielte lokale Sender-/Kosten-/CAS-Verbundtest reproduzierte zunächst acht
+falsche Nicht-Aufrufe. Nach der Korrektur bestehen alle zehn Fälle: Erst-/Updatepfad
+jeweils mit unbestätigtem Kostenabschluss, Nullantwort, ungültigem Inhalt und
+unklarem Speichern sowie zwei Budget-Gegenfälle. Ein zweiter Modellstart bleibt
+gesperrt. Bei unbestätigtem Kostenabschluss bleiben exakt 212.000 Mikro-USD gebunden;
+bei bestätigter Antwort bleibt der echte Senderbeleg erhalten. Bestehende
+CAS-Prüfungen 107/107 und Nutzungsprotokoll-Prüfungen 38/38 bestehen weiter.
+Historische falsche Marker und unbekannte Ausgänge werden dadurch nicht verändert.
+
 ## Gezielte Nachweise
 
 Keine erneute Monats- oder allgemeine Lastsimulation; keine bezahlten Testaufrufe.

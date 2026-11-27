@@ -268,8 +268,117 @@ function neuesProtokoll() {
   return { kiAufrufe: 0, gespeichert: [], verknuepft: [], reihenfolge: [], kiVerzoegerung: 0 };
 }
 
+// Kostenabschluss und Fachabschluss sind verschiedene Belege. Der echte Sender
+// schreibt hoechstens seinen einen Kostenbeleg; ein spaeteres Fachproblem darf
+// daraus keinen zusaetzlichen kostenfreien Nicht-Aufruf machen.
+async function pruefeKostenwahrheit() {
+  abschnitt("20 · Kostenwahrheit nach Modellstart, Erstverstehen und Aktualisierung");
+  const assert = require("node:assert/strict"), https = require("node:https");
+  const { EventEmitter } = require("node:events");
+  const U = require("../lib/helmut/understanding"), storage = require("../lib/helmut/storage");
+  const B = require("../lib/helmut/betriebskosten-budget"), control = require("../lib/helmut/anbieter-steuerung");
+  const oldEnv = { ...process.env }, old = { request: https.request, mutate: storage.mutateAuthStore,
+    profiles: storage.listFullProfiles, reserve: storage.reserveLlmCall, record: storage.recordLlmUsage,
+    control: control.steuerungAktiv };
+  const contract = { version: 1, profileId: "pilot-offline", startsAt: new Date(Date.now() - 60000).toISOString(),
+    dailyLimitUsd: 1, totalLimitUsd: 30,
+    route: { provider: "azure", responsesUrl: "https://offline.openai.azure.com/openai/v1/responses", model: "gpt-5-mini" } };
+  try {
+    Object.assign(process.env, { [B.ENV]: JSON.stringify(contract), AZURE_OPENAI_KEY: "offline",
+      AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini",
+      AZURE_OPENAI_UNDERSTANDING_DEPLOYMENT: "gpt-5-mini" });
+    control.steuerungAktiv = () => false;
+    storage.listFullProfiles = async () => [{ id: contract.profileId }];
+    storage.reserveLlmCall = async () => ({ allowed: true });
+    for (const mode of ["erst", "update"]) for (const fall of ["kostenabschluss", "nullantwort", "validierung", "speicher"]) {
+      const auth = { llmUsage: [] }, events = [], p = neuesProtokoll(), speicher = baueSpeicherAttrappe();
+      let requests = 0, verloreneBelege = 0, senderBody;
+      storage.mutateAuthStore = async change => {
+        const copy = structuredClone(auth), result = await change(copy);
+        Object.assign(auth, copy); return result;
+      };
+      storage.recordLlmUsage = async info => {
+        const record = storage.buildLlmUsageRecord(info); events.push(record);
+        // Originalmechanismus: Providerantwort liegt vor, der native Kostenbeleg
+        // wurde nicht bestaetigt; der spaetere Fake-Skip konnte dennoch liegen.
+        if (fall === "kostenabschluss" && info.callType === "understanding") { verloreneBelege++; return null; }
+        auth.llmUsage.push(record); return { ...record, _ablage: { blob: true } };
+      };
+      https.request = (_url, options, callback) => {
+        assert.equal(options.method, "POST"); requests++;
+        const req = new EventEmitter(); req.write = body => { senderBody = JSON.parse(body); }; req.destroy = () => {};
+        req.end = () => setImmediate(() => {
+          const res = new EventEmitter(); res.statusCode = 200; res.setEncoding = () => {};
+          const result = fall === "nullantwort" ? null : fall === "validierung"
+            ? { ...ANALYSE, was_ist_passiert: "schreiben an max@example.invalid" } : { ...ANALYSE };
+          callback(res); res.emit("data", JSON.stringify({ status: "completed",
+            usage: { input_tokens: 100, output_tokens: 20, total_tokens: 120 },
+            output: [{ content: [{ type: "output_text", text: JSON.stringify(result) }] }] })); res.emit("end");
+        }); return req;
+      };
+      if (fall === "speicher") speicher.verstehenSpeichere = async () => ({ verfuegbar: false, grund: "netzfehler" });
+      const doc = { ...baueCluster(TITEL[0], "rd-kostenwahrheit").documents[0],
+        url: "https://example.invalid/synthetischer-bericht", source_name: "Synthetische Quelle",
+        summary: "Der synthetische Bundestag debattiert einen Haushaltsentwurf. ".repeat(300) };
+      const cluster = { documents: [doc] }, vorgangId = "vg-kostenwahrheit";
+      const opts = { vorgangId, existing: null, quellenAbschnitte: { [doc.id]: 0 } };
+      const existing = { id: "ko-vg-kostenwahrheit", vorgang_id: vorgangId, ko_version: 1 };
+      const run = () => {
+        const defaults = U.defaultDeps({ runId: "offline-kostenwahrheit", betriebskostenProfileId: contract.profileId });
+        const deps = baueDeps(p, speicher, { requestUnderstanding: defaults.requestUnderstanding,
+          logSkip: defaults.logSkip, listVorgangDocuments: async () => [doc] });
+        return mode === "erst" ? U.understandOneCluster(cluster, deps, opts)
+          : U.understandUpdate(cluster, deps, { vorgangId, existing, neueDocs: [doc], alleDocs: [doc],
+            neueAnker: [], spur: {}, quellenAbschnitte: opts.quellenAbschnitte });
+      };
+      const first = await run(), second = await run(), label = `${mode}/${fall}`;
+      assert.equal(first.status, fall === "kostenabschluss" ? "skipped-error" : fall === "speicher" ? "skipped-store" : "skipped-invalid", label);
+      assert.equal(first.ausgang, "unbekannt", label);
+      assert.equal(second.status, "skipped-ausgang-unbekannt", label);
+      assert.equal(speicher.zeilen.get(vorgangId).zustand, "unbekannt", label);
+      assert.equal(speicher.zeilen.get(vorgangId).kiAufrufe, 1, label);
+      assert.equal(requests, 1, `${label}: kein bezahlter Zweitversuch`);
+      assert.equal(first.errorCode, fall === "kostenabschluss" ? "betriebskosten-abschluss-unbestaetigt" : undefined, label);
+      const calls = Object.values(auth[B.KEY].calls);
+      assert.equal(calls.length, 1); assert.equal(calls[0].reserved, 212000);
+      assert.equal(calls[0].status, fall === "kostenabschluss" ? "ungeklaert" : "abgerechnet");
+      assert.equal(auth[B.KEY].bound, fall === "kostenabschluss" ? 212000 : 130);
+      assert.equal(verloreneBelege, fall === "kostenabschluss" ? 1 : 0);
+      assert.equal(auth.llmUsage.filter(e => e.callType === "understanding").length, fall === "kostenabschluss" ? 0 : 1);
+      assert.equal(events.filter(e => e.callType === "understanding").length, 1);
+      assert(senderBody.input.includes('"index":0'), "Der echte Sender bekommt einen gebundenen Einzelabschnitt");
+      check(`20 ${label}: kein falscher Nicht-Aufruf und keine zweite Nutzungsbuchung`,
+        events.length === 1 && auth.llmUsage.every(e => e.keinAufruf !== true),
+        events.map(e => `${e.callType}/${e.keinAufruf === true}`).join(","));
+    }
+    // Gegenfall: ein belegter Budgetstopp bleibt kostenfreier Nicht-Aufruf.
+    for (const mode of ["erst", "update"]) {
+      const events = [], p = neuesProtokoll(), speicher = baueSpeicherAttrappe(), cluster = baueCluster(TITEL[0], "rd-budget");
+      storage.recordLlmUsage = async info => { events.push(storage.buildLlmUsageRecord(info)); };
+      const defaults = U.defaultDeps({ runId: "offline-budgetstopp" });
+      const deps = baueDeps(p, speicher, { canSpend: async () => ({ allowed: false, reason: "budget" }), logSkip: defaults.logSkip });
+      const result = mode === "erst" ? await U.understandOneCluster(cluster, deps, { vorgangId: "vg-budget", existing: null })
+        : await U.understandUpdate(cluster, deps, { vorgangId: "vg-budget", existing: { id: "ko-vg-budget", ko_version: 1 },
+          neueDocs: cluster.documents, neueAnker: [], spur: {} });
+      assert.equal(result.status, "skipped-budget"); assert.equal(p.kiAufrufe, 0);
+      assert.equal(events.length, 1); assert.equal(events[0].keinAufruf, true); assert.equal(events[0].estimatedCost, 0);
+      check(`20 ${mode}: belegter Budget-Nichtstart bleibt markiert`, true);
+    }
+  } finally {
+    https.request = old.request; storage.mutateAuthStore = old.mutate; storage.listFullProfiles = old.profiles;
+    storage.reserveLlmCall = old.reserve; storage.recordLlmUsage = old.record; control.steuerungAktiv = old.control;
+    for (const k of Object.keys(process.env)) if (!(k in oldEnv)) delete process.env[k]; Object.assign(process.env, oldEnv);
+  }
+}
+
 async function main() {
   console.log("Helmut — Vertragstest des atomaren Verstehensvertrags (OP-30 CAS)");
+  const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
+  if (only && !["kostenwahrheit", "bestand"].includes(only)) throw Error("Unbekannte Testauswahl");
+  if (only !== "bestand") await pruefeKostenwahrheit();
+  if (only === "kostenwahrheit") {
+    console.log(`PASS ${pass} FAIL ${fail}`); process.exit(fail > 0 ? 1 : 0);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   abschnitt("1 · Flag, Parallelitaetsriegel, Klassengrenze");
