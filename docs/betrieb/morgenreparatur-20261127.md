@@ -393,3 +393,10 @@ Policy-, GIZ-, Tenant-, Original-, Schreib- und Modellschutz bleiben erhalten.
 Der Runtime-Fehlerschutz wurde dafür nicht geändert. Beide Erstfehler bleiben
 erhalten; Nachträge werden gemeinsam auf einem neuen CI-Endkopf geprüft.
 
+Auch die bereits vorhandene Altlink-Erhaltungsprobe wurde wegen des geänderten
+Schreibwegs gezielt weiterverwendet: Ihr alter Tabellen-POST-Mock scheiterte am
+neuen atomaren Link-RPC. Der Fixture-RPC prüft jetzt Payload, Fremdschlüssel und
+eindeutige Kanten vor dem ersten Write, erhält idempotenten Bestand und simuliert
+echte RPC-Fehler. Alle bisherigen Raw-/Linkfehler- und Bestandsschutzprüfungen
+bleiben erhalten; 27/27 gezielte Fälle bestehen. Kein Runtime-Nachtrag dafür.
+
