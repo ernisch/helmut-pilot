@@ -59,6 +59,21 @@ test("Amtlich benannter AJAX-Endpunkt statt leerer Tabelle; kein fremder Host/Pf
   A.equal(B.dokumentLinks(q, row(4))[0].revision, 4);
   A.throws(() => B.dokumentLinks(q, row(4).replace("www.bundestag.de", "fremd.test")), /liste-leer/);
 });
+test("Plenum erkennt die amtliche Komplettdatei der kommenden Woche ohne fremde PDF-Dateien", () => {
+  const plenum = B.QUELLEN.find(quelle => quelle.art === "plenum");
+  // Beobachtete Linkform der amtlichen Liste vom28Nov. Kein neuer Originalabruf.
+  const kommende = "https://www.bundestag.de/resource/blob/473450/Tagesordnung-komplett-kommende-Woche.pdf";
+  const html = `<a href="${kommende}">Tagesordnung komplett (114. - 116. Sitzung)</a>`
+    + '<a href="https://www.bundestag.de/resource/blob/473454/Ablaufplan-kommende-Woche.pdf">Ablaufplan</a>';
+  A.deepEqual(B.dokumentLinks(plenum, html).map(d => d.url), [kommende]);
+  const bisher = kommende.replace("-kommende-Woche.pdf", ".pdf");
+  A.deepEqual(B.dokumentLinks(plenum, `<a href="${bisher}">Tagesordnung komplett</a>`).map(d => d.url), [bisher]);
+  for (const falsch of [kommende.replace("www.bundestag.de", "fremd.test"),
+    kommende.replace("/resource/blob/473450/", "/unbelegt/"),
+    kommende.replace("-kommende-Woche.pdf", "-andere-Datei.pdf")])
+    A.throws(() => B.dokumentLinks(plenum, `<a href="${falsch}">Tagesordnung komplett</a>`), /liste-leer/);
+  A.throws(() => B.dokumentLinks(plenum, "<p>Keine erkannten Dateien</p>"), /liste-leer/);
+});
 test("Tatsaechliche Wirtschaft-Zeitaenderung, Zusatz-TOP und Frist; historische Frist bleibt datiert", () => {
   const base = doc(), extra = doc(1, "09:00");
   A.equal(base.meetings[0].startsAt, "2026-11-11T09:30:00.000Z");
