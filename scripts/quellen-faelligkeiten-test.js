@@ -6,6 +6,7 @@ const P = require("../lib/helmut/scalable-pipeline");
 const B = require("../lib/helmut/quellen-bundestag-termine");
 const C = require("../lib/helmut/quellenarchitektur/faelligkeitsabgleich");
 const { resolveArticleUrl, crawlAllSources } = require("../lib/helmut/crawler");
+const { erzeugeSpeicherWarteschlange } = require("./fixtures/jobqueue-speicher-treiber");
 const jetzt = Date.parse("2026-11-19T03:30:00Z");
 const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on",
   HELMUT_JOB_DISPATCH_MODE: "off", DIP_API_KEY: "fixture" };
@@ -16,6 +17,40 @@ const due = "2026-11-19T03:00:00Z";
 const inhalt = { art: "terminstand", belegHash: "a".repeat(64), standHash: "b".repeat(64) };
 let n = 0;
 async function test(name, fn) { await fn(); n++; console.log("PASS " + name); }
+
+function vollerPlan(auftraege, tag = "2026-11-19") {
+  return { version: 1, tag, auftraege, tagesplan: null, cursor: auftraege.length, zustand: "fertig",
+    manifestHash: require("../lib/helmut/briefing-speicher").hash([tag, auftraege, null]) };
+}
+
+async function historischerQueueFall(plan, start = jetzt) {
+  let zeit = Date.parse("2026-11-18T03:00:00Z");
+  const queue = erzeugeSpeicherWarteschlange({ now: () => zeit });
+  const feed = "https://fixture.invalid/alt/feed";
+  const job = { jobType: "source_fetch", idempotencyKey: "source_fetch|geteilt|fixture-alt|2026-11-18T00Z",
+    tenantId: null, dueAt: new Date(zeit).toISOString(), freshnessWindow: "2026-11-18T00Z", maxAttempts: 5,
+    payload: { art: "geteilt", quelle: { id: "fixture-alt", retrievalPathId: "rp-fixture-alt", type: "media",
+      category: "ausschuss", url: feed, rssUrl: feed, crawlMethod: "rss", active: true } } };
+  const angelegt = await queue.enqueue(job);
+  zeit = start;
+  const abschluesse = [], nebenwirkungen = [];
+  const verboten = name => async () => { nebenwirkungen.push(name); A.fail(name); };
+  const deps = { env, now: () => zeit, handler: P.HANDLER, klassen: {},
+    leseHeutigenQuellenplan: async () => plan, hardeningConfig: () => ({ enabled: false }),
+    quellenbelegSpeicher: () => ({ lesen: async () => null, sichern: verboten("Quellenbeleg schreiben") }),
+    crawlAllSources: verboten("Quellenabruf"), persistRohdokumente: verboten("Dokument schreiben"),
+    runUnderstandingShadow: verboten("Modellaufruf"), enqueue: verboten("Auftrag anlegen"),
+    buildV3Briefing: verboten("Publikation"),
+    budget: new Proxy({}, { get: () => A.fail("Budgetzugriff") }),
+    extendLease: queue.extendLease, zurueckstellen: queue.zurueckstellen,
+    finish: async r => { abschluesse.push(structuredClone(r)); return queue.finish(r); } };
+  return { queue, job, id: angelegt.id, deps, abschluesse, nebenwirkungen, setzeZeit: ms => { zeit = ms; },
+    async ausfuehren(restzeitMs = 2000) {
+      const claim = await queue.claim({ owner: "fixture-lebenszyklus", limit: 1, leaseMs: 120000 });
+      A.equal(claim.auftraege.length, 1);
+      return P.fuehreAuftragAus({ auftrag: claim.auftraege[0], deps, besitzer: "fixture-lebenszyklus", restzeitMs });
+    } };
+}
 
 async function main() {
   await test("Bestätigter leerer RSS-Feed erzeugt weder zweiten Abruf noch Meldung", async () => {
@@ -116,6 +151,106 @@ async function main() {
     } });
     A.equal(fehler.results[0].ok, false);
     A.deepEqual(fehlerAbrufe, [feed]);
+  });
+  await test("Bestätigt entfallener Altbedarf endet nativ nach fünf Fehlversuchen ohne Abruf oder Nebenmutation", async () => {
+    const f = await historischerQueueFall(vollerPlan([]));
+    const zukunft = { ...f.job, idempotencyKey: "fixture-zukunft", freshnessWindow: "2026-11-20T00Z",
+      dueAt: "2026-11-20T03:00:00Z" };
+    const zukuenftig = await f.queue.enqueue(zukunft);
+    const vorher = structuredClone(f.queue._zeilen.get(zukuenftig.id));
+    const altVorher = structuredClone(f.queue._zeilen.get(f.id));
+    for (let versuch = 1; versuch <= 5; versuch++) {
+      const r = await f.ausfuehren();
+      A.equal(r.ausgang, versuch === 5 ? "endgueltig-fehlgeschlagen" : "wiederholt");
+      A.match(r.fehler, /^quellenbedarf-entfallen:/);
+      A.equal(r.bilanz.erledigt, 0); A.equal(r.bilanz.zurueckgestellt, 0);
+      A.equal(f.queue._zeilen.get(f.id).attempts, versuch);
+    }
+    A.equal(f.queue._zeilen.get(f.id).status, "fehlgeschlagen");
+    A.equal(f.queue._zeilen.get(f.id).max_attempts, altVorher.max_attempts);
+    A.equal(f.queue._zeilen.get(f.id).first_due_at, altVorher.first_due_at);
+    A.deepEqual(f.queue._zeilen.get(f.id).payload, altVorher.payload);
+    A.deepEqual(f.queue._zeilen.get(zukuenftig.id), vorher);
+    A.equal(f.abschluesse.length, 5);
+    for (const r of f.abschluesse) { A.equal(r.ok, false); A.equal(r.retryDelayMs, 0); }
+    A.deepEqual(f.nebenwirkungen, []);
+    A.equal((await f.queue.claim({ owner: "fixture-danach", limit: 1 })).auftraege.length, 0);
+    // Derselbe regulaere Compiler erzeugt spaeter einen eigenen Fensterschluessel.
+    const D = require("../lib/helmut/source-demand");
+    const quelle = f.job.payload.quelle;
+    const plane = zeit => D.kompiliereQuellenbedarf({ profile: [profile], env, jetztMs: Date.parse(zeit),
+      quellenFuerProfil: async () => [quelle] });
+    const heute = (await plane("2026-11-19T03:30:00Z")).auftraege.find(j => j.payload.quelle?.id === quelle.id);
+    const morgen = (await plane("2026-11-20T03:30:00Z")).auftraege.find(j => j.payload.quelle?.id === quelle.id);
+    A(heute); A(morgen); A.notEqual(heute.idempotencyKey, morgen.idempotencyKey);
+    A.equal((await f.queue.enqueue(morgen)).neu, true);
+    A.equal(f.queue._zeilen.get(f.id).status, "fehlgeschlagen");
+  });
+  await test("Fehlender, offener, fremder oder unbestätigter Tagesplan verbraucht keine Altversuche", async () => {
+    const anderer = { jobType: "source_fetch", idempotencyKey: "fixture-anderer", tenantId: null,
+      payload: { art: "geteilt", quelle: { id: "andere-quelle", url: "https://fixture.invalid/anders", crawlMethod: "rss" } } };
+    const fertig = vollerPlan([anderer]);
+    const varianten = [null, { auftraege: [] }, { ...fertig, cursor: 0, zustand: "offen" },
+      vollerPlan([anderer], "2026-11-18"), { ...fertig, cursor: "1" }, { ...fertig, cursor: -1 },
+      { ...fertig, cursor: 2 }, { ...fertig, zustand: "offen" }, { ...fertig, manifestHash: "0".repeat(64) },
+      { ...fertig, extra: true }, { ...fertig, auftraege: {} }, vollerPlan([anderer, anderer]),
+      vollerPlan([{ jobType: "source_fetch" }])];
+    for (const plan of varianten) {
+      const f = await historischerQueueFall(plan);
+      const r = await f.ausfuehren();
+      A.equal(r.ausgang, "zurueckgestellt"); A.equal(r.grund, "quellenbedarf-nicht-mehr-bestaetigt");
+      A.equal(f.queue._zeilen.get(f.id).attempts, 0); A.equal(f.queue._zeilen.get(f.id).status, "wartend");
+      A.deepEqual(f.abschluesse, []); A.deepEqual(f.nebenwirkungen, []);
+    }
+    const f = await historischerQueueFall(fertig);
+    f.deps.leseHeutigenQuellenplan = async () => { throw Error("Fixture-Erstfehler HTTP503"); };
+    const r = await f.ausfuehren();
+    A.equal(r.ausgang, "zurueckgestellt"); A.match(r.grund, /^quellenplan-lesefehler: Fixture-Erstfehler HTTP503$/);
+    A.equal(f.queue._zeilen.get(f.id).attempts, 0);
+    A.deepEqual(f.abschluesse, []); A.deepEqual(f.nebenwirkungen, []);
+  });
+  await test("Späte Planlesung und UTC-Tagwechsel bestätigen kein endgültiges Entfallen", async () => {
+    for (const tagwechsel of [false, true]) {
+      const start = tagwechsel ? Date.parse("2026-11-19T23:59:59Z") : jetzt;
+      const f = await historischerQueueFall(vollerPlan([]), start);
+      f.deps.leseHeutigenQuellenplan = async () => { f.setzeZeit(start + (tagwechsel ? 1000 : 2000)); return vollerPlan([]); };
+      const r = await f.ausfuehren();
+      A.equal(r.ausgang, "zurueckgestellt");
+      A.equal(r.grund, tagwechsel ? "quellenbedarf-nicht-mehr-bestaetigt" : "quellenabruf-zeitbudget");
+      A.equal(f.queue._zeilen.get(f.id).attempts, 0);
+      A.deepEqual(f.abschluesse, []); A.deepEqual(f.nebenwirkungen, []);
+    }
+  });
+  await test("Vollständiger heutiger Plan erhält den bestätigten alten Google-Feed ohne HTML-Ersatz", async () => {
+    const f = await historischerQueueFall(null);
+    const feed = "https://news.google.com/rss/search?q=fixture-alt";
+    const alt = f.queue._zeilen.get(f.id).payload.quelle;
+    alt.url = "https://news.google.com/search?q=fixture-alt"; alt.rssUrl = feed;
+    const neu = { ...alt, url: feed };
+    f.deps.leseHeutigenQuellenplan = async () => vollerPlan([{ jobType: "source_fetch", idempotencyKey: "fixture-heute",
+      tenantId: null, payload: { art: "geteilt", quelle: neu } }]);
+    const abrufe = [];
+    f.deps.crawlAllSources = async sources => { abrufe.push(...sources); return { results: [{ ok: true, status: "empty", items: [] }] }; };
+    const r = await f.ausfuehren(60000);
+    A.equal(r.ausgang, "erledigt"); A.equal(f.abschluesse.length, 1); A.equal(f.abschluesse[0].ok, true);
+    A.equal(abrufe.length, 1); A.equal(abrufe[0].url, feed); A.equal(abrufe[0].rssUrl, feed);
+    A.equal(f.queue._zeilen.get(f.id).payload.quelle.url, "https://news.google.com/search?q=fixture-alt");
+    A.deepEqual(f.nebenwirkungen, []);
+  });
+  await test("Vollständiger Plan überträgt weder fremde Mandats- noch Quellen-, Weg- oder Nutzungsrechte", async () => {
+    for (const aendere of [j => { j.tenantId = "fremdes-mandat"; },
+      j => { j.payload.quelle.id = "fremde-quelle"; }, j => { j.payload.quelle.retrievalPathId = "rp-fremd"; },
+      j => { j.payload.quelle.url = j.payload.quelle.rssUrl = "https://fixture.invalid/anderer-weg"; },
+      j => { j.payload.quelle.eurlexExcerptApproved = true; }]) {
+      const f = await historischerQueueFall(null);
+      const j = { ...structuredClone(f.job), idempotencyKey: "fixture-heute" };
+      aendere(j);
+      f.deps.leseHeutigenQuellenplan = async () => vollerPlan([j]);
+      const r = await f.ausfuehren();
+      A.equal(r.ausgang, "wiederholt"); A.match(r.fehler, /^quellenbedarf-entfallen:/);
+      A.equal(f.abschluesse[0].ok, false); A.equal(f.abschluesse[0].retryDelayMs, 0);
+      A.deepEqual(f.nebenwirkungen, []);
+    }
   });
   await test("DIP wird einmal gemeinsam geplant und Personensuchen behalten zwei getrennte Mandate", async () => {
     let manifest;

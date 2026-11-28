@@ -105,7 +105,9 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     for (const [host, katalog, alias, suffix, aliasSuffix, quelle, typ] of [
       ["www.wiwo.de", "WirtschaftsWoche", "WiWo", " - WirtschaftsWoche", " - WiWo", "news-wirtschaftswoche", "media"],
       ["www.golem.de", "Golem.de", "Golem", " - Golem.de", " - Golem", "committee-digitales", "committee"],
-      ["www.deutschlandfunk.de", "Deutschlandfunk Politik", "Deutschlandfunk", "", " - Deutschlandfunk", "deutschlandfunk-politik", "media"]
+      ["www.deutschlandfunk.de", "Deutschlandfunk Politik", "Deutschlandfunk", "", " - Deutschlandfunk", "deutschlandfunk-politik", "media"],
+      ["www.rnd.de", "RND", "RND.de", " - RND.de", " - RND.de", "news-rnd", "media"],
+      ["osthessen-news.de", "OSTHESSEN|NEWS", "Osthessen|News", " - OSTHESSEN|NEWS", " - Osthessen|News", "signal-armutsbericht", "association"]
     ]) for (const richtung of [false, true]) {
       const w = welt({ gute: 0 }), rumpf = "Synthetischer Bericht zum beschlossenen Entwurf";
       const eingang = { ...w.items[0], url: "https://" + host + "/synthetischer-bericht", linkType: "direct",
@@ -142,6 +144,21 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
         A.equal(metadaten({ ...row, url: adresse }, { ...kanonisch, url: adresse }), false);
       A.equal(metadaten({ ...row, canonical_url: "https://example.invalid/" },
         { ...kanonisch, canonical_url: "https://example.invalid/" }), false);
+      const fremdeId = "rd-" + "f".repeat(64);
+      A.equal(metadaten(row, { ...kanonisch, id: fremdeId }), false);
+      w.kanonisch.set(row.id, { ...kanonisch, id: fremdeId });
+      await A.rejects(w.native([row.id], { [row.id]: stand }), /quellenstand-metadatenabweichung/);
+      if (["www.rnd.de", "osthessen-news.de"].includes(host)) {
+        // Die tatsaechlichen28Nov-Metadatenpaare haben keinen gespeicherten Text.
+        // Ein lesbarer Alias erfindet weder Auszug noch Originalinhalt.
+        const ohneText = { ...row, summary: null }, kanonischOhneText = { ...kanonisch, summary: null };
+        const textloserStand = R.standHash(ohneText);
+        w.kanonisch.set(row.id, kanonischOhneText); w.archiv.set(key(ohneText), ohneText);
+        const [gelesen] = await w.native([row.id], { [row.id]: textloserStand });
+        A.equal(gelesen.summary, null);
+        A.equal(require("../lib/helmut/quellen-auszug").hatOriginalinhalt(gelesen), false);
+        A.deepEqual(w.kanonisch.get(row.id), kanonischOhneText);
+      }
       A.deepEqual(w.forbidden, []);
     }
   });

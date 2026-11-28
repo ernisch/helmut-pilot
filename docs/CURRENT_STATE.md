@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**27.11.** [Morgenreparatur und offene Abnahme](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
+**28.11. Morgen weiter teilweise; Wiederanlauf belegt.** [Restkorrekturen, unveränderte Limits und neue Datenfreigaben](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
-**25.11. Offline.** Lasttest 320/323, 0/2 vollständig. Einzelmorgen 51/51. [Monat 26/30 vollständig](betrieb/quellen-monatssimulation-20261125.md). Teilfassung Desktop/Mobil 15/15, Budget PostgreSQL 59/59. [Lasttest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Einzelmorgen](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955) · [Drei Tage](https://github.com/ernisch/helmut-pilot/actions/runs/45596100664)
+**25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
 
 **25.11. Live.** 50/61 bis 06:45 Berlin, 07:20 ohne Tagesanlass. HTTP 521 stoppte um 08:47. Hetzner `5c28a53c` bereit, Mandatszuordnung an. Morgen offen. [521](https://github.com/ernisch/helmut-pilot/pull/1343) · [Lage](https://github.com/ernisch/helmut-pilot/pull/1348) · [503](https://github.com/ernisch/helmut-pilot/pull/1350) · [Beleg](betrieb/quellen-status-20261124.md) · [Hetzner-Updateautomatik aktiv](betrieb/hetzner-quellenworker.md#automatische-worker-updates)
 
