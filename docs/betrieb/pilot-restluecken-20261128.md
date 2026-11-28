@@ -13,6 +13,42 @@ blockierte Quellenauftrag erledigt. Reguläre Hetzner-Folgeläufe um14:15,14:30
 und14:45 sind auf02a74e69 gespeichert und vollständig bilanziert, ohne
 Leaseverlust. Das ist ein Wiederanlaufnachweis, keine vollständige Kundenabnahme.
 
+## Erneuter Datenbankausfall beim Wiederaufnahmelauf
+
+PR1366 ist auf `4c25df17` ausgerollt. Der einmal freigegebene Politico-Lauf
+vom28Nov16:45Berlin hat den Zielauftrag im zweiten Versuch leasefrei erledigt.
+Die hashgeprüfte Hostantwort belegt80reservierte Aufträge:9erledigt,
+38zur Wiederholung vorgesehen,30zurückgestellt und3endgültig fehlgeschlagen;
+kein Leaseverlust. Die30Vertagungen betreffen11Anbietergrenzen vor Abruf
+und19übersprungene Analysen. Das ist keine vollständige Versorgung.
+
+Der Laufabschluss scheiterte mitHTTP521; auch der Lesespiegel mit94gesammelten
+Einträgen wurde nicht bestätigt. Die kanonische Ablage blieb laut nativer
+Fehlermeldung unberührt. Daraus folgt weder ein Verlust kanonischer Inhalte
+noch ein erfolgreicher Spiegel. Relational bleibt die Laufzeile `running`
+mit unbekannter Endzeit und unbekannten Zählern. Kein Quellenfreigabe-Replay.
+
+PostgreSQL begann um15:49:18UTC erneut, nach einem weiteren Start um14:46:37UTC.
+Zwei Prozessquittungs-POSTs um15:49:17 und15:49:32UTC erhielten521;
+57P03/PGRST002/08006 bestätigen die Verbindungsunterbrechung. Der Auslöser
+bleibt ohne Compute-/Kernel-/Restart-Audit offen; kein OOM- oder Lastbeleg.
+Die sieben aktualisierten terminalen Zeilen sind nicht sieben neue Fehlschläge:
+vier wurden nur erneut beobachtet. Neu abgeschlossen wurden eine alte
+Budgetwartefrist und zwei Diagnosejobs zu Versionskonflikten. Zwei historische
+Table-Aufträge mit Profilbindungsfehler bzw. Budgetwartefrist haben allerdings
+heute erneut belegten Abrufbedarf; passende fertige Analysen fehlen. Sie sind
+keine irrelevanten Altlasten und brauchen einen frisch abgesicherten Reparaturweg.
+Für die zwei Versionskonflikte fehlt eine heutige positive Zielbindung.
+
+Das konkrete GO für Politico, zwei Regierungsfassungen und den bedingten
+EU29-Fall liegt vor. Nach dem technischen UNKNOWN bleiben Folgeaktionen
+gestoppt; bereits verbrauchte Einmalrechte und Reserven bleiben erhalten.
+100Hetzner-Aufrufe sind ausgeschöpft. Die28Nov-Morgenabnahme bleibt FAILED.
+Der lokale Folgefix erhält die genaue Abschlusszeile bei Speicherfehlern und
+bestätigt unklare Schreibantworten nur bei exakt passendem persistiertem Beleg.
+Er führt keinen zweiten Schreib- oder Quellenaufruf aus und ersetzt weder
+den fehlenden aktuellen Laufabschluss noch eine Produktionsabnahme.
+
 ## Endlicher negativer Abschluss entfallener Altaufträge
 
 Ein frischer Originalbefund zeigt469Quellenjobs mit erster Fälligkeit11.–19Nov,
