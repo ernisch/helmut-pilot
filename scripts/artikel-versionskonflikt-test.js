@@ -7,6 +7,7 @@ const A = require("node:assert/strict"), S = require("../lib/helmut/storage"),
   P = require("../lib/helmut/scalable-pipeline"), D = require("../lib/helmut/dedup"),
   R = require("../lib/helmut/roh-quellenstaende"), V = require("../lib/helmut/quellen-versorgungsstand");
 const { erzeugeSpeicherWarteschlange } = require("./fixtures/jobqueue-speicher-treiber");
+const gebunden = require("../lib/helmut/ko-quellenfassung").bindeArchiv;
 const now = Date.parse("2026-11-14T05:00:00Z"), heute = "2026-11-14T00Z";
 const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_QUELLEN_ARBEITSFENSTER: "on" };
 const key = row => row.id + ":" + R.standHash(row);
@@ -67,6 +68,83 @@ let count = 0;
 const only = process.argv.find(arg => arg.startsWith("--only="))?.slice(7);
 async function test(name, fn) { if (only && !name.includes(only)) return; await fn(); count++; console.log("PASS " + name); }
 (async () => {
+  await test("Belegte hib-Suchwege und typografische Titel bleiben eng an das amtliche Original gebunden", async () => {
+    for (const [quelle, pfad, typografisch] of [["process-hib-arbeit-soziales", "rp-process-hib-arbeit-soziales", false],
+      ["process-hib-arbeit-soziales", "rp-process-hib-arbeit-soziales", true], ["general-hib", "rp-general-hib", true]]) {
+      const w = welt({ gute: 0 }), eingang = { ...w.items[0],
+        title: 'Synthetischer Bericht zur "Vorsorge"',
+        url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
+        sourceId: "bundestag", sourceName: "Bundestag", sourceType: "bundestag", linkType: "direct",
+        retrievalPathId: "rp-bundestag", publishedAt: "2026-11-13T10:06:00Z" };
+      const amtlich = D.toRawDocumentRow(eingang), stand = R.standHash(amtlich);
+      const fund = { ...amtlich, summary: null, source_id: quelle, source_name: "Deutscher Bundestag",
+        title: (typografisch ? amtlich.title.replace('"Vorsorge"', "„Vorsorge“") : amtlich.title) + " - Deutscher Bundestag",
+        published_at: "2026-11-13T10:16:10Z", quellenabrufpfad: pfad };
+      delete fund.raw; // Tatsaechliche native Pfadprojektion, kein Rohobjekt.
+      w.items = [eingang]; w.kanonisch.clear(); w.archiv.clear();
+      w.kanonisch.set(amtlich.id, structuredClone(fund)); w.archiv.set(key(amtlich), structuredClone(amtlich));
+      A.deepEqual(await w.native([amtlich.id], { [amtlich.id]: stand }), [gebunden(amtlich)]);
+      const r = await w.run();
+      A.equal(r.teilfehler, undefined); A.equal(r.abrufErgebnis.analyse.length, 1);
+      A.equal(w.q.alle().length, 1); A.equal(w.q.alle()[0].payload.artikelFehler, undefined);
+      A.deepEqual(w.kanonisch.get(amtlich.id), fund);
+      for (const diff of [{ source_id: "fremde-quelle" }, { quellenabrufpfad: "rp-fremd" },
+        { source_id: quelle === "general-hib" ? "process-hib-arbeit-soziales" : "general-hib" },
+        { title: "Synthetischer Bericht zur anderen Vorsorge - Deutscher Bundestag" },
+        { title: 'Synthetischer Bericht zur "vorsorge" - Deutscher Bundestag' },
+        { title: 'Synthetischer Bericht zur „Vorsorge" - Deutscher Bundestag' },
+        { source_name: "Anderer Herausgeber" }, { link_type: "indirect" },
+        { url: "https://example.invalid/1234" }, { published_at: "2026-11-13T10:22:00Z" }]) {
+        w.kanonisch.set(amtlich.id, { ...fund, ...diff });
+        await A.rejects(w.native([amtlich.id], { [amtlich.id]: stand }), /quellenstand-metadatenabweichung/);
+      }
+      A.deepEqual(w.forbidden, []);
+    }
+  });
+  await test("Belegte Verlagsaliaspaare gleichen nur den eigenen Titelsuffix auf derselben Hostautoritaet ab", async () => {
+    for (const [host, katalog, alias, suffix, aliasSuffix, quelle, typ] of [
+      ["www.wiwo.de", "WirtschaftsWoche", "WiWo", " - WirtschaftsWoche", " - WiWo", "news-wirtschaftswoche", "media"],
+      ["www.golem.de", "Golem.de", "Golem", " - Golem.de", " - Golem", "committee-digitales", "committee"],
+      ["www.deutschlandfunk.de", "Deutschlandfunk Politik", "Deutschlandfunk", "", " - Deutschlandfunk", "deutschlandfunk-politik", "media"]
+    ]) for (const richtung of [false, true]) {
+      const w = welt({ gute: 0 }), rumpf = "Synthetischer Bericht zum beschlossenen Entwurf";
+      const eingang = { ...w.items[0], url: "https://" + host + "/synthetischer-bericht", linkType: "direct",
+        title: rumpf + (richtung ? aliasSuffix : suffix), sourceName: richtung ? alias : katalog,
+        sourceId: richtung ? "synthetische-suche" : quelle, sourceType: richtung ? "media" : typ };
+      const row = D.toRawDocumentRow(eingang), stand = R.standHash(row);
+      const kanonisch = { ...row, title: rumpf + (richtung ? suffix : aliasSuffix),
+        source_name: richtung ? katalog : alias, source_id: richtung ? quelle : "synthetische-suche",
+        source_type: richtung ? typ : "media" };
+      w.items = [eingang]; w.kanonisch.clear(); w.archiv.clear();
+      w.kanonisch.set(row.id, structuredClone(kanonisch)); w.archiv.set(key(row), structuredClone(row));
+      A.deepEqual(await w.native([row.id], { [row.id]: stand }), [gebunden(row)]);
+      const r = await w.run(); A.equal(r.teilfehler, undefined); A.equal(r.abrufErgebnis.analyse.length, 1);
+      A.deepEqual(w.kanonisch.get(row.id), kanonisch);
+      for (const diff of [{ title: "Anderer inhaltlicher Bericht" + (richtung ? suffix : aliasSuffix) },
+        { source_name: "Fremder Verlag" }, { link_type: "indirect" },
+        { url: "https://example.invalid/synthetischer-bericht" }, { canonical_url: "https://example.invalid/" }]) {
+        w.kanonisch.set(row.id, { ...kanonisch, ...diff });
+        let error; try { await w.native([row.id], { [row.id]: stand }); } catch (e) { error = e; }
+        A.equal(error?.message, "quellenstand-metadatenabweichung");
+        A.equal(S.leseRohdokumentKonfliktBeleg(error)?.inhaltlichAbweichend, true);
+      }
+      // Eine andere Publikationszeit bleibt ein Versionskonflikt. Regel A darf
+      // lediglich die gebundene Archivfassung weiterreichen, keinen Text mischen.
+      w.kanonisch.set(row.id, { ...kanonisch, published_at: "2026-11-13T12:15:00Z" });
+      let zeitfehler; try { await w.native([row.id], { [row.id]: stand }); } catch (e) { zeitfehler = e; }
+      A.equal(zeitfehler?.message, "quellenstand-metadatenabweichung");
+      A.equal(S.leseRohdokumentKonfliktBeleg(zeitfehler)?.inhaltlichAbweichend, false);
+      const bindung = require("../lib/helmut/quellenstand-bindung"), metadaten = bindung.gleicheBelegteVerlagsMetadaten;
+      A.equal(bindung.gleicherStand(row, kanonisch), false, "Leseralias erweitert keine kanonische Textfortschreibung");
+      for (const adresse of ["http://" + host + "/synthetischer-bericht",
+        "https://" + host + ".example.invalid/synthetischer-bericht",
+        "https://name@" + host + "/synthetischer-bericht", "https://" + host + ":8443/synthetischer-bericht"])
+        A.equal(metadaten({ ...row, url: adresse }, { ...kanonisch, url: adresse }), false);
+      A.equal(metadaten({ ...row, canonical_url: "https://example.invalid/" },
+        { ...kanonisch, canonical_url: "https://example.invalid/" }), false);
+      A.deepEqual(w.forbidden, []);
+    }
+  });
   await test("Native hib-Projektion erhaelt den belegten Archivstand ohne neue Metadaten-Ausnahme", async () => {
     const w = welt({ gute: 0 });
     const amtlichesItem = { ...w.items[0], url: "https://www.bundestag.de/presse/hib/kurzmeldungen-1234",
@@ -89,7 +167,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     A.equal(konflikt?.message, "quellenstand-metadatenabweichung");
     const beleg = S.leseRohdokumentKonfliktBeleg(konflikt);
     A.equal(beleg?.inhaltlichAbweichend, false, "Vorhandener hib-Vertrag gilt auch fuer die native Pfadprojektion");
-    A.deepEqual(beleg.dokument, fund); A.equal(beleg.stand, stand);
+    A.deepEqual(beleg.dokument, gebunden(fund)); A.equal(beleg.stand, stand);
     const r = await w.run();
     A.equal(r.abrufErgebnis.art, "rohfassungen"); A.equal(r.teilfehler, undefined);
     A.deepEqual(r.abrufErgebnis.analyse.map(a => [a.rohId, a.stand]), [[fund.id, stand]]);
@@ -125,7 +203,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     try { await w.native([row.id], { [row.id]: R.standHash(row) }); } catch (e) { error = e; }
     A.equal(error?.message, "quellenstand-metadatenabweichung");
     const beleg = S.leseRohdokumentKonfliktBeleg(error);
-    A.equal(beleg.id, row.id); A.equal(beleg.stand, R.standHash(row)); A.deepEqual(beleg.dokument, row);
+    A.equal(beleg.id, row.id); A.equal(beleg.stand, R.standHash(row)); A.deepEqual(beleg.dokument, gebunden(row));
     A.equal(Object.getOwnPropertyDescriptor(error, "quellenstandKonflikt").enumerable, false);
     A.equal(error.quellenstandKonflikt, true);
     A(!JSON.stringify(error).includes(row.summary)); A(!String(error.stack).includes(row.summary));
@@ -136,7 +214,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     beleg.id = "Fremde Kennung"; beleg.stand = "0".repeat(64); beleg.dokument.summary = "Manipulierter Text";
     A.equal(S.leseRohdokumentKonfliktBeleg(error).id, row.id);
     A.equal(S.leseRohdokumentKonfliktBeleg(error).stand, R.standHash(row));
-    A.deepEqual(S.leseRohdokumentKonfliktBeleg(error).dokument, row);
+    A.deepEqual(S.leseRohdokumentKonfliktBeleg(error).dokument, gebunden(row));
   });
   await test("Regel A: reiner Zeitstempel-Drift wird ueber die archivierte Fassung verstanden", async () => {
     const w = welt({ konflikte: 0, zeitlich: 4 }), before = JSON.stringify([...w.kanonisch]), r = await w.run();
@@ -153,7 +231,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     const job = { ...P.einzelArtikelAuftrag({ id: row.id, stand: R.standHash(row) }), id: "synthetischer-archivauftrag" };
     let ergebnis = { status: "duplicate" };
     const deps = { ...w.deps, env: { ...env, HELMUT_VERSTEHEN_CAS: "on" }, budget: null, eagerUnderstanding: async (docs, options) => {
-      A.deepEqual(docs, [row]); A.deepEqual(options.quellenRestDokumentIds, [row.id]);
+      A.deepEqual(docs, [gebunden(row)]); A.deepEqual(options.quellenRestDokumentIds, [row.id]);
       A.equal(options.artikelkontextVersorgung, undefined);
       return { processed: 1, counts: { [ergebnis.status]: 1 }, results: [ergebnis] };
     } };
@@ -193,7 +271,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
       const r = await w.run();
       A.equal(r.abrufErgebnis.art, "rohfassungen");
       A.equal(r.abrufErgebnis.analyse[0].stand, stand);
-      A.deepEqual(await w.native([row.id], { [row.id]: stand }), [row]);
+      A.deepEqual(await w.native([row.id], { [row.id]: stand }), [gebunden(row)]);
       A.deepEqual(w.kanonisch.get(row.id), kanonisch);
 
       for (const abweichung of [{ source_name: "Fremder Verlag" }, { title: "Anderer Bericht" },
@@ -226,7 +304,7 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
     A.equal(w.diagnosen().length, 0); A.equal(r.abrufErgebnis.analyse.length, 1);
     const analyse = r.abrufErgebnis.analyse[0];
     A.equal(analyse.stand, R.standHash(amtlich));
-    A.deepEqual(await w.native([amtlich.id], { [amtlich.id]: analyse.stand }), [amtlich]);
+    A.deepEqual(await w.native([amtlich.id], { [amtlich.id]: analyse.stand }), [gebunden(amtlich)]);
     A.deepEqual(w.kanonisch.get(amtlich.id), fundstelle);
 
     for (const abweichung of [{ quellenabrufpfad: null }, { source_id: "fremde-quelle" }, { link_type: "indirect" },
@@ -338,6 +416,6 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
   // ersetzt: die archivierte Fassung wird verstanden statt als Eingangsfehler
   // verworfen. Die früheren Diagnose-Pfade (ACK-Robustheit, getrennte Konfliktstände,
   // Wiederbeobachtungsfenster der Diagnose) entfallen damit.
-    if (!only) A.equal(count, 12);
+    if (!only) A.equal(count, 14);
   console.log(`${count}/${count} neue Artikel-Versionskonfliktgruppen bestanden; keine Modelle Datenbank oder alten Tests.`);
 })().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
