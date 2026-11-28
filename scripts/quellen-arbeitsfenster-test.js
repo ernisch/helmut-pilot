@@ -444,6 +444,47 @@ async function main() {
     w.weiter(361000);await operatorLauf(w,()=>assert.fail("UNKNOWN bleibt ohne Retry"),operatorAuftrag("2026-11-17","2"));
     assert.equal(w.stand(ERSATZ_KEY),1);assert.equal(w.stand(fenster.SCHLUESSEL.fenster),9);
   });
+  await check("24h-Wiederaufnahme nach 30 Fenstern braucht gebundenen Vorflug unter globaler Lease", async () => {
+    const w = welt(); w.setze("2026-11-28T12:00:00Z");
+    w.konten.set("2026-11-28|"+fenster.SCHLUESSEL.fenster,30);
+    w.konten.set("2026-11-28|"+fenster.SCHLUESSEL.sekunden,9000);
+    const a=operatorAuftrag("2026-11-28");let gelesen=0,gearbeitet=0;
+    const r=await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,adminAuftrag:a,
+      vorAdminReservierung:async()=>{gelesen++;assert.equal(w.frei(),0);assert.equal(w.rpcs.length,0);return {bereit:true};},
+      arbeit:async()=>{gearbeitet++;return {ok:true};}});
+    assert.equal(r.ok,true);assert.equal(gelesen,1);assert.equal(gearbeitet,1);
+    assert.equal(w.stand(fenster.SCHLUESSEL.fenster),31);assert.equal(w.stand(fenster.SCHLUESSEL.sekunden),9300);
+    assert.equal(r.arbeitsfenster.grenzen.originale,16);assert.equal(r.arbeitsfenster.grenzen.fenster,96);
+    w.weiter(361000);
+    await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,adminAuftrag:a,
+      vorAdminReservierung:async()=>({bereit:true}),arbeit:()=>assert.fail("gleiche UUID bleibt verbraucht")});
+    assert.equal(w.stand(fenster.SCHLUESSEL.fenster),31);
+  });
+  await check("24h-Wiederaufnahme ohne gueltigen Vorflug bucht keinen Einmalslot", async () => {
+    for(const pruefe of [null,async()=>({bereit:false}),async()=>{throw Error("DB aus");}]){
+      const w=welt();w.setze("2026-11-28T12:00:00Z");
+      const r=await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,adminAuftrag:operatorAuftrag("2026-11-28"),
+        vorAdminReservierung:pruefe,arbeit:()=>assert.fail("keine Arbeit")});
+      assert.equal(r.grund,"wiederaufnahme-vorstand-nicht-bestaetigt");assert.equal(w.rpcs.length,0);assert.equal(w.frei(),1);
+    }
+  });
+  await check("24h-Admin bleibt an Redaktionspause Startslot Tagesende und96Fenster gebunden", async()=>{
+    for(const zeit of ["2026-11-28T05:45:00Z","2026-11-28T06:29:59Z","2026-11-28T12:06:00Z","2026-11-28T23:58:00Z"]){
+      const w=welt();w.setze(zeit);const r=await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,
+        adminAuftrag:operatorAuftrag("2026-11-28"),vorAdminReservierung:()=>assert.fail("kein Vorflug ausserhalb Slot"),arbeit:()=>assert.fail("keine Arbeit")});
+      assert.equal(r.ok,false);assert.equal(w.rpcs.length,0);
+    }
+    const w=welt();w.setze("2026-11-28T12:00:00Z");w.konten.set("2026-11-28|"+fenster.SCHLUESSEL.fenster,96);
+    const r=await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,adminAuftrag:operatorAuftrag("2026-11-28"),
+      vorAdminReservierung:async()=>({bereit:true}),arbeit:()=>assert.fail("kein97.Fenster")});
+    assert.equal(r.ok,false);assert.equal(w.stand(fenster.SCHLUESSEL.fenster),96);
+  });
+  await check("24h-Vorflug nach Ende der fuenften Slotminute bucht keine Menge",async()=>{
+    const w=welt();w.setze("2026-11-28T12:04:50Z");
+    const r=await fenster.fuehreAus({env:ENV,deps:w.deps,ganztags:true,adminAuftrag:operatorAuftrag("2026-11-28"),
+      vorAdminReservierung:async()=>{w.weiter(20000);return {bereit:true};},arbeit:()=>assert.fail("Startfrist abgelaufen")});
+    assert.equal(r.grund,"arbeitsfenster-vorbereitung-zu-lang");assert.equal(w.rpcs.length,0);assert.equal(w.frei(),1);
+  });
   console.log(`PASS ${pass}/${pass} Quellen-Arbeitsfenster; keine Productionaufrufe`);
 }
 main().catch(e => { console.error(e.stack); process.exitCode = 1; });
