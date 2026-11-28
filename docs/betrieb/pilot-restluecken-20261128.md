@@ -105,3 +105,7 @@ umschreiben. Die Betriebsabnahme erfordert ein späteres tatsächlich vollständ
 fristgerecht gespeichertes und am normalen Kundenleser verfügbares Morgenpaket.
 Private Originale, Erstfehler, Testprotokolle und unabhängige Reviews liegen
 außerhalb von Git im vorhandenen Reparaturverzeichnis.
+
+## Erhaltene Vergleichsnachweise
+
+**25.11. Offline.** Lasttest 320/323, 0/2 vollständig. Einzelmorgen 51/51. [Monat 26/30 vollständig](quellen-monatssimulation-20261125.md). Teilfassung Desktop/Mobil 15/15, Budget PostgreSQL 59/59. [Lasttest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Einzelmorgen](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955) · [Drei Tage](https://github.com/ernisch/helmut-pilot/actions/runs/45596100664)
