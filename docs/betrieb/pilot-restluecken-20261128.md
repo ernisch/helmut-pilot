@@ -49,6 +49,41 @@ bestätigt unklare Schreibantworten nur bei exakt passendem persistiertem Beleg.
 Er führt keinen zweiten Schreib- oder Quellenaufruf aus und ersetzt weder
 den fehlenden aktuellen Laufabschluss noch eine Produktionsabnahme.
 
+## Lokale Fortsetzung am28.11.
+
+PR1368 wurde um18:48Berlin auf `e982612f` gemergt: beide Pflichtchecks am
+Integrationskopf `c1d766fb` erfolgreich, unabhaengiger Review PASS. Runtime und
+53erNachweis blieben bytegleich; nur aktueller main und zwei Berliner Zeitzeilen
+wurden integriert. Vercel Production ist auf `e982612f` READY; auch die main-CI
+ist gruen. Hetzner wartet auf das regulaere Updatefenster; kein manueller Start.
+
+Alle1407Uebergabedateien sind hashgleich. Der lokale main wurde nach Abgleich
+aller206unveraenderten, bereits verschluesselt gesicherten Zusatzdateien sicher
+nachgezogen. Historische Originale und laufende lokale Prozesse blieben erhalten.
+
+Die native BReg-Vorschau von18:43Berlin bindet weiterhin110Raw/8KO/155Links;
+der unveraenderte JS-Pruefer bestaetigt diesen Bestandsbefund zur Erfassungszeit.
+Die Fuenfminutenbindung ist inzwischen abgelaufen: kein Freigabeschreibversuch.
+Die reine Mac-Pfadzuordnung des privaten SQL-Transports ist unabhaengig geprueft,
+3/3Transportfaelle bestanden; beide SQL-Kerne unveraendert. Das konkrete BReg-GO
+bleibt erhalten. Vor Aktivierung fehlen erneut frische Plattform-/KundenGET-
+und native Vorwerte. Ein lokaler Zugangsfehler ist kein Supabase-Ausfall.
+Der englische Supabase-Supportentwurf bleibt privat und unversendet; Ursache
+der beiden Datenbankstarts und der alte Laufabschluss weiterhin UNKNOWN.
+
+## Enger Table-Herausgebername
+
+Das belegte Paar unterscheidet `Table.Media` und `Table.Briefings` bei gleicher
+ID, direkter table.media-Adresse, Canonical, vollstaendigem Titel und
+Publikationszeit. Die [Nutzungsbedingungen, Abschnitt1.1](https://table.media/allgemeine-nutzungsbedingungen)
+und das [Impressum](https://table.media/impressum) belegen die Herausgeberidentitaet.
+Nur diese host- und quellengebundene Namenspaarung ergaenzt den bestehenden Leser.
+Beide textlosen Fassungen bleiben ohne Originalinhalt; Rechte, historische
+Versionen und kanonische Zeilen bleiben unveraendert. Der gezielte Altcodefall
+reproduziert den Fehler; die bestehende Fachsuite besteht14/14 inklusive beider
+Aliasrichtungen und Gegenfaellen. Das ist weder ein Text-/KI-Erfolg noch eine
+Reparatur terminaler Jobs. Haufe braucht weiterhin den konkreten Versionsbeleg.
+
 ## Endlicher negativer Abschluss entfallener Altaufträge
 
 Ein frischer Originalbefund zeigt469Quellenjobs mit erster Fälligkeit11.–19Nov,
