@@ -41,7 +41,7 @@ keine irrelevanten Altlasten und brauchen einen frisch abgesicherten Reparaturwe
 Für die zwei Versionskonflikte fehlt eine heutige positive Zielbindung.
 
 Das konkrete GO für Politico, zwei Regierungsfassungen und den bedingten
-EU29-Fall liegt vor. Nach dem technischen UNKNOWN bleiben Folgeaktionen
+EU29-Fall liegt vor. Nach dem technischen UNKNOWN wurden Folgeaktionen
 gestoppt; bereits verbrauchte Einmalrechte und Reserven bleiben erhalten.
 100Hetzner-Aufrufe sind ausgeschöpft. Die28Nov-Morgenabnahme bleibt FAILED.
 Der lokale Folgefix erhält die genaue Abschlusszeile bei Speicherfehlern und
@@ -54,22 +54,46 @@ den fehlenden aktuellen Laufabschluss noch eine Produktionsabnahme.
 PR1368 wurde um18:48Berlin auf `e982612f` gemergt: beide Pflichtchecks am
 Integrationskopf `c1d766fb` erfolgreich, unabhaengiger Review PASS. Runtime und
 53erNachweis blieben bytegleich; nur aktueller main und zwei Berliner Zeitzeilen
-wurden integriert. Vercel Production ist auf `e982612f` READY; auch die main-CI
-ist gruen. Hetzner wartet auf das regulaere Updatefenster; kein manueller Start.
+wurden integriert. Vercel und ab19:10Berlin auch Hetzner bestaetigen `e982612f`;
+die main-CI ist gruen. Der Worker wurde regulaer aktualisiert, nicht manuell gestartet.
 
 Alle1407Uebergabedateien sind hashgleich. Der lokale main wurde nach Abgleich
 aller206unveraenderten, bereits verschluesselt gesicherten Zusatzdateien sicher
 nachgezogen. Historische Originale und laufende lokale Prozesse blieben erhalten.
 
-Die native BReg-Vorschau von18:43Berlin bindet weiterhin110Raw/8KO/155Links;
-der unveraenderte JS-Pruefer bestaetigt diesen Bestandsbefund zur Erfassungszeit.
-Die Fuenfminutenbindung ist inzwischen abgelaufen: kein Freigabeschreibversuch.
-Die reine Mac-Pfadzuordnung des privaten SQL-Transports ist unabhaengig geprueft,
-3/3Transportfaelle bestanden; beide SQL-Kerne unveraendert. Das konkrete BReg-GO
-bleibt erhalten. Vor Aktivierung fehlen erneut frische Plattform-/KundenGET-
-und native Vorwerte. Ein lokaler Zugangsfehler ist kein Supabase-Ausfall.
-Der englische Supabase-Supportentwurf bleibt privat und unversendet; Ursache
-der beiden Datenbankstarts und der alte Laufabschluss weiterhin UNKNOWN.
+Der erste BReg-Vorflug von18:43Berlin lief ohne Schreibversuch ab. Nach der
+ausdruecklichen Betreiberentscheidung um19:03Berlin durfte eine frische
+maschinelle Bindung ausgefertigt werden; das menschliche Original-GO von16:19
+bleibt unveraendert. Beide SQL-Kerne und alle Guards blieben bytegleich.
+Die Mac-Pfadzuordnung des privaten Transports ist unabhaengig geprueft,3/3PASS.
+Die neue native Vorschau und der JS-Pruefer bestaetigten um19:11Berlin den
+110Raw/8KO/155Links-Vorbestand. Direkter Worker-GET und normaler Vercel-KundenGET
+waren200; beide Codes `e982612f`, Migrationsledger und1/30USD/100/0/16 gebunden.
+Die gemeinsame GIZ-Ausgabepolicy wurde am KundenGET belegt; eine lokale
+Worker-Policy wurde weder behauptet noch eingerichtet.
+
+Genau ein Freigabeversuch aktivierte um19:15:33Berlin103unveraenderliche Archive,
+155Fassungsbindungen und zwei Rawpromotionen. Die Nachkontrolle um19:16:43Berlin
+bestaetigt alle103/155/2exakt gegen die persistierte Einmalquittung. Die acht
+historischen KO-Ansichten, Jobs/CAS, Rechte und Geldbuch blieben nativ unveraendert;
+Kostenbuchhash `9bc11b14...` gleich, global100,0aktiveJobs. Kein Modell-/Quellenstart.
+Der permanente lokale Einmalversuchsmarker und das Original-GO bleiben erhalten.
+Der alte verwaiste Adminlauf steht weiterhin `running`/NULL: kein Altabschlussreplay.
+
+Der Cronzugang ist im macOS-Schluesselbund gespeichert und bytegleich
+zurueckgelesen; sein lesender GET liefert200. [Zugangsnachweis](mac-arbeitsablauf-20261128.md).
+Der normale KundenGET nach der Korrektur um19:20Berlin liefert65Meldungen,
+weiterhin teilweise und ohne verbotene GIZ-Mischfassung. Er liest die gespeicherte
+07:20-Ausgabe; keine nachtraegliche Heilung der Morgenfrist und kein Voll-PASS.
+Der englische Supabase-Supporttext wurde nach ausdruecklichem Betreiber-GO
+ueber das offizielle Formular versandt; die Eingangsantwort bestaetigt Ticket
+`SU-573198`. Kategorie Database unresponsive, Schwere Normal/System impaired,
+zusaetzlicher menschlicher/AI-Projektzugriff ausgeschaltet. Keine Betriebs- oder
+Kostenmassnahme beauftragt. Der Text entspricht dem verlinkten
+[Supportleitfaden](https://supabase.com/docs/guides/troubleshooting/formatting-support-requests-for-faster-resolution-616717.md).
+Das Dashboard zeigt fuer15:38–16:52Berlin eine SEVERE-Speichercommitmentwarnung;
+mehrere Detailgrafiken laden nicht. Das beweist keinen OOM-Ausloeser.
+Ursache der beiden Datenbankstarts und alter Laufabschluss bleiben UNKNOWN.
 
 ## Enger Table-Herausgebername
 
@@ -83,6 +107,19 @@ Versionen und kanonische Zeilen bleiben unveraendert. Der gezielte Altcodefall
 reproduziert den Fehler; die bestehende Fachsuite besteht14/14 inklusive beider
 Aliasrichtungen und Gegenfaellen. Das ist weder ein Text-/KI-Erfolg noch eine
 Reparatur terminaler Jobs. Haufe braucht weiterhin den konkreten Versionsbeleg.
+
+PR1370 wurde um19:17Berlin auf `2e39da61` gemergt:14/14gezielte Fachgruppen,
+unabhaengiger Review und beide Pflichtchecks am Kopf `1e35f857` erfolgreich.
+Vercel bestaetigt `2e39da61` READY; der normale KundenGET bleibt200.
+Beide main-Pflichtchecks sind erfolgreich. Das Workerjournal bestaetigt am28Nov
+um19:40:17Berlin `2e39da61` bereit; lesend um19:40:21Berlin nachgeprueft.
+Die bestehende Updateautomatik wurde verwendet, kein manueller Quellenstart.
+
+Die zwei anderen positiv gebundenen Table-Altjobs bleiben terminal3/3 und ihre
+Fassungen textlos. Ein neuer Tagesplan aendert die versionengebundene Idempotenz
+nicht. Ohne echte zulaessige Textneufassung oder gesonderten geprueften
+Wiederaufnahmeweg entsteht daraus kein neuer Analyseversuch. Fehlende KO-Links
+beweisen keine CAS-Abwesenheit; kein passender Altoperator wurde umgedeutet.
 
 ## Endlicher negativer Abschluss entfallener Altaufträge
 
@@ -125,8 +162,8 @@ Drei weitere sind aktuelle HIB-Fassungen; der dafür erforderliche enge Leserfix
 ist bereits in02a74e69 enthalten und wird nicht erneut implementiert.
 
 Zwei amtliche Regierungsfassungen sind tatsächlich aktuell und fachlich verändert:
-„Zuckergetränkesteuer soll Gesundheitssystem entlasten“ vom27Nov13:51UTC und
-„Etat im Zeichen von Wohlstand und Sicherheit“ vom27Nov11:45UTC. Die älteren
+„Zuckergetränkesteuer soll Gesundheitssystem entlasten“ vom27Nov14:51Berlin und
+„Etat im Zeichen von Wohlstand und Sicherheit“ vom27Nov12:45Berlin. Die älteren
 kanonischen Zeilen tragen andere Titel, Texte und Publikationstage. Ein Alias
 oder Ausblenden anhand des alten Datums würde neue Sachstände verwerfen.
 
@@ -139,8 +176,8 @@ und alter Zählabweichungen bleiben exakt erhalten. Bestandssnapshots sind keine
 nachträglich erfundenen historischen Modelllektüren.
 
 Vorschau und nativer Plan müssen dieselben vollständigen Vorwerte bestätigen.
-Aktivierung braucht ein neues konkretes GO, frische Plattform-/Migrations-/GIZ-
-und Kostenbelege sowie die Fünfminutenbindung. Die100/0-Aufrufbindung gilt
+Die oben belegte Aktivierung erfolgte mit konkretem GO, frischen Plattform-/Migrations-/GIZ-
+und Kostenbelegen sowie Fuenfminutenbindung. Die100/0-Aufrufbindung gilt
 ausdrücklich für Hetzner; Vercel belegt den Kundenleser und denselben Geldvertrag.
 Erst nach Erwerb aller bisherigen
 globalen Schreibsperren liest ein getrenntes Hauptstatement den aktuellen Zustand.
@@ -157,8 +194,10 @@ Originalantwort. Eine dauerhafte Quittung fehlt; Job und CAS blieben im gesperrt
 Vorwert. Zusätzliche PostgreSQL-Loglesungen ersetzen die fehlende Antwort nicht.
 Die alte Freigabe wird nicht wiederverwendet.
 
-Der neue Operator `scripts/ops/quellen-eu-wiederaufnahme-20261129` ist auf29Nov,
-einen neuen Einmalschlüssel und ein neues konkretes GO beschränkt. Jede später
+Der neue Operator `scripts/ops/quellen-eu-wiederaufnahme-20261129` ist auf29Nov
+und einen neuen Einmalschluessel beschraenkt. Sein eigenes konkretes GO liegt vor;
+die jetzt bestaetigte frische Bindungssemantik gilt nur fuer BReg, nicht fuer EU29.
+Vor dessen Ausfuehrung bleibt diese maschinelle Zeitbindung sicher zu klaeren. Jede spaeter
 auffindbare alte Aktivierungs-/Rückwegquittung sperrt ihn. Ein tatsächlich fertiger
 neuer Tagesplan und ein regulärer positiver amtlicher Pflichtabruf müssen exakt
 Artikel, Archivhash und Einzelauftrag erneut belegen. Ohne Bedarf keine Aktion.
@@ -193,8 +232,8 @@ gesperrt. Der GIZ-Veröffentlichungsriegel bleibt unverändert; Nachrichten übe
 Parteien werden nicht pauschal gefiltert. Kein Quellenrecht wird erweitert.
 
 Neue Codeprüfungen und lokale Operatorbelege sind keine Produktionsaktivierung.
-Die beiden Bestandskorrekturen brauchen ihren konkreten Freigabeschritt; der EU-Fall
-zusätzlich den tatsächlich neu belegten Bedarf und freie reguläre Kapazität.
+Die BReg-Bestandskorrektur ist oben nativ und lesend belegt. Der EU-Fall bleibt
+an sichere Zeitbindung, tatsaechlich neuen Bedarf und freie regulaere Kapazitaet gebunden.
 Kein nachträglich vervollständigter Datensatz darf die heutige verfehlte Frist
 umschreiben. Die Betriebsabnahme erfordert ein späteres tatsächlich vollständiges,
 fristgerecht gespeichertes und am normalen Kundenleser verfügbares Morgenpaket.
