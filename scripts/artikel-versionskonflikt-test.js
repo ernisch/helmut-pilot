@@ -275,7 +275,9 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
   await test("Bekannte Verlagsnamen binden auf der exakten Originaladresse dieselbe Artikelfassung", async () => {
     for (const [host, quelle, name, alias, aliasImAbruf] of [
       ["www.n-tv.de", "news-ntv", "ntv", "n-tv.de", false],
-      ["www.zeit.de", "news-zeit", "ZEIT Online", "DIE ZEIT", true]
+      ["www.zeit.de", "news-zeit", "ZEIT Online", "DIE ZEIT", true],
+      ["table.media", "news-table-media", "Table.Media", "Table.Briefings", false],
+      ["table.media", "news-table-media", "Table.Media", "Table.Briefings", true]
     ]) {
       const w = welt({ gute: 0 });
       const eingang = { ...w.items[0], url: "https://" + host + "/synthetischer-bericht",
@@ -290,6 +292,20 @@ async function test(name, fn) { if (only && !name.includes(only)) return; await 
       A.equal(r.abrufErgebnis.analyse[0].stand, stand);
       A.deepEqual(await w.native([row.id], { [row.id]: stand }), [gebunden(row)]);
       A.deepEqual(w.kanonisch.get(row.id), kanonisch);
+
+      if (host === "table.media") {
+        // Das belegte Paar ist textlos und traegt auf beiden Seiten denselben
+        // vollstaendigen Titel; der Leseralias erzeugt keinen Originalauszug.
+        const ohneText = { ...row, title: row.title + " - Table.Briefings", summary: null };
+        const kanonischOhneText = { ...kanonisch, title: ohneText.title, summary: null,
+          published_at: "2026-11-13T10:00:00+00:00" };
+        const textloserStand = R.standHash(ohneText);
+        w.kanonisch.set(row.id, kanonischOhneText); w.archiv.set(key(ohneText), ohneText);
+        const [gelesen] = await w.native([row.id], { [row.id]: textloserStand });
+        A.equal(gelesen.summary, null);
+        A.equal(require("../lib/helmut/quellen-auszug").hatOriginalinhalt(gelesen), false);
+        A.deepEqual(w.kanonisch.get(row.id), kanonischOhneText);
+      }
 
       for (const abweichung of [{ source_name: "Fremder Verlag" }, { title: "Anderer Bericht" },
         { url: "https://example.invalid/synthetischer-bericht" }, { canonical_url: "https://example.invalid/" },
