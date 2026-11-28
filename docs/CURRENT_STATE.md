@@ -1,5 +1,13 @@
 # CURRENT STATE — Helmut
 
+**28.11. Pilotmorgen gescheitert, Wiederanlauf belegt.** Pflichtversorgung9/12,
+Kundenpaket teilweise. Automatische Hetzner-Folgeläufe auf02a74e69 vollständig
+bilanziert. Vorbereitet: endlicher negativer Abschluss469entfallener Altaufträge,
+fassungserhaltende Korrektur zweier amtlicher Regierungsmeldungen und ein neuer,
+gesonderter EU29-Vorschlag. Keine dieser neuen Datenaktionen ist ausgeführt;
+Kosten1/30USD,100Aufrufe,16Originale und UNKNOWN-Bindungen unverändert.
+[Nachweise, Freigabegrenzen und Rückwege](betrieb/pilot-restluecken-20261128.md).
+
 **27.11.** [Morgenreparatur und offene Abnahme](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
 **25.11. Offline.** Lasttest 320/323, 0/2 vollständig. Einzelmorgen 51/51. [Monat 26/30 vollständig](betrieb/quellen-monatssimulation-20261125.md). Teilfassung Desktop/Mobil 15/15, Budget PostgreSQL 59/59. [Lasttest](https://github.com/ernisch/helmut-pilot/actions/runs/45584784897) · [Einzelmorgen](https://github.com/ernisch/helmut-pilot/actions/runs/45590271955) · [Drei Tage](https://github.com/ernisch/helmut-pilot/actions/runs/45596100664)
