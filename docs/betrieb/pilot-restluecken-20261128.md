@@ -32,6 +32,19 @@ vor dem negativen Abschluss erneut geprüft. Bestehende positive Identitäts- un
 Google-Feed-Bindungen bleiben erhalten. Es gibt keine pauschale Mutation der469Zeilen;
 die Korrektur greift bei deren regulärer Übernahme.
 
+## Zwei weitere belegte Metadatenvarianten
+
+Die neue Bilanz seit der Wiederaufnahme zeigt zwei weitere enge Leserfehler:
+RND/RND.de sowie OSTHESSEN|NEWS/Osthessen|News mit dem jeweils zugehörigen
+Titelsuffix. In den gespeicherten Originalpaaren stimmen direkte Artikeladresse,
+kanonische Adresse, Titelrumpf und exakte Publikationszeit überein. Nur diese
+hostgebundenen Paare werden im bestehenden Leser ergänzt. Andere Titel,
+Zeitpunkte, IDs, Hosts und Zugriffsarten bleiben gesperrt; die kanonische
+Persistenz erhält keine zusätzliche Schreibfreigabe. Beide Originalpaare sind
+textlos. Ihre Metadatenäquivalenz erzeugt keinen Artikeltext oder KI-Erfolg.
+Die betroffene bestehende Suite besteht14/14; beide Originalpaare scheitern vor
+der Korrektur und sind danach ausschließlich als Metadaten lesbar.
+
 ## Zwei aktuelle amtliche Regierungsfassungen
 
 Die14RohIDs ohne Analyseverweis in zwei Morgenquittungen sind keine14fehlenden
@@ -86,7 +99,14 @@ unter exakt quittiertem Nachzustand. Bei FAIL/UNKNOWN sofort stoppen, nicht wied
 
 ## Grenzen und noch erforderlicher Produktionsnachweis
 
-Unverändert:1USD/UTC-Tag,30USDkumulativ,100Modellaufrufe,Reserve0,16Originale.
+Vorgesehene Betriebsgrenzen:1USD/UTC-Tag,30USDkumulativ,100Modellaufrufe,
+Reserve0,16Originale. Hetzner ist mit100/0/16 direkt belegt. Eine frische lesende
+Vercel-Projektprüfung zeigt dagegen noch die alten Werte2416Aufrufe/702Reserve
+bei16Originalen. Projektkonfiguration allein beweist nicht den geladenen
+Runtimezustand. Diese Abweichung braucht eine gesonderte konkrete Freigabe zur
+Angleichung und deren reguläres Deployment mit anschließender Lesekontrolle;
+die Geldgrenzen bleiben1/30USD. Kein Vorflug darf daraus100/0 auf beiden
+Plattformen behaupten, solange dieser Nachweis fehlt.
 Sieben ungeklärte Geldbindungen mit1,484USD bleiben geschützt. Die sechs aktuell
 noch im Eigentümerfilter stehenden abgelaufenen CAS-Zeilen sind eine andere Menge;
 sie werden exakt gebunden und nicht bereinigt. Der siebte frühere CAS steht jetzt
@@ -98,7 +118,7 @@ gesperrt. Der GIZ-Veröffentlichungsriegel bleibt unverändert; Nachrichten übe
 Parteien werden nicht pauschal gefiltert. Kein Quellenrecht wird erweitert.
 
 Neue Codeprüfungen und lokale Operatorbelege sind keine Produktionsaktivierung.
-Die zwei Bestandskorrekturen brauchen ihren konkreten Freigabeschritt; der EU-Fall
+Die Bestands- und Konfigurationskorrekturen brauchen ihren konkreten Freigabeschritt; der EU-Fall
 zusätzlich den tatsächlich neu belegten Bedarf und freie reguläre Kapazität.
 Kein nachträglich vervollständigter Datensatz darf die heutige verfehlte Frist
 umschreiben. Die Betriebsabnahme erfordert ein späteres tatsächlich vollständiges,
