@@ -97,4 +97,3 @@ spätere09:01-Ausfall erklärt diese frühere Lücke nicht. Der28Nov-Morgen blei
 FAILED. Auch nach einer Wiederaufnahme sind ein echter regulärer Folgelauf,
 die Quellenabdeckung und die vollständige fristgerechte Kundenausgabe
 nachzuweisen. Keine Pilotfreigabe aus grünen Tests ableiten.
-
