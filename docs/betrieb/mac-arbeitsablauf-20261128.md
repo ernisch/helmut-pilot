@@ -1,6 +1,6 @@
 # Lokale Mac-Entwicklung und bestehende Zugänge
 
-Stand: 28.11.2026, 17:53 Uhr Europe/Berlin. Verbindliche Entscheidung:
+Stand: 28.11.2026, 19:46 Uhr Europe/Berlin. Verbindliche Entscheidung:
 gesamte Entwicklung lokal in Codex auf dem Mac. Regeln und Freigaben stehen in
 [AGENTS.md](../../AGENTS.md), technische Grenzen in [CLAUDE.md](../../CLAUDE.md).
 Diese Anleitung ist die kanonische Stelle für Befehle und Zugangsnachweise.
@@ -21,6 +21,15 @@ ausführen, niemals Sandbox oder Produktionsschutz global abschalten.
 | Hetzner | `ssh helmut-codex`, Benutzer `codex`, Host `helmut-worker`; Anmeldung ohne Dialog, strikte Prüfung des bekannten Hostschlüssels, kein Agent-/X11-/Portforwarding. | `sudo -n -l` verweigert; Worker-Env nicht lesbar und Docker-Socket nicht schreibbar. Kein Entwicklungsauftrag auf dem Server. |
 | Supabase | Verbundene Supabase-Tools: Projekt `ddckuvvpcytqbyfmbvie`, `ACTIVE_HEALTHY`; `BEGIN READ ONLY; SELECT current_database(), current_setting('transaction_read_only'), 1; ROLLBACK;` lieferte `postgres`, `on`, `1`. | Keine Kundentabellen, RPCs, Migrationen oder Schreibabfragen für diesen Nachweis. `service_role` ist keine Mandantenfreigabe. |
 | Vercel | Verbundene Vercel-Tools: Team `nohut`, Projekt `helmut-pilot` / `prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`; Projekt und Production-Deploymentliste gelesen, SSO-Schutz aktiv. | Keine CLI-Installation, Env-Abfrage mit Secretwerten, neue Freigabelinks oder Deploymentaktion erforderlich. |
+| Lesender Briefingvertrag | Vorhandener Cronschluessel am28.11.um18:57Berlin verdeckt eingegeben, ausschliesslich mit bestehendem GET `/api/cron/briefing-nachweis` validiert:200. Dauerhaft im macOS-Schluesselbund unter `helmut-pilot-cron-secret`, bytegleich zurueckgelesen. | Kein Secretwert in Chat, Git, Logs oder Argumenten; keine Rotation, Env-Aenderung oder Schreibroute.200 ist keine vollstaendige Morgenabnahme. |
+
+Die vorherigen lokalen `.env`-Eintraege enthielten nur den Beispielwert; der
+vorhandene andere Operator-Schluesselbundeintrag wurde mit403 abgewiesen und
+nicht ersetzt. Nur der bestaetigte Cronschluessel wurde neu lokal hinterlegt.
+Der private Nur-Lesen-Reader uebergibt ihn vom Schluesselbund ausschliesslich
+im Speicher an System-curl ueber stdin. `-q` unterbindet Standard-curlrc;
+TLS-Pruefung bleibt aktiv. Der erste Python-SSL-Versuch scheiterte am lokalen
+CA-Pfad, nicht an Supabase. Keine pauschale Secretdateiuebernahme in Worktrees.
 
 Erstfehler GitHub: innerhalb der Sandbox erschien die gespeicherte Anmeldung
 ungültig; derselbe vorhandene Schlüsselbundzugang funktionierte außerhalb der

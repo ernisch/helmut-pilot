@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**28.11. Lokal: Quittungsfix #1368 gemergt, Vercel bereit; Morgen offen.** [Belege und Restpunkte](betrieb/pilot-restluecken-20261128.md) · [Codex-SSH/Sandbox](betrieb/codex-hetzner-zugang-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
+**28.11. Lokal: #1368/#1370 live; BReg 103/155/2 aktiviert. Morgen offen.** [Belege und Restpunkte](betrieb/pilot-restluecken-20261128.md) · [Codex-SSH/Sandbox](betrieb/codex-hetzner-zugang-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
 **28.11. Mac:** [Lokaler Arbeitsablauf](betrieb/mac-arbeitsablauf-20261128.md). **25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
 
