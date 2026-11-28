@@ -1,12 +1,23 @@
 # CLAUDE.md — dauerhafte technische Repository-Regeln
 
-Stand: 11.11.2026. Arbeitsweise, Leseumfang, Agentenzusammenarbeit und Freigaben
+Stand: 28.11.2026. Arbeitsweise, Leseumfang, Agentenzusammenarbeit und Freigaben
 stehen ausschliesslich in [AGENTS.md](AGENTS.md); bei Ueberschneidung gilt `AGENTS.md`.
 Produktprinzipien: [START_HERE.md](docs/START_HERE.md). Aktueller Betrieb und Belege:
 [CURRENT_STATE.md](docs/CURRENT_STATE.md). Quellen Normalbetrieb seit 23.11.2026:
 Hetzner Worker statt Vercel Functions, siehe [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 und [Produktionsbeleg](docs/betrieb/hetzner-live-20261123.md).
 Vercel Quellencron bleibt nur als manuell aktivierbarer Rueckweg. Historie ist kein aktueller Auftrag.
+
+## 2 · Lokale Entwicklung und GitHub-Synchronisation
+
+Verbindlich ist der [lokale Arbeitsablauf in AGENTS.md](AGENTS.md#verbindlicher-lokaler-arbeitsablauf-vom-28112026):
+Entwicklung ausschliesslich auf dem Mac; vor jedem neuen Auftrag lokale Arbeit
+pruefen/sichern, GitHub abrufen und den aktuellen `main` samt Dokumentation sicher
+uebernehmen. Nach Abschluss Code und Dokumentation ueber den geprueften PR und
+anschliessendes lokales Fast-Forward synchronisieren. Keine alten Arbeitsstaende
+reaktivieren. [Befehle und vier lesende Zugangsnachweise](docs/betrieb/mac-arbeitsablauf-20261128.md).
+Produktionsabfragen von lokalen Tests trennen: verbundene Tools bzw. bestehendes
+SSH fuer autorisierte Betriebslesevorgaenge, `scripts/lokal.js` fuer Tests.
 
 ## 3 · Aufgabenabhängige Zusatzlektüre
 
@@ -47,12 +58,13 @@ Nur passende Abschnitte lesen; keine pauschale Volllektüre oder Repository-Inve
    2026-08-14, `op30-zielarchitektur-2026-08-13.md` §17.4; testgesichert durch
    `scripts/migrations-organisation-test.js`). Altbestand mit 8-stelligen Stempeln ist
    angewendete Historie und wird nicht umbenannt.
-9. **Produktionsrelevante Skripte, die Secrets benötigen, müssen sowohl lokal als auch in
-   einer Codex-Cloud-Sitzung lauffähig sein.** Sie lesen Secrets ausschließlich aus
-   `process.env` — kein eigenes Parsen einer `.env.local` im Code. In Cloud-Sitzungen
-   erreichen Secrets den Prozess **ausschließlich über die Codex-Cloud-Environment-
-   Einstellungen** (Environment → Environment Variables), **niemals über den Chat und
-   niemals über Commits**. Details/Referenz: [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md) §8.
+9. **Produktionsrelevante Skripte lesen Secrets ausschliesslich aus `process.env`** —
+   kein eigenes Parsen einer `.env.local` im Code. Lokale Entwicklung verwendet
+   bestehende geschuetzte Zugaenge; Secretdateien werden weder pauschal in neue
+   Worktrees kopiert noch ausgegeben, committet oder auf Server uebertragen.
+   Historische Cloud-Anleitungen sind keine Freigabe fuer Cloud-Entwicklung.
+   Das bestehende Secretinventar bleibt Referenz:
+   [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md).
 10. **Gemeinsam genutzter Zustand wird bedingt geschrieben, und eine Meldung behauptet nur, was
     die Ablage trägt.** Schreiben mehrere Läufe dieselbe Zeile/denselben Blob, ist Lesen →
     Ändern → Schreiben **ohne Bedingung** verboten (Compare-and-Set oder ein atomarer

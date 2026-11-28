@@ -1,12 +1,54 @@
 # HELMUT AGENT CONTRACT
 
-Stand: 15.11.2026. Diese Datei fuehrt Arbeitsweise, Freigaben und Zusammenarbeit.
+Stand: 28.11.2026. Diese Datei fuehrt Arbeitsweise, Freigaben und Zusammenarbeit.
 Technische Sicherheitsregeln: [CLAUDE.md §4–6](CLAUDE.md).
 Aktueller Betrieb und Belege: [CURRENT_STATE.md](docs/CURRENT_STATE.md).
 Aktueller Quellen Normalbetrieb: [ARCHITECTURE.md](docs/ARCHITECTURE.md) und
 [Hetzner Produktionsbeleg](docs/betrieb/hetzner-live-20261123.md).
 Vercel ist fuer Quellen nur geschuetzter manueller Rueckweg; keine schwere
 Quellenarbeit auf Vercel und keine zwei parallelen Quellenverbraucher.
+
+## Verbindlicher lokaler Arbeitsablauf vom 28.11.2026
+
+Die gesamte Entwicklung erfolgt lokal auf dem Mac in Codex. GitHub
+`ernisch/helmut-pilot`, Branch `main`, ist die aktuelle gemeinsame Code- und
+Dokumentationsbasis. Bestehende GitHub-CI bleibt die externe Pflichtabnahme.
+Hetzner ist Betriebsziel, kein Entwicklungsort; dort keine neuen Codex-,
+Agenten-, Entwicklungs- oder Testlaeufe starten. Bereits vorhandene Server-
+Arbeitsbereiche und offene Sitzungen nicht eigenmaechtig loeschen oder beenden.
+
+Vor **jedem neuen Entwicklungsauftrag**, noch vor Implementierung:
+
+1. Branch, HEAD, Index, lokale geaenderte, unversionierte und ignorierte Dateien,
+   Worktrees, laufende Arbeit und relevante offene PRs rein lesend pruefen.
+   Offene Arbeit vor jedem betroffenen Checkout/Update nachvollziehbar sichern:
+   Patches fuer Index/Arbeitsbaum, Commitbindung und Dateimanifest mit SHA256;
+   private Dateien nur verschluesselt ausserhalb von Git. Sicherung ruecklesen.
+2. `origin` auf das genannte Repository pruefen und `git fetch origin` ausfuehren.
+   Bei fehlendem Zugang keinen alten Stand als aktuell behandeln. Vor Uebernahme
+   lokale Abweichungen und auch Kollisionen mit ignorierten Dateien pruefen.
+3. Lokalen `main` bei sauberem Index/Arbeitsbaum und kollisionsfreien lokalen
+   Zusatzdateien ausschliesslich mit `git merge --ff-only origin/main`
+   aktualisieren; relevante Regeln und Dokumentationen aus diesem Stand lesen.
+   Neue Arbeit auf eigenem `codex/`-Branch vom aktuellen `origin/main` beginnen.
+   Bei offenen Aenderungen, Divergenz oder paralleler Arbeit isolierten lokalen
+   Worktree nutzen; bestehende beauftragte Arbeit kontrolliert integrieren und
+   neu pruefen. Kein Reset, Clean, Force-Push, automatisches Stash/Pop oder
+   Wiederaufnehmen alter Branches/Archive als aktuelle Entwicklungsbasis.
+4. Nach Abschluss nur auftragsbezogenen Code und zugehoerige Dokumentation
+   explizit stagen, pruefen, committen, pushen und per PR gemaess der folgenden
+   Dauerfreigabe integrieren. Vor Merge erneut aktuellen `main` und Parallelitaet
+   pruefen; danach fetch, lokalen `main` sicher per Fast-Forward nachziehen und
+   Gleichstand belegen. Bei Blockade Branch/Commit/PR und Sicherung erhalten.
+
+Codex fuehrt die notwendigen Befehle selbst aus. Bestehende SSH-/Schluesselbund-
+Zugaenge und verbundene Tools fuer Hetzner, Supabase, GitHub und Vercel verwenden;
+keine regelmaessige Terminalmitwirkung des Betreibers voraussetzen. Sandbox,
+Hostschluesselpruefung, Produktionsschutz und Kostenfreigaben bleiben erhalten.
+Zugang ist keine Schreibfreigabe. Abgelaufene Anmeldung oder fehlende Rechte
+konkret benennen; keine Schutzumgehung oder neue Berechtigung ableiten.
+Kanonische Befehle, Zugangsgrenzen und Sicherungsbelege:
+[Lokale Mac-Entwicklung](docs/betrieb/mac-arbeitsablauf-20261128.md).
 
 ## Verbindliche Dauerfreigabe vom 11.11.2026: Push und Merge automatisch bei Gruen
 

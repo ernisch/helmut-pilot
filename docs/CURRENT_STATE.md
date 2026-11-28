@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**28.11. Codex:** [SSH-Zugang, Anmeldung und Sandbox geprüft](betrieb/codex-hetzner-zugang-20261128.md). **28.11. Morgen weiter teilweise; Wiederanlauf belegt.** [Restkorrekturen, unveränderte Limits und neue Datenfreigaben](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
+**28.11. Mac:** [Lokale Entwicklung, Git-Abgleich, Sicherungen und vier Zugänge geprüft](betrieb/mac-arbeitsablauf-20261128.md). **28.11. Morgen weiter teilweise; Wiederanlauf belegt.** [Restkorrekturen, unveränderte Limits und neue Datenfreigaben](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
 **25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
 
