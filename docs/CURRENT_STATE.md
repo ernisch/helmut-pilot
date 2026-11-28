@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**28.11. Morgen teilweise; erneuter DB-Ausfall, Laufabschluss unbekannt.** [Restkorrekturen und aktuelle Störung](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
+**28.11. Morgen teilweise; DB-Ausfall, Laufabschluss unbekannt.** [Störung und Restkorrekturen](betrieb/pilot-restluecken-20261128.md) · [Codex-SSH/Sandbox](betrieb/codex-hetzner-zugang-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
 **25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
 
