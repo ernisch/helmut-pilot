@@ -68,9 +68,13 @@ function konfigurationsfehler(env = process.env) {
   return null;
 }
 
-function quellenlauf() {
-  return arbeitsfenster.fuehreAus({ ganztags: true, arbeit: ({ freigabe, startMs }) => {
-    const runId = helmutRunId("cron-crawl", startMs);
+function quellenlauf({ adminAuftrag = null, bindung = null } = {}) {
+  const wiederaufnahme = adminAuftrag ? require("./lib/helmut/quellen-wiederaufnahme") : null;
+  if (adminAuftrag) wiederaufnahme.pruefeBindung(adminAuftrag, bindung);
+  return arbeitsfenster.fuehreAus({ ganztags: true, adminAuftrag,
+    vorAdminReservierung: wiederaufnahme ? () => wiederaufnahme.pruefeLive(adminAuftrag, bindung) : null,
+    arbeit: ({ freigabe, startMs }) => {
+    const runId = adminAuftrag ? require("./lib/helmut/quellen-adminstart").laufId(adminAuftrag) : helmutRunId("cron-crawl", startMs);
     return abdeckung.runQuellenCronMitAbdeckung(
       () => runCronUeberWarteschlange("crawl", {
         deadlineMs: 270000, runId, startedMs: startMs, arbeitsfenster: freigabe,

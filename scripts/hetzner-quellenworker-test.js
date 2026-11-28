@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const { once } = require("node:events");
 const { betreibe, einmal, konfigurationsfehler, pruefeEinmalZiel, pruefeProduktionsstand } = require("../worker");
 
@@ -101,6 +101,70 @@ async function pruefeProzess() {
   assert.deepEqual(await fertig, [0, null]);
 }
 
+async function pruefeWiederaufnahme() {
+  const W=require("../lib/helmut/quellen-wiederaufnahme");
+  // Deklarierte synthetische Fehlerzustandsfixture, keine Modellantwort oder Originalquittung.
+  const zeit=Date.parse("2026-11-28T12:00:00Z"),tag="2026-11-28",id="00000000-0000-4000-8000-000000000001";
+  const r={run_id:"cron-crawl-synthetisch",process:"warteschlange-crawl",status:"failed",error_class:"warteschlange-nicht-verfuegbar",
+    location:"hetzner-de",reason:null,started_at:tag+"T08:00:00Z",finished_at:tag+"T08:01:59Z",commit_ref:"b".repeat(40),
+    target_count:23,processed_count:1,deferred_count:19,failed_count:2,telemetrie:{wiederholt:0,leaseVerloren:0}};
+  const basis={version:1,auftrag:{tag,auftragId:id},ziel:{jobId:id,runId:r.run_id},commit:"a".repeat(40),gelesenAm:new Date(zeit).toISOString(),
+    limits:{aufrufe:100,reserve:0,originale:16,tagUsd:1,gesamtUsd:30},
+    codeHashes:Object.fromEntries(["worker.js","lib/helmut/quellen-arbeitsfenster.js","lib/helmut/quellen-wiederaufnahme.js","lib/helmut/quellen-automatik.js"].map(f=>[f,"c".repeat(64)])),
+    stand:{job:{id,job_type:"source_fetch",tenant_id:null,status:"laeuft",finished_at:null,attempts:1,max_attempts:3,lease_owner:r.run_id+"-worker",
+      lease_expires_at:tag+"T08:06:48Z",updated_at:tag+"T08:01:48Z",payload:{quelle:{id:"synthetische-quelle",retrievalPathId:"synthetischer-pfad"}}},
+      laufend:[{id}],laeufe:[r,...Array.from({length:29},(_,i)=>({...r,run_id:"cron-crawl-alt-"+i,status:"partial"}))],
+      zaehler:[{day:tag,scope:"global",used:100}],geld:{buchHash:"d".repeat(64),heutigeAbgerechneteAufrufe:100,offeneHeute:0},
+      ressourcen:[{schluessel:"quellenarbeit|fenster",verbraucht:30},{schluessel:"quellenarbeit|reservierte-sekunden",verbraucht:9000},
+        {schluessel:"quellenarbeit|originalabrufe",verbraucht:6},...Array.from({length:30},(_,i)=>({schluessel:"quellenarbeit|slot|"+i,verbraucht:1}))]}};
+  function fall(aendere){const b=structuredClone(basis);aendere?.(b);b.digest=W.digest(b);return b;}
+  let checks=0;const gut=fall();W.pruefeBindung(gut.auftrag,gut,zeit);checks++;
+  for(const aendere of [b=>b.stand.job.job_type="document_understanding",b=>b.stand.job.attempts=3,
+    b=>b.stand.job.lease_expires_at=new Date(zeit+1).toISOString(),b=>b.stand.job.lease_owner="anderer-worker",
+    b=>b.stand.laufend.push({id:"anderer"}),b=>b.stand.laeufe[0].status="success",b=>b.stand.laeufe[0].target_count=22,
+    b=>b.stand.laeufe[0].telemetrie.leaseVerloren=1,b=>b.stand.laeufe[1].status="running",
+    b=>b.stand.zaehler[0].used=99,b=>b.stand.geld.offeneHeute=1,b=>b.limits.aufrufe=101,b=>b.limits.originale=17,
+    b=>b.stand.ressourcen[0].verbraucht=31,b=>b.stand.ressourcen[1].verbraucht=9300,
+    b=>b.gelesenAm=new Date(zeit-300001).toISOString(),b=>b.gelesenAm=new Date(zeit+1).toISOString()]){
+    const b=fall(aendere);assert.throws(()=>W.pruefeBindung(b.auftrag,b,zeit),/wiederaufnahme-/);checks++;
+  }
+  const verfremdet=fall();verfremdet.digest="f".repeat(64);assert.throws(()=>W.pruefeBindung(verfremdet.auftrag,verfremdet,zeit),/digest/);checks++;
+  assert.throws(()=>W.pruefeBindung(gut.auftrag,gut,zeit+86400000),/tag/);checks++;
+  assert.deepEqual(await W.pruefeLive(gut.auftrag,gut,{jetzt:()=>zeit,lese:async()=>fall()}),{bereit:true});checks++;
+  for(const mutate of [b=>b.stand.geld.buchHash="e".repeat(64),b=>b.stand.job.updated_at="2026-11-28T08:01:49Z",b=>b.commit="e".repeat(40)]){
+    await assert.rejects(W.pruefeLive(gut.auftrag,gut,{jetzt:()=>zeit,lese:async()=>fall(mutate)}),/vorwert-drift/);checks++;
+  }
+  let now=zeit;
+  await assert.rejects(W.pruefeLive(gut.auftrag,gut,{jetzt:()=>now,lese:async()=>{now+=300001;return gut;}}),/bindung-abgelaufen/);checks++;
+  await assert.rejects(W.pruefeLive(gut.auftrag,gut,{jetzt:()=>zeit,lese:async()=>{throw Error("synthetischer DB-Ausfall");}}),/DB-Ausfall/);checks++;
+  assert.throws(()=>require("../worker").quellenlauf({adminAuftrag:gut.auftrag}),/wiederaufnahme-auftrag/);checks++;
+  const success={ok:true,lauftelemetrie:{start:true,ende:true,status:"success"}};
+  assert.equal(W.ausgangBestaetigt(success),true);checks++;
+  for(const bad of [{...success,ok:false},{...success,lauftelemetrie:{...success.lauftelemetrie,start:false}},
+    {...success,lauftelemetrie:{...success.lauftelemetrie,ende:false}},
+    {...success,reason:"blob-spiegel-fehlgeschlagen"},
+    {...success,verarbeitung:{blobSpiegel:{geschrieben:false}}},
+    {...success,verarbeitung:{blobSpiegel:{verworfen:1}}},
+    {...success,lauftelemetrie:{...success.lauftelemetrie,fehlerklasse:"unbekannt"}},
+    ...["lease-verloren","vertagung-unbestaetigt","auftragsausgang-unbestaetigt","auftraege-endgueltig-fehlgeschlagen"]
+      .map(fehlerklasse=>({...success,lauftelemetrie:{...success.lauftelemetrie,status:"partial",fehlerklasse}}))]){
+    assert.equal(W.ausgangBestaetigt(bad),false);checks++;
+  }
+  // Echter CLI-Kindprozess mit deklarierter nativer Ersatzantwort. Kein DB/Provider.
+  for(const [native,exit] of [[success,0],[{ok:false,lauftelemetrie:{start:true,ende:true,status:"partial",fehlerklasse:"auftragsausgang-unbestaetigt"}},2],
+    [{ok:true,lauftelemetrie:{start:true,ende:false,status:"success"}},2],
+    [{...success,verarbeitung:{blobSpiegel:{geschrieben:false}}},2]]){
+    const file=require.resolve("../lib/helmut/quellen-wiederaufnahme");
+    const childCode=`const M=require('node:module'),load=M._load,file=${JSON.stringify(file)};
+      process.argv=[process.execPath,file,'--freigeben'];Date.now=()=>${zeit};
+      M._load=function(id,parent,isMain){if(parent?.filename===file&&id==='../../worker')return{quellenlauf:async()=>(${JSON.stringify(native)})};return load.apply(this,arguments);};
+      M._load(file,null,true);`;
+    const child=spawnSync(process.execPath,["-e",childCode],{input:JSON.stringify(gut),encoding:"utf8",timeout:5000});
+    assert.equal(child.status,exit,child.stderr);assert.deepEqual(JSON.parse(child.stdout).nativeAntwort,native);checks++;
+  }
+  console.log("PASS "+checks+" gezielte Wiederaufnahme-Bindungen; keine Netzwerk-/Modellaufrufe");
+}
+
 async function main() {
   const env = {
     SUPABASE_URL: "https://testprojekt.supabase.co",
@@ -141,6 +205,7 @@ async function main() {
   await pruefeEinmalmodus(env);
   await pruefeCronRoute();
   await pruefeProzess();
+  await pruefeWiederaufnahme();
   console.log("PASS Konfiguration, Viertelstunden, Redaktionssperre, Fehlerisolierung, Einmalmodus, Cron und SIGTERM");
 }
 
