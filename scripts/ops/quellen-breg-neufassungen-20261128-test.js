@@ -162,7 +162,9 @@ function original(file){
    aktion,digest,tag:now.slice(0,10),approvedAt:now,codeCommit:"d".repeat(40),migrationSHA256:B.digest(["native lokale Migration"]),
    policyHash:O.ZIEL.policyHash,plattformen:["hetzner","vercel"].map(name=>({name,checkedAt:now,commit:"d".repeat(40),
     evidenceSHA256:B.digest(["synthetischer isolierter Plattformbeleg",name]),httpStatus:200,policyHash:O.ZIEL.policyHash,
-    migration:true,migrationSHA256:B.digest(["native lokale Migration"]),dailyUsd:1,totalUsd:30,calls:100,originals:16}))};};
+    // Unterschiedliche Appwerte sind keine100/0-Workerfreigabe und kein Runtimebeleg.
+    migration:true,migrationSHA256:B.digest(["native lokale Migration"]),dailyUsd:1,totalUsd:30,
+    calls:name==="hetzner"?100:2416,reserve:name==="hetzner"?0:702,originals:16}))};};
   const rueck=r=>({version:1,id:r.id,receiptSHA256:B.digest(r)});
   const before=()=>{const v=run("vorschau");letzteVorschau=v;try{return O.pruefe(v);}catch(e){
    fs.writeFileSync(path.join(dir,"breg28-fehler-vorschau-private.json"),JSON.stringify(v),{mode:0o600});throw e;}};
@@ -182,7 +184,9 @@ function original(file){
    for(const mutate of [g=>g.scope="BREG-BESTANDSFASSUNG-20261127",g=>delete g.einmalKey,g=>g.einmalKey+="-alt",
     g=>g.tag="2026-01-01",g=>g.approvedAt="2026-01-01T00:00:00Z",g=>g.plattformen[0].originals=17,
     g=>g.plattformen[0].commit="a".repeat(40),g=>g.plattformen[0].policyHash="a".repeat(64),g=>g.plattformen[0].httpStatus=503,
-    g=>g.plattformen[0].migration=false,g=>g.plattformen[0].dailyUsd=2,g=>g.plattformen.pop()]){
+    g=>g.plattformen[0].migration=false,g=>g.plattformen[0].dailyUsd=2,
+    g=>g.plattformen[0].calls=101,g=>g.plattformen[0].reserve=1,g=>delete g.plattformen[0].reserve,
+    g=>g.plattformen[0].name="vercel",g=>g.plattformen.pop()]){
     const g=go("freigeben",prepared.digest);mutate(g);A.throws(()=>run("freigeben",prepared,g),/breg-neufassungen:/);
    }
    A.throws(()=>run("freigeben",{...prepared,gelesenAm:"2026-01-01T00:00:00Z"},go("freigeben",prepared.digest)),/Vorwert/);
@@ -337,7 +341,11 @@ function original(file){
      const hook="-- Nur lokale Testsynchronisation nach Tempdefinitionen.\nselect pg_advisory_xact_lock("+lockKey+");\n";
      const synchronisiert=quelle.replace(marker,hook+marker);
      A.equal(synchronisiert.replace(hook,""),quelle,"Operatorkern bytegleich ausserhalb des Testhooks");
-     operator=verbindung(appB,operatorInput("freigeben",p,go("freigeben",p.digest),synchronisiert));
+     const raceGo=go("freigeben",p.digest);
+     // Das bytegesicherte Altoriginal verlangte noch100 bei beiden Plattformen.
+     // Nur sein deklarierter lokaler Altfall behaelt dieses alte Testszenario.
+     if(!index)raceGo.plattformen[1].calls=100;
+     operator=verbindung(appB,operatorInput("freigeben",p,raceGo,synchronisiert));
      await warteBis(()=>psql("select count(*) from pg_stat_activity where datname=current_database() and application_name="+lit(appB)
       +" and state='active' and wait_event_type='Lock' and wait_event='advisory';")==="1",operator,"Operator B vor globalen Locks");
      beleg.advisoryWaitBestaetigt=true;

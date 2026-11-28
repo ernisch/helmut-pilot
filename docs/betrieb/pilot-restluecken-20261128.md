@@ -69,7 +69,9 @@ nachträglich erfundenen historischen Modelllektüren.
 
 Vorschau und nativer Plan müssen dieselben vollständigen Vorwerte bestätigen.
 Aktivierung braucht ein neues konkretes GO, frische Plattform-/Migrations-/GIZ-
-und Kostenbelege sowie die Fünfminutenbindung. Erst nach Erwerb aller bisherigen
+und Kostenbelege sowie die Fünfminutenbindung. Die100/0-Aufrufbindung gilt
+ausdrücklich für Hetzner; Vercel belegt den Kundenleser und denselben Geldvertrag.
+Erst nach Erwerb aller bisherigen
 globalen Schreibsperren liest ein getrenntes Hauptstatement den aktuellen Zustand.
 So bleiben zwischen Vorflug und Sperre bestätigte Claims oder Quotenwrites sichtbar.
 Kein Modell-/Quellenstart, keine Job-, CAS-, Kosten-, Profil- oder Rechtemutation.
@@ -99,14 +101,16 @@ unter exakt quittiertem Nachzustand. Bei FAIL/UNKNOWN sofort stoppen, nicht wied
 
 ## Grenzen und noch erforderlicher Produktionsnachweis
 
-Vorgesehene Betriebsgrenzen:1USD/UTC-Tag,30USDkumulativ,100Modellaufrufe,
-Reserve0,16Originale. Hetzner ist mit100/0/16 direkt belegt. Eine frische lesende
-Vercel-Projektprüfung zeigt dagegen noch die alten Werte2416Aufrufe/702Reserve
-bei16Originalen. Projektkonfiguration allein beweist nicht den geladenen
-Runtimezustand. Diese Abweichung braucht eine gesonderte konkrete Freigabe zur
-Angleichung und deren reguläres Deployment mit anschließender Lesekontrolle;
-die Geldgrenzen bleiben1/30USD. Kein Vorflug darf daraus100/0 auf beiden
-Plattformen behaupten, solange dieser Nachweis fehlt.
+Unveränderte Betriebsgrenzen:1USD/UTC-Tag,30USDkumulativ,100Hetzner-Aufrufe,
+Reserve0 auf Hetzner,16Originale. Die frische Vercel-Projektprüfung zeigt
+2416Aufrufe/702Reserve bei16Originalen. Die ursprünglichen Freigaben bezeichnen
+die100Aufrufe ausdrücklich als Hetzner-Grenze; sie belegen keine entsprechende
+Vercel-Vorgabe. Unterschiedliche Appwerte allein sind kein nachgewiesener
+Produktionsfehler und keine Erlaubnis zur Änderung. Projektkonfiguration ist
+auch kein neuer Runtimebeleg. Die neu vorbereitete Vorflugannahme wurde daher
+auf ihren belegten Umfang berichtigt; keine Produktionsvariable wird verändert
+und kein systemweiter100er-Deckel behauptet. Native1/30USD-Buchwachen und der
+100er-Gegenwert im aktuellen Queuevorflug bleiben unverändert.
 Sieben ungeklärte Geldbindungen mit1,484USD bleiben geschützt. Die sechs aktuell
 noch im Eigentümerfilter stehenden abgelaufenen CAS-Zeilen sind eine andere Menge;
 sie werden exakt gebunden und nicht bereinigt. Der siebte frühere CAS steht jetzt
@@ -118,7 +122,7 @@ gesperrt. Der GIZ-Veröffentlichungsriegel bleibt unverändert; Nachrichten übe
 Parteien werden nicht pauschal gefiltert. Kein Quellenrecht wird erweitert.
 
 Neue Codeprüfungen und lokale Operatorbelege sind keine Produktionsaktivierung.
-Die Bestands- und Konfigurationskorrekturen brauchen ihren konkreten Freigabeschritt; der EU-Fall
+Die beiden Bestandskorrekturen brauchen ihren konkreten Freigabeschritt; der EU-Fall
 zusätzlich den tatsächlich neu belegten Bedarf und freie reguläre Kapazität.
 Kein nachträglich vervollständigter Datensatz darf die heutige verfehlte Frist
 umschreiben. Die Betriebsabnahme erfordert ein späteres tatsächlich vollständiges,

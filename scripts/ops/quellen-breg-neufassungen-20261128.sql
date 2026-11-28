@@ -266,8 +266,12 @@ begin
    and p->>'migrationSHA256'=g->>'migrationSHA256' and p->>'evidenceSHA256' ~ '^[a-f0-9]{64}$'
    and (p->>'checkedAt')::timestamptz between jetzt-interval '5 minutes' and jetzt
    and p->'httpStatus'='200'::jsonb and p->>'policyHash'=g->>'policyHash'
-   and p->'dailyUsd'='1'::jsonb and p->'totalUsd'='30'::jsonb and p->'calls'='100'::jsonb
-   and p->'originals'='16'::jsonb,'frischer Code/GET/GIZ/100/16-Plattformvorflug');
+   and p->'dailyUsd'='1'::jsonb and p->'totalUsd'='30'::jsonb
+   and p->'originals'='16'::jsonb
+   -- Der primaer freigegebene100/0-Vertrag betrifft den Quellenworker auf Hetzner.
+   -- Vercel liefert den Kundenleser; dessen eigene App-Quoten bleiben unveraendert.
+   and (p->>'name'='vercel' or (p->'calls'='100'::jsonb and p->'reserve'='0'::jsonb)),
+   'frischer Code/GET/GIZ/1/30/16-Vorflug und Hetzner100/0');
  end loop;
 end $$;
 
