@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**28.11. Mac:** [Lokale Entwicklung, Git-Abgleich, Sicherungen und vier Zugänge geprüft](betrieb/mac-arbeitsablauf-20261128.md). **28.11. Morgen weiter teilweise; Wiederanlauf belegt.** [Restkorrekturen, unveränderte Limits und neue Datenfreigaben](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
+**28.11. Codex:** [SSH-Zugang, Anmeldung und Sandbox geprüft](betrieb/codex-hetzner-zugang-20261128.md). **28.11. Morgen weiter teilweise; Wiederanlauf belegt.** [Restkorrekturen, unveränderte Limits und neue Datenfreigaben](betrieb/pilot-restluecken-20261128.md). [27.11.](betrieb/morgenreparatur-20261127.md) · [26.11.](betrieb/quellenreparatur-20261126.md).
 
-**25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
+**28.11. Mac:** [Lokaler Arbeitsablauf](betrieb/mac-arbeitsablauf-20261128.md). **25.11. Offline.** [Erhaltene Einzel-, Last- und Monatsnachweise](betrieb/pilot-restluecken-20261128.md#erhaltene-vergleichsnachweise).
 
 **25.11. Live.** 50/61 bis 06:45 Berlin, 07:20 ohne Tagesanlass. HTTP 521 stoppte um 08:47. Hetzner `5c28a53c` bereit, Mandatszuordnung an. Morgen offen. [521](https://github.com/ernisch/helmut-pilot/pull/1343) · [Lage](https://github.com/ernisch/helmut-pilot/pull/1348) · [503](https://github.com/ernisch/helmut-pilot/pull/1350) · [Beleg](betrieb/quellen-status-20261124.md) · [Hetzner-Updateautomatik aktiv](betrieb/hetzner-quellenworker.md#automatische-worker-updates)
 
